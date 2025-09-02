@@ -127,6 +127,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Ball.cpp" />
+    <ClCompile Include="CollisionManager.cpp" />
+    <ClCompile Include="ICollide.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
     <ClCompile Include="ImGui\imgui_draw.cpp" />
@@ -138,9 +141,13 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
+
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="TestScene.cpp" />
     <ClCompile Include="TestScene.h" />
+
+    <ClCompile Include="Renderer.cpp" />
+
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
@@ -148,6 +155,11 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="00.Renderer.h" />
+    <ClInclude Include="Ball.h" />
+    <ClInclude Include="CollisionManager.h" />
+    <ClInclude Include="Define.h" />
+    <ClInclude Include="ICollide.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_impl_dx11.h" />
@@ -157,8 +169,12 @@
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="pch.h" />
+
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneManager.h" />
+
+    <ClInclude Include="Renderer.h" />
+
     <ClInclude Include="Sphere.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -69,8 +69,8 @@ private:
     IDXGISwapChain* SwapChain = nullptr;
     ID3D11Texture2D* FrameBuffer = nullptr;
     ID3D11RenderTargetView* FrameBufferRTV = nullptr;
-    ID3D11Buffer* VertexBuffer = nullptr;
-    ID3D11Buffer* ConstantBuffer = nullptr;
+   /* ID3D11Buffer* VertexBuffer = nullptr;
+    ID3D11Buffer* ConstantBuffer = nullptr;*/
 
     // 4
     unsigned int NumVerticesSphere = 0;
