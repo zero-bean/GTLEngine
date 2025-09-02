@@ -41,3 +41,21 @@ enum class eBallType
     Static = 0,
     Dynamic = 1
 };
+
+
+namespace CalculateUtil
+{
+    inline const FVector3 operator* (const FVector3& lhs, float rhs) { return FVector3(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs); }
+    inline const FVector3 operator/ (const FVector3& lhs, float rhs) { return FVector3(lhs.x / rhs, lhs.y / rhs, lhs.z / rhs); }
+    inline const FVector3 operator+ (const FVector3& lhs, const FVector3& rhs) { return FVector3(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z); }
+    inline const FVector3 operator- (const FVector3& lhs, const FVector3& rhs) { return FVector3(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z); }
+
+    inline const float Length(const FVector3& lhs) { return sqrtf(lhs.x * lhs.x + lhs.y * lhs.y + lhs.z * lhs.z); }
+    inline const float Dot(const FVector3& lhs, const FVector3& rhs) { return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z; }
+}
+
+
+namespace RandomUtil
+{
+    inline float CreateRandomFloat(const float fMin, const float fMax) { return fMin + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (fMax - fMin))); }
+}

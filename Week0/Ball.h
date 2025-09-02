@@ -1,11 +1,11 @@
 #pragma once
 #include "pch.h"
-#include "ICollide.h"
+#include "Object.h"
 
 class Renderer;
 
 
-class Ball : protected ICollide
+class Ball : public Object
 {
 public:
     Ball();
@@ -17,10 +17,12 @@ private:
     Ball& operator=(const Ball&);
 
 public:
-    void Initialize();
-    void Update();
-    void Release();
-    void Render(Renderer& Renderer);
+    void Initialize(const Renderer& renderer)override;
+    void Update(Renderer& renderer) override;
+    void Render(Renderer& renderer) override;
+    void Release() override;
+
+    void Collidable() override;
 
 public:
     // getter
@@ -37,7 +39,7 @@ public:
     inline void                 SetMass(float newMass) { Mass = newMass; }
 
 private:
-    FVector3 WorldPosition{};
+
     FVector3 Velocity{};
 
     eBallType BallType;
