@@ -16,7 +16,7 @@ public:
     void Update(const FVector3& InOffset, float InScale, float rotationZDeg);
     void Prepare();
     void PrepareShader();
-    void Render(ID3D11Buffer* vertexBuffer, UINT numVertices);
+    void Render(ID3D11Buffer* InConstantBuffer, ID3D11Buffer* InVertexBuffer, UINT numVertice);
     void SwapBuffer();
 
     void Release();
@@ -25,7 +25,7 @@ public:
     ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth);
 
     //Update
-    void UpdateConstant(const FVector3& InWorldPosition, float InScale, float rotationZDeg);
+    void UpdateConstant(ID3D11Buffer* InConstantBuffer, const FVector3& InWorldPosition, float InScale, float rotationZDeg);
 
     //getter
 	ID3D11Device* GetDevice()const { return Device; }
@@ -39,7 +39,7 @@ private:
     void InitializeAndSetPipeline();
     void CreateFrameBuffer();
     void CreateRasterizerState();
-    void CreateConstantBuffer();
+    //void CreateConstantBuffer();
     void CreateShader();
     void SetRenderingPipeline();
 
@@ -75,7 +75,7 @@ private:
     ID3D11Texture2D* FrameBuffer = nullptr;
     ID3D11RenderTargetView* FrameBufferRTV = nullptr;
     //ID3D11Buffer* VertexBuffer = nullptr;
-    ID3D11Buffer* ConstantBuffer = nullptr;
+    //ID3D11Buffer* ConstantBuffer = nullptr;
 
     // 4
     unsigned int NumVerticesSphere = 0;

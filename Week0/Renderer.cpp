@@ -23,21 +23,18 @@ void Renderer::Initialize(HWND hWindow)
     // IA, VS, RS, PS, OM 등을 설정한다.
     InitializeAndSetPipeline();
 
-    //INT NumVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
-    //CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
-    //SetNumVerticesSphere(NumVerticesSphere);
 }
 
 void Renderer::Update(const FVector3& InOffset, float InScale, float rotationZDeg)
 {
-    UpdateConstant(InOffset, InScale, rotationZDeg);
+    //UpdateConstant(InOffset, InScale, rotationZDeg);
 }
 
-void Renderer::Render(ID3D11Buffer* vertexBuffer, UINT numVertices)
+void Renderer::Render(ID3D11Buffer* InConstantBuffer, ID3D11Buffer* InVertexBuffer, UINT numVertices)
 {
     UINT offset = 0;
-    DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &Stride, &offset);
-
+    DeviceContext->IASetVertexBuffers(0, 1, &InVertexBuffer, &Stride, &offset);
+    DeviceContext->VSSetConstantBuffers(0, 1, &InConstantBuffer);
     DeviceContext->Draw(numVertices, 0);
 }
 
@@ -103,20 +100,20 @@ void Renderer::CreateRasterizerState()
     Device->CreateRasterizerState(&rasterizerdesc, &RasterizerState);
 }
 
-void Renderer::CreateConstantBuffer()
-{
-    D3D11_BUFFER_DESC constantbufferdesc = {};
-    constantbufferdesc.ByteWidth = (sizeof(FConstants) + 0xf) & 0xfffffff0; // 16바이트 정렬
-    constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC; 
-    constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
-    if (!Device)
-    {
-        OutputDebugStringA("Device is nullptr\n");
-    }
-    Device->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
-}
+//void Renderer::CreateConstantBuffer()
+//{
+//    D3D11_BUFFER_DESC constantbufferdesc = {};
+//    constantbufferdesc.ByteWidth = (sizeof(FConstants) + 0xf) & 0xfffffff0; // 16바이트 정렬
+//    constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC; 
+//    constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+//    constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+//
+//    if (!Device)
+//    {
+//        OutputDebugStringA("Device is nullptr\n");
+//    }
+//    Device->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
+//}
 
 void Renderer::CreateShader()
 {
@@ -172,7 +169,7 @@ void Renderer::SetRenderingPipeline()
     }
 }
 
-void Renderer::UpdateConstant(const FVector3& InWorldPosition, float InScale, float rotationZDeg)
+void Renderer::UpdateConstant(ID3D11Buffer* InConstantBuffer, const FVector3& InWorldPosition, float InScale, float rotationZDeg)
 {
     XMMATRIX R = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, XMConvertToRadians(rotationZDeg));
 
@@ -180,14 +177,14 @@ void Renderer::UpdateConstant(const FVector3& InWorldPosition, float InScale, fl
     XMStoreFloat4x4(&rotationTemp, XMMatrixTranspose(R));
 
     D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
-    DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
+    DeviceContext->Map(InConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
     FConstants* constants = (FConstants*)constantbufferMSR.pData;
     {
         constants->WorldPosition = InWorldPosition;
         constants->Scale = InScale;
         constants->rotation = rotationTemp;
     }
-    DeviceContext->Unmap(ConstantBuffer, 0);
+    DeviceContext->Unmap(InConstantBuffer, 0);
 }
 
 void Renderer::InitializeAndSetPipeline()
@@ -199,7 +196,7 @@ void Renderer::InitializeAndSetPipeline()
     CreateRasterizerState();
 
     // ConstantBuffer생성
-    CreateConstantBuffer();
+    //CreateConstantBuffer();
 
     // vs, ps, InputLayout 생성
     CreateShader();
@@ -212,13 +209,10 @@ ID3D11Buffer* Renderer::CreateVertexBuffer(FVertexSimple* vertices, UINT byteWid
 {
     D3D11_BUFFER_DESC vertexbufferdesc = {};
     vertexbufferdesc.ByteWidth = byteWidth;
-    /*vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-    vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;*/
     vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;
     vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
     D3D11_SUBRESOURCE_DATA vertexbufferSRD = { vertices };
-
 
     ID3D11Buffer* vertexBuffer;
     Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
@@ -254,10 +248,10 @@ void Renderer::PrepareShader()
     DeviceContext->IASetInputLayout(SimpleInputLayout);
 
     // 버텍스 쉐이더에 상수 버퍼를 설정합니다.
-    if (ConstantBuffer)
-    {
-        DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-    }
+    //if (ConstantBuffer)
+    //{
+    //    DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+    //}
 }
 
 bool Renderer::ValidateResources()

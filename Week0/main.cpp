@@ -15,10 +15,8 @@
 #include "imGui/imgui_impl_win32.h"
 
 
-
-
-// ÄÚµù±ÔÄ¢ 
-//struct ´Â F¸¦ ºÙÈù´Ù
+// ï¿½Úµï¿½ï¿½ï¿½Ä¢ 
+//struct ï¿½ï¿½ Fï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 
 
@@ -31,29 +29,14 @@ using namespace DirectX;
 #include "Sphere.h"
 
 
-// ÆÐÅ°Â¡ À¯¿¬¼º, Ä¸½¶È­ Áõ°¡, ±â´ÉÈ®Àå¼º, ÄÄÆÄÀÏ ÀÇÁ¸µµ ¾àÈ­ ¿ë namespace 
 
-namespace RandomUtil
-{
-    inline float CreateRandomFloat(const float fMin, const float fMax) { return fMin + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (fMax - fMin))); }
-}
+#include "PlayerArrow.h"
 
-
-namespace CalculateUtil
-{
-    inline const FVector3 operator* (const FVector3& lhs, float rhs)            { return FVector3(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs); }
-    inline const FVector3 operator/ (const FVector3& lhs, float rhs)            { return FVector3(lhs.x / rhs, lhs.y / rhs, lhs.z / rhs); }
-    inline const FVector3 operator+ (const FVector3& lhs, const FVector3& rhs)  { return FVector3(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z); }
-    inline const FVector3 operator- (const FVector3& lhs, const FVector3& rhs)  { return FVector3(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z); }
-
-    inline const float Length(const FVector3& lhs)                              { return sqrtf(lhs.x * lhs.x + lhs.y * lhs.y + lhs.z * lhs.z); }
-    inline const float Dot(const FVector3& lhs, const FVector3& rhs)            { return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z; }
-}
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-// °¢Á¾ ¸Þ½ÃÁö¸¦ Ã³¸®ÇÒ ÇÔ¼ö
+// ï¿½ï¿½ï¿½ï¿½ ï¿½Þ½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
@@ -74,19 +57,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-
-
-
-
-//º¯¼ö ¼³Á¤
-const float GGravityValue = 0.00098f; // ÇÁ·¹ÀÓ´ç Áß·Â°¡¼Óµµ (°ªÀº Æ©´× °¡´É)
+//ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+const float GGravityValue = 0.00098f; // ï¿½ï¿½ï¿½ï¿½ï¿½Ó´ï¿½ ï¿½ß·Â°ï¿½ï¿½Óµï¿½ (ï¿½ï¿½ï¿½ï¿½ Æ©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 
 const float GLeftBorder = -1.0f;
 const float GRightBorder = 1.0f;
 const float GTopBorder = 1.0f;
 const float GBottomBorder = -1.0f;
 
-const float GElastic = 0.7f; // Åº¼º°è¼ö
+const float GElastic = 0.7f; // Åºï¿½ï¿½ï¿½ï¿½ï¿½
+
+const float RotationDelta = 5.0f;
+
+
 
 int  TargetBallCount = 1;
 bool bWasIsGravity = true;
@@ -103,7 +86,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #endif
 
 
-    //À©µµ¿ì Ã¢ ¼³Á¤
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¢ ï¿½ï¿½ï¿½ï¿½
     WCHAR WindowClass[] = L"JungleWindowClass";
     WCHAR Title[] = L"Game Tech Lab";
     WNDCLASSW wndclass = { 0, WndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
@@ -112,79 +95,103 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024,
         nullptr, nullptr, hInstance, nullptr);
 
-    // ÆÄÀÌÇÁ¶óÀÎ¿¡ ÇÊ¿äÇÑ ¸®¼Ò½ºµéÀ» ÃÊ±âÈ­ÇÏ°í ÀÌÈÄ »ó¼ö¹öÆÛ¸¸ updateÇÏ´Â ¹æ½ÄÀ¸·Î ·£´õ¸µ
 
-    // ·»´õ·¯ ÃÊ±â ¼³Á¤
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½ ï¿½ï¿½ï¿½ï¿½
     Renderer renderer;
     
-    // Device, Devicecontext, Swapchain, Viewport¸¦ ¼³Á¤ÇÑ´Ù
-    // GPU¿Í Åë½ÅÇÒ ¼ö ÀÖ´Â DC¿Í È­¸é ¼ÛÃâÀ» À§ÇÑ Swapchain, Viewport¸¦ ¼³Á¤ÇÑ´Ù.
     renderer.Initialize(hWnd);
-    
-    
-    // ÆÄÀÌÇÁ¶óÀÎ ¸®¼Ò½º¸¦ ¼³Á¤ÇÏ°í ÆÄÀÌÇÁ¶óÀÎ¿¡ ¹Ú´Â´Ù
-    // IA, VS, RS, PS, OM µîÀ» ¼³Á¤ÇÑ´Ù ÇÏÁö¸¸ constant buffer´Â ¼³Á¤ÇÏÁö¾Ê´Â´Ù. ÀÌ ÈÄ ÀÌ°ÍÀ» µû·Î ¼³Á¤ÇÏ¿© ¾÷µ¥ÀÌÆ®ÇÏ¿© ·»´õ¸µÇÑ´Ù.
-   // renderer.InitializeAndSetPipeline();
 
-    //¹öÅØ½º¹öÆÛ »ý¼º
-    //¹öÅØ½º ¹öÆÛ´Â °øÀ¯µÇ°í constant¹öÆÛ¸¦ »ç¿ëÇÏ¿© ¾÷Å×ÀÌÆ®¿¡ »ç¿ëÇÑ´Ù. µû¶ó¼­ ·»´õ·¯¿¡ ÀúÀåµÈ´Ù.
-    //INT NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);
-    //ID3D11Buffer* arrowVertexBuffer = renderer.CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
+
+
+    PlayerArrow playerarrow;
+
+    playerarrow.Initialize(renderer);
+
+    ///////////////////////////////////////////////////////////////////
+    //INT NumVerticesArrow = sizeof(ArrowVertices) / sizeof(FVertexSimple);
+    //ID3D11Buffer* arrowVertexBuffer = renderer.CreateVertexBuffer(ArrowVertices, sizeof(ArrowVertices));
     //renderer.SetNumVerticesSphere(NumVerticesSphere);
     
     //renderer.CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
+    /////////////////////////////////////////////////////////////////////////
+    
 
-    //ImGui »ý¼º
+
+
+    //ImGui ï¿½ï¿½ï¿½ï¿½
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplWin32_Init((void*)hWnd);
     ImGui_ImplDX11_Init(renderer.GetDevice(), renderer.GetDeviceContext());
     
-    //FPS Á¦ÇÑÀ» À§ÇÑ ¼³Á¤
+    //FPS ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     const int targetFPS = 60;
-    const double targetFrameTime = 1000.0 / targetFPS; // ÇÑ ÇÁ·¹ÀÓÀÇ ¸ñÇ¥ ½Ã°£ (¹Ð¸®ÃÊ ´ÜÀ§)
+    const double targetFrameTime = 1000.0 / targetFPS; // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç¥ ï¿½Ã°ï¿½ (ï¿½Ð¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
     
-    //°í¼º´É Å¸ÀÌ¸Ó ÃÊ±âÈ­
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ì¸ï¿½ ï¿½Ê±ï¿½È­
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
     LARGE_INTEGER startTime, endTime;
     double elapsedTime = 0.0;
-    
-    // ³­¼ö ½Ãµå ¼³Á¤ (time.h ¾øÀÌ)
-    LARGE_INTEGER counter;
-    QueryPerformanceCounter(&counter);
-    srand(static_cast<unsigned int>(counter.QuadPart));
 
     SceneManager* sceneManager = SceneManager::GetInstance();
     TestScene* testScene = new TestScene(&renderer);
     sceneManager->SetScene(testScene);
     
 
-    // Ã¹ °´Ã¼ »ý¼º
+    // Ã¹ ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½
     float rotationDeg = 0.0f;
     float rotationDelta = 5.0f;
-    //¸ÞÀÎ·çÇÁ
+    //ï¿½ï¿½ï¿½Î·ï¿½ï¿½ï¿½
     while (bIsExit == false)
     {
         QueryPerformanceCounter(&startTime);
 
-        sceneManager->Update(elapsedTime);
+        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+
+            if (msg.message == WM_QUIT)
+            {
+                bIsExit = true;
+                break;
+            }
+            else if (msg.message == WM_KEYDOWN)
+            {
+                if (msg.wParam == VK_LEFT)
+                {
+                    // ï¿½ï¿½È¸ï¿½ï¿½
+                    //RotateVertices(arrowVertices, numVerticesArrow, +step, px, py); // ï¿½Ý½Ã°ï¿½
+                    rotationDeg -= rotationDelta;
+                }
+                else if (msg.wParam == VK_RIGHT)
+                {
+                    // ï¿½ï¿½È¸ï¿½ï¿½
+                    rotationDeg += rotationDelta;
+                }
+            }
+        }
+        // ï¿½Ô·Âºï¿½ , ï¿½ï¿½ï¿½çº¼ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ìµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ or ï¿½ï¿½ï¿½ï¿½
+
         
 
 
 
-        // °ø¸¸ ±×¸®´Â °ÍÀÌ ¾Æ´Ï¶ó imguiµµ ±×¸°´Ù
-        // imguiµµ ±×·¡ÇÈ ÆÄÀÌÇÁ¶óÀÎÀ» ¾²±â ¶§¹®¿¡ ¹Ýµå½Ã °øÀ» ±×¸±¶§ ´Ù½Ã ¼³Á¤
-        // ÇØÁà¾ßÇÑ´Ù
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½×¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ´Ï¶ï¿½ imguiï¿½ï¿½ ï¿½×¸ï¿½ï¿½ï¿½
+        // imguiï¿½ï¿½ ï¿½×·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ýµï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½×¸ï¿½ï¿½ï¿½ ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½
         renderer.Prepare();
         renderer.PrepareShader();
         sceneManager->OnRender();
 
+        playerarrow.Update(renderer);
 
         //renderer.UpdateConstant({ 0.0f, -0.9f, 0.0f }, 0.4f, rotationDeg);
         //renderer.Render(arrowVertexBuffer, NumVerticesArrow);
 
+        playerarrow.Render(renderer);
 
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
@@ -198,29 +205,722 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ImGui::Render();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-        // ´Ù ±×·ÈÀ¸¸é ¹öÆÛ¸¦ ±³È¯
+        // ï¿½ï¿½ ï¿½×·ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Û¸ï¿½ ï¿½ï¿½È¯
         renderer.SwapBuffer();
 
         do
         {
             Sleep(0);
 
-            // ·çÇÁ Á¾·á ½Ã°£ ±â·Ï
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½
             QueryPerformanceCounter(&endTime);
 
-            // ÇÑ ÇÁ·¹ÀÓÀÌ ¼Ò¿äµÈ ½Ã°£ °è»ê (¹Ð¸®ÃÊ ´ÜÀ§·Î º¯È¯)
+            // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ò¿ï¿½ï¿½ ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ (ï¿½Ð¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¯)
             elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
 
         } while (elapsedTime < targetFrameTime);
         ////////////////////////////////////////////
     }
 
-    // ImGui ¼Ò¸ê
+    // ImGui ï¿½Ò¸ï¿½
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
-    
 
- 
     return 0;
 }
+
+
+
+// Ball ï¿½Ô¼ï¿½ ï¿½ï¿½ï¿½ï¿½
+//void UBall::Initialize(const URenderer& InRenderer)
+//{
+//    Radius = RandomUtil::CreateRandomFloat(0.05f, 0.2f);
+//    WorldPosition = FVector3(RandomUtil::CreateRandomFloat(-1.0f + Radius, 1.0f - Radius), RandomUtil::CreateRandomFloat(-1.0f + Radius, 1.0f - Radius), 0.0f);
+//    Velocity = FVector3(RandomUtil::CreateRandomFloat(-0.01f, 0.01f), RandomUtil::CreateRandomFloat(-0.01f, 0.01f), 0.0f);
+//    Mass = Radius * Radius;
+//    CreateConstantBuffer(InRenderer);
+//}
+//
+//void UBall::Update(URenderer& Renderer)
+//{
+//    Renderer.UpdateConstant(WorldPosition, Radius, ConstantBuffer);
+//}
+//
+//void UBall::Render(URenderer& Renderer)
+//{
+//    Renderer.SetConstantBuffer(ConstantBuffer);
+//    Renderer.Render();
+//
+//    //ResetOffset();
+//}   
+//
+//void UBall::Release()
+//{
+//    ConstantBuffer->Release();
+//    ConstantBuffer = nullptr;
+//}
+//
+//void UBallNode::Initialize()
+//{
+//    
+//}
+//
+//void UBallNode::Release()
+//{
+//    delete Ball;
+//    //Ball->Release();
+//}
+//
+//
+//
+//void UBallList::MoveAll()
+//{
+//    CollisionUtil::PerfectElasticCollision(*this);
+//}
+//
+//
+//void UBallList::DoRenderAll(URenderer& InRenderer)
+//{
+//    for (UBallNode* curr = HeadNode; curr; curr = curr->GetNextNode())
+//    {
+//        if (curr->GetUBall() == nullptr) continue;
+//        curr->GetUBall()->Render(InRenderer);
+//    }
+//}
+//
+//
+//void UBallList::Add(const URenderer& InRenderer) {
+//    UBall* NewBall = new UBall;
+//    NewBall->Initialize(InRenderer);
+//
+//    UBallNode* NewNode = new UBallNode;
+//    NewNode->SetUBall(NewBall);
+//
+//    if (BallCount == 0) {
+//        HeadNode->SetNextNode(NewNode);
+//        NewNode->SetPrevNode(HeadNode);
+//        NewNode->SetNextNode(TailNode);
+//        TailNode->SetPrevNode(NewNode);
+//    }
+//    else {
+//        TailNode->GetPrevNode()->SetNextNode(NewNode);
+//        NewNode->SetPrevNode(TailNode->GetPrevNode());
+//        NewNode->SetNextNode(TailNode);
+//        TailNode->SetPrevNode(NewNode);
+//    }
+//    ++BallCount;
+//}
+//
+//
+//void UBallList::Delete(URenderer& Renderer)
+//{
+//    UBallNode* TargetNode = HeadNode->GetNextNode();
+//
+//    int TargetNumber = rand() % BallCount;
+//
+//    for (int i = 0; i < TargetNumber; ++i)
+//    {
+//        TargetNode = TargetNode->GetNextNode();
+//    }
+//
+//    TargetNode->GetPrevNode()->SetNextNode(TargetNode->GetNextNode());
+//    TargetNode->GetNextNode()->SetPrevNode(TargetNode->GetPrevNode());
+//
+//    delete TargetNode;
+//
+//    BallCount--;
+//}
+//
+//
+//void UBallList::Initialize()
+//{
+//    UBallNode* NewHeadNode = new UBallNode;
+//    UBallNode* NewTailNode = new UBallNode;
+//
+//    HeadNode = NewHeadNode;
+//    TailNode = NewTailNode;
+//
+//    HeadNode->SetNextNode(TailNode);
+//    TailNode->SetPrevNode(HeadNode);
+//}
+//
+//void UBallList::UpdateAll(URenderer& Renderer)
+//{
+//    for (UBallNode* curr = HeadNode; curr; curr = curr->GetNextNode())
+//    {
+//        if (curr->GetUBall() == nullptr) continue;
+//        curr->GetUBall()->Update(Renderer);
+//    }
+//}
+//
+//
+//void UBallList::Release()
+//{
+//    UBallNode* curr = HeadNode;
+//    while (curr)
+//    {
+//        UBallNode* next = curr->GetNextNode();
+//        delete curr;
+//        curr = next;
+//    }
+//    HeadNode = TailNode = nullptr;
+//}
+//
+//
+//void CollisionUtil::BallMove(UBallList* BallList)
+//{
+//    auto iterStartNode = BallList->GetHead();
+//
+//    if (!iterStartNode)return;
+//    
+//    for (; iterStartNode != nullptr; iterStartNode = iterStartNode->GetNextNode())
+//    {
+//        UBall* pNowBall = iterStartNode->GetUBall();
+//
+//        // pStartBall ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//        if (!pNowBall)continue;
+//        
+//        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½Óµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        FVector3 BallVelocity = pNowBall->GetVelocity();
+//        FVector3 Offset = BallVelocity;
+//
+//        // Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        float Ballradius = pNowBall->GetRadius();
+//
+//        
+//        
+//              
+//      
+//
+//        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ã³ï¿½ï¿½ 
+//        if (Offset.x < GLeftBorder + Ballradius)
+//        {
+//            BallVelocity.x *= -1.0f;
+//        }
+//        if (Offset.x > GRightBorder - Ballradius)
+//        {
+//            BallVelocity.x *= -1.0f;
+//        }
+//        if (Offset.y < GTopBorder + Ballradius)
+//        {
+//            BallVelocity.y *= -1.0f;
+//        }
+//        if (Offset.y > GBottomBorder - Ballradius)
+//        {
+//            BallVelocity.y *= -1.0f;
+//        }
+//        //pNowBall->SetLocation(NextBallLocation);
+//        pNowBall->SetVelocity(BallVelocity);
+//    } 
+//}
+//
+//void CollisionUtil::CollisionBallMove(UBallList* BallList)
+//{
+//    auto iterNowNode = BallList->GetHead();
+//
+//    if (!iterNowNode) return;
+//    
+//    for (; iterNowNode != nullptr; iterNowNode = iterNowNode->GetNextNode())
+//    {
+//        UBall* pBallA = iterNowNode->GetUBall();
+//
+//        auto iterNextNode = iterNowNode->GetNextNode();
+//        if (!iterNextNode) continue;
+//
+//
+//        for (; iterNextNode != nullptr; iterNextNode = iterNextNode->GetNextNode())
+//        {
+//            UBall* pBallB = iterNextNode->GetUBall();
+//
+//            // ï¿½Î°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//            if (pBallA && pBallB)
+//            {
+//                float dist = CalculateUtil::Length(CalculateUtil::operator-(pBallA->GetWorldPosition(), pBallB->GetWorldPosition()));
+//                if (dist <= pBallA->GetRadius() + pBallB->GetRadius())
+//                {
+//                    CollisionUtil::ResolveCollision(pBallA, pBallB);
+//                }
+//            }
+//        }   
+//    }   
+//}
+//
+//void ResolveGravityCollision(UBall* pStartBall, UBall* pAnotherBall)
+//{
+//    FVector3 posA = pStartBall->GetWorldPosition();
+//    FVector3 posB = pAnotherBall->GetWorldPosition();
+//
+//    FVector3 velA = pStartBall->GetVelocity();
+//    FVector3 velB = pAnotherBall->GetVelocity();
+//
+//    float massA = pStartBall->GetMass();
+//    float massB = pAnotherBall->GetMass();
+//
+//    // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½
+//    FVector3 delta(posA.x - posB.x, posA.y - posB.y, 0);
+//    float distSquared = delta.x * delta.x + delta.y * delta.y;
+//    if (distSquared == 0.0f) return;
+//
+//    float distance = sqrtf(distSquared);
+//    FVector3 normal(delta.x / distance, delta.y / distance, 0); // normalize = n
+//
+//    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½æµ¹ï¿½Ã¿ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ï¿½ï¿½
+//    float overlap = pStartBall->GetRadius() + pAnotherBall->GetRadius() - distance;
+//    if (overlap > 0.0f)
+//    {
+//       FVector3 correction = CalculateUtil::operator*(normal, (overlap / 2.0f));
+//       posA = CalculateUtil::operator+(posA, correction);
+//       posB = CalculateUtil::operator-(posB, correction);
+//       pStartBall->SetWorldPosition(posA);
+//       pAnotherBall->SetWorldPosition(posB);
+//    }
+//
+//    FVector3 relVel(velA.x - velB.x, velA.y - velB.y, 0); // ï¿½ï¿½ï¿½ ï¿½Óµï¿½
+//
+//    // ï¿½ï¿½ï¿½ ï¿½Óµï¿½ï¿½ï¿½ ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+//    float relSpeed = CalculateUtil::Dot(relVel, normal);
+//
+//    // ï¿½Ê¹ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+//    const float MinimumRelativeSpeed = 0.001f;
+//    if (relSpeed >= 0.0f || fabs(relSpeed) < MinimumRelativeSpeed) return;
+//        
+//    // Åºï¿½ï¿½ ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½ 
+//    float impulse = (-(1 + GElastic) * relSpeed) / ((1 / massA) + (1 / massB)); // = j
+//
+//    FVector3 impulseA(normal.x * (impulse / massA), normal.y * (impulse / massA), 0);
+//    FVector3 impulseB(normal.x * (impulse / massB), normal.y * (impulse / massB), 0);
+//
+//    FVector3 NewVelocityA(velA.x + impulseA.x, velA.y + impulseA.y, 0);
+//    FVector3 NewVelocityB(velB.x - impulseB.x, velB.y - impulseB.y, 0);
+//
+//    if (CalculateUtil::Length(NewVelocityA) < 0.004f) NewVelocityA = FVector3(0, 0, 0);
+//    if (CalculateUtil::Length(NewVelocityB) < 0.004f) NewVelocityB = FVector3(0, 0, 0);
+//
+//
+//    pStartBall->SetNextVelocity(NewVelocityA);
+//    pAnotherBall->SetNextVelocity(NewVelocityB);
+//}
+//
+//void CollisionUtil::GravityBallMove(UBallList*  BallList)
+//{
+//    if (!BallList) return;
+//
+//    auto iterStartNode = BallList->GetHead();
+//
+//    if (!iterStartNode) return;
+//
+//    for (; iterStartNode != nullptr; iterStartNode = iterStartNode->GetNextNode())
+//    {
+//        UBall* pNowBall = iterStartNode->GetUBall();
+//
+//        // pStartBall ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//        if (!pNowBall)continue;
+//
+//        pNowBall->SetNextVelocity(pNowBall->GetVelocity());
+//    }
+//
+//    iterStartNode = BallList->GetHead();
+//
+//    for (; iterStartNode != nullptr; iterStartNode = iterStartNode->GetNextNode())
+//    {
+//        UBall* pNowBall = iterStartNode->GetUBall();  
+//
+//        // pStartBall ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//        if (!pNowBall)continue;
+//
+//        // Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        const float Ballradius = pNowBall->GetRadius();
+//
+//        auto iterNextNode = iterStartNode->GetNextNode();
+//        if (!iterNextNode) continue;
+//
+//
+//        // ï¿½Ì°ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ nextgravityvelocityï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        for (; iterNextNode != nullptr; iterNextNode = iterNextNode->GetNextNode())
+//        {
+//            UBall* pAnotherBall = iterNextNode->GetUBall();
+//
+//            // ï¿½Î°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//            if ((!pNowBall || !pAnotherBall))continue;
+//            
+//            
+//            
+//            float dist = CalculateUtil::Length(CalculateUtil::operator-(pNowBall->GetWorldPosition(), pAnotherBall->GetWorldPosition()));
+//            if (dist <= pNowBall->GetRadius() + pAnotherBall->GetRadius())
+//            {
+//                ResolveGravityCollision(pNowBall, pAnotherBall);           
+//            }
+//        }            
+//    }
+//
+//    // ï¿½Ñ¹ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+//    iterStartNode = BallList->GetHead();
+//    for (; iterStartNode != nullptr; iterStartNode = iterStartNode->GetNextNode())
+//    {
+//        UBall* pNowBall = iterStartNode->GetUBall();
+//
+//        // Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        float Ballradius = pNowBall->GetRadius();
+//
+//        // pStartBall ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//        if (!pNowBall)continue;
+//
+//        // ï¿½ï¿½ï¿½ï¿½ ï¿½æµ¹ ï¿½Óµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡
+//        FVector3 NextBallLocation = CalculateUtil::operator+(CalculateUtil::operator+(pNowBall->GetWorldPosition(), pNowBall->GetNextVelocity()), FVector3(0, -GGravityValue * 0.5f, 0));
+//        pNowBall->SetNextVelocity({ pNowBall->GetNextVelocity().x, pNowBall->GetNextVelocity().y - GGravityValue, 0 });
+//
+//        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        if (NextBallLocation.x < GLeftBorder + Ballradius)
+//        {
+//            NextBallLocation.x = GLeftBorder + Ballradius;
+//
+//            FVector3 Tempvelocity{ pNowBall->GetNextVelocity() };
+//            Tempvelocity.x *= -GElastic;
+//
+//            if (fabs(Tempvelocity.x) < 0.005f) Tempvelocity.x = 0.0f;
+//
+//            pNowBall->SetNextVelocity(Tempvelocity);
+//
+//        }
+//        if (NextBallLocation.x > GRightBorder - Ballradius)
+//        {
+//            NextBallLocation.x = GRightBorder - Ballradius;
+//
+//            FVector3 Tempvelocity{ pNowBall->GetNextVelocity() };
+//            Tempvelocity.x *= -GElastic;
+//
+//            if (fabs(Tempvelocity.x) < 0.005f) Tempvelocity.x = 0.0f;
+//
+//            pNowBall->SetNextVelocity(Tempvelocity);
+//        }
+//        if (NextBallLocation.y < GTopBorder + Ballradius)
+//        {
+//            NextBallLocation.y = GTopBorder + Ballradius;
+//
+//            FVector3 Tempvelocity{ pNowBall->GetNextVelocity() };
+//            Tempvelocity.y *= -GElastic;
+//
+//            pNowBall->SetNextVelocity(Tempvelocity);
+//        }
+//        if (NextBallLocation.y > GBottomBorder - Ballradius)
+//        {
+//            NextBallLocation.y = GBottomBorder - Ballradius;
+//
+//            FVector3 Tempvelocity{ pNowBall->GetNextVelocity() };
+//            Tempvelocity.y *= -GElastic;
+//
+//            if (fabs(Tempvelocity.y) < 0.05f) Tempvelocity.y = 0.0f;
+//
+//            pNowBall->SetNextVelocity(Tempvelocity);
+//        }
+//        pNowBall->SetWorldPosition(NextBallLocation);
+//        pNowBall->SetVelocity(pNowBall->GetNextVelocity());
+//    }
+//}
+//
+//void CollisionUtil::ResolveCollision(UBall* OutBallA, UBall* OutBallB)
+//{
+//    FVector3 posA = OutBallA->GetWorldPosition();
+//    FVector3 posB = OutBallB->GetWorldPosition();
+//
+//    FVector3 velA = OutBallA->GetVelocity();
+//    FVector3 velB = OutBallB->GetVelocity();
+//
+//    float massA = OutBallA->GetMass();
+//    float massB = OutBallB->GetMass();
+//
+//    // ||p1 - p2||
+//    float distance = CalculateUtil::Length(CalculateUtil::operator-(posA, posB));
+//
+//    // ï¿½ë¸»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//    FVector3 normalizedvector = CalculateUtil::operator-(posA, posB);
+//    normalizedvector.x /= distance;
+//    normalizedvector.y /= distance;
+//
+//
+//
+//    FVector3 relativeVel = CalculateUtil::operator-(velA, velB);
+//
+//
+//    float velAlongNormal = CalculateUtil::Dot(relativeVel, normalizedvector);
+//
+//    // ï¿½æµ¹ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¸ï¿½ ï¿½Ï¾î³­ï¿½ï¿½
+//    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ ï¿½ë¸»ï¿½ï¿½ï¿½Í¿ï¿½ ï¿½ï¿½ï¿½ç¿µï¿½Ñ´ï¿½
+//    if (velAlongNormal > 0.0f || fabs(velAlongNormal) < 0.0001f)
+//    {
+//        return;
+//    }
+//
+//    float invMassA = 1.0f / massA;
+//    float invMassB = 1.0f / massB;
+//
+//    float j = 0.0f;
+//    if (bIsGravity)
+//    {
+//        j = -(1 + GElastic) * velAlongNormal / (invMassA + invMassB);
+//    }
+//    else
+//    {
+//        j = -(2) * velAlongNormal / (invMassA + invMassB);
+//    }
+//
+//    FVector3 impulse = CalculateUtil::operator*(normalizedvector, j);
+//
+//    FVector3 newVelA = CalculateUtil::operator+(velA, CalculateUtil::operator*(impulse, invMassA));
+//    FVector3 newVelB = CalculateUtil::operator-(velB, CalculateUtil::operator*(impulse, invMassB));
+//
+//    OutBallA->SetVelocity(newVelA);
+//    OutBallB->SetVelocity(newVelB);
+//
+//    // Ä§ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+//   float penetration = OutBallA->GetRadius() + OutBallB->GetRadius() - distance;
+//   if (penetration > 0.0f)
+//   {
+//       float correctionRatio = 0.5f;
+//       FVector3 correction = CalculateUtil::operator*(normalizedvector, penetration * correctionRatio);
+//   
+//       OutBallA->SetWorldPosition(CalculateUtil::operator+(posA, correction));
+//       OutBallB->SetWorldPosition(CalculateUtil::operator-(posB, correction));
+//   }
+//
+//
+//}
+//
+//void CollisionUtil::PerfectElasticCollision(UBallList& BallList)
+//{
+//    auto iterNowNode = BallList.GetHead()->GetNextNode();
+//
+//    for (; iterNowNode != nullptr; iterNowNode = iterNowNode->GetNextNode())
+//    {
+//        auto iterNextNode = iterNowNode->GetNextNode();
+//    
+//        for (; iterNextNode != nullptr; iterNextNode = iterNextNode->GetNextNode())
+//        {
+//            UBall* pBallA = iterNowNode->GetUBall();
+//            UBall* pBallB = iterNextNode->GetUBall();
+//    
+//            // ï¿½Î°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//            if (pBallA == nullptr || pBallB == nullptr)
+//            {
+//                continue;
+//            }
+//            float dist = CalculateUtil::Length(CalculateUtil::operator-(pBallA->GetWorldPosition(), pBallB->GetWorldPosition()));
+//            if (dist <= pBallA->GetRadius() + pBallB->GetRadius())
+//            {
+//                CollisionUtil::ResolveCollision(pBallA, pBallB);
+//            }
+//    
+//        }
+//    }
+//
+//    iterNowNode = BallList.GetHead()->GetNextNode();
+//
+//    while (iterNowNode != BallList.GetTail())
+//    {
+//        UBall* pBallA = iterNowNode->GetUBall();
+//
+//        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½Óµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        FVector3 BallVelocity = pBallA->GetVelocity();
+//        FVector3 Position = pBallA->GetWorldPosition();
+//
+//        // ï¿½ß·ï¿½ ï¿½ï¿½ï¿½Óµï¿½ ï¿½ï¿½ï¿½ï¿½
+//        if (bIsGravity)
+//        {
+//            BallVelocity.y -= GGravityValue;
+//        }
+//        
+//
+//
+//
+//        FVector3 NewPosition = CalculateUtil::operator+(Position, BallVelocity);
+//
+//
+//        // Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        float Ballradius = pBallA->GetRadius();
+//
+//
+//        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ã³ï¿½ï¿½ 
+//        if (NewPosition.x < GLeftBorder + Ballradius)
+//        {
+//            NewPosition.x = GLeftBorder + Ballradius;
+//            if (bIsGravity)
+//            {
+//                BallVelocity.x *= -GElastic;
+//            }
+//            else
+//            {
+//                BallVelocity.x *= -1.0f;
+//            }
+//        }
+//
+//        if (NewPosition.x > GRightBorder - Ballradius)
+//        {
+//            NewPosition.x = GRightBorder - Ballradius;
+//            if (bIsGravity)
+//            {
+//                BallVelocity.x *= -GElastic;
+//            }
+//            else
+//            {
+//                BallVelocity.x *= -1.0f;
+//            }
+//        }
+//
+//        if (NewPosition.y > GTopBorder - Ballradius)
+//        {
+//            NewPosition.y = GTopBorder - Ballradius;
+//            if (bIsGravity)
+//            {
+//                BallVelocity.y *= -GElastic;
+//            }
+//            else
+//            {
+//                BallVelocity.y *= -1.0f;
+//            }
+//        }
+//
+//        if (NewPosition.y < GBottomBorder + Ballradius)
+//        {
+//            NewPosition.y = GBottomBorder + Ballradius;
+//            if (bIsGravity)
+//            {
+//                BallVelocity.y *= -GElastic;
+//            }
+//            else
+//            {
+//                BallVelocity.y *= -1.0f;
+//            }
+//        }
+//
+//
+//        //if (fabsf(BallVelocity.x) < 0.0005f)
+//        //    BallVelocity.x = 0.0f;
+//        //if (fabsf(BallVelocity.y) < 0.0005f)
+//        //    BallVelocity.y = 0.0f;
+//
+//        pBallA->SetVelocity(BallVelocity);
+//        pBallA->SetWorldPosition(NewPosition);
+//
+//        iterNowNode = iterNowNode->GetNextNode();
+//    }
+//}
+
+
+
+//void CollisionUtil::GravityBallMove(UBallList* BallList)
+//{
+//    if (!BallList) return;
+//
+//    auto iterStartNode = BallList->GetHead();
+//
+//    if (!iterStartNode) return;
+//
+//    for (; iterStartNode != nullptr; iterStartNode = iterStartNode->GetNextNode())
+//    {
+//        UBall* pNowBall = iterStartNode->GetUBall();
+//
+//        // pStartBall ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//        if (!pNowBall)continue;
+//
+//        pNowBall->SetNextVelocity(pNowBall->GetVelocity());
+//    }
+//
+//    iterStartNode = BallList->GetHead();
+//
+//    for (; iterStartNode != nullptr; iterStartNode = iterStartNode->GetNextNode())
+//    {
+//        UBall* pNowBall = iterStartNode->GetUBall();
+//
+//        // pStartBall ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//        if (!pNowBall)continue;
+//
+//        // Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        const float Ballradius = pNowBall->GetRadius();
+//
+//        auto iterNextNode = iterStartNode->GetNextNode();
+//        if (!iterNextNode) continue;
+//
+//
+//        // ï¿½Ì°ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ nextgravityvelocityï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        for (; iterNextNode != nullptr; iterNextNode = iterNextNode->GetNextNode())
+//        {
+//            UBall* pAnotherBall = iterNextNode->GetUBall();
+//
+//            // ï¿½Î°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//            if ((!pNowBall || !pAnotherBall))continue;
+//
+//
+//
+//            float dist = CalculateUtil::Length(CalculateUtil::operator-(pNowBall->GetLocation(), pAnotherBall->GetLocation()));
+//            if (dist <= pNowBall->GetRadius() + pAnotherBall->GetRadius())
+//            {
+//                ResolveGravityCollision(pNowBall, pAnotherBall);
+//            }
+//        }
+//    }
+//
+//    // ï¿½Ñ¹ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+//    iterStartNode = BallList->GetHead();
+//    for (; iterStartNode != nullptr; iterStartNode = iterStartNode->GetNextNode())
+//    {
+//        UBall* pNowBall = iterStartNode->GetUBall();
+//
+//        // Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        float Ballradius = pNowBall->GetRadius();
+//
+//        // pStartBall ï¿½ï¿½ validï¿½ï¿½ï¿½ï¿½ Ã¼Å©
+//        if (!pNowBall)continue;
+//
+//        // ï¿½ï¿½ï¿½ï¿½ ï¿½æµ¹ ï¿½Óµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡
+//        FVector3 NextBallLocation = CalculateUtil::operator+(CalculateUtil::operator+(pNowBall->GetLocation(), pNowBall->GetNextVelocity()), FVector3(0, -GGravityValue * 0.5f, 0));
+//        pNowBall->SetNextVelocity({ pNowBall->GetNextVelocity().x, pNowBall->GetNextVelocity().y - GGravityValue, 0 });
+//
+//        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//        if (NextBallLocation.x < GLeftBorder + Ballradius)
+//        {
+//            NextBallLocation.x = GLeftBorder + Ballradius;
+//
+//            FVector3 Tempvelocity{ pNowBall->GetNextVelocity() };
+//            Tempvelocity.x *= -GElastic;
+//
+//            if (fabs(Tempvelocity.x) < 0.005f) Tempvelocity.x = 0.0f;
+//
+//            pNowBall->SetNextVelocity(Tempvelocity);
+//
+//        }
+//        if (NextBallLocation.x > GRightBorder - Ballradius)
+//        {
+//            NextBallLocation.x = GRightBorder - Ballradius;
+//
+//            FVector3 Tempvelocity{ pNowBall->GetNextVelocity() };
+//            Tempvelocity.x *= -GElastic;
+//
+//            if (fabs(Tempvelocity.x) < 0.005f) Tempvelocity.x = 0.0f;
+//
+//            pNowBall->SetNextVelocity(Tempvelocity);
+//        }
+//        if (NextBallLocation.y < GTopBorder + Ballradius)
+//        {
+//            NextBallLocation.y = GTopBorder + Ballradius;
+//
+//            FVector3 Tempvelocity{ pNowBall->GetNextVelocity() };
+//            Tempvelocity.y *= -GElastic;
+//
+//            pNowBall->SetNextVelocity(Tempvelocity);
+//        }
+//        if (NextBallLocation.y > GBottomBorder - Ballradius)
+//        {
+//            NextBallLocation.y = GBottomBorder - Ballradius;
+//
+//            FVector3 Tempvelocity{ pNowBall->GetNextVelocity() };
+//            Tempvelocity.y *= -GElastic;
+//
+//            if (fabs(Tempvelocity.y) < 0.05f) Tempvelocity.y = 0.0f;
+//
+//            pNowBall->SetNextVelocity(Tempvelocity);
+//        }
+//        pNowBall->SetLocation(NextBallLocation);
+//        pNowBall->SetVelocity(pNowBall->GetNextVelocity());
+//    }
+//}

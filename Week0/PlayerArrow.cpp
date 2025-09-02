@@ -1,36 +1,26 @@
-#include "Ball.h"
-#include "Sphere.h"
+#include "PlayerArrow.h"
+#include "Arrow.h"
 
-Ball::Ball()
+PlayerArrow::PlayerArrow()
 {
 }
 
-Ball::~Ball()
+PlayerArrow::~PlayerArrow()
 {
-	Release();
+    Release();
 }
 
-//void Ball::Initialize()
-//{
-//	// 반지름 셋
-//	Radius = 40.0f * (2.0f / 720.0f);
-//}
-//
-//void Ball::Update()
-//{
-//
-//}
 
-void Ball::Initialize(const Renderer& renderer)
+void PlayerArrow::Initialize(const Renderer& renderer)
 {
     //버텍스 버퍼 셋
-    NumVertices = sizeof(SphereVertices) / sizeof(FVertexSimple);
+    NumVertices = sizeof(ArrowVertices) / sizeof(FVertexSimple);
 
     D3D11_BUFFER_DESC vertexbufferdesc = {};
-    vertexbufferdesc.ByteWidth = sizeof(SphereVertices);
+    vertexbufferdesc.ByteWidth = sizeof(ArrowVertices);
     vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;
     vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    D3D11_SUBRESOURCE_DATA vertexbufferSRD = { SphereVertices };
+    D3D11_SUBRESOURCE_DATA vertexbufferSRD = { ArrowVertices };
 
     renderer.GetDevice()->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &VertexBuffer);
 
@@ -47,21 +37,25 @@ void Ball::Initialize(const Renderer& renderer)
 
 
 
-	Radius = 40.0f * (2.0f / 720.0f);
+    WorldPosition = { 0.0f, -0.9f, 0.0f };
+    Scale = 0.4f;
 }
 
-void Ball::Update(Renderer& renderer)
+void PlayerArrow::Update(Renderer& renderer)
+{
+    renderer.UpdateConstant(ConstantBuffer, WorldPosition, Scale, RotationDeg);
+}
+
+void PlayerArrow::Render(Renderer& renderer)
+{
+    renderer.Render(ConstantBuffer, VertexBuffer, NumVertices);
+}
+
+void PlayerArrow::Release()
 {
 }
 
-void Ball::Render(Renderer& renderer)
+void PlayerArrow::Collidable()
 {
-}
 
-void Ball::Release()
-{
-}
-
-void Ball::Collidable()
-{
 }
