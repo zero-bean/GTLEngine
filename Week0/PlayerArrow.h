@@ -29,11 +29,15 @@ public:
 	inline void SetDegree(float InDegree)
 	{
 		RotationDeg += InDegree;
+		//if (RotationDeg < -DirectX::XM_PI / 2.0f)
+		//{
+		//	RotationDeg = -DirectX::XM_PI / 2.0f;
+		//}
+		//else if (RotationDeg > DirectX::XM_PI / 2.0f)
+		//{
+		//	RotationDeg = DirectX::XM_PI / 2.0f;
+		//}
 	}
-
-private:
-
-
 
 private:
 	float RotationDeg = 0.0f;

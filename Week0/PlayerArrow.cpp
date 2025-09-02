@@ -44,6 +44,8 @@ void PlayerArrow::Initialize(const Renderer& renderer)
 void PlayerArrow::Update(Renderer& renderer)
 {
     renderer.UpdateConstant(ConstantBuffer, WorldPosition, Scale, RotationDeg);
+
+    //std::cout << RotationDeg << std::endl;
 }
 
 void PlayerArrow::Render(Renderer& renderer)

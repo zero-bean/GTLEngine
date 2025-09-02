@@ -22,11 +22,16 @@ public:
     inline FVector3             GetVelocity()const { return Velocity; }
     inline float                GetRadius()const { return Radius; }
     inline float                GetMass()const { return Mass; }
+    inline eBallType            GetBallType()const { return BallType; }
+
     //setter
     inline void                 SetWorldPosition(const FVector3& InNewPosition) { WorldPosition = InNewPosition; }
     inline void                 SetVelocity(const FVector3& newVelocity) { Velocity = newVelocity; }
     inline void                 SetRadius(float newRadius) { Radius = newRadius; }
     inline void                 SetMass(float newMass) { Mass = newMass; }
+    inline void                 SetBallType(eBallType InBallType) { BallType = InBallType; }
+
+
 private:
     FVector3 Velocity{};
     eBallType BallType;

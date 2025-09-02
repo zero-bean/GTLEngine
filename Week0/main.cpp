@@ -143,7 +143,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
 
-        // sceneManager->LateUpdate(elapsedTime);
+        sceneManager->LateUpdate(elapsedTime);
 
         renderer.Prepare();
         renderer.PrepareShader();

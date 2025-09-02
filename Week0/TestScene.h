@@ -1,6 +1,7 @@
 #pragma once
 #include "SceneManager.h"
 #include "PlayerArrow.h"
+#include "Ball.h"
 
 class TestScene : public Scene {
 private:
@@ -10,6 +11,11 @@ private:
 	ID3D11Buffer* arrowVertexBuffer;
 
 	PlayerArrow playerarrow;
+
+	Ball* balls[ROWS][COLS] = {};
+
+	Ball* ShotBall{};
+
 
 public:
 	TestScene(Renderer * renderer): Scene(renderer){}
