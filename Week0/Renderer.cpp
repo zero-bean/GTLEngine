@@ -1,5 +1,6 @@
 #include "Renderer.h"
 
+using namespace DirectX;
 
 Renderer::Renderer()
 {
@@ -27,22 +28,22 @@ void Renderer::Initialize(HWND hWindow)
     //SetNumVerticesSphere(NumVerticesSphere);
 }
 
-void Renderer::Update(const FVector3& InOffset, float InScale)
+void Renderer::Update(const FVector3& InOffset, float InScale, float rotationZDeg)
 {
-    UpdateConstant(InOffset, InScale);
+    UpdateConstant(InOffset, InScale, rotationZDeg);
 }
 
-void Renderer::Render()
+void Renderer::Render(ID3D11Buffer* vertexBuffer, UINT numVertices)
 {
     UINT offset = 0;
-    DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &offset);
+    DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &Stride, &offset);
 
-    DeviceContext->Draw(NumVerticesSphere, 0);
+    DeviceContext->Draw(numVertices, 0);
 }
 
 void Renderer::Release()
 {
-    ReleaseVertexBuffer();
+    //ReleaseVertexBuffer();
     ReleaseShader(); // il, vs, ps
     ReleaseRasterizerState(); // rs
     ReleaseFrameBuffer(); // fb, rtv
@@ -171,14 +172,20 @@ void Renderer::SetRenderingPipeline()
     }
 }
 
-void Renderer::UpdateConstant(const FVector3& InWorldPosition, float InScale)
+void Renderer::UpdateConstant(const FVector3& InWorldPosition, float InScale, float rotationZDeg)
 {
+    XMMATRIX R = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, XMConvertToRadians(rotationZDeg));
+
+    XMFLOAT4X4 rotationTemp;
+    XMStoreFloat4x4(&rotationTemp, XMMatrixTranspose(R));
+
     D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
     DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
     FConstants* constants = (FConstants*)constantbufferMSR.pData;
     {
         constants->WorldPosition = InWorldPosition;
         constants->Scale = InScale;
+        constants->rotation = rotationTemp;
     }
     DeviceContext->Unmap(ConstantBuffer, 0);
 }
@@ -201,17 +208,22 @@ void Renderer::InitializeAndSetPipeline()
     SetRenderingPipeline();
 }
 
-void Renderer::CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth)
+ID3D11Buffer* Renderer::CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth)
 {
     D3D11_BUFFER_DESC vertexbufferdesc = {};
     vertexbufferdesc.ByteWidth = byteWidth;
-    vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-    vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    /*vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+    vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;*/
+    vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;
     vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
     D3D11_SUBRESOURCE_DATA vertexbufferSRD = { vertices };
 
-    Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &VertexBuffer);
+
+    ID3D11Buffer* vertexBuffer;
+    Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
+
+    return vertexBuffer;
 }
 
 void Renderer::SwapBuffer()
@@ -240,6 +252,12 @@ void Renderer::PrepareShader()
     DeviceContext->VSSetShader(SimpleVertexShader, nullptr, 0);
     DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
     DeviceContext->IASetInputLayout(SimpleInputLayout);
+
+    // 버텍스 쉐이더에 상수 버퍼를 설정합니다.
+    if (ConstantBuffer)
+    {
+        DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+    }
 }
 
 bool Renderer::ValidateResources()
@@ -287,10 +305,9 @@ bool Renderer::ValidateResources()
     return bResult;
 }
 
-void Renderer::ReleaseVertexBuffer()
+void Renderer::ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer)
 {
-    VertexBuffer->Release();
-    VertexBuffer = nullptr;
+    vertexBuffer->Release();
 }
 
 void Renderer::ReleaseShader()
