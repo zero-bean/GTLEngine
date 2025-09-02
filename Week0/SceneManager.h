@@ -1,0 +1,25 @@
+#pragma once
+#include "Scene.h"
+
+class SceneManager
+{
+private:
+	static SceneManager* sInstance;
+	Scene* currentScene;
+
+	SceneManager();
+	SceneManager(const SceneManager& other) = delete;
+	SceneManager& operator=(const SceneManager& other) = delete;
+
+public:
+	~SceneManager();
+
+	void SetScene(Scene* scene);
+	void Shutdown();
+	void Update(float deltaTime);
+	void OnGUI(HWND hWND);
+	void OnRender();
+
+	static SceneManager* GetInstance();
+	static void DestroyInstance();
+};

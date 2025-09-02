@@ -25,8 +25,6 @@
 
 #include "Renderer.h"
 
-
-
 #define		SAFE_DELETE(p)		 if(p) { delete p; p = nullptr;}
 #define		SAFE_DELETE_ARRAY(p) if(p) { delete [] p; p = nullptr;}
 
@@ -39,13 +37,9 @@
 #ifndef DBG_NEW 
 #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ ) 
 #define new DBG_NEW 
-
-
-
-
-
+#endif
 
 #endif
-#endif
+
 #endif
 
