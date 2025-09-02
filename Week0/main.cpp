@@ -710,6 +710,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     QueryPerformanceCounter(&counter);
     srand(static_cast<unsigned int>(counter.QuadPart));
 
+    SceneManager* sceneManager = SceneManager::GetInstance();
+    TestScene* testScene = new TestScene();
+    testScene->SetRenderer(&Renderer);
+    sceneManager->SetScene(testScene);
+    
 
     // 첫 객체 생성
     UBallList BallList;
@@ -735,7 +740,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
         // 입력볼 , 현재볼 개수 차이따라 삭제 or 생성
 
-        if (BallList.GetBallCount() < TargetBallCount)
+        /*if (BallList.GetBallCount() < TargetBallCount)
         {
             int iAddBallCount = TargetBallCount - BallList.GetBallCount();
             for (int i = 0; i < iAddBallCount; ++i)
@@ -750,8 +755,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             {
                 BallList.Delete(Renderer);
             }
-        }
-
+        }*/
+        sceneManager->Update(elapsedTime);
 
 
         // 공만 그리는 것이 아니라 imgui도 그린다
@@ -760,9 +765,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         Renderer.Prepare();
         Renderer.PrepareShader();
 
-        BallList.MoveAll();
-        BallList.UpdateAll(Renderer);
-        BallList.DoRenderAll(Renderer);
+        sceneManager->OnRender(&Renderer);
+
+        //BallList.MoveAll();
+        //BallList.UpdateAll(Renderer);
+        //BallList.DoRenderAll(Renderer);
 
 
         ImGui_ImplDX11_NewFrame();
@@ -770,14 +777,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         ImGui::NewFrame();
         ImGui::Begin("Jungle Property Window");
-        ImGui::Text("Hello Jungle World!");
-        ImGui::Checkbox("Gravity", &bIsGravity);
-        ImGui::InputInt("Number of Balls", &TargetBallCount, 1, 5);
-        if (ImGui::Button("Quit this app"))
-        {
-            // 현재 윈도우에 Quit 메시지를 메시지 큐로 보냄
-            PostMessage(hWnd, WM_QUIT, 0, 0);
-        }
+        sceneManager->OnGUI(hWnd);
+        //ImGui::Text("Hello Jungle World!");
+        //ImGui::Checkbox("Gravity", &bIsGravity);
+        //ImGui::InputInt("Number of Balls", &TargetBallCount, 1, 5);
+        //if (ImGui::Button("Quit this app"))
+        //{
+        //    // 현재 윈도우에 Quit 메시지를 메시지 큐로 보냄
+        //    PostMessage(hWnd, WM_QUIT, 0, 0);
+        //}
         ImGui::End();
 
 
