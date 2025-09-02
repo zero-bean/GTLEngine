@@ -27,6 +27,30 @@ using namespace DirectX;
 #include "pch.h"
 #include "Sphere.h"
 
+// 파란색 RGBA
+#define BLUE_R 0.0f
+#define BLUE_G 0.0f
+#define BLUE_B 1.0f
+#define BLUE_A 1.0f
+
+FVertexSimple arrowVertices[] =
+{
+    // 몸통 (직사각형) - 시계 방향
+    {  0.05f,  0.4f, 0.0f,  BLUE_R, BLUE_G, BLUE_B, BLUE_A },
+    {  0.05f, -0.2f, 0.0f,  BLUE_R, BLUE_G, BLUE_B, BLUE_A },
+    { -0.05f, -0.2f, 0.0f,  BLUE_R, BLUE_G, BLUE_B, BLUE_A },
+
+
+    { -0.05f,  0.4f, 0.0f,  BLUE_R, BLUE_G, BLUE_B, BLUE_A },
+    {  0.05f,  0.4f, 0.0f,  BLUE_R, BLUE_G, BLUE_B, BLUE_A },
+    { -0.05f, -0.2f, 0.0f,  BLUE_R, BLUE_G, BLUE_B, BLUE_A },
+
+    // 화살표 머리 (삼각형) - 시계 방향
+    {  0.0f,  0.6f, 0.0f,  BLUE_R, BLUE_G, BLUE_B, BLUE_A },
+    {  0.1f,  0.4f, 0.0f,  BLUE_R, BLUE_G, BLUE_B, BLUE_A },
+    { -0.1f,  0.4f, 0.0f,  BLUE_R, BLUE_G, BLUE_B, BLUE_A },
+};
+
 class URenderer
 {
 public:
@@ -84,7 +108,7 @@ public:
             return;
         }
 
-        XMMATRIX R = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, XMConvertToRadians(roationZDeg));
+        XMMATRIX R = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, XMConvertToRadians(rotationZDeg));
 
         XMFLOAT4X4 rotationTemp;
         XMStoreFloat4x4(&rotationTemp, XMMatrixTranspose(R));
@@ -681,6 +705,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     Renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
     Renderer.SetNumVerticesSphere(NumVerticesSphere);
     
+    Renderer.CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
 
     //ImGui 생성
     IMGUI_CHECKVERSION();
