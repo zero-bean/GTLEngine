@@ -18,7 +18,7 @@ public:
 	void Shutdown();
 	void Update(float deltaTime);
 	void OnGUI(HWND hWND);
-	void OnRender(URenderer* renderer);
+	void OnRender();
 
 	static SceneManager* GetInstance();
 	static void DestroyInstance();

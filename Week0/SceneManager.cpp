@@ -53,11 +53,11 @@ void SceneManager::OnGUI(HWND hWND)
 	}
 }
 
-void SceneManager::OnRender(URenderer* renderer)
+void SceneManager::OnRender()
 {
 	if (currentScene)
 	{
-		currentScene->OnRender(renderer);
+		currentScene->OnRender();
 	}
 }
 

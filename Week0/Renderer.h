@@ -1,7 +1,6 @@
 #pragma once
 #include "pch.h"
 
-
 class Renderer
 {
 public:
@@ -14,15 +13,25 @@ private:
 
 public:
     void Initialize(HWND hWindow);
-    void Update(const FVector3& InOffset, float InScale);
+    void Update(const FVector3& InOffset, float InScale, float rotationZDeg);
     void Prepare();
     void PrepareShader();
-    void Render();
+    void Render(ID3D11Buffer* vertexBuffer, UINT numVertices);
     void SwapBuffer();
 
     void Release();
 
+    //버텍스 버퍼는 생성보류
+    ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth);
 
+    //Update
+    void UpdateConstant(const FVector3& InWorldPosition, float InScale, float rotationZDeg);
+
+    //getter
+	ID3D11Device* GetDevice()const { return Device; }
+	ID3D11DeviceContext* GetDeviceContext()const { return DeviceContext; }
+
+    //setter
 private:
     // Initialize
     void CreateDeviceAndSwapChain(HWND hWindow);
@@ -35,13 +44,10 @@ private:
     void SetRenderingPipeline();
 
 
-    //Update
-    void UpdateConstant(const FVector3& InWorldPosition, float InScale);
-
 
     // Release
     bool ValidateResources();
-    void ReleaseVertexBuffer();
+    void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer);
     void ReleaseShader(); // il, vs, ps
     void ReleaseRasterizerState(); // rs
     void ReleaseFrameBuffer(); // fb, rtv
@@ -49,8 +55,7 @@ private:
 
     
     
-    //버텍스 버퍼는 생성보류
-    void CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth);
+    
 
 private:
     // 24
@@ -69,8 +74,8 @@ private:
     IDXGISwapChain* SwapChain = nullptr;
     ID3D11Texture2D* FrameBuffer = nullptr;
     ID3D11RenderTargetView* FrameBufferRTV = nullptr;
-   /* ID3D11Buffer* VertexBuffer = nullptr;
-    ID3D11Buffer* ConstantBuffer = nullptr;*/
+    //ID3D11Buffer* VertexBuffer = nullptr;
+    ID3D11Buffer* ConstantBuffer = nullptr;
 
     // 4
     unsigned int NumVerticesSphere = 0;

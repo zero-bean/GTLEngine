@@ -1,33 +1,41 @@
 #include "TestScene.h"
-
-TestScene::TestScene()
-{
-}
+#include "ArrowVertices.h"
 
 void TestScene::Start()
 {
-    BallList.Initialize();
-    BallList.Add(renderer);
+    NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);
+    arrowVertexBuffer = renderer->CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
 }
 
 void TestScene::Update(float deltaTime)
 {
     // 입력볼 , 현재볼 개수 차이따라 삭제 or 생성
+    MSG msg;
+    bool bIsExit = false;
 
-    if (BallList.GetBallCount() < TargetBallCount)
+    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
     {
-        int iAddBallCount = TargetBallCount - BallList.GetBallCount();
-        for (int i = 0; i < iAddBallCount; ++i)
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+
+        if (msg.message == WM_QUIT)
         {
-            BallList.Add(renderer);
+            bIsExit = true;
+            break;
         }
-    }
-    else if (BallList.GetBallCount() > TargetBallCount)
-    {
-        int iDelBallCount = BallList.GetBallCount() - TargetBallCount;
-        for (int i = 0; i < iDelBallCount; ++i)
+        else if (msg.message == WM_KEYDOWN)
         {
-            BallList.Delete(renderer);
+            if (msg.wParam == VK_LEFT)
+            {
+                // 좌회전
+                //RotateVertices(arrowVertices, numVerticesArrow, +step, px, py); // 반시계
+                rotationDeg -= rotationDelta;
+            }
+            else if (msg.wParam == VK_RIGHT)
+            {
+                // 우회전
+                rotationDeg += rotationDelta;
+            }
         }
     }
 }
@@ -35,8 +43,6 @@ void TestScene::Update(float deltaTime)
 void TestScene::OnGUI(HWND hWND)
 {
     ImGui::Text("Hello Jungle World!");
-    ImGui::Checkbox("Gravity", &bIsGravity);
-    ImGui::InputInt("Number of Balls", &TargetBallCount, 1, 5);
     if (ImGui::Button("Quit this app"))
     {
         // 현재 윈도우에 Quit 메시지를 메시지 큐로 보냄
@@ -44,11 +50,10 @@ void TestScene::OnGUI(HWND hWND)
     }
 }
 
-void TestScene::OnRender(URenderer* renderer)
+void TestScene::OnRender()
 {
-    BallList.MoveAll();
-    BallList.UpdateAll(renderer);
-    BallList.DoRenderAll(renderer);
+    renderer->UpdateConstant({ 0.0f, -0.9f, 0.0f }, 0.4f, rotationDeg);
+    renderer->Render(arrowVertexBuffer, NumVerticesArrow);
 }
 
 void TestScene::Shutdown()

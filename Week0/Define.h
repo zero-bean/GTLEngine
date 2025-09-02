@@ -18,7 +18,7 @@ struct FConstants
     FVector4 Color;
     FVector3 WorldPosition;
     float Scale;
-    XMFLOAT4X4 rotation;
+    DirectX::XMFLOAT4X4 rotation;
 };
 
 struct FVertexSimple

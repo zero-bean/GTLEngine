@@ -1,20 +1,19 @@
 #pragma once
-#include "pch.h"
-
-extern class UBallList;
-extern class URenderer;
+#include "SceneManager.h"
 
 class TestScene : public Scene {
 private:
-	bool bIsGravity;
-	int TargetBallCount;
-	UBallList BallList;
+	float rotationDeg = 0.0f;
+	float rotationDelta = 5.0f;
+	INT NumVerticesArrow;
+	ID3D11Buffer* arrowVertexBuffer;
+
 public:
-	TestScene();
+	TestScene(Renderer * renderer): Scene(renderer){}
 
 	void Start() override;
 	void Update(float deltaTime) override;
 	void OnGUI(HWND hWND) override;
-	void OnRender(URenderer * renderer) override;
+	void OnRender() override;
 	void Shutdown() override;
 };
