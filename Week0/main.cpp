@@ -9,6 +9,9 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
+#include <DirectXMath.h>
+#include <cmath>
+
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_internal.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -18,26 +21,11 @@
 // 코딩규칙 
 //struct 는 F를 붙힌다
 
-struct FVertexSimple
-{
-    float x, y, z;    
-    float r, g, b, a; 
-};
+using namespace DirectX;
 
-#include "Sphere.h"
+
 #include "pch.h"
-
-struct FVector3
-{
-    FVector3(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {}
-    float x, y, z;
-};
-
-struct FConstants
-{
-    FVector3 WorldPosition;
-    float Scale;
-};  // 16   
+#include "Sphere.h"
 
 class URenderer
 {
@@ -88,7 +76,7 @@ public:
     }
 
     // update
-    void UpdateConstant(const FVector3& InWorldPosition, float InScale, ID3D11Buffer* const InConstantBuffer)
+    void UpdateConstant(const FVector3& InWorldPosition, float InScale, float rotationZDeg, ID3D11Buffer* const InConstantBuffer)
     {
         if (!InConstantBuffer)
         {
@@ -96,12 +84,18 @@ public:
             return;
         }
 
+        XMMATRIX R = XMMatrixRotationRollPitchYaw(0.0f, 0.0f, XMConvertToRadians(roationZDeg));
+
+        XMFLOAT4X4 rotationTemp;
+        XMStoreFloat4x4(&rotationTemp, XMMatrixTranspose(R));
+
         D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
         DeviceContext->Map(InConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
         FConstants* constants = (FConstants*)constantbufferMSR.pData;
         {
             constants->WorldPosition = InWorldPosition;
             constants->Scale = InScale;
+            constants->rotation = rotationTemp;
         }
         DeviceContext->Unmap(InConstantBuffer, 0);
     }
