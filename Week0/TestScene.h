@@ -1,4 +1,5 @@
-#include "Scene.h"
+#pragma once
+#include "pch.h"
 
 extern class UBallList;
 extern class URenderer;
