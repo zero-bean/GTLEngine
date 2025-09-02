@@ -45,6 +45,22 @@ void SceneManager::Update(float deltaTime)
 	}
 }
 
+void SceneManager::LateUpdate(float deltaTime)
+{
+	if (currentScene)
+	{
+		currentScene->LateUpdate(deltaTime);
+	}
+}
+
+void SceneManager::OnMessage(MSG msg)
+{
+	if (currentScene)
+	{
+		currentScene->OnMessage(msg);
+	}
+}
+
 void SceneManager::OnGUI(HWND hWND)
 {
 	if (currentScene)

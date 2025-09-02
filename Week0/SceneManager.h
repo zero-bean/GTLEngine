@@ -17,6 +17,8 @@ public:
 	void SetScene(Scene* scene);
 	void Shutdown();
 	void Update(float deltaTime);
+	void LateUpdate(float deltaTime);
+	void OnMessage(MSG msg);
 	void OnGUI(HWND hWND);
 	void OnRender();
 

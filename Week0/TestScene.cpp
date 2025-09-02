@@ -13,31 +13,25 @@ void TestScene::Update(float deltaTime)
 {
     // 입력볼 , 현재볼 개수 차이따라 삭제 or 생성
     playerarrow.Update(*renderer);
-    MSG msg;
-    bool bIsExit = false;
+}
 
-    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+void TestScene::LateUpdate(float deltaTime)
+{
+}
+
+void TestScene::OnMessage(MSG msg)
+{
+    if (msg.message == WM_KEYDOWN)
     {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-
-        if (msg.message == WM_QUIT)
+        if (msg.wParam == VK_LEFT)
         {
-            bIsExit = true;
-            break;
+            // 좌회전
+            playerarrow.SetDegree(-rotationDelta);
         }
-        else if (msg.message == WM_KEYDOWN)
+        else if (msg.wParam == VK_RIGHT)
         {
-            if (msg.wParam == VK_LEFT)
-            {
-                // 좌회전
-                playerarrow.SetDegree(-rotationDelta);
-            }
-            else if (msg.wParam == VK_RIGHT)
-            {
-                // 우회전
-                playerarrow.SetDegree(rotationDelta);
-            }
+            // 우회전
+            playerarrow.SetDegree(rotationDelta);
         }
     }
 }
