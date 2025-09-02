@@ -25,7 +25,7 @@
 using namespace DirectX;
 
 #include "SceneManager.h"
-#include "TestScene.h"
+#include "TestScene2.h"
 #include "PlayerArrow.h"
 
 
@@ -115,7 +115,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     double elapsedTime = 0.0;
 
     SceneManager* sceneManager = SceneManager::GetInstance();
-    TestScene* testScene = new TestScene(&renderer);
+    TestScene2* testScene = new TestScene2(&renderer);
     sceneManager->SetScene(testScene);
     
 
@@ -124,6 +124,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         QueryPerformanceCounter(&startTime);
 
         sceneManager->Update(elapsedTime);
+
+        MSG msg;
+
+        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+
+            if (msg.message == WM_QUIT)
+            {
+                bIsExit = true;
+                break;
+            }
+            else
+            {
+                sceneManager->OnMessage(msg);
+            }
+        }
+
+        // sceneManager->LateUpdate(elapsedTime);
 
         renderer.Prepare();
         renderer.PrepareShader();
@@ -136,9 +156,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ImGui::Begin("Jungle Property Window");
         sceneManager->OnGUI(hWnd);
         ImGui::End();
-
-
         ImGui::Render();
+
+
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
         renderer.SwapBuffer();
