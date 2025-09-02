@@ -26,10 +26,6 @@ using namespace DirectX;
 
 #include "SceneManager.h"
 #include "TestScene.h"
-#include "Sphere.h"
-
-
-
 #include "PlayerArrow.h"
 
 
@@ -100,36 +96,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     Renderer renderer;
     
     renderer.Initialize(hWnd);
-
-
-
-    PlayerArrow playerarrow;
-
-    playerarrow.Initialize(renderer);
-
-    ///////////////////////////////////////////////////////////////////
-    //INT NumVerticesArrow = sizeof(ArrowVertices) / sizeof(FVertexSimple);
-    //ID3D11Buffer* arrowVertexBuffer = renderer.CreateVertexBuffer(ArrowVertices, sizeof(ArrowVertices));
-    //renderer.SetNumVerticesSphere(NumVerticesSphere);
-    
-    //renderer.CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
-    /////////////////////////////////////////////////////////////////////////
     
 
 
 
-    //ImGui ����
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplWin32_Init((void*)hWnd);
     ImGui_ImplDX11_Init(renderer.GetDevice(), renderer.GetDeviceContext());
     
-    //FPS ������ ���� ����
     const int targetFPS = 60;
-    const double targetFrameTime = 1000.0 / targetFPS; // �� �������� ��ǥ �ð� (�и��� ����)
+    const double targetFrameTime = 1000.0 / targetFPS;
     
-    //������ Ÿ�̸� �ʱ�ȭ
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
     LARGE_INTEGER startTime, endTime;
@@ -140,58 +119,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     sceneManager->SetScene(testScene);
     
 
-    // ù ��ü ����
-    float rotationDeg = 0.0f;
-    float rotationDelta = 5.0f;
-    //���η���
     while (bIsExit == false)
     {
         QueryPerformanceCounter(&startTime);
 
-        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+        sceneManager->Update(elapsedTime);
 
-            if (msg.message == WM_QUIT)
-            {
-                bIsExit = true;
-                break;
-            }
-            else if (msg.message == WM_KEYDOWN)
-            {
-                if (msg.wParam == VK_LEFT)
-                {
-                    // ��ȸ��
-                    //RotateVertices(arrowVertices, numVerticesArrow, +step, px, py); // �ݽð�
-                    rotationDeg -= rotationDelta;
-                }
-                else if (msg.wParam == VK_RIGHT)
-                {
-                    // ��ȸ��
-                    rotationDeg += rotationDelta;
-                }
-            }
-        }
-        // �Էº� , ���纼 ���� ���̵��� ���� or ����
-
-        
-
-
-
-        // ���� �׸��� ���� �ƴ϶� imgui�� �׸���
-        // imgui�� �׷��� ������������ ���� ������ �ݵ�� ���� �׸��� �ٽ� ����
-        // ������Ѵ�
         renderer.Prepare();
         renderer.PrepareShader();
         sceneManager->OnRender();
-
-        playerarrow.Update(renderer);
-
-        //renderer.UpdateConstant({ 0.0f, -0.9f, 0.0f }, 0.4f, rotationDeg);
-        //renderer.Render(arrowVertexBuffer, NumVerticesArrow);
-
-        playerarrow.Render(renderer);
 
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
@@ -205,17 +141,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ImGui::Render();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-        // �� �׷����� ���۸� ��ȯ
         renderer.SwapBuffer();
 
         do
         {
             Sleep(0);
 
-            // ���� ���� �ð� ���
             QueryPerformanceCounter(&endTime);
 
-            // �� �������� �ҿ�� �ð� ��� (�и��� ������ ��ȯ)
             elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
 
         } while (elapsedTime < targetFrameTime);

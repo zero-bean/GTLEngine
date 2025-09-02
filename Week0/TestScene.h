@@ -1,5 +1,6 @@
 #pragma once
 #include "SceneManager.h"
+#include "PlayerArrow.h"
 
 class TestScene : public Scene {
 private:
@@ -7,6 +8,8 @@ private:
 	float rotationDelta = 5.0f;
 	INT NumVerticesArrow;
 	ID3D11Buffer* arrowVertexBuffer;
+
+	PlayerArrow playerarrow;
 
 public:
 	TestScene(Renderer * renderer): Scene(renderer){}

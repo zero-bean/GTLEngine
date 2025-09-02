@@ -3,6 +3,8 @@
 
 void TestScene::Start()
 {
+    playerarrow.Initialize(*renderer);
+
     NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);
     arrowVertexBuffer = renderer->CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
 }
@@ -10,6 +12,7 @@ void TestScene::Start()
 void TestScene::Update(float deltaTime)
 {
     // 입력볼 , 현재볼 개수 차이따라 삭제 or 생성
+    playerarrow.Update(*renderer);
     MSG msg;
     bool bIsExit = false;
 
@@ -28,13 +31,12 @@ void TestScene::Update(float deltaTime)
             if (msg.wParam == VK_LEFT)
             {
                 // 좌회전
-                //RotateVertices(arrowVertices, numVerticesArrow, +step, px, py); // 반시계
-                rotationDeg -= rotationDelta;
+                playerarrow.SetDegree(-rotationDelta);
             }
             else if (msg.wParam == VK_RIGHT)
             {
                 // 우회전
-                rotationDeg += rotationDelta;
+                playerarrow.SetDegree(rotationDelta);
             }
         }
     }
@@ -52,8 +54,7 @@ void TestScene::OnGUI(HWND hWND)
 
 void TestScene::OnRender()
 {
-    renderer->UpdateConstant({ 0.0f, -0.9f, 0.0f }, 0.4f, rotationDeg);
-    renderer->Render(arrowVertexBuffer, NumVerticesArrow);
+    playerarrow.Render(*renderer);
 }
 
 void TestScene::Shutdown()
