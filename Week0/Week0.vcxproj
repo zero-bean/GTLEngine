@@ -146,8 +146,6 @@
     <ClCompile Include="TestScene.cpp" />
     <ClCompile Include="TestScene.h" />
 
-    <ClCompile Include="Renderer.cpp" />
-
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
