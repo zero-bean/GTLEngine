@@ -35,10 +35,10 @@ void Ball::Initialize(const Renderer& renderer)
 }
 void Ball::Update(Renderer& renderer)
 {
-    if (BallType == eBallType::Static)
-    {
-        return;
-    }
+    //if (BallType == eBallType::Static)
+    //{
+    //    return;
+    //}
     // update
     WorldPosition = CalculateUtil::operator+(WorldPosition, Velocity);
     renderer.UpdateConstant(ConstantBuffer, WorldPosition, Scale, RotationDeg);

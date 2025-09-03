@@ -6,7 +6,7 @@
 class TestScene : public Scene {
 private:
 	float rotationDeg = 0.0f;
-	float rotationDelta = 5.0f;
+	float rotationDelta = 0.3f;
 	INT NumVerticesArrow;
 	ID3D11Buffer* arrowVertexBuffer;
 
