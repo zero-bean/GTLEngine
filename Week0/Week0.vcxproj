@@ -194,6 +194,7 @@
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="PlayerArrow.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="ScreenUtil.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="TestScene2.h" />
   </ItemGroup>

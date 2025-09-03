@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "TextureSet.h"
+#include "ScreenUtil.h"
 
 using namespace DirectX;
 
@@ -157,7 +158,7 @@ void Renderer::CreateTextureSampler()
     samplerDesc.MaxAnisotropy = 1;
     samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
     samplerDesc.MinLOD = 0;
-    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;                                                 
 
     Device->CreateSamplerState(&samplerDesc, &TextureSampler);
 }
@@ -203,6 +204,7 @@ void Renderer::UpdateConstant(ID3D11Buffer* InConstantBuffer, const FVector3& In
         constants->WorldPosition = InWorldPosition;
         constants->Scale = InScale;
         constants->rotation = rotationTemp;
+        constants->aspectRatio = (float)SCREEN_HEIGHT / (float)SCREEN_WIDTH;
     }
     DeviceContext->Unmap(InConstantBuffer, 0);
 }

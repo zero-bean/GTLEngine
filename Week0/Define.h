@@ -22,6 +22,8 @@ struct FConstants
     FVector3 WorldPosition;
     float Scale;
     DirectX::XMFLOAT4X4 rotation;
+    float aspectRatio;
+    FVector3 padding;
 };
 
 struct FVertexSimple
