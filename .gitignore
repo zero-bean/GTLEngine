@@ -418,4 +418,5 @@ FodyWeavers.xsd
 *.msp
 
 # DirectXTK 폴더만 제외 (추적함)
-!/DirectXTK/
+!/DirectXTK/Lib/Win32
+!/DirectXTK/Lib/x64
