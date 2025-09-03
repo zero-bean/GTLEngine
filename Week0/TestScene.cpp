@@ -2,6 +2,11 @@
 #include "ArrowVertices.h"
 #include "ScreenUtil.h"
 
+inline bool TestScene::IsInRange(const int x, const int y) const
+{
+    return (x >= 0 && x < ROWS && y >= 0 && y < COLS);
+}
+
 void TestScene::Start()
 {
     playerarrow.Initialize(*renderer);
@@ -9,42 +14,55 @@ void TestScene::Start()
     NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);
     arrowVertexBuffer = renderer->CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
 
-
     ShotBall = nullptr;
 
-	BallQueue = std::queue<Ball*>(); // ¿À·ù°¡ ³ª´Â ÁÙ
+  BallQueue = std::queue<Ball*>(); // ì˜¤ë¥˜ê°€ ë‚˜ëŠ” ì¤„
     //std::queue<Ball*> qTemp;
-    for(int i = 0; i < 2; ++i)
-    {
-        Ball* ball = new Ball;
-        ball->Initialize(*renderer);
-        ball->SetRadius(0.11f);
-		ball->SetWorldPosition({ 0.0f - (i * 0.22f), -0.9f, 0.0f});
-        BallQueue.push(ball);
+  for(int i = 0; i < 2; ++i)
+  {
+      Ball* ball = new Ball;
+      ball->Initialize(*renderer);
+      ball->SetRadius(0.11f);
+  ball->SetWorldPosition({ 0.0f - (i * 0.22f), -0.9f, 0.0f});
+      BallQueue.push(ball);
 	}
+  
+   for (int i = 0;i < ROWS; ++i)
+   {
+       for (int j = 0;j < COLS; ++j)
+       {
+          
+           board[i][j].ball = nullptr;
+           board[i][j].bEnable = false;
+       }
+   }
 
 
-    for (int i = 0;i < ROWS; ++i)
-    {
-        for (int j = 0;j < COLS; ++j)
-        {
-           balls[i][j] = nullptr;  
-        }
-    }
+   // ì„ì‹œ ë ˆë²¨(0,4)
+   Ball* temp= new Ball;
+   board[0][4].ball = temp;
+   board[0][4].ball->Initialize(*renderer);
+   board[0][4].ball->SetWorldPosition({ 0.0f, 0.89f, 0.0f });
+
+
+    for (int i = 0; i < COLS; ++i)
+        board[0][i].bEnable = true;
+    board[0][4].bEnable = false;
+    board[1][4].bEnable = true;
 }
 
 void TestScene::Update(float deltaTime)
 {
-    // ÀÔ·Âº¼ , ÇöÀçº¼ °³¼ö Â÷ÀÌµû¶ó »èÁ¦ or »ı¼º
+    // ì…ë ¥ë³¼ , í˜„ì¬ë³¼ ê°œìˆ˜ ì°¨ì´ë”°ë¼ ì‚­ì œ or ìƒì„±
     playerarrow.Update(*renderer);
 
     for (int i = 0;i < ROWS; ++i)
     {
         for (int j = 0;j < COLS; ++j)
         {
-            if (balls[i][j] != nullptr)
+            if (board[i][j].ball != nullptr)
             {
-                balls[i][j]->Update(*renderer);
+                board[i][j].ball->Update(*renderer);
             }
         }
     }
@@ -69,48 +87,54 @@ void TestScene::LateUpdate(float deltaTime)
     }
     FVector3 ShotBallPosition = ShotBall->GetWorldPosition();
     FVector3 ShotBallVelocity = ShotBall->GetVelocity();
+    int dy = std::round((ShotBallPosition.x + 1) / 2.0f * static_cast<float>(COLS - 1)); // ì´ì°¨ì› ë°°ì—´ì˜ ê°€ë¡œ (ì²« ë²ˆì§¸)
+    int dx = ROWS - 2 - std::round((ShotBallPosition.y + 1) / 2.0f * static_cast<float>(ROWS - 1)); // ì´ì°¨ì› ë°°ì—´ì˜ ì„¸ë¡œ (ë‘ ë²ˆì§¸)
+    FVector3 NewVector = { (dy - 4) * 0.22F, (dx - 4) * - 0.22f, 0.0f };
 
-
-
-
-    //ÃµÀåÁ¢ÃË
-    if (ShotBallPosition.y + 0.11f > 1.0f)
-    {
-        int dx = std::round((ShotBallPosition.x + 1) / 2.0f * static_cast<float>(COLS - 1));
-
-        ShotBall->SetVelocity({ 0,0,0 });
-
-        //FVector3 NewVector = { 2.0f * static_cast<float>(dx) / static_cast<float>(COLS - 1) - 1.0f, 0.89f, 0.0f };
-        FVector3 NewVector = { (dx -4) * 0.22F, 0.89f, 0.0f };
-
-
-        ShotBall->SetWorldPosition(NewVector);
-        ShotBall->SetBallType(eBallType::Static);
-
-        balls[0][dx] = ShotBall;
-
-        //balls[0][dx]->SetVelocity({ 0,0,0 });
-        //balls[0][dx]->SetWorldPosition({ 2.0f * static_cast<float>(dx) / 8.0f - 1.0f, 0.89f, 0.0f });
-        //balls[0][dx]->SetBallType(eBallType::Static);
-        ShotBall = nullptr;
-    }
-
-    //¿ŞÂÊ º®ÀÌ¶û ´ê¾ÒÀ»¶§
+    //ì™¼ìª½ ë²½ì´ë‘ ë‹¿ì•˜ì„ë•Œ
     if (ShotBall && (ShotBallPosition.x - 0.11f <= -1.0f * ScreenUtil::GetAspectRatio()))
     {
         ShotBall->SetWorldPosition({ -ScreenUtil::GetAspectRatio() + 0.11f, ShotBallPosition.y, ShotBallPosition.z });
         ShotBall->SetVelocity({ -ShotBallVelocity.x, ShotBallVelocity.y, ShotBallVelocity.z });
     }
 
-    //¿À¸¥ÂÊ º®ÀÌ¶û ´ê¾ÒÀ»¶§
+    //ì˜¤ë¥¸ìª½ ë²½ì´ë‘ ë‹¿ì•˜ì„ë•Œ
     if (ShotBall && (ShotBallPosition.x + 0.11f >= 1.0f * ScreenUtil::GetAspectRatio()))
     {
         ShotBall->SetWorldPosition({ ScreenUtil::GetAspectRatio() - 0.11f, ShotBallPosition.y, ShotBallPosition.z });
         ShotBall->SetVelocity({ -ShotBallVelocity.x, ShotBallVelocity.y, ShotBallVelocity.z });
     }
 
+    if(board[dx][dy].bEnable == true)
+    { 
+        ShotBall->SetVelocity({ 0,0,0 });
+        ShotBall->SetWorldPosition(NewVector);
+
+        board[dx][dy].ball = ShotBall;
+        board[dx][dy].bEnable = false;
+        ShotBall = nullptr;
 
 
+        const int cx[4] = { 1,-1,0,0 };
+        const int cy[4] = { 0,0,1,-1 };
+
+        for (int i = 0; i < 4; ++i)
+        {
+            // ìƒ í•˜ ì¢Œ ìš° 4êµ°ë° ê²€ì‚¬
+            const int nx = dx + cx[i];
+            const int ny = dy + cy[i];
+            
+            if (IsInRange(nx, ny))
+            {
+                if (board[nx][ny].bEnable == false && board[nx][ny].ball == nullptr)
+                    board[nx][ny].bEnable = true;
+            }
+        }
+
+        // ë²„ë¸” ì‚­ì œ í•¨ìˆ˜ ì¶”ê°€í•  ê²ƒ
+    
+        // ê²Œì„ ì˜¤ë²„ ê²€ì‚¬í•˜ê¸°
+    }
 }
 
 void TestScene::OnMessage(MSG msg)
@@ -119,17 +143,17 @@ void TestScene::OnMessage(MSG msg)
     {
         if (msg.wParam == VK_LEFT)
         {
-            // ÁÂÈ¸Àü
+            // ì¢ŒíšŒì „
             playerarrow.SetDegree(-rotationDelta);
         }
         else if (msg.wParam == VK_RIGHT)
         {
-            // ¿ìÈ¸Àü
+            // ìš°íšŒì „
             playerarrow.SetDegree(rotationDelta);
         }
         else if (msg.wParam == VK_SPACE)
         {
-            // ÃÑ¾Ë»ı¼º
+            // ì´ì•Œìƒì„±
             //playerarrow.SetDegree(rotationDelta);
             if (ShotBall == nullptr)
             {
@@ -148,7 +172,7 @@ void TestScene::OnMessage(MSG msg)
                 ball->SetWorldPosition({ 0.0f - 0.22f, -0.9f, 0.0f });
                 BallQueue.push(ball);
 
-                float speed = 0.02f; // ¿øÇÏ´Â ¼Óµµ °ª
+                float speed = 0.02f; // ì›í•˜ëŠ” ì†ë„ ê°’
                 ShotBall->SetVelocity({ -cosf(DirectX::XMConvertToRadians(playerarrow.GetDegree() + 90)) * speed,
                                         sinf(DirectX::XMConvertToRadians(playerarrow.GetDegree() + 90)) * speed,
                                         0.0f });
@@ -167,7 +191,7 @@ void TestScene::OnGUI(HWND hWND)
     ImGui::Text("Hello Jungle World!");
     if (ImGui::Button("Quit this app"))
     {
-        // ÇöÀç À©µµ¿ì¿¡ Quit ¸Ş½ÃÁö¸¦ ¸Ş½ÃÁö Å¥·Î º¸³¿
+        // í˜„ì¬ ìœˆë„ìš°ì— Quit ë©”ì‹œì§€ë¥¼ ë©”ì‹œì§€ íë¡œ ë³´ëƒ„
         PostMessage(hWND, WM_QUIT, 0, 0);
     }
 }
@@ -176,14 +200,14 @@ void TestScene::OnRender()
 {
     playerarrow.Render(*renderer);
 
-    //ÀüÃ¼ ¹è¿­ ·»´õ
+    //ì „ì²´ ë°°ì—´ ë Œë”
     for (int i = 0;i < ROWS; ++i)
     {
         for (int j = 0;j < COLS; ++j)
         {
-            if (balls[i][j] != nullptr)
+            if (board[i][j].ball !=  nullptr)
             {
-                balls[i][j]->Render(*renderer);
+                board[i][j].ball->Render(*renderer);
             }
         }
     }
@@ -191,7 +215,7 @@ void TestScene::OnRender()
     BallQueue.back()->Render(*renderer);
     BallQueue.front()->Render(*renderer);
 
-    //¹ß»çÃÑ¾Ë ·»´õ
+    //ë°œì‚¬ì´ì•Œ ë Œë”
     if (ShotBall != nullptr)
     {
         ShotBall->Render(*renderer);
@@ -201,8 +225,8 @@ void TestScene::OnRender()
 void TestScene::Shutdown()
 {
     while (!BallQueue.empty()) {
-        Ball* b = BallQueue.front(); // ¸Ç ¾Õ ¿ä¼Ò °¡Á®¿À±â
-        BallQueue.pop();            // ¸Ç ¾Õ ¿ä¼Ò Á¦°Å
+        Ball* b = BallQueue.front(); // ë§¨ ì• ìš”ì†Œ ê°€ì ¸ì˜¤ê¸°
+        BallQueue.pop();            // ë§¨ ì• ìš”ì†Œ ì œê±°
 
         delete b;
     }
