@@ -51,8 +51,8 @@ enum class eBallType
 enum class eBallColor
 {
     Red = 0,
-    Green = 2,
-	Blue = 1
+    Green = 1,
+	Blue = 2
 };
 
 namespace CalculateUtil
