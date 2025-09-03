@@ -86,17 +86,7 @@ bld/
 *.log
 *.tlog
 *.lastbuildstate
-*.idb
-*.pdb
-*.ilk
-*.obj
-*.lib
-*.exp
-*.pch
 *.tmp
-*.manifest
-*.res
-*.rc2
 
 # 하지만 DirectXTK 라이브러리는 예외
 !DirectXTK/**/*.lib
