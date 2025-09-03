@@ -1,0 +1,231 @@
+# =============================================================================
+# DirectX/DirectXTK 프로젝트용 .gitignore
+# =============================================================================
+
+# DirectXTK 라이브러리는 포함 (최우선 - 맨 위에 배치)
+!DirectXTK/
+!DirectXTK/**/*.h
+!DirectXTK/**/*.hpp
+!DirectXTK/**/*.lib
+!DirectXTK/**/*.dll
+!DirectXTK/**/*.pdb
+!DirectXTK/Lib/
+!DirectXTK/Lib/**
+!DirectXTK/Inc/
+!DirectXTK/Inc/**
+!DirectXTK/Src/
+!DirectXTK/Src/**
+
+# 중요한 프로젝트 파일들은 항상 포함
+!*.sln
+!*.vcxproj
+!*.vcxproj.filters
+!*.vcxproj.user
+!*.props
+!*.targets
+
+# 에셋 파일들은 포함
+!Assets/
+!Assets/**/*.png
+!Assets/**/*.jpg
+!Assets/**/*.jpeg
+!Assets/**/*.bmp
+!Assets/**/*.tga
+!Assets/**/*.dds
+!Assets/**/*.hdr
+!Assets/**/*.exr
+!Assets/**/*.ico
+!Assets/**/*.wav
+!Assets/**/*.mp3
+!Assets/**/*.ogg
+!Assets/**/*.fx
+!Assets/**/*.hlsl
+!Assets/**/*.cso
+
+# 셰이더 파일들은 포함
+!*.hlsl
+!*.fx
+!*.cso
+!Shaders/
+!Shaders/**
+
+# =============================================================================
+# Visual Studio 빌드 결과물 및 임시 파일들
+# =============================================================================
+
+# 빌드 디렉토리
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+
+# 하지만 DirectXTK 빌드 결과는 예외
+!DirectXTK/**/[Bb]in/
+!DirectXTK/**/[Oo]bj/
+!DirectXTK/Lib/
+
+# Visual Studio 파일들
+.vs/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.db
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+
+# 빌드 로그 및 임시 파일들
+*.log
+*.tlog
+*.lastbuildstate
+*.idb
+*.pdb
+*.ilk
+*.obj
+*.lib
+*.exp
+*.pch
+*.tmp
+*.manifest
+*.res
+*.rc2
+
+# 하지만 DirectXTK 라이브러리는 예외
+!DirectXTK/**/*.lib
+!DirectXTK/**/*.pdb
+
+# 컴파일러 생성 파일들
+*_i.c
+*_i.h
+*_p.c
+*_h.h
+*.tlb
+*.tli
+*.tlh
+
+# IntelliSense 파일들
+*.ncb
+*.aps
+*.clw
+*.tags
+*.opt
+*.plg
+*.positions
+
+# Visual Studio 캐시
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# =============================================================================
+# 기타 도구들
+# =============================================================================
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# TeamCity
+_TeamCity*
+
+# NuGet
+packages/
+*.nuget.props
+*.nuget.targets
+
+# MSTest
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# JetBrains Rider
+.idea/
+
+# =============================================================================
+# 시스템 파일들
+# =============================================================================
+
+# Windows
+[Tt]humbs.db
+[Tt]humbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# =============================================================================
+# 프로젝트별 커스텀 설정
+# =============================================================================
+
+# 개발자 개인 설정 파일들
+*.env
+*.local
+config.local.*
+
+# 큰 에셋 소스 파일들 (선택사항)
+# Assets/**/*.psd
+# Assets/**/*.ai
+# Assets/**/*.max
+# Assets/**/*.blend
+# Assets/**/*.mb
+# Assets/**/*.ma
+
+# 로그 파일들
+*.log
+logs/
+[Ll]og/
+[Ll]ogs/
+
+# 백업 파일들
+*.bak
+*.backup
+*~
+*.orig
+
+# =============================================================================
+# 커스텀 예외 규칙들 (필요시 수정)
+# =============================================================================
+
+# 특정 써드파티 라이브러리들 포함
+!ThirdParty/
+!ThirdParty/**/*.lib
+!ThirdParty/**/*.dll
+!ThirdParty/**/*.h
+!ThirdParty/**/*.hpp
+
+# 문서 파일들 포함
+!*.md
+!*.txt
+!*.pdf
+!docs/
+!Documentation/
+
+# 프로젝트 설정 파일들
+!*.json
+!*.xml
+!*.config
