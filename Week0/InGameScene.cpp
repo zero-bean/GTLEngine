@@ -9,7 +9,7 @@ inline bool InGameScene::IsInRange(const int x, const int y) const
     return (x >= 0 && x < ROWS && y >= 0 && y < COLS);
 }
 
-// ?�당 ?�치??볼과 4-방향 "?�접??같�? ?�상??�????�색?�고 반환?�니??
+// ?´ë‹¹ ?„ì¹˜??ë³¼ê³¼ 4-ë°©í–¥ "?¸ì ‘??ê°™ì? ?‰ìƒ??ë³????ìƒ‰?˜ê³  ë°˜í™˜?©ë‹ˆ??
 std::vector<std::pair<int, int>> InGameScene::FindSameColorBalls(const std::pair<int, int>& start, const eBallColor& color)
 {
     std::vector<std::pair<int, int>> sameColorBalls = {};
@@ -18,7 +18,7 @@ std::vector<std::pair<int, int>> InGameScene::FindSameColorBalls(const std::pair
      const int sx = start.first;
      const int sy = start.second;
     
-     // 방문 배열?� [R][C] = [y][x]
+     // ë°©ë¬¸ ë°°ì—´?€ [R][C] = [y][x]
      std::vector<std::vector<bool>> visited(ROWS, std::vector<bool>(COLS, false));
      std::queue<std::pair<int, int>> q;
     
@@ -28,7 +28,7 @@ std::vector<std::pair<int, int>> InGameScene::FindSameColorBalls(const std::pair
      // BFS
      while (!q.empty())
      {
-         // ?�재 좌표
+         // ?„ìž¬ ì¢Œí‘œ
          const int cx = q.front().first;
          const int cy = q.front().second;
          q.pop();
@@ -39,17 +39,17 @@ std::vector<std::pair<int, int>> InGameScene::FindSameColorBalls(const std::pair
          sameColorBalls.push_back({ cx,cy });
          visited[cx][cy] = true;
 
-         // 4-방향 ?�접??좌표 ?�색
+         // 4-ë°©í–¥ ?¸ì ‘??ì¢Œí‘œ ?ìƒ‰
          for (int i = 0; i < 4; ++i)
          {
              const int nx = cx + dx[i];
              const int ny = cy + dy[i];
     
-             // ?�효??범위가 ?�니?�면
+             // ? íš¨??ë²”ìœ„ê°€ ?„ë‹ˆ?¼ë©´
              if (IsInRange(nx, ny) == false) { continue; }
-             // ?��? 방문???�다�?
+             // ?´ë? ë°©ë¬¸???ˆë‹¤ë©?
              if (visited[nx][ny] == true) { continue; }
-             // 같�? ?�상???�니?�면
+             // ê°™ì? ?‰ìƒ???„ë‹ˆ?¼ë©´
              if (board[nx][ny].ball == nullptr || board[nx][ny].ball->GetBallColor() != color) { continue; }
     
              q.push({ nx, ny });
@@ -61,25 +61,24 @@ std::vector<std::pair<int, int>> InGameScene::FindSameColorBalls(const std::pair
     
 }
 
-
-// ?�하??볼을 ?�색?�고 반환?�니??
-// 루트(�??�줄)�??�결?��? ?��? 공들??찾아 반환?�니?? (y,x) ??목록
+// ?™í•˜??ë³¼ì„ ?ìƒ‰?˜ê³  ë°˜í™˜?©ë‹ˆ??
+// ë£¨íŠ¸(ë§??—ì¤„)ê³??°ê²°?˜ì? ?Šì? ê³µë“¤??ì°¾ì•„ ë°˜í™˜?©ë‹ˆ?? (y,x) ??ëª©ë¡
 std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
 {
     std::vector<std::pair<int, int>> floating = {};
     std::vector<std::vector<bool>> visited(ROWS, std::vector<bool>(COLS, false));
     std::queue<std::pair<int, int>> q = {};
 
-    // 1) �??�줄?�서 공이 ?�는 칸들???�작?�으�??�에 ?�입
+    // 1) ë§??—ì¤„?ì„œ ê³µì´ ?ˆëŠ” ì¹¸ë“¤???œìž‘?ìœ¼ë¡??ì— ?½ìž…
     for (int y = 0; y < COLS; ++y) {
         if (board[0][y].ball != nullptr && board[0][y].ball->GetBallState()==eBallState::Idle)
-        {           // 공이 ?�는 칸만 ?�작
+        {           // ê³µì´ ?ˆëŠ” ì¹¸ë§Œ ?œìž‘
             visited[0][y] = true;
             q.push({ 0, y });               // (y,x)
         }
     }
 
-    // 2) BFS: 공이 ?�는 칸들?�리�??�결???�색
+    // 2) BFS: ê³µì´ ?ˆëŠ” ì¹¸ë“¤?¼ë¦¬ë§??°ê²°???ìƒ‰
     const int dx[4] = { 1, -1, 0, 0 };
     const int dy[4] = { 0, 0, 1, -1 };
 
@@ -101,7 +100,7 @@ std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
         }
     }
 
-    // 3) 방문?��? ?��? �?=루트 미연�?�??�집
+    // 3) ë°©ë¬¸?˜ì? ?Šì? ê³?=ë£¨íŠ¸ ë¯¸ì—°ê²?ë§??˜ì§‘
     for (int x = 0; x < ROWS; ++x) {
         for (int y = 0; y < COLS; ++y) {
             if (board[x][y].ball != nullptr && !visited[x][y]) {
@@ -113,7 +112,6 @@ std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
     return floating;
 }
 
-
 void InGameScene::Start()
 {
     playerarrow.Initialize(*renderer);
@@ -123,14 +121,14 @@ void InGameScene::Start()
 
     ShotBall = nullptr;
 
-  BallQueue = std::queue<Ball*>(); // ?�류가 ?�는 �?
+  BallQueue = std::queue<Ball*>(); // ?¤ë¥˜ê°€ ?˜ëŠ” ì¤?
     //std::queue<Ball*> qTemp;
   for(int i = 0; i < 2; ++i)
   {
       Ball* ball = new Ball;
       ball->Initialize(*renderer);
       ball->SetRadius(0.11f);
-  ball->SetWorldPosition({ 0.0f - (i * 0.22f), -0.9f, 0.0f});
+      ball->SetWorldPosition({ 0.0f - (i * 0.22f), -0.9f, 0.0f});
       BallQueue.push(ball);
 	}
   
@@ -145,7 +143,7 @@ void InGameScene::Start()
    }
 
 
-   // ?�시 ?�벨(0,4)
+   // ?„ì‹œ ?ˆë²¨(0,4)
    Ball* temp= new Ball;
    board[0][4].ball = temp;
    board[0][4].ball->Initialize(*renderer);
@@ -160,7 +158,6 @@ void InGameScene::Start()
 
 void InGameScene::Update(float deltaTime)
 {
-    // ?�력�?, ?�재�?개수 차이?�라 ??�� or ?�성
     playerarrow.Update(*renderer);
 
     for (int i = 0;i < ROWS; ++i)
@@ -170,9 +167,6 @@ void InGameScene::Update(float deltaTime)
             if (board[i][j].ball != nullptr)
             {
                 board[i][j].ball->Update(*renderer);
-
-                // ?�기???�태기반 if �??�어가?�함
-
             }
         }
     }
@@ -183,28 +177,38 @@ void InGameScene::Update(float deltaTime)
         {
             if (board[i][j].ball != nullptr && board[i][j].ball->GetBallState() != eBallState::Idle)
             {
-                SAFE_DELETE(board[i][j].ball);
-                board[i][j].ball = nullptr;
+                if (board[i][j].ball->GetBallState() == eBallState::Fallen)
+                {
+                    FVector3 pos = board[i][j].ball->GetWorldPosition();
+                    if (pos.x <= -1 || pos.x >= 1 || pos.y <= -1)
+                    {
+                        SAFE_DELETE(board[i][j].ball);
+                        board[i][j].ball = nullptr;
+                    }
+                }
+                else
+                {
+                    board[i][j].ball->SetBallState(eBallState::Fallen);
+                    board[i][j].ball->SetIsGravity(true);
+                }
             }
 
-            //?�기??모두 false처리
             board[i][j].bEnable = false;
         }
     }
 
 
-
-    // 1�?true 처리
+    // 1ì°?true ì²˜ë¦¬
     for (int i = 0;i < ROWS; ++i)
     {
         for (int j = 0;j < COLS; ++j)
         {
-            if (board[i][j].ball != nullptr) // 공이 ?�다�?
+            if (board[i][j].ball != nullptr) // ê³µì´ ?ˆë‹¤ë©?
             {
                 const int dx[4] = { 1, -1, 0, 0 };
                 const int dy[4] = { 0, 0, 1, -1 };
 
-                //?�효??검??
+                //? íš¨??ê²€??
                 for (int k = 0;k < 4;++k)
                 {
                     const int nx = i + dx[k];
@@ -221,7 +225,7 @@ void InGameScene::Update(float deltaTime)
         }
     }
 
-    // 2�?벽면처리
+    // 2ì°?ë²½ë©´ì²˜ë¦¬
     for (int i = 0;i < COLS; ++i)
     {
         if (board[0][i].ball == nullptr)
@@ -229,7 +233,6 @@ void InGameScene::Update(float deltaTime)
             board[0][i].bEnable = true;
         }
     }
-
 
 	BallQueue.back()->Update(*renderer);
 	BallQueue.front()->Update(*renderer);
@@ -247,7 +250,7 @@ void InGameScene::LateUpdate(float deltaTime)
     {
         int bGameClear = 2;
 
-        // 게임 ?�버 검?�하�?
+        // ê²Œìž„ ?¤ë²„ ê²€?¬í•˜ê¸?
         for (int i = 0;i < COLS;++i)
         {
             if (board[6][i].ball != nullptr)
@@ -280,18 +283,18 @@ void InGameScene::LateUpdate(float deltaTime)
     }
     FVector3 ShotBallPosition = ShotBall->GetWorldPosition();
     FVector3 ShotBallVelocity = ShotBall->GetVelocity();
-    int dy = std::round((ShotBallPosition.x + 1) / 2.0f * static_cast<float>(COLS - 1)); // ?�차??배열??가�?(�?번째)
-    int dx = ROWS - 2 - std::round((ShotBallPosition.y + 1) / 2.0f * static_cast<float>(ROWS - 1)); // ?�차??배열???�로 (??번째)
+    int dy = std::round((ShotBallPosition.x + 1) / 2.0f * static_cast<float>(COLS - 1)); // ?´ì°¨??ë°°ì—´??ê°€ë¡?(ì²?ë²ˆì§¸)
+    int dx = ROWS - 2 - std::round((ShotBallPosition.y + 1) / 2.0f * static_cast<float>(ROWS - 1)); // ?´ì°¨??ë°°ì—´???¸ë¡œ (??ë²ˆì§¸)
     FVector3 NewVector = { (dy - 4) * 0.22F, (dx - 4) * - 0.22f, 0.0f };
 
-    //?�쪽 벽이???�았?�때
+    //?¼ìª½ ë²½ì´???¿ì•˜?„ë•Œ
     if (ShotBall && (ShotBallPosition.x - 0.11f <= -1.0f * ScreenUtil::GetAspectRatio()))
     {
         ShotBall->SetWorldPosition({ -ScreenUtil::GetAspectRatio() + 0.11f, ShotBallPosition.y, ShotBallPosition.z });
         ShotBall->SetVelocity({ -ShotBallVelocity.x, ShotBallVelocity.y, ShotBallVelocity.z });
     }
 
-    //?�른�?벽이???�았?�때
+    //?¤ë¥¸ìª?ë²½ì´???¿ì•˜?„ë•Œ
     if (ShotBall && (ShotBallPosition.x + 0.11f >= 1.0f * ScreenUtil::GetAspectRatio()))
     {
         ShotBall->SetWorldPosition({ ScreenUtil::GetAspectRatio() - 0.11f, ShotBallPosition.y, ShotBallPosition.z });
@@ -313,7 +316,7 @@ void InGameScene::LateUpdate(float deltaTime)
 
         for (int i = 0; i < 4; ++i)
         {
-            // ????�???4군데 검??
+            // ????ì¢???4êµ°ë° ê²€??
             const int nx = dx + cx[i];
             const int ny = dy + cy[i];
             
@@ -324,24 +327,8 @@ void InGameScene::LateUpdate(float deltaTime)
             }
         }
 
-        // 버블 ??�� ?�수 추�???�?
-            
-        /*
-        1. 같�??�상 찾기(dfs, bfs ?�무거나) ?�료구조(queue)???�기
-
-        1-1 ???�이즈�? ?�정 �?�� ?�하?�면 그냥 ?�과
-
-        1-2 ???�이즈�? ?�정 �?�� ?�상?�라�??�괴
-
-        2. 1-2가 만족?�면 추�? ?�괴 진행
-
-        
-        
-        */
-
-        // 1-2첫번�??�괴
-        std::vector<std::pair<int, int>> ResultDieVector = FindSameColorBalls({ dx,dy }, board[dx][dy].ball->GetBallColor());
-        if (ResultDieVector.size() >= 3)
+         std::vector<std::pair<int, int>> ResultDieVector = FindSameColorBalls({ dx,dy }, board[dx][dy].ball->GetBallColor());
+         if (ResultDieVector.size() >= 3)
         {
             for (auto& pos : ResultDieVector)
             {
@@ -349,17 +336,43 @@ void InGameScene::LateUpdate(float deltaTime)
             }
             
         }
-        // 2 ?�번�??�괴
+        // 2 ?ë²ˆì§??Œê´´
         std::vector<std::pair<int, int>> ResultFallenVector = FindFloatingBalls();
 
         for (auto& pos : ResultFallenVector)
         {
-            board[pos.first][pos.second].ball->SetBallState(eBallState::Fallen);
+            board[pos.first][pos.second].ball->SetBallState(eBallState::Die);
         }
 
+        // 0: ?¤ì‹œ?˜ê¸°, 1:ê²Œìž„?¤ë²„, 2:ê²Œìž„?´ë¦¬??
+        int bGameClear = 2;
+
+        // ê²Œìž„ ?¤ë²„ ê²€?¬í•˜ê¸?
+        for (int i = 0;i < COLS;++i)
+        {
+            if (board[6][i].ball != nullptr)
+            {
+                //?¬ê¸°??ê²Œìž„?¤ë²„ ?¤í–‰
+                bGameClear = 1;
+            }
+        }
+
+        
+
+        //ê²Œìž„ ?´ë¦¬??ê²€??
+        for (int i = 0;i < ROWS; ++i)
+        {
+            for (int j = 0;j < COLS; ++j)
+            {
+                if (board[i][j].ball != nullptr)
+                {
+                    bGameClear = 0;
+                }
+            }
+        }
     }
-    // 0: ?�시?�기, 1:게임?�버, 2:게임?�리??
-        // 0: �������� 1: ���� ���� 2: ���� Ŭ����
+    // 0: ?¤ì‹œ?˜ê¸°, 1:ê²Œìž„?¤ë²„, 2:ê²Œìž„?´ë¦¬??
+        // 0: °ÔÀÓÁö¼Ó 1: °ÔÀÓ ¿À¹ö 2: °ÔÀÓ Å¬¸®¾î
 
     
 }
@@ -370,17 +383,17 @@ void InGameScene::OnMessage(MSG msg)
     {
         if (msg.wParam == VK_LEFT)
         {
-            // 좌회??
+            // ì¢ŒíšŒ??
             playerarrow.SetDegree(-rotationDelta);
         }
         else if (msg.wParam == VK_RIGHT)
         {
-            // ?�회??
+            // ?°íšŒ??
             playerarrow.SetDegree(rotationDelta);
         }
         else if (msg.wParam == VK_SPACE)
         {
-            // 총알?�성
+            // ì´ì•Œ?ì„±
             //playerarrow.SetDegree(rotationDelta);
             if (ShotBall == nullptr)
             {
@@ -399,7 +412,7 @@ void InGameScene::OnMessage(MSG msg)
                 ball->SetWorldPosition({ 0.0f - 0.22f, -0.9f, 0.0f });
                 BallQueue.push(ball);
 
-                float speed = 0.02f; // ?�하???�도 �?
+                float speed = 0.02f; // ?í•˜???ë„ ê°?
                 ShotBall->SetVelocity({ -cosf(DirectX::XMConvertToRadians(playerarrow.GetDegree() + 90)) * speed,
                                         sinf(DirectX::XMConvertToRadians(playerarrow.GetDegree() + 90)) * speed,
                                         0.0f });
@@ -418,7 +431,7 @@ void InGameScene::OnGUI(HWND hWND)
     ImGui::Text("Hello Jungle World!");
     if (ImGui::Button("Quit this app"))
     {
-        // ?�재 ?�도?�에 Quit 메시지�?메시지 ?�로 보냄
+        // ?„ìž¬ ?ˆë„?°ì— Quit ë©”ì‹œì§€ë¥?ë©”ì‹œì§€ ?ë¡œ ë³´ëƒ„
         PostMessage(hWND, WM_QUIT, 0, 0);
     }
 }
@@ -427,7 +440,7 @@ void InGameScene::OnRender()
 {
     playerarrow.Render(*renderer);
 
-    //?�체 배열 ?�더
+    //?„ì²´ ë°°ì—´ ?Œë”
     for (int i = 0;i < ROWS; ++i)
     {
         for (int j = 0;j < COLS; ++j)
@@ -442,7 +455,7 @@ void InGameScene::OnRender()
     BallQueue.back()->Render(*renderer);
     BallQueue.front()->Render(*renderer);
 
-    //발사총알 ?�더
+    //ë°œì‚¬ì´ì•Œ ?Œë”
     if (ShotBall != nullptr)
     {
         ShotBall->Render(*renderer);
@@ -452,8 +465,8 @@ void InGameScene::OnRender()
 void InGameScene::Shutdown()
 {
     while (!BallQueue.empty()) {
-        Ball* b = BallQueue.front(); // �????�소 가?�오�?
-        BallQueue.pop();            // �????�소 ?�거
+        Ball* b = BallQueue.front(); // ë§????”ì†Œ ê°€?¸ì˜¤ê¸?
+        BallQueue.pop();            // ë§????”ì†Œ ?œê±°
 
         delete b;
     }

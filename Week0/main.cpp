@@ -27,6 +27,7 @@
 using namespace DirectX;
 
 #include "SceneManager.h"
+#include "TimeManager.h"
 #include "TitleScene.h"
 #include "PlayerArrow.h"
 
@@ -131,6 +132,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     double elapsedTime = 0.0;
 
     SceneManager* sceneManager = SceneManager::GetInstance();
+    TimeManager::GET_SINGLE()->Init();
     TitleScene* testScene = new TitleScene(&hWnd, &renderer);
     sceneManager->SetScene(testScene);
     
@@ -139,6 +141,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     {
         QueryPerformanceCounter(&startTime);
 
+        TimeManager::GET_SINGLE()->Update();
         sceneManager->Update(elapsedTime);
 
         MSG msg;

@@ -10,6 +10,7 @@ public:
 private:
     Ball(const Ball&);
     Ball& operator=(const Ball&);
+
 public:
     void Initialize(Renderer& renderer)override;
     void Update(Renderer& renderer) override;
@@ -25,6 +26,7 @@ public:
     inline eBallType            GetBallType()const { return BallType; }
     inline eBallColor           GetBallColor()const { return BallColor; }
     inline eBallState           GetBallState()const { return BallState; }
+    inline bool                 GetIsGravity()const { return bIsGravity; }
 
     //setter
     inline void                 SetWorldPosition(const FVector3& InNewPosition) { WorldPosition = InNewPosition; }
@@ -33,6 +35,8 @@ public:
     inline void                 SetMass(float newMass) { Mass = newMass; }
     inline void                 SetBallType(eBallType InBallType) { BallType = InBallType; }
     inline void                 SetBallState(eBallState InBallState) { BallState = InBallState; }
+     void                 SetBalllColor(eBallColor InBallColor);
+     void                 SetIsGravity(bool bIsActive);
 
 private:
     FVector3 Velocity{};
@@ -43,4 +47,6 @@ private:
     eBallColor BallColor{};
 
     eBallState BallState{};
+
+    bool bIsGravity = false;
 };

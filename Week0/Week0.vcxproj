@@ -167,7 +167,7 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="InGameScene.cpp" />
-
+    <ClCompile Include="TimeManager.cpp" />
     <ClCompile Include="TitleScene.cpp" />
 
   </ItemGroup>
@@ -204,7 +204,8 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="ScreenUtil.h" />
     <ClInclude Include="Sphere.h" />
-    <ClInclude Include="TitleScene.h" />    
+    <ClInclude Include="TimeManager.h" />
+    <ClInclude Include="TitleScene.h" />  
     <ClInclude Include="TextureSet.h" />
     <ClInclude Include="InGameScene.h" />
   </ItemGroup>
