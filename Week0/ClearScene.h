@@ -1,12 +1,19 @@
 #pragma once
 #pragma once
 #include "SceneManager.h"
+#include "Button.h"
+#include "Image.h"
 
-class TestScene2 : public Scene {
+class ClearScene : public Scene {
 private:
-
+	Image* logo;
+	Button* exitButton;
+	Button* playButton;
+	HWND* hWND;
 public:
-	TestScene2(Renderer* renderer) : Scene(renderer) {}
+	ClearScene(HWND* newhWND, Renderer* newRenderer) : Scene(newRenderer) {
+		hWND = newhWND;
+	}
 
 	void Start() override;
 	void Update(float deltaTime) override;

@@ -18,9 +18,9 @@ void Ball::Initialize(Renderer& renderer)
     unsigned int seed = static_cast<unsigned int>(seedTime.QuadPart);
     std::srand(seed);
 
-    eBallColor randomValue = static_cast<eBallColor>(std::rand() % 3);
+    BallColor = static_cast<eBallColor>(std::rand() % 3);
     std::wstring textureFileName;
-    switch (randomValue)
+    switch (BallColor)
     {
     case eBallColor::Red:
         textureFileName = L"assets/sprite.png";

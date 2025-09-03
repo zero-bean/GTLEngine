@@ -161,6 +161,7 @@ void Renderer::CreateTextureSampler()
     samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;                                                 
 
     Device->CreateSamplerState(&samplerDesc, &TextureSampler);
+    DeviceContext->PSSetSamplers(0, 1, &TextureSampler);
 }
 
 void Renderer::SetRenderingPipeline()
