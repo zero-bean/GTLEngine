@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# DirectXTK 폴더만 제외 (추적함)
+!/DirectXTK/Lib/Win32
+!/DirectXTK/Lib/x64
+
 # User-specific files
 *.rsuser
 *.suo
@@ -22,8 +26,6 @@ mono_crash.*
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
-x64/
-x86/
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
@@ -416,7 +418,3 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
-
-# DirectXTK 폴더만 제외 (추적함)
-!/DirectXTK/Lib/Win32
-!/DirectXTK/Lib/x64
