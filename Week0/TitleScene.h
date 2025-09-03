@@ -11,7 +11,7 @@ private:
 	Button* playButton;
 	HWND* hWND;
 public:
-	TitleScene(HWND* newhWND, Renderer* renderer) : Scene(renderer) {
+	TitleScene(HWND* newhWND, Renderer* newRenderer) : Scene(newRenderer) {
 		hWND = newhWND;
 	}
 

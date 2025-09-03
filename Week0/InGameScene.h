@@ -11,6 +11,7 @@ struct Board
 
 class InGameScene : public Scene {
 private:
+	HWND* hWND;
 	float rotationDeg = 0.0f;
 	float rotationDelta = 0.3f;
 	INT NumVerticesArrow;
@@ -33,7 +34,9 @@ private:
     std::vector<std::pair<int, int>> FindFloatingBalls();
 
 public:
-	InGameScene(Renderer * renderer): Scene(renderer){}
+	InGameScene(HWND * hWnd, Renderer * newRenderer): Scene(newRenderer){
+		hWND = hWnd;
+	}
 
 	void Start() override;
 	void Update(float deltaTime) override;

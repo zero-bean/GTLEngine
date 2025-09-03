@@ -167,10 +167,9 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="InGameScene.cpp" />
-    <ClCompile Include="InGameScene.h" />
     <ClCompile Include="TimeManager.cpp" />
     <ClCompile Include="TitleScene.cpp" />
-    <ClCompile Include="TextureSet.h" />
+
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
@@ -206,7 +205,9 @@
     <ClInclude Include="ScreenUtil.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="TimeManager.h" />
-    <ClInclude Include="TitleScene.h" />
+    <ClInclude Include="TitleScene.h" />  
+    <ClInclude Include="TextureSet.h" />
+    <ClInclude Include="InGameScene.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
