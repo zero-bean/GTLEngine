@@ -12,13 +12,15 @@ Ball::~Ball()
 }
 void Ball::Initialize(Renderer& renderer)
 {
-    // ball color ·£´ı »ı¼º
-    std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    BallColor = static_cast<eBallColor>(std::rand() % 3);
+    // ball color ëœë¤ ìƒì„±
+    LARGE_INTEGER seedTime;
+    QueryPerformanceCounter(&seedTime);
+    unsigned int seed = static_cast<unsigned int>(seedTime.QuadPart);
+    std::srand(seed);
 
-
-    std::wstring textureFileName; 
-    switch (BallColor)
+    eBallColor randomValue = static_cast<eBallColor>(std::rand() % 3);
+    std::wstring textureFileName;
+    switch (randomValue)
     {
     case eBallColor::Red:
         textureFileName = L"assets/sprite.png";
@@ -31,11 +33,11 @@ void Ball::Initialize(Renderer& renderer)
         break;
     }
 
-    // ÅØ½ºÃ³ ·Îµå
+    // í…ìŠ¤ì²˜ ë¡œë“œ
     TextureSet textureSet = renderer.LoadTextureSet(textureFileName.c_str());
     SetTextureSet(textureSet);
 
-    //¹öÅØ½º ¹öÆÛ ¼Â
+    //ë²„í…ìŠ¤ ë²„í¼ ì…‹
     NumVertices = sizeof(SphereVertices) / sizeof(FVertexSimple);
     D3D11_BUFFER_DESC vertexbufferdesc = {};
     vertexbufferdesc.ByteWidth = sizeof(SphereVertices);
@@ -44,15 +46,15 @@ void Ball::Initialize(Renderer& renderer)
     D3D11_SUBRESOURCE_DATA vertexbufferSRD = { SphereVertices };
     renderer.GetDevice()->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &VertexBuffer);
 
-    //»ó¼ö ¹öÆÛ ¼Â
+    //ìƒìˆ˜ ë²„í¼ ì…‹
     D3D11_BUFFER_DESC constantbufferdesc = {};
-    constantbufferdesc.ByteWidth = (sizeof(FConstants) + 0xf) & 0xfffffff0; // 16¹ÙÀÌÆ® Á¤·Ä
+    constantbufferdesc.ByteWidth = (sizeof(FConstants) + 0xf) & 0xfffffff0; // 16ë°”ì´íŠ¸ ì •ë ¬
     constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
     constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     renderer.GetDevice()->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
 
-    // º¯¼ö ¼³Á¤
+    // ë³€ìˆ˜ ì„¤ì •
     WorldPosition = { 0.0f, -0.9f, 0.0f };
     Scale = 0.11f;
     //Radius = 40.0f * (2.0f / 720.0f);
