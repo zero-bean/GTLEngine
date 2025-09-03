@@ -75,6 +75,9 @@
     <ClCompile Include="TestScene2.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="TextureSet.h">
+      <Filter>헤더 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
@@ -118,24 +121,6 @@
     <ClInclude Include="SceneManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="00.Renderer.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Ball.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="CollisionManager.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Define.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="ICollide.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Arrow.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -149,6 +134,27 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="TestScene2.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ICollide.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Define.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Ball.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="00.Renderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenUtil.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

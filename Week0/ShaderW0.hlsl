@@ -6,6 +6,7 @@ cbuffer constants : register(b0)
     float3 WorldPosition;
     float Scale;
     float4x4 rotation;
+    float aspectRatio;
 }
 
 // 텍스처와 샘플러 선언 (누락된 부분)
@@ -41,9 +42,10 @@ PS_INPUT mainVS(VS_INPUT input)
     float4 pos = input.position * Scale;
     pos = mul(rotation, float4(pos.xyz, 1.0f));
     float4 pos2 = float4(pos.xy, 0.0, 1.0);
-    output.position = float4(WorldPosition, 0) + pos2;
+    output.position = float4(WorldPosition, 0) + pos2; 
     
     //output.position = input.position;
+    output.position.x *= aspectRatio;
     output.tex = input.tex;
 
     return output;

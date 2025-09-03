@@ -1,5 +1,6 @@
 #include "TestScene.h"
 #include "ArrowVertices.h"
+#include "ScreenUtil.h"
 
 void TestScene::Start()
 {
@@ -53,16 +54,16 @@ void TestScene::LateUpdate(float deltaTime)
     }
 
     //¿ÞÂÊ º®ÀÌ¶û ´ê¾ÒÀ»¶§
-    if (ShotBall && (ShotBallPosition.x - 0.11f <= -1.0f))
+    if (ShotBall && (ShotBallPosition.x - 0.11f <= -1.0f * ScreenUtil::GetAspectRatio()))
     {
-        ShotBall->SetWorldPosition({ -0.89f, ShotBallPosition.y, ShotBallPosition.z });
+        ShotBall->SetWorldPosition({ -ScreenUtil::GetAspectRatio() + 0.11f, ShotBallPosition.y, ShotBallPosition.z });
         ShotBall->SetVelocity({ -ShotBallVelocity.x, ShotBallVelocity.y, ShotBallVelocity.z });
     }
 
     //¿À¸¥ÂÊ º®ÀÌ¶û ´ê¾ÒÀ»¶§
-    if (ShotBall && (ShotBallPosition.x + 0.11f >= 1.0f))
+    if (ShotBall && (ShotBallPosition.x + 0.11f >= 1.0f * ScreenUtil::GetAspectRatio()))
     {
-        ShotBall->SetWorldPosition({ 0.89f, ShotBallPosition.y, ShotBallPosition.z });
+        ShotBall->SetWorldPosition({ ScreenUtil::GetAspectRatio() - 0.11f, ShotBallPosition.y, ShotBallPosition.z });
         ShotBall->SetVelocity({ -ShotBallVelocity.x, ShotBallVelocity.y, ShotBallVelocity.z });
     }
 

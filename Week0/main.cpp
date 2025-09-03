@@ -9,6 +9,7 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include "ScreenUtil.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_internal.h"
@@ -89,7 +90,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     WNDCLASSW wndclass = { 0, WndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
     RegisterClassW(&wndclass);
     HWND hWnd = CreateWindowExW(0, WindowClass, Title, WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024,
+        CW_USEDEFAULT, CW_USEDEFAULT, SCREEN_WIDTH, SCREEN_HEIGHT,
         nullptr, nullptr, hInstance, nullptr);
 
 
