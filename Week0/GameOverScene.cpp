@@ -11,7 +11,7 @@ void GameOverScene::Start()
     playButton->Initialize(*renderer);
     playButton->SetWorldPosition(FVector3(0, -0.2f, 0));
     playButton->SetCallback([this]() {
-        SceneManager::GetInstance()->SetScene(new InGameScene(renderer));
+        SceneManager::GetInstance()->SetScene(new InGameScene(hWND, renderer));
         });
     exitButton = new Button(L"assets/exit.png", { 0.25f, 0.0625f });
     exitButton->Initialize(*renderer);
@@ -58,7 +58,7 @@ void GameOverScene::OnGUI(HWND hWND)
     ImGui::Text("Hello Jungle World!");
     if (ImGui::Button("Start Game"))
     {
-        SceneManager::GetInstance()->SetScene(new InGameScene(renderer));
+        SceneManager::GetInstance()->SetScene(new InGameScene(&hWND, renderer));
     }
 }
 

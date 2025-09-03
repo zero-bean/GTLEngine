@@ -11,6 +11,7 @@ struct Board
 
 class InGameScene : public Scene {
 private:
+	HWND* hWND;
 	float rotationDeg = 0.0f;
 	float rotationDelta = 0.3f;
 	INT NumVerticesArrow;
@@ -37,7 +38,9 @@ private:
     
 
 public:
-	InGameScene(Renderer * renderer): Scene(renderer){}
+	InGameScene(HWND * hWnd, Renderer * renderer): Scene(renderer){
+		hWND = hWnd;
+	}
 
 	void Start() override;
 	void Update(float deltaTime) override;

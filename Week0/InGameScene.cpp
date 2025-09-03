@@ -1,6 +1,8 @@
 #include "InGameScene.h"
 #include "ArrowVertices.h"
 #include "ScreenUtil.h"
+#include "GameOverScene.h"
+#include "ClearScene.h"
 
 inline bool InGameScene::IsInRange(const int x, const int y) const
 {
@@ -307,8 +309,8 @@ void InGameScene::LateUpdate(float deltaTime)
         */
 
         // 1-2ì²«ë²ˆì§??Œê´´
-         std::vector<std::pair<int, int>> ResultDieVector = FindSameColorBalls({ dx,dy }, board[dx][dy].ball->GetBallColor());
-         if (ResultDieVector.size() >= 3)
+        std::vector<std::pair<int, int>> ResultDieVector = FindSameColorBalls({ dx,dy }, board[dx][dy].ball->GetBallColor());
+        if (ResultDieVector.size() >= 3)
         {
             for (auto& pos : ResultDieVector)
             {
@@ -335,6 +337,7 @@ void InGameScene::LateUpdate(float deltaTime)
             {
                 //?¬ê¸°??ê²Œìž„?¤ë²„ ?¤í–‰
                 bGameClear = 1;
+                SceneManager::GetInstance()->SetScene(new GameOverScene(hWND, renderer));
             }
         }
 
