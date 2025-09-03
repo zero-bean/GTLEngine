@@ -23,6 +23,8 @@ public:
     inline float                GetRadius()const { return Radius; }
     inline float                GetMass()const { return Mass; }
     inline eBallType            GetBallType()const { return BallType; }
+    inline eBallColor           GetBallColor()const { return BallColor; }
+    inline eBallState           GetBallState()const { return BallState; }
 
     //setter
     inline void                 SetWorldPosition(const FVector3& InNewPosition) { WorldPosition = InNewPosition; }
@@ -30,13 +32,15 @@ public:
     inline void                 SetRadius(float newRadius) { Radius = newRadius; }
     inline void                 SetMass(float newMass) { Mass = newMass; }
     inline void                 SetBallType(eBallType InBallType) { BallType = InBallType; }
-
+    inline void                 SetBallState(eBallState InBallState) { BallState = InBallState; }
 
 private:
     FVector3 Velocity{};
-    eBallType BallType;
+    eBallType BallType{};
     float Radius{};
     float Mass{ 100.0f };
     float RotationDeg = 0.0f;
-    eBallColor BallColor;
+    eBallColor BallColor{};
+
+    eBallState BallState{};
 };
