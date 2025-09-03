@@ -12,6 +12,18 @@ void TestScene::Start()
 
     ShotBall = nullptr;
 
+	BallQueue = std::queue<Ball*>(); // 오류가 나는 줄
+    //std::queue<Ball*> qTemp;
+    for(int i = 0; i < 2; ++i)
+    {
+        Ball* ball = new Ball;
+        ball->Initialize(*renderer);
+        ball->SetRadius(0.11f);
+		ball->SetWorldPosition({ 0.0f - (i * 0.22f), -0.9f, 0.0f});
+        BallQueue.push(ball);
+	}
+
+
     for (int i = 0;i < ROWS; ++i)
     {
         for (int j = 0;j < COLS; ++j)
@@ -37,6 +49,8 @@ void TestScene::Update(float deltaTime)
         }
     }
 
+	BallQueue.back()->Update(*renderer);
+	BallQueue.front()->Update(*renderer);
 
 
     if (ShotBall != nullptr)
@@ -119,9 +133,20 @@ void TestScene::OnMessage(MSG msg)
             //playerarrow.SetDegree(rotationDelta);
             if (ShotBall == nullptr)
             {
-                ShotBall = new Ball;
+                /*ShotBall = new Ball;
                 ShotBall->Initialize(*renderer);
-                ShotBall->SetRadius(0.11f);
+                ShotBall->SetRadius(0.11f);*/
+
+				ShotBall = BallQueue.front();
+				BallQueue.pop();
+
+                BallQueue.front()->SetWorldPosition({ 0.0f, -0.9f, 0.0f });
+
+                Ball* ball = new Ball;
+                ball->Initialize(*renderer);
+                ball->SetRadius(0.11f);
+                ball->SetWorldPosition({ 0.0f - 0.22f, -0.9f, 0.0f });
+                BallQueue.push(ball);
 
                 float speed = 0.02f; // 원하는 속도 값
                 ShotBall->SetVelocity({ -cosf(DirectX::XMConvertToRadians(playerarrow.GetDegree() + 90)) * speed,
@@ -163,6 +188,9 @@ void TestScene::OnRender()
         }
     }
 
+    BallQueue.back()->Render(*renderer);
+    BallQueue.front()->Render(*renderer);
+
     //발사총알 렌더
     if (ShotBall != nullptr)
     {
@@ -172,4 +200,10 @@ void TestScene::OnRender()
 
 void TestScene::Shutdown()
 {
+    while (!BallQueue.empty()) {
+        Ball* b = BallQueue.front(); // 맨 앞 요소 가져오기
+        BallQueue.pop();            // 맨 앞 요소 제거
+
+        delete b;
+    }
 }

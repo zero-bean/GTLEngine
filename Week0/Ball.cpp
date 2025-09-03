@@ -12,8 +12,25 @@ Ball::~Ball()
 }
 void Ball::Initialize(Renderer& renderer)
 {
+    // ball color 랜덤 생성
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    eBallColor randomValue = static_cast<eBallColor>(std::rand() % 3);
+    std::wstring textureFileName;
+    switch (randomValue)
+    {
+    case eBallColor::Red:
+        textureFileName = L"assets/sprite.png";
+        break;
+    case eBallColor::Green:
+        textureFileName = L"assets/spriteG.png";
+        break;
+    case eBallColor::Blue:
+        textureFileName = L"assets/spriteB.png";
+        break;
+    }
+
     // 텍스처 로드
-    TextureSet textureSet = renderer.LoadTextureSet(L"assets/sprite.png");
+    TextureSet textureSet = renderer.LoadTextureSet(textureFileName.c_str());
     SetTextureSet(textureSet);
 
     //버텍스 버퍼 셋

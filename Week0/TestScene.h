@@ -15,10 +15,11 @@ private:
 	Ball* balls[ROWS][COLS] = {};
 
 	Ball* ShotBall{};
+	std::queue<Ball*> BallQueue;
 
 
 public:
-	TestScene(Renderer * renderer): Scene(renderer){}
+	TestScene(Renderer* renderer) : Scene(renderer){}
 
 	void Start() override;
 	void Update(float deltaTime) override;
