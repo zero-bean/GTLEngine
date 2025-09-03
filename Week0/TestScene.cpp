@@ -26,11 +26,26 @@ void TestScene::Update(float deltaTime)
     // 입력볼 , 현재볼 개수 차이따라 삭제 or 생성
     playerarrow.Update(*renderer);
 
+    for (int i = 0;i < ROWS; ++i)
+    {
+        for (int j = 0;j < COLS; ++j)
+        {
+            if (balls[i][j] != nullptr)
+            {
+                balls[i][j]->Update(*renderer);
+            }
+        }
+    }
+
+
+
     if (ShotBall != nullptr)
     {
         ShotBall->Update(*renderer);
     }
 }
+
+
 
 void TestScene::LateUpdate(float deltaTime)
 {
@@ -41,15 +56,28 @@ void TestScene::LateUpdate(float deltaTime)
     FVector3 ShotBallPosition = ShotBall->GetWorldPosition();
     FVector3 ShotBallVelocity = ShotBall->GetVelocity();
 
+
+
+
     //천장접촉
-    if (ShotBallPosition.y + 0.11f >= 1)
+    if (ShotBallPosition.y + 0.11f > 1.0f)
     {
         int dx = std::round((ShotBallPosition.x + 1) / 2.0f * static_cast<float>(COLS - 1));
+
+        ShotBall->SetVelocity({ 0,0,0 });
+
+        //FVector3 NewVector = { 2.0f * static_cast<float>(dx) / static_cast<float>(COLS - 1) - 1.0f, 0.89f, 0.0f };
+        FVector3 NewVector = { (dx -4) * 0.22F, 0.89f, 0.0f };
+
+
+        ShotBall->SetWorldPosition(NewVector);
+        ShotBall->SetBallType(eBallType::Static);
+
         balls[0][dx] = ShotBall;
 
-        balls[0][dx]->SetVelocity({ 0,0,0 });
-        balls[0][dx]->SetWorldPosition({ 2.0f * static_cast<float>(dx) / 8.0f - 1.0f, 0.89f, 0.0f });
-        balls[0][dx]->SetBallType(eBallType::Static);
+        //balls[0][dx]->SetVelocity({ 0,0,0 });
+        //balls[0][dx]->SetWorldPosition({ 2.0f * static_cast<float>(dx) / 8.0f - 1.0f, 0.89f, 0.0f });
+        //balls[0][dx]->SetBallType(eBallType::Static);
         ShotBall = nullptr;
     }
 
