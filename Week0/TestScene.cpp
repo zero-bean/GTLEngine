@@ -2,6 +2,11 @@
 #include "ArrowVertices.h"
 #include "ScreenUtil.h"
 
+inline bool TestScene::IsInRange(const int x, const int y) const
+{
+    return (x >= 0 && x < ROWS && y >= 0 && y < COLS);
+}
+
 void TestScene::Start()
 {
     playerarrow.Initialize(*renderer);
@@ -9,16 +14,32 @@ void TestScene::Start()
     NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);
     arrowVertexBuffer = renderer->CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
 
-
     ShotBall = nullptr;
 
-    for (int i = 0;i < ROWS; ++i)
-    {
-        for (int j = 0;j < COLS; ++j)
-        {
-           balls[i][j] = nullptr;  
-        }
-    }
+   for (int i = 0;i < ROWS; ++i)
+   {
+       for (int j = 0;j < COLS; ++j)
+       {
+          
+           board[i][j].ball = nullptr;
+           board[i][j].bEnable = false;
+       }
+   }
+
+
+   // 임시 레벨(0,4)
+   Ball* temp= new Ball;
+   board[0][4].ball = temp;
+   board[0][4].ball->Initialize(*renderer);
+   board[0][4].ball->SetWorldPosition({ 0.0f, 0.89f, 0.0f });
+
+
+    for (int i = 0; i < COLS; ++i)
+        board[0][i].bEnable = true;
+    board[0][4].bEnable = false;
+    board[1][4].bEnable = true;
+
+     
 }
 
 void TestScene::Update(float deltaTime)
@@ -30,9 +51,9 @@ void TestScene::Update(float deltaTime)
     {
         for (int j = 0;j < COLS; ++j)
         {
-            if (balls[i][j] != nullptr)
+            if (board[i][j].ball != nullptr)
             {
-                balls[i][j]->Update(*renderer);
+                board[i][j].ball->Update(*renderer);
             }
         }
     }
@@ -55,31 +76,9 @@ void TestScene::LateUpdate(float deltaTime)
     }
     FVector3 ShotBallPosition = ShotBall->GetWorldPosition();
     FVector3 ShotBallVelocity = ShotBall->GetVelocity();
-
-
-
-
-    //천장접촉
-    if (ShotBallPosition.y + 0.11f > 1.0f)
-    {
-        int dx = std::round((ShotBallPosition.x + 1) / 2.0f * static_cast<float>(COLS - 1));
-
-        ShotBall->SetVelocity({ 0,0,0 });
-
-        //FVector3 NewVector = { 2.0f * static_cast<float>(dx) / static_cast<float>(COLS - 1) - 1.0f, 0.89f, 0.0f };
-        FVector3 NewVector = { (dx -4) * 0.22F, 0.89f, 0.0f };
-
-
-        ShotBall->SetWorldPosition(NewVector);
-        ShotBall->SetBallType(eBallType::Static);
-
-        balls[0][dx] = ShotBall;
-
-        //balls[0][dx]->SetVelocity({ 0,0,0 });
-        //balls[0][dx]->SetWorldPosition({ 2.0f * static_cast<float>(dx) / 8.0f - 1.0f, 0.89f, 0.0f });
-        //balls[0][dx]->SetBallType(eBallType::Static);
-        ShotBall = nullptr;
-    }
+    int dy = std::round((ShotBallPosition.x + 1) / 2.0f * static_cast<float>(COLS - 1)); // 이차원 배열의 가로 (첫 번째)
+    int dx = ROWS - 2 - std::round((ShotBallPosition.y + 1) / 2.0f * static_cast<float>(ROWS - 1)); // 이차원 배열의 세로 (두 번째)
+    FVector3 NewVector = { (dy - 4) * 0.22F, (dx - 4) * - 0.22f, 0.0f };
 
     //왼쪽 벽이랑 닿았을때
     if (ShotBall && (ShotBallPosition.x - 0.11f <= -1.0f * ScreenUtil::GetAspectRatio()))
@@ -95,8 +94,36 @@ void TestScene::LateUpdate(float deltaTime)
         ShotBall->SetVelocity({ -ShotBallVelocity.x, ShotBallVelocity.y, ShotBallVelocity.z });
     }
 
+    if(board[dx][dy].bEnable == true)
+    { 
+        ShotBall->SetVelocity({ 0,0,0 });
+        ShotBall->SetWorldPosition(NewVector);
+
+        board[dx][dy].ball = ShotBall;
+        board[dx][dy].bEnable = false;
+        ShotBall = nullptr;
 
 
+        const int cx[4] = { 1,-1,0,0 };
+        const int cy[4] = { 0,0,1,-1 };
+
+        for (int i = 0; i < 4; ++i)
+        {
+            // 상 하 좌 우 4군데 검사
+            const int nx = dx + cx[i];
+            const int ny = dy + cy[i];
+            
+            if (IsInRange(nx, ny))
+            {
+                if (board[nx][ny].bEnable == false && board[nx][ny].ball == nullptr)
+                    board[nx][ny].bEnable = true;
+            }
+        }
+
+        // 버블 삭제 함수 추가할 것
+    
+        // 게임 오버 검사하기
+    }
 }
 
 void TestScene::OnMessage(MSG msg)
@@ -156,9 +183,9 @@ void TestScene::OnRender()
     {
         for (int j = 0;j < COLS; ++j)
         {
-            if (balls[i][j] != nullptr)
+            if (board[i][j].ball !=  nullptr)
             {
-                balls[i][j]->Render(*renderer);
+                board[i][j].ball->Render(*renderer);
             }
         }
     }

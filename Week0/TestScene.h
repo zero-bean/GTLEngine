@@ -3,6 +3,14 @@
 #include "PlayerArrow.h"
 #include "Ball.h"
 
+
+struct Board
+{
+	Ball* ball = nullptr;
+	bool bEnable = false;
+};
+
+
 class TestScene : public Scene {
 private:
 	float rotationDeg = 0.0f;
@@ -12,10 +20,11 @@ private:
 
 	PlayerArrow playerarrow;
 
-	Ball* balls[ROWS][COLS] = {};
+	Board board[ROWS][COLS] = {};
 
 	Ball* ShotBall{};
 
+	inline bool IsInRange(const int x, const int y) const;
 
 public:
 	TestScene(Renderer * renderer): Scene(renderer){}
