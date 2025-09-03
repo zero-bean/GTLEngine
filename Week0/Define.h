@@ -1,5 +1,8 @@
 #pragma once
 
+#define ROWS 12
+#define COLS 9
+
 
 struct FVector3
 {

@@ -15,7 +15,7 @@ PlayerArrow::~PlayerArrow()
 void PlayerArrow::Initialize(Renderer& renderer)
 {
     // 텍스처 로드
-    TextureSet textureSet = renderer.LoadTextureSet(L"assets/sprite.png");
+    TextureSet textureSet = renderer.LoadTextureSet(L"assets/sprite2.png");
     SetTextureSet(textureSet);
 
     //버텍스 버퍼 셋
@@ -49,6 +49,8 @@ void PlayerArrow::Initialize(Renderer& renderer)
 void PlayerArrow::Update(Renderer& renderer)
 {
     renderer.UpdateConstant(ConstantBuffer, WorldPosition, Scale, RotationDeg);
+
+    //std::cout << RotationDeg << std::endl;
 }
 
 void PlayerArrow::Render(Renderer& renderer)

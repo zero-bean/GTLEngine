@@ -56,5 +56,9 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     // Sample the pixel color from the texture using the sampler at this texture coordinate location.
     textureColor = shaderTexture.Sample(SampleType, input.tex);
     //return color * input.color * textureColor;
+    
+    // 알파 테스트 (옵션)
+    if (textureColor.a < 0.01f)
+        discard;
     return textureColor;
 }
