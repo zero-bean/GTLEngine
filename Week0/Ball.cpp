@@ -13,7 +13,11 @@ Ball::~Ball()
 void Ball::Initialize(Renderer& renderer)
 {
     // ball color ·£´ý »ý¼º
-    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    LARGE_INTEGER seedTime;
+    QueryPerformanceCounter(&seedTime);
+    unsigned int seed = static_cast<unsigned int>(seedTime.QuadPart);
+    std::srand(seed);
+
     eBallColor randomValue = static_cast<eBallColor>(std::rand() % 3);
     std::wstring textureFileName;
     switch (randomValue)
