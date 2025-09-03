@@ -11,7 +11,7 @@ private:
 	Button* playButton;
 	HWND* hWND;
 public:
-	ClearScene(HWND* newhWND, Renderer* renderer) : Scene(renderer) {
+	ClearScene(HWND* newhWND, Renderer* newRenderer) : Scene(newRenderer) {
 		hWND = newhWND;
 	}
 

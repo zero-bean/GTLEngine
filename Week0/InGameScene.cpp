@@ -333,11 +333,12 @@ void InGameScene::LateUpdate(float deltaTime)
         // ê²Œìž„ ?¤ë²„ ê²€?¬í•˜ê¸?
         for (int i = 0;i < COLS;++i)
         {
-            if (board[6][i].ball != nullptr)
+            if (board[6][i].ball != nullptr && bGameClear == 2)
             {
                 //?¬ê¸°??ê²Œìž„?¤ë²„ ?¤í–‰
                 bGameClear = 1;
                 SceneManager::GetInstance()->SetScene(new GameOverScene(hWND, renderer));
+                break;
             }
         }
 
@@ -348,9 +349,10 @@ void InGameScene::LateUpdate(float deltaTime)
         {
             for (int j = 0;j < COLS; ++j)
             {
-                if (board[i][j].ball != nullptr)
+                if (board[i][j].ball != nullptr && bGameClear == 2)
                 {
                     bGameClear = 0;
+                    break;
                 }
             }
         }

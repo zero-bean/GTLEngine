@@ -4,7 +4,7 @@
 void GameOverScene::Start()
 {
     logo = new Image(L"assets/gameover_team.png", { 0.75f, 1.0f });
-    logo->Initialize(*renderer);
+      logo->Initialize(*renderer);
     logo->SetWorldPosition(FVector3(0, 0, 0));
 
     playButton = new Button(L"assets/reset.png", { 0.25f, 0.0625f });

@@ -17,7 +17,7 @@ Button::~Button()
 void Button::Initialize(Renderer& renderer)
 {
     // 텍스처 로드
-    TextureSet textureSet = renderer.LoadTextureSet(imagePath);
+      TextureSet textureSet = renderer.LoadTextureSet(imagePath);
     SetTextureSet(textureSet);
 
     FVertexSimple ButtonVertices[] = {

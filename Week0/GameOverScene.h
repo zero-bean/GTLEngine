@@ -11,7 +11,7 @@ private:
 	Button* playButton;
 	HWND* hWND;
 public:
-	GameOverScene(HWND* newhWND, Renderer* renderer) : Scene(renderer) {
+	GameOverScene(HWND* newhWND, Renderer* newRenderer) : Scene(newRenderer) {
 		hWND = newhWND;
 	}
 

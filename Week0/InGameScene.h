@@ -38,7 +38,7 @@ private:
     
 
 public:
-	InGameScene(HWND * hWnd, Renderer * renderer): Scene(renderer){
+	InGameScene(HWND * hWnd, Renderer * newRenderer): Scene(newRenderer){
 		hWND = hWnd;
 	}
 

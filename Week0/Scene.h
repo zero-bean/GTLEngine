@@ -7,7 +7,7 @@ class Scene
 protected:
 	Renderer* renderer;
 public:
-	Scene(Renderer* newRenderer) { renderer = newRenderer; }
+   	Scene(Renderer* newRenderer) { renderer = std::move(newRenderer); }
 	virtual ~Scene() = default;
 
 	virtual void Start() = 0;
