@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "TextureSet.h"
 
 class Renderer
 {
@@ -23,6 +24,7 @@ public:
 
     //버텍스 버퍼는 생성보류
     ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth);
+    TextureSet LoadTextureSet(const wchar_t* filename);
 
     //Update
     void UpdateConstant(ID3D11Buffer* InConstantBuffer, const FVector3& InWorldPosition, float InScale, float rotationZDeg);
@@ -41,6 +43,7 @@ private:
     void CreateRasterizerState();
     //void CreateConstantBuffer();
     void CreateShader();
+    void CreateTextureSampler();
     void SetRenderingPipeline();
 
 
@@ -52,10 +55,7 @@ private:
     void ReleaseRasterizerState(); // rs
     void ReleaseFrameBuffer(); // fb, rtv
     void ReleaseDeviceAndSwapChain();
-
-    
-    
-    
+    void ReleaseTextureSampler();
 
 private:
     // 24
@@ -74,6 +74,7 @@ private:
     IDXGISwapChain* SwapChain = nullptr;
     ID3D11Texture2D* FrameBuffer = nullptr;
     ID3D11RenderTargetView* FrameBufferRTV = nullptr;
+    ID3D11SamplerState* TextureSampler = nullptr;
     //ID3D11Buffer* VertexBuffer = nullptr;
     //ID3D11Buffer* ConstantBuffer = nullptr;
 

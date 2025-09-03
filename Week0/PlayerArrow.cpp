@@ -1,5 +1,6 @@
 #include "PlayerArrow.h"
 #include "Arrow.h"
+#include "Renderer.h"
 
 PlayerArrow::PlayerArrow()
 {
@@ -11,8 +12,12 @@ PlayerArrow::~PlayerArrow()
 }
 
 
-void PlayerArrow::Initialize(const Renderer& renderer)
+void PlayerArrow::Initialize(Renderer& renderer)
 {
+    // 텍스처 로드
+    TextureSet textureSet = renderer.LoadTextureSet(L"assets/sprite.png");
+    SetTextureSet(textureSet);
+
     //버텍스 버퍼 셋
     NumVertices = sizeof(ArrowVertices) / sizeof(FVertexSimple);
 
@@ -48,6 +53,7 @@ void PlayerArrow::Update(Renderer& renderer)
 
 void PlayerArrow::Render(Renderer& renderer)
 {
+    BindTexture(renderer.GetDeviceContext(), 0);
     renderer.Render(ConstantBuffer, VertexBuffer, NumVertices);
 }
 

@@ -11,7 +11,7 @@ private:
     Ball(const Ball&);
     Ball& operator=(const Ball&);
 public:
-    void Initialize(const Renderer& renderer)override;
+    void Initialize(Renderer& renderer)override;
     void Update(Renderer& renderer) override;
     void Render(Renderer& renderer) override;
     void Release() override;

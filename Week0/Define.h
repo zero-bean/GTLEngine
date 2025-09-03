@@ -25,6 +25,7 @@ struct FVertexSimple
 {
     float x, y, z;
     float r, g, b, a;
+    float u, v;
 };
 
 // ฐ๘ ป๓ลย

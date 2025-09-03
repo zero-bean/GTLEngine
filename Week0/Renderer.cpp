@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "TextureSet.h"
 
 using namespace DirectX;
 
@@ -45,6 +46,7 @@ void Renderer::Release()
     ReleaseRasterizerState(); // rs
     ReleaseFrameBuffer(); // fb, rtv
     ReleaseDeviceAndSwapChain();
+    ReleaseTextureSampler();
 }
 
 
@@ -132,14 +134,32 @@ void Renderer::CreateShader()
     {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
 
-    Device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), &SimpleInputLayout);
+    Device->CreateInputLayout(layout, ARRAYSIZE(layout), 
+        vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), &SimpleInputLayout);
 
     Stride = sizeof(FVertexSimple);
 
     vertexshaderCSO->Release();
     pixelshaderCSO->Release();
+}
+
+void Renderer::CreateTextureSampler()
+{
+    D3D11_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.MipLODBias = 0.0f;
+    samplerDesc.MaxAnisotropy = 1;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    Device->CreateSamplerState(&samplerDesc, &TextureSampler);
 }
 
 void Renderer::SetRenderingPipeline()
@@ -201,6 +221,9 @@ void Renderer::InitializeAndSetPipeline()
     // vs, ps, InputLayout 생성
     CreateShader();
 
+    // Texture Sampler 생성
+    CreateTextureSampler();
+
     // 파이프라인에 인피니티 스톤박듯이 과정대로 셋
     SetRenderingPipeline();
 }
@@ -219,6 +242,35 @@ ID3D11Buffer* Renderer::CreateVertexBuffer(FVertexSimple* vertices, UINT byteWid
 
     return vertexBuffer;
 }
+
+TextureSet Renderer::LoadTextureSet(const wchar_t* filename)
+{
+    TextureSet textureSet;
+
+    ID3D11Resource* resource = nullptr;  // 임시 리소스 포인터
+    HRESULT hr = CreateWICTextureFromFile(
+        Device,
+        filename,
+        &resource,           // ID3D11Resource**
+        &textureSet.srv      // ID3D11ShaderResourceView**
+    );
+
+    if (SUCCEEDED(hr) && resource) {
+        // 안전하게 Texture2D로 캐스팅
+        hr = resource->QueryInterface(__uuidof(ID3D11Texture2D),
+            (void**)&textureSet.texture);
+        resource->Release(); // 임시 리소스 해제
+
+        if (FAILED(hr)) {
+            // 캐스팅 실패 시 정리
+            textureSet.Release();
+        }
+    }
+
+    return textureSet;
+}
+
+
 
 void Renderer::SwapBuffer()
 {
@@ -293,8 +345,13 @@ bool Renderer::ValidateResources()
     {
         OutputDebugStringA("RasterizerState is nullptr\n");
     }
+    if (!TextureSampler)
+    {
+        OutputDebugStringA("TextureSampler is nullptr\n");
+    }
 
-    bool bResult = Device && DeviceContext && SwapChain && FrameBufferRTV && SimpleInputLayout && SimpleVertexShader && SimplePixelShader && RasterizerState;
+    bool bResult = Device && DeviceContext && SwapChain && FrameBufferRTV && SimpleInputLayout && 
+        SimpleVertexShader && SimplePixelShader && RasterizerState && TextureSampler;
 
     return bResult;
 }
@@ -373,6 +430,15 @@ void Renderer::ReleaseDeviceAndSwapChain()
     {
         DeviceContext->Release();
         DeviceContext = nullptr;
+    }
+}
+
+void Renderer::ReleaseTextureSampler()
+{
+    if (TextureSampler)
+    {
+        TextureSampler->Release();
+        TextureSampler = nullptr;
     }
 }
 

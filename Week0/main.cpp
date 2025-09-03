@@ -4,6 +4,7 @@
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
+#pragma comment(lib, "DirectXTK.lib")
 
 
 #include <d3d11.h>
@@ -143,7 +144,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
 
-        // sceneManager->LateUpdate(elapsedTime);
+        //sceneManager->LateUpdate(elapsedTime);
 
         renderer.Prepare();
         renderer.PrepareShader();

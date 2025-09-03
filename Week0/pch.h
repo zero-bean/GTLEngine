@@ -21,9 +21,9 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
 
-#include "Define.h"
+#include "WICTextureLoader.h"
 
-#include "Renderer.h"
+#include "Define.h"
 
 #define		SAFE_DELETE(p)		 if(p) { delete p; p = nullptr;}
 #define		SAFE_DELETE_ARRAY(p) if(p) { delete [] p; p = nullptr;}

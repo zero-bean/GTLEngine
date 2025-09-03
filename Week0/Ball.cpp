@@ -1,5 +1,7 @@
 #include "Ball.h"
 #include "Sphere.h"
+#include "Renderer.h"
+
 Ball::Ball()
 {
 }
@@ -7,8 +9,12 @@ Ball::~Ball()
 {
     Release();
 }
-void Ball::Initialize(const Renderer& renderer)
+void Ball::Initialize(Renderer& renderer)
 {
+    // 텍스처 로드
+    TextureSet textureSet = renderer.LoadTextureSet(L"assets/sprite.png");
+    SetTextureSet(textureSet);
+
     //버텍스 버퍼 셋
     NumVertices = sizeof(SphereVertices) / sizeof(FVertexSimple);
     D3D11_BUFFER_DESC vertexbufferdesc = {};
@@ -42,6 +48,7 @@ void Ball::Update(Renderer& renderer)
 }
 void Ball::Render(Renderer& renderer)
 {
+    BindTexture(renderer.GetDeviceContext(), 0);
     renderer.Render(ConstantBuffer, VertexBuffer, NumVertices);
 }
 void Ball::Release()
