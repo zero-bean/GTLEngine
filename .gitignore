@@ -416,3 +416,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# DirectXTK 폴더만 제외 (추적함)
+!/DirectXTK/
