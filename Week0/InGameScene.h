@@ -3,15 +3,13 @@
 #include "PlayerArrow.h"
 #include "Ball.h"
 
-
 struct Board
 {
 	Ball* ball = nullptr;
 	bool bEnable = false;
 };
 
-
-class TestScene : public Scene {
+class InGameScene : public Scene {
 private:
 	float rotationDeg = 0.0f;
 	float rotationDelta = 0.3f;
@@ -39,7 +37,7 @@ private:
     
 
 public:
-	TestScene(Renderer* renderer) : Scene(renderer){}
+	InGameScene(Renderer * renderer): Scene(renderer){}
 
 	void Start() override;
 	void Update(float deltaTime) override;

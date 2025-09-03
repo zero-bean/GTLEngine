@@ -27,7 +27,7 @@
 using namespace DirectX;
 
 #include "SceneManager.h"
-#include "TestScene2.h"
+#include "TitleScene.h"
 #include "PlayerArrow.h"
 
 
@@ -83,15 +83,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
+    RECT clientRect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+
+    // 윈도우 스타일에 맞게 전체 윈도우 크기 계산
+    DWORD windowStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+    AdjustWindowRect(&clientRect, windowStyle, FALSE);
+
+    int windowWidth = clientRect.right - clientRect.left;
+    int windowHeight = clientRect.bottom - clientRect.top;
+
 
     //������ â ����
     WCHAR WindowClass[] = L"JungleWindowClass";
     WCHAR Title[] = L"Game Tech Lab";
     WNDCLASSW wndclass = { 0, WndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
     RegisterClassW(&wndclass);
-    HWND hWnd = CreateWindowExW(0, WindowClass, Title, WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, SCREEN_WIDTH, SCREEN_HEIGHT,
+    HWND hWnd = CreateWindowExW(0, WindowClass, Title, windowStyle,
+        CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight,
         nullptr, nullptr, hInstance, nullptr);
+
+    if (hWnd) {
+        ShowWindow(hWnd, SW_SHOW);
+        UpdateWindow(hWnd);
+    }
 
 
     // ������ �ʱ� ����
@@ -117,7 +131,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     double elapsedTime = 0.0;
 
     SceneManager* sceneManager = SceneManager::GetInstance();
-    TestScene2* testScene = new TestScene2(&renderer);
+    TitleScene* testScene = new TitleScene(&hWnd, &renderer);
     sceneManager->SetScene(testScene);
     
 
@@ -155,9 +169,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ImGui_ImplWin32_NewFrame();
 
         ImGui::NewFrame();
-        ImGui::Begin("Jungle Property Window");
-        sceneManager->OnGUI(hWnd);
-        ImGui::End();
+        //ImGui::Begin("Jungle Property Window");
+        //sceneManager->OnGUI(hWnd);
+        //ImGui::End();
         ImGui::Render();
 
 
