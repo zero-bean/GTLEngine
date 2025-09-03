@@ -59,7 +59,6 @@ std::vector<std::pair<int, int>> InGameScene::FindSameColorBalls(const std::pair
     
 }
 
-
 // ?™í•˜??ë³¼ì„ ?ìƒ‰?˜ê³  ë°˜í™˜?©ë‹ˆ??
 // ë£¨íŠ¸(ë§??—ì¤„)ê³??°ê²°?˜ì? ?Šì? ê³µë“¤??ì°¾ì•„ ë°˜í™˜?©ë‹ˆ?? (y,x) ??ëª©ë¡
 std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
@@ -111,7 +110,6 @@ std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
     return floating;
 }
 
-
 void InGameScene::Start()
 {
     playerarrow.Initialize(*renderer);
@@ -128,7 +126,7 @@ void InGameScene::Start()
       Ball* ball = new Ball;
       ball->Initialize(*renderer);
       ball->SetRadius(0.11f);
-  ball->SetWorldPosition({ 0.0f - (i * 0.22f), -0.9f, 0.0f});
+      ball->SetWorldPosition({ 0.0f - (i * 0.22f), -0.9f, 0.0f});
       BallQueue.push(ball);
 	}
   
@@ -158,7 +156,6 @@ void InGameScene::Start()
 
 void InGameScene::Update(float deltaTime)
 {
-    // ?…ë ¥ë³?, ?„ì¬ë³?ê°œìˆ˜ ì°¨ì´?°ë¼ ?? œ or ?ì„±
     playerarrow.Update(*renderer);
 
     for (int i = 0;i < ROWS; ++i)
@@ -168,9 +165,6 @@ void InGameScene::Update(float deltaTime)
             if (board[i][j].ball != nullptr)
             {
                 board[i][j].ball->Update(*renderer);
-
-                // ?¬ê¸°???íƒœê¸°ë°˜ if ë¬??¤ì–´ê°€?¼í•¨
-
             }
         }
     }
@@ -181,15 +175,25 @@ void InGameScene::Update(float deltaTime)
         {
             if (board[i][j].ball != nullptr && board[i][j].ball->GetBallState() != eBallState::Idle)
             {
-                SAFE_DELETE(board[i][j].ball);
-                board[i][j].ball = nullptr;
+                if (board[i][j].ball->GetBallState() == eBallState::Fallen)
+                {
+                    FVector3 pos = board[i][j].ball->GetWorldPosition();
+                    if (pos.x <= -1 || pos.x >= 1 || pos.y <= -1)
+                    {
+                        SAFE_DELETE(board[i][j].ball);
+                        board[i][j].ball = nullptr;
+                    }
+                }
+                else
+                {
+                    board[i][j].ball->SetBallState(eBallState::Fallen);
+                    board[i][j].ball->SetIsGravity(true);
+                }
             }
 
-            //?¬ê¸°??ëª¨ë‘ falseì²˜ë¦¬
             board[i][j].bEnable = false;
         }
     }
-
 
 
     // 1ì°?true ì²˜ë¦¬
@@ -227,7 +231,6 @@ void InGameScene::Update(float deltaTime)
             board[0][i].bEnable = true;
         }
     }
-
 
 	BallQueue.back()->Update(*renderer);
 	BallQueue.front()->Update(*renderer);
@@ -291,22 +294,6 @@ void InGameScene::LateUpdate(float deltaTime)
             }
         }
 
-        // ë²„ë¸” ?? œ ?¨ìˆ˜ ì¶”ê???ê²?
-            
-        /*
-        1. ê°™ì??‰ìƒ ì°¾ê¸°(dfs, bfs ?„ë¬´ê±°ë‚˜) ?ë£Œêµ¬ì¡°(queue)???£ê¸°
-
-        1-1 ???¬ì´ì¦ˆê? ?¼ì • ê°?ˆ˜ ?´í•˜?¼ë©´ ê·¸ëƒ¥ ?µê³¼
-
-        1-2 ???¬ì´ì¦ˆê? ?¼ì • ê°?ˆ˜ ?´ìƒ?´ë¼ë©??Œê´´
-
-        2. 1-2ê°€ ë§Œì¡±?˜ë©´ ì¶”ê? ?Œê´´ ì§„í–‰
-
-        
-        
-        */
-
-        // 1-2ì²«ë²ˆì§??Œê´´
          std::vector<std::pair<int, int>> ResultDieVector = FindSameColorBalls({ dx,dy }, board[dx][dy].ball->GetBallColor());
          if (ResultDieVector.size() >= 3)
         {
@@ -321,7 +308,7 @@ void InGameScene::LateUpdate(float deltaTime)
 
         for (auto& pos : ResultFallenVector)
         {
-            board[pos.first][pos.second].ball->SetBallState(eBallState::Fallen);
+            board[pos.first][pos.second].ball->SetBallState(eBallState::Die);
         }
 
 
@@ -351,10 +338,6 @@ void InGameScene::LateUpdate(float deltaTime)
                 }
             }
         }
-
-
-
-        
 
     }
 }

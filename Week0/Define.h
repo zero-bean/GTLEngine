@@ -38,7 +38,8 @@ enum class eBallState
 {
     Idle = 0,
     Fallen = 1,
-    Die = 2
+    Die = 2,
+
 };
 
 // ╟Ь е╦ют

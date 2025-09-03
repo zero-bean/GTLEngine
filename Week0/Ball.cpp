@@ -1,6 +1,7 @@
 #include "Ball.h"
 #include "Sphere.h"
 #include "Renderer.h"
+#include "TimeManager.h"
 
 Ball::Ball()
 {
@@ -64,10 +65,13 @@ void Ball::Initialize(Renderer& renderer)
 }
 void Ball::Update(Renderer& renderer)
 {
-    //if (BallType == eBallType::Static)
-    //{
-    //    return;
-    //}
+    float deltaTime = TimeManager::GET_SINGLE()->GetDeltaTime();
+
+    if (bIsGravity == true)
+    {
+        Velocity.y -= deltaTime * 0.58f;
+    }
+
     // update
     WorldPosition = CalculateUtil::operator+(WorldPosition, Velocity);
     renderer.UpdateConstant(ConstantBuffer, WorldPosition, Scale, RotationDeg);
@@ -84,4 +88,40 @@ void Ball::Release()
 }
 void Ball::Collidable()
 {
+}
+
+ void Ball::SetBalllColor(eBallColor InBallColor)
+{
+    if (BallColor == InBallColor)
+        return;
+
+    BallColor = InBallColor;
+
+    std::wstring textureFileName;
+    switch (InBallColor)
+    {
+    case eBallColor::Red:
+        textureFileName = L"assets/sprite.png";
+        break;
+    case eBallColor::Green:
+        textureFileName = L"assets/spriteG.png";
+        break;
+    case eBallColor::Blue:
+        textureFileName = L"assets/spriteB.png";
+        break;
+    }
+}
+
+ void Ball::SetIsGravity(bool bIsActive)
+{
+    if (bIsGravity == bIsActive)
+        return;
+
+    bIsGravity = bIsActive;
+
+    if (bIsGravity == true)
+    {
+        int val = (rand() % 5) - 2;
+        Velocity = FVector3(0.03 * val, 0.11, 0);
+    }
 }
