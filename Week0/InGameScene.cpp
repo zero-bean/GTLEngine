@@ -245,6 +245,37 @@ void InGameScene::LateUpdate(float deltaTime)
 {
     if (ShotBall == nullptr)
     {
+        int bGameClear = 2;
+
+        // ê²Œìž„ ?¤ë²„ ê²€?¬í•˜ê¸?
+        for (int i = 0;i < COLS;++i)
+        {
+            if (board[6][i].ball != nullptr)
+            {
+                bGameClear = 1;
+                break;
+            }
+        }
+        if (bGameClear == 1)
+        {
+            SceneManager::GetInstance()->SetScene(new GameOverScene(hWND, renderer));
+        }
+
+        for (int i = 0;i < ROWS; ++i)
+        {
+            for (int j = 0;j < COLS; ++j)
+            {
+                if (board[i][j].ball != nullptr)
+                {
+                    bGameClear = 0;
+                }
+            }
+        }
+        if (bGameClear == 2)
+        {
+            SceneManager::GetInstance()->SetScene(new ClearScene(hWND, renderer));
+        }
+
         return;
     }
     FVector3 ShotBallPosition = ShotBall->GetWorldPosition();
@@ -326,48 +357,11 @@ void InGameScene::LateUpdate(float deltaTime)
             board[pos.first][pos.second].ball->SetBallState(eBallState::Fallen);
         }
 
-
-        // 0: ?¤ì‹œ?˜ê¸°, 1:ê²Œìž„?¤ë²„, 2:ê²Œìž„?´ë¦¬??
-        // 0: °ÔÀÓÁö¼Ó 1: °ÔÀÓ ¿À¹ö 2: °ÔÀÓ Å¬¸®¾î
-        
-        int bGameClear = 0;
-
-        // ê²Œìž„ ?¤ë²„ ê²€?¬í•˜ê¸?
-        for (int i = 0;i < COLS;++i)
-        {
-            if (board[6][i].ball != nullptr)
-            {
-                //?¬ê¸°??ê²Œìž„?¤ë²„ ?¤í–‰
-                bGameClear = 1;
-
-            }
-        }
-
-        
-
-        //ê²Œìž„ ?´ë¦¬??ê²€??
-        for (int i = 0;i < ROWS; ++i)
-        {
-            for (int j = 0;j < COLS; ++j)
-            {
-                if (board[i][j].ball != nullptr)
-                {
-                    bGameClear = 0;
-
-                }
-            }
-        }
-
-        if (bGameClear == 1)
-        {
-            SceneManager::GetInstance()->SetScene(new GameOverScene(hWND, renderer));
-        }
-        else if (bGameClear == 2)
-        {
-            SceneManager::GetInstance()->SetScene(new ClearScene(hWND, renderer));
-        }
-
     }
+    // 0: ?¤ì‹œ?˜ê¸°, 1:ê²Œìž„?¤ë²„, 2:ê²Œìž„?´ë¦¬??
+        // 0: °ÔÀÓÁö¼Ó 1: °ÔÀÓ ¿À¹ö 2: °ÔÀÓ Å¬¸®¾î
+
+    
 }
 
 void InGameScene::OnMessage(MSG msg)
