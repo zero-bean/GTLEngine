@@ -48,6 +48,12 @@ enum class eBallType
     Dynamic = 1
 };
 
+enum class eBallColor
+{
+    Red = 0,
+    Green = 2,
+	Blue = 1
+};
 
 namespace CalculateUtil
 {

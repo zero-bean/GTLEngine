@@ -38,4 +38,5 @@ private:
     float Radius{};
     float Mass{ 100.0f };
     float RotationDeg = 0.0f;
+    eBallColor BallColor;
 };
