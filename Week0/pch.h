@@ -23,6 +23,8 @@
 #include "imGui/imgui_impl_win32.h"
 
 #include "WICTextureLoader.h"
+#include "TimeManager.h"
+#include "SceneManager.h"
 
 #include "Define.h"
 

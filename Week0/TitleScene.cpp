@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "InGameScene.h"
 #include "TitleScene.h"
 void TitleScene::Start()

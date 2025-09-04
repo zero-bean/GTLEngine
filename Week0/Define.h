@@ -3,6 +3,7 @@
 #define ROWS 12
 #define COLS 9
 
+const int DefaultScore = 100;
 
 struct FVector3
 {

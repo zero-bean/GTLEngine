@@ -1,5 +1,4 @@
 #pragma once
-#include "SceneManager.h"
 #include "PlayerArrow.h"
 #include "Ball.h"
 #include "Image.h"
@@ -63,6 +62,8 @@ private:
 private:
 	float DescentEventTime{};
 	int	  DescentCount{0};
+
+
 
 
 

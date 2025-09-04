@@ -1,9 +1,10 @@
+#include "pch.h"
 #include "InGameScene.h"
 #include "ArrowVertices.h"
 #include "ScreenUtil.h"
 #include "GameOverScene.h"
 #include "ClearScene.h"
-#include "TimeManager.h"
+
 
 inline bool InGameScene::IsInRange(const int x, const int y) const
 {
@@ -115,6 +116,10 @@ std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
 
 void InGameScene::Start()
 {
+    //reset TotalScore
+    SceneManager::GetInstance()->ResetTotalScore();
+
+
     playerarrow.Initialize(*renderer);
     NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);
     arrowVertexBuffer = renderer->CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
@@ -138,6 +143,9 @@ void InGameScene::Start()
         ball->SetWorldPosition({ 0.0f - (i * 0.22f), -0.9f, 0.0f });
         BallQueue.push(ball);
     }
+
+    
+
 
     CreateLevelDesign();
 }
@@ -330,11 +338,14 @@ void InGameScene::LateUpdate(float deltaTime)
             }
         }
 
-         std::vector<std::pair<int, int>> ResultDieVector = FindSameColorBalls({ dx,dy }, board[dx][dy].ball->GetBallColor());
-         if (ResultDieVector.size() >= 3)
+        std::vector<std::pair<int, int>> ResultDieVector = FindSameColorBalls({ dx,dy }, board[dx][dy].ball->GetBallColor());
+        if (ResultDieVector.size() >= 3)
         {
+            int Score = DefaultScore;
             for (auto& pos : ResultDieVector)
             {
+                SceneManager::GetInstance()->AddScore(Score);
+                Score += 100;
                 board[pos.first][pos.second].ball->SetBallState(eBallState::Die);
             }
             
@@ -344,6 +355,7 @@ void InGameScene::LateUpdate(float deltaTime)
 
         for (auto& pos : ResultFallenVector)
         {
+            SceneManager::GetInstance()->AddScore(DefaultScore);
             board[pos.first][pos.second].ball->SetBallState(eBallState::Die);
         }
 
