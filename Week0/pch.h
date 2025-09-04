@@ -10,7 +10,6 @@
 #include <unordered_map>
 #include <algorithm>
 
-#include <filesystem>
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
