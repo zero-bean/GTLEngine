@@ -2,6 +2,7 @@
 #include "SceneManager.h"
 #include "PlayerArrow.h"
 #include "Ball.h"
+#include "Image.h"
 
 struct Board
 {
@@ -18,10 +19,16 @@ private:
 	ID3D11Buffer* arrowVertexBuffer;
 
 	PlayerArrow playerarrow;
+	Image* shutter;
+	Image* bg;
 
 	Board board[ROWS][COLS] = {};
 
 	Ball* ShotBall{};
+
+	const int descentThreshold = 7.0f;
+	const int maxVerticalBallCount = 7;
+
 	std::queue<Ball*> BallQueue;
 	inline bool IsInRange(const int x, const int y) const;
 

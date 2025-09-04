@@ -119,6 +119,13 @@ void InGameScene::Start()
     NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);
     arrowVertexBuffer = renderer->CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
 
+    shutter = new Image(L"assets/shutter.png", {ScreenUtil::GetAspectRatio(), 1});
+    shutter->Initialize(*renderer);
+    shutter->SetWorldPosition(FVector3{ 0,2,0 });
+    bg = new Image(L"assets/ingame_bg.png", { ScreenUtil::GetAspectRatio(), 1 });
+    bg->Initialize(*renderer);
+    bg->SetWorldPosition(FVector3{ 0,0,0 });
+
     ShotBall = nullptr;
 
     BallQueue = std::queue<Ball*>(); // ?¤ë¥˜ê°€ ?˜ëŠ” ì¤?
@@ -137,12 +144,12 @@ void InGameScene::Start()
 
 void InGameScene::Update(float deltaTime)
 {
+    shutter->Update(*renderer);
+    bg->Update(*renderer);
     DescentEventTime += TimeManager::GET_SINGLE()->GetDeltaTime();
 
-    if (DescentEventTime >= 5.0f)
-    {
-       
-
+    if (DescentEventTime >= descentThreshold)
+    {       
         // start descent
         // change board
         DescentBoard();
@@ -249,7 +256,7 @@ void InGameScene::LateUpdate(float deltaTime)
         // ê²Œìž„ ?¤ë²„ ê²€?¬í•˜ê¸?
         for (int i = 0;i < COLS;++i)
         {
-            if (board[6][i].ball != nullptr)
+            if (board[maxVerticalBallCount][i].ball != nullptr)
             {
                 bGameClear = 1;
                 break;
@@ -435,6 +442,7 @@ void InGameScene::OnGUI(HWND hWND)
 
 void InGameScene::OnRender()
 {
+    bg->Render(*renderer);
     playerarrow.Render(*renderer);
 
     //?„ì²´ ë°°ì—´ ?Œë”
@@ -457,6 +465,7 @@ void InGameScene::OnRender()
     {
         ShotBall->Render(*renderer);
     }
+    shutter->Render(*renderer);
 }
 
 void InGameScene::Shutdown()
@@ -547,5 +556,5 @@ void InGameScene::DescentBoard()
 
 
     // stair block algorithm
-
+    shutter->SetWorldPosition(FVector3{ 0, 2 - 0.22f * (DescentCount+1), 0 });
 }
