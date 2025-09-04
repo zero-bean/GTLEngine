@@ -72,4 +72,7 @@ void GameOverScene::OnRender()
 
 void GameOverScene::Shutdown()
 {
+    SAFE_DELETE(exitButton);
+    SAFE_DELETE(playButton);
+    SAFE_DELETE(logo);
 }

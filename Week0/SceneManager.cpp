@@ -90,7 +90,6 @@ void SceneManager::DestroyInstance()
 {
 	if (sInstance)
 	{
-		delete sInstance;
-		sInstance = nullptr;
+		SAFE_DELETE(sInstance);
 	}
 }
