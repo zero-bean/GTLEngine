@@ -49,7 +49,7 @@ public:
 
 private:
 
-
+	void CreateLevelDesign();
 	void DescentBoard();
 	
 

@@ -115,45 +115,24 @@ std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
 
 void InGameScene::Start()
 {
-        playerarrow.Initialize(*renderer);
+    playerarrow.Initialize(*renderer);
     NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);
     arrowVertexBuffer = renderer->CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
 
     ShotBall = nullptr;
 
-  BallQueue = std::queue<Ball*>(); // ?¤ë¥˜ê°€ ?˜ëŠ” ì¤?
+    BallQueue = std::queue<Ball*>(); // ?¤ë¥˜ê°€ ?˜ëŠ” ì¤?
     //std::queue<Ball*> qTemp;
-  for(int i = 0; i < 2; ++i)
-  {
-      Ball* ball = new Ball;
-      ball->Initialize(*renderer);
-      ball->SetRadius(0.11f);
-      ball->SetWorldPosition({ 0.0f - (i * 0.22f), -0.9f, 0.0f});
-      BallQueue.push(ball);
-	}
-  
-   for (int i = 0;i < ROWS; ++i)
-   {
-       for (int j = 0;j < COLS; ++j)
-       {
-          
-           board[i][j].ball = nullptr;
-           board[i][j].bEnable = false;
-       }
-   }
+    for (int i = 0; i < 2; ++i)
+    {
+        Ball* ball = new Ball;
+        ball->Initialize(*renderer);
+        ball->SetRadius(0.11f);
+        ball->SetWorldPosition({ 0.0f - (i * 0.22f), -0.9f, 0.0f });
+        BallQueue.push(ball);
+    }
 
-
-   // ?„ì‹œ ?ˆë²¨(0,4)
-   Ball* temp= new Ball;
-   board[0][4].ball = temp;
-   board[0][4].ball->Initialize(*renderer);
-   board[0][4].ball->SetWorldPosition({ 0.0f, 0.89f, 0.0f });
-
-
-    for (int i = 0; i < COLS; ++i)
-        board[0][i].bEnable = true;
-    board[0][4].bEnable = false;
-    board[1][4].bEnable = true;
+    CreateLevelDesign();
 }
 
 void InGameScene::Update(float deltaTime)
@@ -488,6 +467,44 @@ void InGameScene::Shutdown()
 
         delete b;
     }
+}
+
+void InGameScene::CreateLevelDesign()
+{
+    for (int i = 0;i < ROWS; ++i)
+    {
+        for (int j = 0;j < COLS; ++j)
+        {
+
+            board[i][j].ball = nullptr;
+            board[i][j].bEnable = false;
+        }
+    }
+
+    Ball* temp[6];
+    for (int i = 0; i < 6; ++i)
+    {
+        temp[i] = new Ball;
+        temp[i]->Initialize(*renderer);
+    }
+
+    board[0][2].ball = temp[0];
+    board[0][3].ball = temp[1];
+    board[1][3].ball = temp[2];
+
+    board[0][5].ball = temp[3];
+    board[0][6].ball = temp[4];
+    board[1][5].ball = temp[5];
+
+    board[0][2].ball->SetWorldPosition({ 0.0f, 0.89f, 0.0f });
+    //board[0][3].ball->SetWorldPosition({ 0.0f, 0.67f, 0.0f });
+
+
+
+    for (int i = 0; i < COLS; ++i)
+        board[0][i].bEnable = true;
+    board[0][4].bEnable = false;
+    board[1][4].bEnable = true;
 }
 
 void InGameScene::DescentBoard()
