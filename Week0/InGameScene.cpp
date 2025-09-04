@@ -6,6 +6,7 @@
 #include "ClearScene.h"
 
 
+
 inline bool InGameScene::IsInRange(const int x, const int y) const
 {
     return (x >= 0 && x < ROWS && y >= 0 && y < COLS);
