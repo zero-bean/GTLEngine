@@ -496,15 +496,29 @@ void InGameScene::CreateLevelDesign()
     board[0][6].ball = temp[4];
     board[1][5].ball = temp[5];
 
-    board[0][2].ball->SetWorldPosition({ 0.0f, 0.89f, 0.0f });
-    //board[0][3].ball->SetWorldPosition({ 0.0f, 0.67f, 0.0f });
+    //board[0][4].ball->SetWorldPosition({ 0.0f, 0.89f, 0.0f });
+    board[0][2].ball->SetWorldPosition({ 0.0f - 0.22f * (4 - 2), 0.89f - 0.22f * (0), 0.0f });
+    board[0][3].ball->SetWorldPosition({ 0.0f - 0.22f * (4 - 3), 0.89f - 0.22f * (0), 0.0f });
+    board[1][3].ball->SetWorldPosition({ 0.0f - 0.22f * (4 - 3), 0.89f - 0.22f * (1), 0.0f });
+    board[0][5].ball->SetWorldPosition({ 0.0f + 0.22f * (1), 0.89f - 0.22f * (0), 0.0f });
+    board[0][6].ball->SetWorldPosition({ 0.0f + 0.22f * (2), 0.89f - 0.22f * (0), 0.0f });
+    board[1][5].ball->SetWorldPosition({ 0.0f + 0.22f * (1), 0.89f - 0.22f * (1), 0.0f });
 
 
 
     for (int i = 0; i < COLS; ++i)
         board[0][i].bEnable = true;
-    board[0][4].bEnable = false;
+    board[0][2].bEnable = false;
+    board[0][3].bEnable = false;
+    board[0][5].bEnable = false;
+    board[0][6].bEnable = false;
+    board[1][5].bEnable = false;
+    board[1][3].bEnable = false;
+    board[1][2].bEnable = true;
     board[1][4].bEnable = true;
+    board[1][6].bEnable = true;
+    board[2][3].bEnable = true;
+    board[2][5].bEnable = true;
 }
 
 void InGameScene::DescentBoard()
