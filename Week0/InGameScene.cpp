@@ -1,9 +1,11 @@
+#include "pch.h"
 #include "InGameScene.h"
 #include "ArrowVertices.h"
 #include "ScreenUtil.h"
 #include "GameOverScene.h"
 #include "ClearScene.h"
 #include "TimeManager.h"
+
 
 inline bool InGameScene::IsInRange(const int x, const int y) const
 {
@@ -14,52 +16,52 @@ inline bool InGameScene::IsInRange(const int x, const int y) const
 std::vector<std::pair<int, int>> InGameScene::FindSameColorBalls(const std::pair<int, int>& start, const eBallColor& color)
 {
     std::vector<std::pair<int, int>> sameColorBalls = {};
-     const int dx[4] = { 1,-1, 0, 0 };
-     const int dy[4] = { 0, 0, 1, -1 };
-     const int sx = start.first;
-     const int sy = start.second;
-    
-     // ë°©ë¬¸ ë°°ì—´?€ [R][C] = [y][x]
-     std::vector<std::vector<bool>> visited(ROWS, std::vector<bool>(COLS, false));
-     std::queue<std::pair<int, int>> q;
-    
-     //visited[sx][sy] = true;
-     q.push({ sx, sy });
-    
-     // BFS
-     while (!q.empty())
-     {
-         // ?„ìž¬ ì¢Œí‘œ
-         const int cx = q.front().first;
-         const int cy = q.front().second;
-         q.pop();
-    
-         if (visited[cx][cy] == true)
-             continue;
+    const int dx[4] = { 1,-1, 0, 0 };
+    const int dy[4] = { 0, 0, 1, -1 };
+    const int sx = start.first;
+    const int sy = start.second;
 
-         sameColorBalls.push_back({ cx,cy });
-         visited[cx][cy] = true;
+    // ë°©ë¬¸ ë°°ì—´?€ [R][C] = [y][x]
+    std::vector<std::vector<bool>> visited(ROWS, std::vector<bool>(COLS, false));
+    std::queue<std::pair<int, int>> q;
 
-         // 4-ë°©í–¥ ?¸ì ‘??ì¢Œí‘œ ?ìƒ‰
-         for (int i = 0; i < 4; ++i)
-         {
-             const int nx = cx + dx[i];
-             const int ny = cy + dy[i];
-    
-             // ? íš¨??ë²”ìœ„ê°€ ?„ë‹ˆ?¼ë©´
-             if (IsInRange(nx, ny) == false) { continue; }
-             // ?´ë? ë°©ë¬¸???ˆë‹¤ë©?
-             if (visited[nx][ny] == true) { continue; }
-             // ê°™ì? ?‰ìƒ???„ë‹ˆ?¼ë©´
-             if (board[nx][ny].ball == nullptr || board[nx][ny].ball->GetBallColor() != color) { continue; }
-    
-             q.push({ nx, ny });
-         }
+    //visited[sx][sy] = true;
+    q.push({ sx, sy });
 
-     }
+    // BFS
+    while (!q.empty())
+    {
+        // ?„ìž¬ ì¢Œí‘œ
+        const int cx = q.front().first;
+        const int cy = q.front().second;
+        q.pop();
 
-     return sameColorBalls;
-    
+        if (visited[cx][cy] == true)
+            continue;
+
+        sameColorBalls.push_back({ cx,cy });
+        visited[cx][cy] = true;
+
+        // 4-ë°©í–¥ ?¸ì ‘??ì¢Œí‘œ ?ìƒ‰
+        for (int i = 0; i < 4; ++i)
+        {
+            const int nx = cx + dx[i];
+            const int ny = cy + dy[i];
+
+            // ? íš¨??ë²”ìœ„ê°€ ?„ë‹ˆ?¼ë©´
+            if (IsInRange(nx, ny) == false) { continue; }
+            // ?´ë? ë°©ë¬¸???ˆë‹¤ë©?
+            if (visited[nx][ny] == true) { continue; }
+            // ê°™ì? ?‰ìƒ???„ë‹ˆ?¼ë©´
+            if (board[nx][ny].ball == nullptr || board[nx][ny].ball->GetBallColor() != color) { continue; }
+
+            q.push({ nx, ny });
+        }
+
+    }
+
+    return sameColorBalls;
+
 }
 
 // ?™í•˜??ë³¼ì„ ?ìƒ‰?˜ê³  ë°˜í™˜?©ë‹ˆ??
@@ -72,7 +74,7 @@ std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
 
     // 1) ë§??—ì¤„?ì„œ ê³µì´ ?ˆëŠ” ì¹¸ë“¤???œìž‘?ìœ¼ë¡??ì— ?½ìž…
     for (int y = 0; y < COLS; ++y) {
-        if (board[DescentCount][y].ball != nullptr && board[DescentCount][y].ball->GetBallState()==eBallState::Idle)
+        if (board[DescentCount][y].ball != nullptr && board[DescentCount][y].ball->GetBallState() == eBallState::Idle)
         {           // ê³µì´ ?ˆëŠ” ì¹¸ë§Œ ?œìž‘
             visited[DescentCount][y] = true;
             q.push({ DescentCount, y });               // (y,x)
@@ -115,11 +117,15 @@ std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
 
 void InGameScene::Start()
 {
+    //reset TotalScore
+    SceneManager::GetInstance()->ResetTotalScore();
+
+
     playerarrow.Initialize(*renderer);
     NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);
     arrowVertexBuffer = renderer->CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
 
-    shutter = new Image(L"assets/shutter.png", {ScreenUtil::GetAspectRatio(), 1});
+    shutter = new Image(L"assets/shutter.png", { ScreenUtil::GetAspectRatio(), 1 });
     shutter->Initialize(*renderer);
     shutter->SetWorldPosition(FVector3{ 0,2,0 });
     bg = new Image(L"assets/ingame_bg.png", { ScreenUtil::GetAspectRatio(), 1 });
@@ -139,6 +145,9 @@ void InGameScene::Start()
         BallQueue.push(ball);
     }
 
+
+
+
     CreateLevelDesign();
 }
 
@@ -149,11 +158,11 @@ void InGameScene::Update(float deltaTime)
     DescentEventTime += TimeManager::GET_SINGLE()->GetDeltaTime();
 
     if (DescentEventTime >= descentThreshold)
-    {       
+    {
         // start descent
         // change board
         DescentBoard();
-        
+
         DescentCount++;
 
         // reset DescentEventTime
@@ -223,7 +232,7 @@ void InGameScene::Update(float deltaTime)
                     board[nx][ny].bEnable = true;
 
                 }
-                
+
             }
         }
     }
@@ -237,8 +246,8 @@ void InGameScene::Update(float deltaTime)
         }
     }
 
-	BallQueue.back()->Update(*renderer);
-	BallQueue.front()->Update(*renderer);
+    BallQueue.back()->Update(*renderer);
+    BallQueue.front()->Update(*renderer);
 
     if (ShotBall != nullptr)
     {
@@ -287,8 +296,8 @@ void InGameScene::LateUpdate(float deltaTime)
     FVector3 ShotBallPosition = ShotBall->GetWorldPosition();
     FVector3 ShotBallVelocity = ShotBall->GetVelocity();
     int dy = std::round((ShotBallPosition.x + 1) / 2.0f * static_cast<float>(COLS - 1)); // ?´ì°¨??ë°°ì—´??ê°€ë¡?(ì²?ë²ˆì§¸)
-    int dx = ROWS - 1 -std::round((ShotBallPosition.y + 1) / 2.0f * static_cast<float>(ROWS - 1)); // ?´ì°¨??ë°°ì—´???¸ë¡œ (??ë²ˆì§¸)
-    FVector3 NewVector = { (dy - 4) * 0.22F, (dx - 4) * - 0.22f, 0.0f };
+    int dx = ROWS - 1 - std::round((ShotBallPosition.y + 1) / 2.0f * static_cast<float>(ROWS - 1)); // ?´ì°¨??ë°°ì—´???¸ë¡œ (??ë²ˆì§¸)
+    FVector3 NewVector = { (dy - 4) * 0.22F, (dx - 4) * -0.22f, 0.0f };
 
     //?¼ìª½ ë²½ì´???¿ì•˜?„ë•Œ
     if (ShotBall && (ShotBallPosition.x - 0.11f <= -1.0f * ScreenUtil::GetAspectRatio()))
@@ -304,8 +313,8 @@ void InGameScene::LateUpdate(float deltaTime)
         ShotBall->SetVelocity({ -ShotBallVelocity.x, ShotBallVelocity.y, ShotBallVelocity.z });
     }
 
-    if(board[dx][dy].bEnable == true)
-    { 
+    if (board[dx][dy].bEnable == true)
+    {
         ShotBall->SetVelocity({ 0,0,0 });
         ShotBall->SetWorldPosition(NewVector);
 
@@ -322,7 +331,7 @@ void InGameScene::LateUpdate(float deltaTime)
             // ????ì¢???4êµ°ë° ê²€??
             const int nx = dx + cx[i];
             const int ny = dy + cy[i];
-            
+
             if (IsInRange(nx, ny))
             {
                 if (board[nx][ny].bEnable == false && board[nx][ny].ball == nullptr)
@@ -330,20 +339,24 @@ void InGameScene::LateUpdate(float deltaTime)
             }
         }
 
-         std::vector<std::pair<int, int>> ResultDieVector = FindSameColorBalls({ dx,dy }, board[dx][dy].ball->GetBallColor());
-         if (ResultDieVector.size() >= 3)
+        std::vector<std::pair<int, int>> ResultDieVector = FindSameColorBalls({ dx,dy }, board[dx][dy].ball->GetBallColor());
+        if (ResultDieVector.size() >= 3)
         {
+            int Score = DefaultScore;
             for (auto& pos : ResultDieVector)
             {
+                SceneManager::GetInstance()->AddScore(Score);
+                Score += 100;
                 board[pos.first][pos.second].ball->SetBallState(eBallState::Die);
             }
-            
+
         }
         // 2 ?ë²ˆì§??Œê´´
         std::vector<std::pair<int, int>> ResultFallenVector = FindFloatingBalls();
 
         for (auto& pos : ResultFallenVector)
         {
+            SceneManager::GetInstance()->AddScore(DefaultScore);
             board[pos.first][pos.second].ball->SetBallState(eBallState::Die);
         }
 
@@ -360,7 +373,7 @@ void InGameScene::LateUpdate(float deltaTime)
             }
         }
 
-        
+
 
         //ê²Œìž„ ?´ë¦¬??ê²€??
         for (int i = DescentCount;i < ROWS; ++i)
@@ -377,7 +390,7 @@ void InGameScene::LateUpdate(float deltaTime)
     // 0: ?¤ì‹œ?˜ê¸°, 1:ê²Œìž„?¤ë²„, 2:ê²Œìž„?´ë¦¬??
         // 0: °ÔÀÓÁö¼Ó 1: °ÔÀÓ ¿À¹ö 2: °ÔÀÓ Å¬¸®¾î
 
-    
+
 }
 
 void InGameScene::OnMessage(MSG msg)
@@ -404,8 +417,8 @@ void InGameScene::OnMessage(MSG msg)
                 ShotBall->Initialize(*renderer);
                 ShotBall->SetRadius(0.11f);*/
 
-				ShotBall = BallQueue.front();
-				BallQueue.pop();
+                ShotBall = BallQueue.front();
+                BallQueue.pop();
 
                 BallQueue.front()->SetWorldPosition({ 0.0f, -0.9f, 0.0f });
 
@@ -420,11 +433,11 @@ void InGameScene::OnMessage(MSG msg)
                 ShotBall->SetVelocity({ -cosf(DirectX::XMConvertToRadians(playerarrow.GetDegree() + 90)) * speed,
                                         sinf(DirectX::XMConvertToRadians(playerarrow.GetDegree() + 90)) * speed,
                                         0.0f });
-              
-            
+
+
                 //ShotBall->SetVelocity( 
             }
-            
+
 
         }
     }
@@ -450,7 +463,7 @@ void InGameScene::OnRender()
     {
         for (int j = 0;j < COLS; ++j)
         {
-            if (board[i][j].ball !=  nullptr)
+            if (board[i][j].ball != nullptr)
             {
                 board[i][j].ball->Render(*renderer);
             }
@@ -476,11 +489,6 @@ void InGameScene::Shutdown()
 
         delete b;
     }
-
-    if(shutter)
-        delete shutter;
-    if(bg)
-        delete bg;
 }
 
 void InGameScene::CreateLevelDesign()
@@ -544,10 +552,10 @@ void InGameScene::DescentBoard()
             board[i][j].ball = board[i - 1][j].ball;
             board[i][j].bEnable = board[i - 1][j].bEnable;
 
-            if (board[i-1][j].ball != nullptr)
+            if (board[i - 1][j].ball != nullptr)
             {
                 FVector3 TempVector = board[i - 1][j].ball->GetWorldPosition();
-                board[i][j].ball->SetWorldPosition({TempVector.x, TempVector.y - 0.22f, TempVector.z});
+                board[i][j].ball->SetWorldPosition({ TempVector.x, TempVector.y - 0.22f, TempVector.z });
             }
 
         }
@@ -561,5 +569,5 @@ void InGameScene::DescentBoard()
 
 
     // stair block algorithm
-    shutter->SetWorldPosition(FVector3{ 0, 2 - 0.22f * (DescentCount+1), 0 });
+    shutter->SetWorldPosition(FVector3{ 0, 2 - 0.22f * (DescentCount + 1), 0 });
 }
