@@ -1,9 +1,10 @@
-#include "pch.h"
+
 #include "InGameScene.h"
 #include "ArrowVertices.h"
 #include "ScreenUtil.h"
 #include "GameOverScene.h"
 #include "ClearScene.h"
+#include "TimeManager.h"
 
 
 

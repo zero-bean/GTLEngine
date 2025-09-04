@@ -72,4 +72,7 @@ void TitleScene::OnRender()
 
 void TitleScene::Shutdown()
 {
+    SAFE_DELETE(exitButton);
+    SAFE_DELETE(playButton);
+    SAFE_DELETE(logo);
 }

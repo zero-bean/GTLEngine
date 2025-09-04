@@ -1,7 +1,9 @@
 #pragma once
+
 #include "PlayerArrow.h"
 #include "Ball.h"
 #include "Image.h"
+#include "SceneManager.h"
 
 struct Board
 {

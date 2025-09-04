@@ -38,8 +38,6 @@ public:
 		TotalScore += InScore;
 	}
 
-private:
-	int  TotalScore{};
 
 
 };
