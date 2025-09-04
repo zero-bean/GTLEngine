@@ -488,6 +488,11 @@ void InGameScene::Shutdown()
 
         delete b;
     }
+
+    if(shutter)
+        delete shutter;
+    if(bg)
+        delete bg;
 }
 
 void InGameScene::CreateLevelDesign()
