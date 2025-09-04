@@ -120,6 +120,7 @@ void InGameScene::Start()
     //reset TotalScore
     SceneManager::GetInstance()->ResetTotalScore();
 
+    sceneState = ECurrentScene::ECS_GAME;
 
     playerarrow.Initialize(*renderer);
     NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);

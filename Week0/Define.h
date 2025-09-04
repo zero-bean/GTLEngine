@@ -58,6 +58,15 @@ enum class eBallColor
 	Blue = 2
 };
 
+enum class ECurrentScene
+{
+    ECS_NONE,
+    ECS_READY,
+    ECS_GAME,
+    ECS_CLEAR,
+    ECS_OVER,
+};
+
 namespace CalculateUtil
 {
     inline const FVector3 operator* (const FVector3& lhs, float rhs) { return FVector3(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs); }

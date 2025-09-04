@@ -3,6 +3,8 @@
 
 void ClearScene::Start()
 {
+    sceneState = ECurrentScene::ECS_CLEAR;
+
     logo = new Image(L"assets/clear_team.png", { 0.75f, 1.0f });
     logo->Initialize(*renderer);
     logo->SetWorldPosition(FVector3(0, 0, 0));

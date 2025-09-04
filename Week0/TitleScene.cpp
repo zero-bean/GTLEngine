@@ -2,6 +2,8 @@
 #include "TitleScene.h"
 void TitleScene::Start()
 {
+    sceneState = ECurrentScene::ECS_READY;
+
     logo = new Image(L"assets/logo.png", { 0.25f, 0.0625f });
     logo->Initialize(*renderer);
     logo->SetWorldPosition(FVector3(0, 0.8f, 0));

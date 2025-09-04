@@ -6,7 +6,6 @@
 #pragma comment(lib, "d3dcompiler")
 #pragma comment(lib, "DirectXTK.lib")
 
-
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include "ScreenUtil.h"
@@ -16,13 +15,6 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
 
-
-// �ڵ���Ģ 
-//struct �� F�� ������
-
-
-
-
 #include "pch.h"
 using namespace DirectX;
 
@@ -30,8 +22,6 @@ using namespace DirectX;
 #include "TimeManager.h"
 #include "TitleScene.h"
 #include "PlayerArrow.h"
-
-
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -68,14 +58,10 @@ const float GElastic = 0.7f; // ź�����
 
 const float RotationDelta = 5.0f;
 
-
-
 int  TargetBallCount = 1;
 bool bWasIsGravity = true;
 bool bIsGravity = false;
 bool bIsExit = false;
-
-
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -115,11 +101,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     renderer.Initialize(hWnd);
     
 
-
-
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    //  //  //  //  //
+    ImFont* gScoreFont = io.Fonts->AddFontFromFileTTF(
+        "assets/mario.ttf",        // 경로
+        32.0f,                     // 폰트 크기
+        nullptr,                   // 설정
+        io.Fonts->GetGlyphRangesKorean()
+    );
+    //  //  //  //  //
     ImGui_ImplWin32_Init((void*)hWnd);
     ImGui_ImplDX11_Init(renderer.GetDevice(), renderer.GetDeviceContext());
     
@@ -135,7 +127,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     TimeManager::GET_SINGLE()->Init();
     TitleScene* testScene = new TitleScene(&hWnd, &renderer);
     sceneManager->SetScene(testScene);
-    
 
     while (bIsExit == false)
     {
@@ -175,13 +166,40 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         //ImGui::Begin("Jungle Property Window");
         //sceneManager->OnGUI(hWnd);
         //ImGui::End();
+        //  //  //  //  //
+        ImVec2 pos;
+        switch (SceneManager::GetInstance()->GetSceneState())
+        {
+            case ECurrentScene::ECS_GAME:
+                pos = ImVec2(550.0f, 50.0f);
+                break;
+            case ECurrentScene::ECS_CLEAR:
+                pos = ImVec2(330.0f, 300.0f);
+                break;
+            case ECurrentScene::ECS_OVER:
+                pos = ImVec2(330.0f, 300.0f);
+                break;
+            default:
+                pos = ImVec2(1050.0f, 50.0f);
+                break;
+        }
+        int score = SceneManager::GetInstance()->GetTotalScore();
+        std::string scoreText = std::to_string(score);
+        ImDrawList* dl = ImGui::GetForegroundDrawList();
+        dl->AddText(
+            gScoreFont,                 // 폰트 (위에서 AddFont로 만든 것)
+            32.0f,                      // 사이즈(생략 가능: 폰트 기본 크기 사용)
+            pos,
+            IM_COL32(255, 255, 255, 255), // 색상 (흰색)
+            scoreText.c_str()
+        );
+        //  //  //  //  //
         ImGui::Render();
-
 
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
         renderer.SwapBuffer();
-
+        
         do
         {
             Sleep(0);

@@ -26,6 +26,14 @@ public:
 	static SceneManager* GetInstance();
 	static void DestroyInstance();
 
+	ECurrentScene GetSceneState() const 
+	{ 
+		if (currentScene != nullptr)
+		{
+			return currentScene->GetSceneState(); 
+		}
+	}
+
 	//getter
 	inline int GetTotalScore() const { return TotalScore; }
 	//setter
@@ -34,4 +42,5 @@ public:
 	{
 		TotalScore += InScore;
 	}
+
 };

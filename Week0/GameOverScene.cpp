@@ -3,6 +3,8 @@
 
 void GameOverScene::Start()
 {
+    sceneState = ECurrentScene::ECS_OVER;
+
     logo = new Image(L"assets/gameover_team.png", { 0.75f, 1.0f });
       logo->Initialize(*renderer);
     logo->SetWorldPosition(FVector3(0, 0, 0));

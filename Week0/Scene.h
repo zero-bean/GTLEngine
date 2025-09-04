@@ -6,6 +6,12 @@ class Scene
 {
 protected:
 	Renderer* renderer;
+	HFONT font = {};
+	ECurrentScene sceneState = ECurrentScene::ECS_NONE;
+
+public:
+	ECurrentScene GetSceneState() const { return sceneState; }
+
 public:
    	Scene(Renderer* newRenderer) { renderer = std::move(newRenderer); }
 	virtual ~Scene() = default;
