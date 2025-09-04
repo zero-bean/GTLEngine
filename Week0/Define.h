@@ -5,6 +5,7 @@
 
 const int DefaultScore = 100;
 
+
 struct FVector3
 {
     FVector3(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {}
@@ -34,7 +35,7 @@ struct FVertexSimple
     float u, v;
 };
 
-// ╟Ь ╩Себ
+// О©╫О©╫ О©╫О©╫О©╫О©╫
 enum class eBallState
 {
     Idle = 0,
@@ -43,7 +44,7 @@ enum class eBallState
 
 };
 
-// ╟Ь е╦ют
+// О©╫О©╫ е╦О©╫О©╫
 enum class eBallType
 {
     Static = 0,

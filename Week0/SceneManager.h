@@ -6,6 +6,7 @@ class SceneManager
 private:
 	static SceneManager* sInstance;
 	Scene* currentScene;
+	int  TotalScore{};
 
 	SceneManager();
 	SceneManager(const SceneManager& other) = delete;
