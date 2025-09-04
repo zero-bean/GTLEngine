@@ -3,6 +3,7 @@
 #include "ScreenUtil.h"
 #include "GameOverScene.h"
 #include "ClearScene.h"
+#include "TimeManager.h"
 
 inline bool InGameScene::IsInRange(const int x, const int y) const
 {
@@ -71,10 +72,10 @@ std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
 
     // 1) ë§??—ì¤„?ì„œ ê³µì´ ?ˆëŠ” ì¹¸ë“¤???œìž‘?ìœ¼ë¡??ì— ?½ìž…
     for (int y = 0; y < COLS; ++y) {
-        if (board[0][y].ball != nullptr && board[0][y].ball->GetBallState()==eBallState::Idle)
+        if (board[DescentCount][y].ball != nullptr && board[DescentCount][y].ball->GetBallState()==eBallState::Idle)
         {           // ê³µì´ ?ˆëŠ” ì¹¸ë§Œ ?œìž‘
-            visited[0][y] = true;
-            q.push({ 0, y });               // (y,x)
+            visited[DescentCount][y] = true;
+            q.push({ DescentCount, y });               // (y,x)
         }
     }
 
@@ -101,7 +102,7 @@ std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
     }
 
     // 3) ë°©ë¬¸?˜ì? ?Šì? ê³?=ë£¨íŠ¸ ë¯¸ì—°ê²?ë§??˜ì§‘
-    for (int x = 0; x < ROWS; ++x) {
+    for (int x = DescentCount; x < ROWS; ++x) {
         for (int y = 0; y < COLS; ++y) {
             if (board[x][y].ball != nullptr && !visited[x][y]) {
                 floating.push_back({ x, y });
@@ -114,8 +115,7 @@ std::vector<std::pair<int, int>> InGameScene::FindFloatingBalls()
 
 void InGameScene::Start()
 {
-    playerarrow.Initialize(*renderer);
-
+        playerarrow.Initialize(*renderer);
     NumVerticesArrow = sizeof(arrowVertices) / sizeof(FVertexSimple);
     arrowVertexBuffer = renderer->CreateVertexBuffer(arrowVertices, sizeof(arrowVertices));
 
@@ -158,9 +158,26 @@ void InGameScene::Start()
 
 void InGameScene::Update(float deltaTime)
 {
+    DescentEventTime += TimeManager::GET_SINGLE()->GetDeltaTime();
+
+    if (DescentEventTime >= 5.0f)
+    {
+       
+
+        // start descent
+        // change board
+        DescentBoard();
+        
+        DescentCount++;
+
+        // reset DescentEventTime
+        DescentEventTime = 0.0f;
+    }
+
+
     playerarrow.Update(*renderer);
 
-    for (int i = 0;i < ROWS; ++i)
+    for (int i = DescentCount;i < ROWS; ++i)
     {
         for (int j = 0;j < COLS; ++j)
         {
@@ -171,7 +188,7 @@ void InGameScene::Update(float deltaTime)
         }
     }
 
-    for (int i = 0;i < ROWS; ++i)
+    for (int i = DescentCount;i < ROWS; ++i)
     {
         for (int j = 0;j < COLS; ++j)
         {
@@ -199,7 +216,7 @@ void InGameScene::Update(float deltaTime)
 
 
     // 1ì°?true ì²˜ë¦¬
-    for (int i = 0;i < ROWS; ++i)
+    for (int i = DescentCount;i < ROWS; ++i)
     {
         for (int j = 0;j < COLS; ++j)
         {
@@ -228,9 +245,9 @@ void InGameScene::Update(float deltaTime)
     // 2ì°?ë²½ë©´ì²˜ë¦¬
     for (int i = 0;i < COLS; ++i)
     {
-        if (board[0][i].ball == nullptr)
+        if (board[DescentCount][i].ball == nullptr)
         {
-            board[0][i].bEnable = true;
+            board[DescentCount][i].bEnable = true;
         }
     }
 
@@ -284,7 +301,7 @@ void InGameScene::LateUpdate(float deltaTime)
     FVector3 ShotBallPosition = ShotBall->GetWorldPosition();
     FVector3 ShotBallVelocity = ShotBall->GetVelocity();
     int dy = std::round((ShotBallPosition.x + 1) / 2.0f * static_cast<float>(COLS - 1)); // ?´ì°¨??ë°°ì—´??ê°€ë¡?(ì²?ë²ˆì§¸)
-    int dx = ROWS - 2 - std::round((ShotBallPosition.y + 1) / 2.0f * static_cast<float>(ROWS - 1)); // ?´ì°¨??ë°°ì—´???¸ë¡œ (??ë²ˆì§¸)
+    int dx = ROWS - 1 -std::round((ShotBallPosition.y + 1) / 2.0f * static_cast<float>(ROWS - 1)); // ?´ì°¨??ë°°ì—´???¸ë¡œ (??ë²ˆì§¸)
     FVector3 NewVector = { (dy - 4) * 0.22F, (dx - 4) * - 0.22f, 0.0f };
 
     //?¼ìª½ ë²½ì´???¿ì•˜?„ë•Œ
@@ -360,7 +377,7 @@ void InGameScene::LateUpdate(float deltaTime)
         
 
         //ê²Œìž„ ?´ë¦¬??ê²€??
-        for (int i = 0;i < ROWS; ++i)
+        for (int i = DescentCount;i < ROWS; ++i)
         {
             for (int j = 0;j < COLS; ++j)
             {
@@ -410,6 +427,7 @@ void InGameScene::OnMessage(MSG msg)
                 ball->Initialize(*renderer);
                 ball->SetRadius(0.11f);
                 ball->SetWorldPosition({ 0.0f - 0.22f, -0.9f, 0.0f });
+                ball->Update(*renderer); // ball 첫 프레임에 커지는 거 방지
                 BallQueue.push(ball);
 
                 float speed = 0.02f; // ?í•˜???ë„ ê°?
@@ -470,4 +488,33 @@ void InGameScene::Shutdown()
 
         delete b;
     }
+}
+
+void InGameScene::DescentBoard()
+{
+    for (int i = ROWS - 1; i > DescentCount;--i)
+    {
+        for (int j = 0; j < COLS; ++j)
+        {
+            board[i][j].ball = board[i - 1][j].ball;
+            board[i][j].bEnable = board[i - 1][j].bEnable;
+
+            if (board[i-1][j].ball != nullptr)
+            {
+                FVector3 TempVector = board[i - 1][j].ball->GetWorldPosition();
+                board[i][j].ball->SetWorldPosition({TempVector.x, TempVector.y - 0.22f, TempVector.z});
+            }
+
+        }
+    }
+
+    for (int j = 0; j < COLS; ++j)
+    {
+        board[DescentCount][j].ball = nullptr;
+        board[DescentCount][j].bEnable = false;
+    }
+
+
+    // stair block algorithm
+
 }

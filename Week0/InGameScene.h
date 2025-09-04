@@ -13,7 +13,7 @@ class InGameScene : public Scene {
 private:
 	HWND* hWND;
 	float rotationDeg = 0.0f;
-	float rotationDelta = 0.3f;
+	float rotationDelta = 1.5f;
 	INT NumVerticesArrow;
 	ID3D11Buffer* arrowVertexBuffer;
 
@@ -45,4 +45,19 @@ public:
 	void OnGUI(HWND hWND) override;
 	void OnRender() override;
 	void Shutdown() override;
+
+
+private:
+
+
+	void DescentBoard();
+	
+
+private:
+	float DescentEventTime{};
+	int	  DescentCount{0};
+
+
+
+
 };

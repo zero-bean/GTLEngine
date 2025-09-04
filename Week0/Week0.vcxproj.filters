@@ -48,9 +48,6 @@
     <ClCompile Include="SceneManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="InGameScene.h">
-      <Filter>헤더 파일</Filter>
-    </ClCompile>
     <ClCompile Include="InGameScene.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -74,9 +71,6 @@
     </ClCompile>
     <ClCompile Include="TitleScene.cpp">
       <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="TextureSet.h">
-      <Filter>헤더 파일</Filter>
     </ClCompile>
     <ClCompile Include="Button.cpp">
       <Filter>소스 파일</Filter>
@@ -185,6 +179,12 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="TimeManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureSet.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="InGameScene.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

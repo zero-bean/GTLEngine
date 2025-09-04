@@ -5,7 +5,7 @@
 
 Ball::Ball()
 {
-
+    
 }
 Ball::~Ball()
 {
