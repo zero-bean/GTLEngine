@@ -1,10 +1,11 @@
-#include "pch.h"
+
 #include "InGameScene.h"
 #include "ArrowVertices.h"
 #include "ScreenUtil.h"
 #include "GameOverScene.h"
 #include "ClearScene.h"
 #include "TimeManager.h"
+
 
 
 inline bool InGameScene::IsInRange(const int x, const int y) const
@@ -488,8 +489,20 @@ void InGameScene::Shutdown()
         Ball* b = BallQueue.front(); // ë§????”ì†Œ ê°€?¸ì˜¤ê¸?
         BallQueue.pop();            // ë§????”ì†Œ ?œê±°
 
-        delete b;
+        SAFE_DELETE(b);
     }
+
+
+    for (int i = 0;i < ROWS;++i)
+    {
+        for (int j = 0;j < COLS;++j)
+        {
+            SAFE_DELETE(board[i][j].ball);
+        }
+    }
+
+    SAFE_DELETE(bg);
+    SAFE_DELETE(shutter);
 }
 
 void InGameScene::CreateLevelDesign()

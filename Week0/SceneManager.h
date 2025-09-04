@@ -36,8 +36,10 @@ public:
 
 	//getter
 	inline int GetTotalScore() const { return TotalScore; }
+
 	//setter
 	inline void ResetTotalScore() { TotalScore = 0; }
+
 	inline void AddScore(int InScore)
 	{
 		TotalScore += InScore;

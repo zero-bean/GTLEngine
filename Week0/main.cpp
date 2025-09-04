@@ -212,6 +212,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ////////////////////////////////////////////
     }
 
+    sceneManager->DestroyInstance();
+
+
     // ImGui �Ҹ�
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();

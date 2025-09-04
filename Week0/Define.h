@@ -35,7 +35,7 @@ struct FVertexSimple
     float u, v;
 };
 
-// ╟Ь ╩Себ
+// О©╫О©╫ О©╫О©╫О©╫О©╫
 enum class eBallState
 {
     Idle = 0,
@@ -44,7 +44,7 @@ enum class eBallState
 
 };
 
-// ╟Ь е╦ют
+// О©╫О©╫ е╦О©╫О©╫
 enum class eBallType
 {
     Static = 0,

@@ -6,9 +6,9 @@
 
 class TitleScene : public Scene {
 private:
-	Image* logo;
-	Button* exitButton;
-	Button* playButton;
+	Image* logo{};
+	Button* exitButton{};
+	Button* playButton{};
 	HWND* hWND;
 public:
 	TitleScene(HWND* newhWND, Renderer* newRenderer) : Scene(newRenderer) {
