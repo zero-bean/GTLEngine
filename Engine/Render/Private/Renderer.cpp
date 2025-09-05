@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Render/Public/Renderer.h"
-
+#include "Render/Public/Pipeline.h"
 #include "Manager/ImGui/Public/ImGuiManager.h"
 
 IMPLEMENT_SINGLETON(URenderer)
@@ -23,6 +23,8 @@ void URenderer::Create(HWND InWindowHandle)
 
 	// 래스터라이저 상태 생성
 	CreateRasterizerState();
+
+	Pipeline = new UPipeline(DeviceContext);
 }
 
 /**
@@ -189,13 +191,13 @@ void URenderer::CreateShader()
 	                   &VertexShaderCSO, nullptr);
 
 	Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(),
-	                           VertexShaderCSO->GetBufferSize(), nullptr, &SimpleVertexShader);
+	                           VertexShaderCSO->GetBufferSize(), nullptr, &DefaultVertexShader);
 
 	D3DCompileFromFile(L"Shader/SampleShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
 	                   &PixelShaderCSO, nullptr);
 
 	Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(),
-	                          PixelShaderCSO->GetBufferSize(), nullptr, &SimplePixelShader);
+	                          PixelShaderCSO->GetBufferSize(), nullptr, &DefaultPixelShader);
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -204,9 +206,9 @@ void URenderer::CreateShader()
 	};
 
 	Device->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(),
-	                          VertexShaderCSO->GetBufferSize(), &SimpleInputLayout);
+	                          VertexShaderCSO->GetBufferSize(), &DefaultInputLayout);
 
-	Stride = sizeof(FVertexSimple);
+	Stride = sizeof(FVertex);
 
 	VertexShaderCSO->Release();
 	PixelShaderCSO->Release();
@@ -217,22 +219,22 @@ void URenderer::CreateShader()
  */
 void URenderer::ReleaseShader()
 {
-	if (SimpleInputLayout)
+	if (DefaultInputLayout)
 	{
-		SimpleInputLayout->Release();
-		SimpleInputLayout = nullptr;
+		DefaultInputLayout->Release();
+		DefaultInputLayout = nullptr;
 	}
 
-	if (SimplePixelShader)
+	if (DefaultPixelShader)
 	{
-		SimplePixelShader->Release();
-		SimplePixelShader = nullptr;
+		DefaultPixelShader->Release();
+		DefaultPixelShader = nullptr;
 	}
 
-	if (SimpleVertexShader)
+	if (DefaultVertexShader)
 	{
-		SimpleVertexShader->Release();
-		SimpleVertexShader = nullptr;
+		DefaultVertexShader->Release();
+		DefaultVertexShader = nullptr;
 	}
 }
 
@@ -242,14 +244,20 @@ void URenderer::ReleaseShader()
 void URenderer::Prepare() const
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
-
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
-	DeviceContext->RSSetState(RasterizerState);
-
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+
+	Pipeline->UpdatePipeline({
+		DefaultInputLayout,
+		DefaultVertexShader,
+		RasterizerState,
+		DefaultPixelShader,
+		nullptr,
+		});
+
+	//DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//DeviceContext->RSSetState(RasterizerState);
+	//DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
 
 /**
@@ -257,14 +265,15 @@ void URenderer::Prepare() const
  */
 void URenderer::PrepareShader() const
 {
-	DeviceContext->VSSetShader(SimpleVertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
-	DeviceContext->IASetInputLayout(SimpleInputLayout);
+	//DeviceContext->VSSetShader(DefaultVertexShader, nullptr, 0);
+	//DeviceContext->PSSetShader(DefaultPixelShader, nullptr, 0);
+	//DeviceContext->IASetInputLayout(DefaultInputLayout);
 
-	if (ConstantBuffer)
+	Pipeline->SetConstantBuffer(0, true, ConstantBuffer);
+	/*if (ConstantBuffer)
 	{
 		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-	}
+	}*/
 }
 
 /**
@@ -312,15 +321,15 @@ void URenderer::RenderTriangle() const
  * @brief Line Segments 그리는 함수
  * Concave Collider를 위해 구현되었음
  */
-void URenderer::RenderLines(const FVertexSimple* InVertices, UINT InCount) const
+void URenderer::RenderLines(const FVertex* InVertices, UINT InCount) const
 {
 	if (!InVertices || InCount == 0)
 	{
 		return;
 	}
 
-	ID3D11Buffer* tempVB = CreateVertexBuffer(const_cast<FVertexSimple*>(InVertices),
-	                                          sizeof(FVertexSimple) * InCount);
+	ID3D11Buffer* tempVB = CreateVertexBuffer(const_cast<FVertex*>(InVertices),
+	                                          sizeof(FVertex) * InCount);
 
 	UINT Offset = 0;
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -339,7 +348,7 @@ void URenderer::RenderLines(const FVertexSimple* InVertices, UINT InCount) const
  * @param InByteWidth
  * @return
  */
-ID3D11Buffer* URenderer::CreateVertexBuffer(FVertexSimple* InVertices, UINT InByteWidth) const
+ID3D11Buffer* URenderer::CreateVertexBuffer(FVertex* InVertices, UINT InByteWidth) const
 {
 	// 2. Create a vertex buffer
 	D3D11_BUFFER_DESC VertexBufferDesc = {};
@@ -418,7 +427,7 @@ void URenderer::ReleaseConstantBuffer()
  * @param InOffset
  * @param InScale Ball Size
  */
-void URenderer::UpdateConstant(FVector InOffset, float InScale) const
+void URenderer::UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const
 {
 	if (ConstantBuffer)
 	{
@@ -428,57 +437,16 @@ void URenderer::UpdateConstant(FVector InOffset, float InScale) const
 		// update constant buffer every frame
 		FConstants* constants = (FConstants*)constantbufferMSR.pData;
 		{
-			constants->Offset = InOffset;
-			constants->ScaleX = InScale;
-			constants->ScaleY = InScale;
-			constants->Rotation = 0.0f;
-			constants->Radius = 0.0f;
-		}
-		DeviceContext->Unmap(ConstantBuffer, 0);
-	}
-}
+			const float Roll = FVector::GetDegreeToRadian(InRotation.X);
+			const float Pitch = FVector::GetDegreeToRadian(InRotation.Y);
+			const float Yaw = FVector::GetDegreeToRadian(InRotation.Z);
 
-/**
- * @brief Rectangle용 상수 버퍼 업데이트 함수
- * @param InOffset
- * @param InScaleX Rectangle Width
- * @param InScaleY Rectangle Height
- * @param InRotation Angle
- */
-void URenderer::UpdateConstantForRectangle(FVector InOffset, float InScaleX, float InScaleY,
-                                           float InRotation) const
-{
-	if (ConstantBuffer)
-	{
-		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
-		DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
-		// update constant buffer every frame
-		FConstants* constants = (FConstants*)constantbufferMSR.pData;
-		{
-			constants->Offset = InOffset;
-			constants->ScaleX = InScaleX * 0.5f;
-			constants->ScaleY = InScaleY * 0.5f;
-			constants->Rotation = InRotation;
-			constants->Radius = 0.0f;
+			FConstants C = FConstants::TranslationMatrix(FVector(0, 0, 0));
+			FConstants S = FConstants::ScaleMatrix(InScale);
+			FConstants R = FConstants::RotationMatrix({ Roll, Pitch, Yaw });
+			FConstants T = FConstants::TranslationMatrix(InPosition);
+			*constants = C * S * R * T;
 		}
-		DeviceContext->Unmap(ConstantBuffer, 0);
-	}
-}
-
-void URenderer::UpdateConstantForTriangle(FVector InOffset, float InBase, float InHeight,
-                                          float InRotation,
-                                          float InRadius) const
-{
-	if (ConstantBuffer)
-	{
-		D3D11_MAPPED_SUBRESOURCE msr;
-		DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
-		FConstants* c = (FConstants*)msr.pData;
-		c->Offset = InOffset;
-		c->ScaleX = InBase;
-		c->ScaleY = InHeight;
-		c->Rotation = InRotation;
-		c->Radius = InRadius;
 		DeviceContext->Unmap(ConstantBuffer, 0);
 	}
 }

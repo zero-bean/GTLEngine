@@ -1,6 +1,8 @@
 #pragma once
 #include "Core/Public/Object.h"
 
+class UPipeline;
+
 /**
  * @brief Rendering Pipeline 전반을 처리하는 클래스
  *
@@ -18,9 +20,9 @@
  * @param ClearColor 화면을 초기화(clear)할 때 사용할 색상 (RGBA)
  * @param ViewportInfo 렌더링 영역을 정의하는 뷰포트 정보
  *
- * @param SimpleVertexShader
- * @param SimplePixelShader
- * @param SimpleInputLayout
+ * @param DefaultVertexShader
+ * @param DefaultPixelShader
+ * @param DefaultInputLayout
  * @param Stride
  *
  * @param vertexBufferSphere
@@ -52,24 +54,23 @@ public:
 	void RenderPrimitive(ID3D11Buffer* Vertexbuffer, UINT NumVertices) const;
 	void RenderRectangle() const;
 	void RenderTriangle() const;
-	void RenderLines(const FVertexSimple* InVertices, UINT InCount) const;
+	void RenderLines(const FVertex* InVertices, UINT InCount) const;
 
-	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* InVertices, UINT InByteWidth) const;
+	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, UINT InByteWidth) const;
 	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, UINT InByteWidth) const;
 	static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
 	void CreateConstantBuffer();
 	void ReleaseConstantBuffer();
-	void UpdateConstant(FVector InOffset, float InScale) const;
-	void UpdateConstantForRectangle(FVector InOffset, float InScaleX, float InScaleY,
-	                                float InRotation) const;
-	void UpdateConstantForTriangle(FVector InOffset, float InBase, float InHeight, float InRotation,
-	                               float InRadius) const;
+	void UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
 
 	void Init(HWND InWindowHandle);
 	void Release();
 
 	ID3D11Device* GetDevice() const { return Device; }
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
+
+private:
+	UPipeline* Pipeline;
 
 private:
 	ID3D11Device* Device = nullptr;
@@ -85,9 +86,9 @@ private:
 	D3D11_VIEWPORT ViewportInfo;
 	D3D11_VIEWPORT UIViewportInfo;
 
-	ID3D11VertexShader* SimpleVertexShader;
-	ID3D11PixelShader* SimplePixelShader;
-	ID3D11InputLayout* SimpleInputLayout;
+	ID3D11VertexShader* DefaultVertexShader;
+	ID3D11PixelShader* DefaultPixelShader;
+	ID3D11InputLayout* DefaultInputLayout;
 	unsigned int Stride;
 
 	ID3D11Buffer* vertexBufferSphere;
