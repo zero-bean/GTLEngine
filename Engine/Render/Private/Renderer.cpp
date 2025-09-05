@@ -270,11 +270,11 @@ void URenderer::PrepareShader() const
 /**
  * @brief Buffer에 작성된 내용 그리는 함수
  */
-void URenderer::RenderPrimitive() const
+void URenderer::RenderPrimitive(ID3D11Buffer* Vertexbuffer, UINT NumVertices) const
 {
 	UINT Offset = 0;
-	DeviceContext->IASetVertexBuffers(0, 1, &vertexBufferSphere, &Stride, &Offset);
-	DeviceContext->Draw(numVerticesSphere, 0);
+	DeviceContext->IASetVertexBuffers(0, 1, &Vertexbuffer, &Stride, &Offset);
+	DeviceContext->Draw(NumVertices, 0);
 }
 
 /**

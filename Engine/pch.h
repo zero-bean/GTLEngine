@@ -36,7 +36,7 @@ using TArray = std::vector<T>;
 template <typename K, typename V>
 using TMap = std::map<K, V>;
 
-using std::string;
+using FString = std::string;
 using std::clamp;
 using std::unordered_map;
 using std::to_string;
