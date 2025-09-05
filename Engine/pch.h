@@ -21,6 +21,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <functional>
+#include <filesystem>
 
 #include <cassert>
 
@@ -44,3 +45,9 @@ using std::function;
 using std::wstring;
 using std::cout;
 using std::endl;
+
+// File System
+namespace filesystem = std::filesystem;
+using filesystem::path;
+using filesystem::exists;
+using filesystem::create_directories;
