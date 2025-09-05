@@ -44,21 +44,18 @@ public:
 
 	void ReleaseResource();
 
-	// 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
-	void SwapBuffer() const;
-
 	void CreateShader();
 	void ReleaseShader();
-	void Prepare() const;
-	void PrepareShader() const;
-	void RenderPrimitive(ID3D11Buffer* Vertexbuffer, UINT NumVertices) const;
-	void RenderRectangle() const;
-	void RenderTriangle() const;
-	void RenderLines(const FVertex* InVertices, UINT InCount) const;
+	void RenderBegin() const;
+	void Render() const;
+	void RenderEnd() const;
 
+	//Testing Func
+	void RenderLines(const FVertex* InVertices, UINT InCount) const;
 	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, UINT InByteWidth) const;
 	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, UINT InByteWidth) const;
 	static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
+
 	void CreateConstantBuffer();
 	void ReleaseConstantBuffer();
 	void UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
@@ -84,7 +81,6 @@ private:
 
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};
 	D3D11_VIEWPORT ViewportInfo;
-	D3D11_VIEWPORT UIViewportInfo;
 
 	ID3D11VertexShader* DefaultVertexShader;
 	ID3D11PixelShader* DefaultPixelShader;

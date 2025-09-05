@@ -90,13 +90,12 @@ void FClientApp::UpdateSystem()
 	TimeManager.Update();
 	InputManager.Update();
 
-	Renderer.Prepare();
-	Renderer.PrepareShader();
+	Renderer.RenderBegin();
 
-	// TODO(KHJ): 실제 나머지 렌더링 가져올 것
+	Renderer.Render();
 	ImGuiManager.Render();
 
-	Renderer.SwapBuffer();
+	Renderer.RenderEnd();
 }
 
 /**

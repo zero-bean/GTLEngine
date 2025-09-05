@@ -63,11 +63,11 @@ void URenderer::CreateDeviceAndSwapChain(HWND InWindowHandle)
 		(float)swapchaindesc.BufferDesc.Height, 0.0f, 1.0f
 	};
 
-	// UI 영역을 위한 뷰포트 정보도 저장
-	UIViewportInfo = {
-		GameAreaWidth, 0.0f, (float)swapchaindesc.BufferDesc.Width - GameAreaWidth,
-		(float)swapchaindesc.BufferDesc.Height, 0.0f, 1.0f
-	};
+	// // UI 영역을 위한 뷰포트 정보도 저장
+	// UIViewportInfo = {
+	// 	GameAreaWidth, 0.0f, (float)swapchaindesc.BufferDesc.Width - GameAreaWidth,
+	// 	(float)swapchaindesc.BufferDesc.Height, 0.0f, 1.0f
+	// };
 }
 
 /**
@@ -174,7 +174,7 @@ void URenderer::ReleaseResource()
 /**
  * @brief 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
  */
-void URenderer::SwapBuffer() const
+void URenderer::RenderEnd() const
 {
 	SwapChain->Present(0, 0); // 1: VSync 활성화
 }
@@ -241,80 +241,40 @@ void URenderer::ReleaseShader()
 /**
  * @brief Render Prepare Step
  */
-void URenderer::Prepare() const
+void URenderer::RenderBegin() const
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
+}
 
-	Pipeline->UpdatePipeline({
-		DefaultInputLayout,
-		DefaultVertexShader,
-		RasterizerState,
-		DefaultPixelShader,
-		nullptr,
+/**
+ * @brief Buffer에 데이터 입력 및 Draw
+ */
+void URenderer::Render() const
+{
+	//Gather All Renderable Objects and Render
+	{
+		Pipeline->UpdatePipeline({
+			DefaultInputLayout,
+			DefaultVertexShader,
+			RasterizerState,
+			DefaultPixelShader,
+			nullptr,
 		});
 
-	//DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//DeviceContext->RSSetState(RasterizerState);
-	//DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-}
+		Pipeline->SetConstantBuffer(0, true, ConstantBuffer);
 
-/**
- * @brief Prepare Shader 함수
- */
-void URenderer::PrepareShader() const
-{
-	//DeviceContext->VSSetShader(DefaultVertexShader, nullptr, 0);
-	//DeviceContext->PSSetShader(DefaultPixelShader, nullptr, 0);
-	//DeviceContext->IASetInputLayout(DefaultInputLayout);
-
-	Pipeline->SetConstantBuffer(0, true, ConstantBuffer);
-	/*if (ConstantBuffer)
-	{
-		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-	}*/
-}
-
-/**
- * @brief Buffer에 작성된 내용 그리는 함수
- */
-void URenderer::RenderPrimitive(ID3D11Buffer* Vertexbuffer, UINT NumVertices) const
-{
-	UINT Offset = 0;
-	DeviceContext->IASetVertexBuffers(0, 1, &Vertexbuffer, &Stride, &Offset);
-	DeviceContext->Draw(NumVertices, 0);
-}
-
-/**
- * @brief Rectangle 그리는 함수
- */
-void URenderer::RenderRectangle() const
-{
-	if (!vertexBufferRectangle || !indexBufferRectangle)
-	{
-		return;
+		//Test Code
+		UpdateConstant({}, {}, {1,1,1});
+		FVertex vert[] = {
+			{
+				{0,0,0}, {1, 1,1,1}},
+			{{1,1,1},{1,1,1,1}}};
+		RenderLines(vert, 2);
+		// Pipeline->SetVertexBuffer(Vertexbuffer, Stride);
+		// Pipeline->Draw(NumVertices, 0);
 	}
-
-	UINT Offset = 0;
-	DeviceContext->IASetVertexBuffers(0, 1, &vertexBufferRectangle, &Stride, &Offset);
-	DeviceContext->IASetIndexBuffer(indexBufferRectangle, DXGI_FORMAT_R32_UINT, 0);
-	DeviceContext->DrawIndexed(numIndicesRectangle, 0, 0);
-}
-
-/**
- * @brief Triangle 그리는 함수
- */
-void URenderer::RenderTriangle() const
-{
-	if (!vertexBufferTriangle)
-	{
-		return;
-	}
-
-	UINT Offset = 0;
-	DeviceContext->IASetVertexBuffers(0, 1, &vertexBufferTriangle, &Stride, &Offset);
-	DeviceContext->Draw(3, 0);
 }
 
 /**
