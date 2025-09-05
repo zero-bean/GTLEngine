@@ -51,7 +51,7 @@ public:
 	void ReleaseShader();
 	void Prepare() const;
 	void PrepareShader() const;
-	void RenderPrimitive() const;
+	void RenderPrimitive(ID3D11Buffer* Vertexbuffer, UINT NumVertices) const;
 	void RenderRectangle() const;
 	void RenderTriangle() const;
 	void RenderLines(const FVertex* InVertices, UINT InCount) const;
