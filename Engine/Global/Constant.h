@@ -12,3 +12,5 @@ namespace Time
 	// Time Sample Count
 	constexpr int FPS_SAMPLE_COUNT = 60;
 }
+
+constexpr float Pi = 3.141592f;
