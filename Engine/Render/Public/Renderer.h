@@ -1,6 +1,8 @@
 #pragma once
 #include "Core/Public/Object.h"
 
+class UPipeline;
+
 /**
  * @brief Rendering Pipeline 전반을 처리하는 클래스
  *
@@ -18,9 +20,9 @@
  * @param ClearColor 화면을 초기화(clear)할 때 사용할 색상 (RGBA)
  * @param ViewportInfo 렌더링 영역을 정의하는 뷰포트 정보
  *
- * @param SimpleVertexShader
- * @param SimplePixelShader
- * @param SimpleInputLayout
+ * @param DefaultVertexShader
+ * @param DefaultPixelShader
+ * @param DefaultInputLayout
  * @param Stride
  *
  * @param vertexBufferSphere
@@ -68,6 +70,9 @@ public:
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
 
 private:
+	UPipeline* Pipeline;
+
+private:
 	ID3D11Device* Device = nullptr;
 	ID3D11DeviceContext* DeviceContext = nullptr;
 	IDXGISwapChain* SwapChain = nullptr;
@@ -81,9 +86,9 @@ private:
 	D3D11_VIEWPORT ViewportInfo;
 	D3D11_VIEWPORT UIViewportInfo;
 
-	ID3D11VertexShader* SimpleVertexShader;
-	ID3D11PixelShader* SimplePixelShader;
-	ID3D11InputLayout* SimpleInputLayout;
+	ID3D11VertexShader* DefaultVertexShader;
+	ID3D11PixelShader* DefaultPixelShader;
+	ID3D11InputLayout* DefaultInputLayout;
 	unsigned int Stride;
 
 	ID3D11Buffer* vertexBufferSphere;
