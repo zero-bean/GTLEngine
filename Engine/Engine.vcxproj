@@ -84,6 +84,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -166,7 +167,6 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Core\Public\AppWindow.h" />
     <ClInclude Include="Core\Public\ClientApp.h" />
-    <ClInclude Include="Render\Public\Pipeline.h" />
     <ClInclude Include="Render\Public\Renderer.h" />
     <ClInclude Include="UI\Public\UI.h" />
   </ItemGroup>
@@ -190,7 +190,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Core\Private\AppWindow.cpp" />
     <ClCompile Include="Core\Private\ClientApp.cpp" />
-    <ClCompile Include="Render\Private\Pipeline.cpp" />
     <ClCompile Include="Render\Private\Renderer.cpp" />
     <ClCompile Include="UI\Private\UI.cpp" />
   </ItemGroup>

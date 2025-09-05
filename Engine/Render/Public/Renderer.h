@@ -54,18 +54,14 @@ public:
 	void RenderPrimitive() const;
 	void RenderRectangle() const;
 	void RenderTriangle() const;
-	void RenderLines(const FVertexSimple* InVertices, UINT InCount) const;
+	void RenderLines(const FVertex* InVertices, UINT InCount) const;
 
-	ID3D11Buffer* CreateVertexBuffer(FVertexSimple* InVertices, UINT InByteWidth) const;
+	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, UINT InByteWidth) const;
 	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, UINT InByteWidth) const;
 	static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
 	void CreateConstantBuffer();
 	void ReleaseConstantBuffer();
-	void UpdateConstant(FVector InOffset, float InScale) const;
-	void UpdateConstantForRectangle(FVector InOffset, float InScaleX, float InScaleY,
-	                                float InRotation) const;
-	void UpdateConstantForTriangle(FVector InOffset, float InBase, float InHeight, float InRotation,
-	                               float InRadius) const;
+	void UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
 
 	void Init(HWND InWindowHandle);
 	void Release();
