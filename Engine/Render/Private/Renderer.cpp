@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Render/Public/Renderer.h"
-
+#include "Render/Public/Pipeline.h"
 #include "Manager/ImGui/Public/ImGuiManager.h"
 
 IMPLEMENT_SINGLETON(URenderer)
@@ -23,6 +23,8 @@ void URenderer::Create(HWND InWindowHandle)
 
 	// 래스터라이저 상태 생성
 	CreateRasterizerState();
+
+	Pipeline = new UPipeline(DeviceContext);
 }
 
 /**
@@ -189,13 +191,13 @@ void URenderer::CreateShader()
 	                   &VertexShaderCSO, nullptr);
 
 	Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(),
-	                           VertexShaderCSO->GetBufferSize(), nullptr, &SimpleVertexShader);
+	                           VertexShaderCSO->GetBufferSize(), nullptr, &DefaultVertexShader);
 
 	D3DCompileFromFile(L"Shader/SampleShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
 	                   &PixelShaderCSO, nullptr);
 
 	Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(),
-	                          PixelShaderCSO->GetBufferSize(), nullptr, &SimplePixelShader);
+	                          PixelShaderCSO->GetBufferSize(), nullptr, &DefaultPixelShader);
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -204,7 +206,7 @@ void URenderer::CreateShader()
 	};
 
 	Device->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(),
-	                          VertexShaderCSO->GetBufferSize(), &SimpleInputLayout);
+	                          VertexShaderCSO->GetBufferSize(), &DefaultInputLayout);
 
 	Stride = sizeof(FVertexSimple);
 
@@ -217,22 +219,22 @@ void URenderer::CreateShader()
  */
 void URenderer::ReleaseShader()
 {
-	if (SimpleInputLayout)
+	if (DefaultInputLayout)
 	{
-		SimpleInputLayout->Release();
-		SimpleInputLayout = nullptr;
+		DefaultInputLayout->Release();
+		DefaultInputLayout = nullptr;
 	}
 
-	if (SimplePixelShader)
+	if (DefaultPixelShader)
 	{
-		SimplePixelShader->Release();
-		SimplePixelShader = nullptr;
+		DefaultPixelShader->Release();
+		DefaultPixelShader = nullptr;
 	}
 
-	if (SimpleVertexShader)
+	if (DefaultVertexShader)
 	{
-		SimpleVertexShader->Release();
-		SimpleVertexShader = nullptr;
+		DefaultVertexShader->Release();
+		DefaultVertexShader = nullptr;
 	}
 }
 
@@ -242,14 +244,20 @@ void URenderer::ReleaseShader()
 void URenderer::Prepare() const
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
-
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
-	DeviceContext->RSSetState(RasterizerState);
-
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+
+	Pipeline->UpdatePipeline({
+		DefaultInputLayout,
+		DefaultVertexShader,
+		RasterizerState,
+		DefaultPixelShader,
+		nullptr,
+		});
+
+	//DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//DeviceContext->RSSetState(RasterizerState);
+	//DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 }
 
 /**
@@ -257,14 +265,15 @@ void URenderer::Prepare() const
  */
 void URenderer::PrepareShader() const
 {
-	DeviceContext->VSSetShader(SimpleVertexShader, nullptr, 0);
-	DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
-	DeviceContext->IASetInputLayout(SimpleInputLayout);
+	//DeviceContext->VSSetShader(DefaultVertexShader, nullptr, 0);
+	//DeviceContext->PSSetShader(DefaultPixelShader, nullptr, 0);
+	//DeviceContext->IASetInputLayout(DefaultInputLayout);
 
-	if (ConstantBuffer)
+	Pipeline->SetConstantBuffer(0, true, ConstantBuffer);
+	/*if (ConstantBuffer)
 	{
 		DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-	}
+	}*/
 }
 
 /**
@@ -272,9 +281,11 @@ void URenderer::PrepareShader() const
  */
 void URenderer::RenderPrimitive() const
 {
-	UINT Offset = 0;
-	DeviceContext->IASetVertexBuffers(0, 1, &vertexBufferSphere, &Stride, &Offset);
-	DeviceContext->Draw(numVerticesSphere, 0);
+	Pipeline->SetVertexBuffer(vertexBufferSphere, Stride);
+	Pipeline->Draw(numVerticesSphere, 0);
+	//UINT Offset = 0;
+	//DeviceContext->IASetVertexBuffers(0, 1, &vertexBufferSphere, &Stride, &Offset);
+	//DeviceContext->Draw(numVerticesSphere, 0);
 }
 
 /**
