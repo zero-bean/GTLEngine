@@ -1,8 +1,9 @@
 #pragma once
+#include "DeviceResources.h"
 #include "Core/Public/Object.h"
 
 class UPipeline;
-
+class UDeviceResources;
 /**
  * @brief Rendering Pipeline 전반을 처리하는 클래스
  *
@@ -34,18 +35,17 @@ class URenderer :
 DECLARE_SINGLETON(URenderer)
 
 public:
-	void Create(HWND InWindowHandle);
-	void CreateDeviceAndSwapChain(HWND InWindowHandle);
-	void ReleaseDeviceAndSwapChain();
-	void CreateFrameBuffer();
-	void ReleaseFrameBuffer();
+	void Init(HWND InWindowHandle);
+	void Release();
+
 	void CreateRasterizerState();
 	void ReleaseRasterizerState();
 
 	void ReleaseResource();
 
-	void CreateShader();
-	void ReleaseShader();
+	void CreateDefaultShader();
+	void ReleaseDefaultShader();
+	void Update() const;
 	void RenderBegin() const;
 	void Render() const;
 	void RenderEnd() const;
@@ -60,22 +60,16 @@ public:
 	void ReleaseConstantBuffer();
 	void UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
 
-	void Init(HWND InWindowHandle);
-	void Release();
-
-	ID3D11Device* GetDevice() const { return Device; }
-	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
+	ID3D11Device* GetDevice() const { return DeviceResources->GetDevice(); }
+	ID3D11DeviceContext* GetDeviceContext() const { return DeviceResources->GetDeviceContext(); }
+	IDXGISwapChain* GetSwapChain() const { return DeviceResources->GetSwapChain();}
+	ID3D11RenderTargetView* GetRenderTargetView() const { return DeviceResources->GetRenderTargetView(); }
 
 private:
 	UPipeline* Pipeline;
+	UDeviceResources* DeviceResources;
 
 private:
-	ID3D11Device* Device = nullptr;
-	ID3D11DeviceContext* DeviceContext = nullptr;
-	IDXGISwapChain* SwapChain = nullptr;
-
-	ID3D11Texture2D* FrameBuffer = nullptr;
-	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 	ID3D11RasterizerState* RasterizerState = nullptr;
 	ID3D11Buffer* ConstantBuffer = nullptr;
 
@@ -88,13 +82,4 @@ private:
 	unsigned int Stride;
 
 	ID3D11Buffer* vertexBufferSphere;
-	UINT numVerticesSphere;
-
-	// Rectangle용 버퍼
-	ID3D11Buffer* vertexBufferRectangle = nullptr;
-	ID3D11Buffer* indexBufferRectangle = nullptr;
-	UINT numIndicesRectangle = 0;
-
-	// Triangle용 버퍼
-	ID3D11Buffer* vertexBufferTriangle = nullptr;
 };
