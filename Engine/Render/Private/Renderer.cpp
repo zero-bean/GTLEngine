@@ -7,6 +7,7 @@
 #include "Manager/Level/Public/LevelManager.h"
 #include "Render/Public/DeviceResources.h"
 #include "Mesh/Public/Actor.h"
+#include "Render/Gizmo/Public/Gizmo.h"
 
 IMPLEMENT_SINGLETON(URenderer)
 
@@ -21,6 +22,7 @@ void URenderer::Init(HWND InWindowHandle)
 
 	// 래스터라이저 상태 생성
 	CreateRasterizerState();
+	CreateDepthStencilState();
 	CreateDefaultShader();
 	CreateConstantBuffer();
 
@@ -47,6 +49,24 @@ void URenderer::CreateRasterizerState()
 	rasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
 
 	GetDevice()->CreateRasterizerState(&rasterizerdesc, &RasterizerState);
+}
+
+void URenderer::CreateDepthStencilState()
+{
+	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+
+	depthStencilDesc.DepthEnable = TRUE;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	depthStencilDesc.StencilEnable = FALSE;
+	depthStencilDesc.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	depthStencilDesc.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+
+	HRESULT hr = DeviceResources->GetDevice()->CreateDepthStencilState(
+		&depthStencilDesc,
+		&DepthStencilState
+	);
 }
 
 /**
@@ -134,13 +154,60 @@ void URenderer::ReleaseDefaultShader()
 	}
 }
 
+void URenderer::RenderGizmo(AActor* SelectedActor)
+{
+	FPipelineInfo PipelineInfo = {
+		DefaultInputLayout,
+		DefaultVertexShader,
+		RasterizerState,
+		DepthStencilState,
+		DefaultPixelShader,
+		nullptr,
+	};
+	Pipeline->UpdatePipeline(PipelineInfo);
+
+	UpdateConstant(
+		SelectedActor->GetActorLocation(),
+		{ 0.f, 0.f, 0.f},
+		{0.3f, 0.3f, 0.3f} );
+
+	UINT Offset = 0;
+	ID3D11Buffer* Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::GizmoR);
+	UINT VertexCount = UResourceManager::GetInstance().GetNumVertices(EPrimitiveType::GizmoR);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(VertexCount, 0);
+	}
+
+	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::GizmoG);
+	VertexCount = UResourceManager::GetInstance().GetNumVertices(EPrimitiveType::GizmoG);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(VertexCount, 0);
+	}
+
+	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::GizmoB);
+	VertexCount = UResourceManager::GetInstance().GetNumVertices(EPrimitiveType::GizmoB);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(VertexCount, 0);
+	}
+
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
 void URenderer::Update()
 {
 	RenderBegin();
 
+	RenderLines();
 	GatherRenderableObjects();
 	Render();
 	UImGuiManager::GetInstance().Render(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
+	//RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
 
 	RenderEnd();
 }
@@ -152,11 +219,14 @@ void URenderer::RenderBegin()
 {
 	auto* rtv = DeviceResources->GetRenderTargetView();
 	GetDeviceContext()->ClearRenderTargetView(rtv, ClearColor);
+	auto* dsv = DeviceResources->GetDepthStencilView();
+	GetDeviceContext()->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	GetDeviceContext()->RSSetViewports(1, &DeviceResources->GetViewportInfo());
 
 	ID3D11RenderTargetView* rtvs[] = { rtv };  // 배열 생성
-	GetDeviceContext()->OMSetRenderTargets(1, rtvs, nullptr);
+
+	GetDeviceContext()->OMSetRenderTargets(1, rtvs, DeviceResources->GetDepthStencilView());
 }
 
 /**
@@ -164,20 +234,85 @@ void URenderer::RenderBegin()
  */
 void URenderer::GatherRenderableObjects()
 {
+	if (!ULevelManager::GetInstance().GetCurrentLevel())
+		return;
+
 	PrimitiveComponents.clear();
 	for (auto& Object : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelObjects())
 	{
 		AActor* Actor = dynamic_cast<AActor*>(Object);
 		if (!Actor)
 			continue;
-		for (auto& Component : Actor->OwnedComponents)
+		if (const AGizmo* Gizmo = dynamic_cast<AGizmo*>(Actor))
 		{
-			UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Component);
-			if (!Primitive)
-				continue;
-			PrimitiveComponents.push_back(Primitive);
+			if (ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor())
+			{
+				for (auto& Component : Gizmo->OwnedComponents)
+				{
+					UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Component);
+					if (!Primitive)
+						continue;
+					PrimitiveComponents.push_back(Primitive);
+				}
+			}
+		}
+		else
+		{
+			for (auto& Component : Actor->OwnedComponents)
+			{
+				UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Component);
+				if (!Primitive)
+					continue;
+				PrimitiveComponents.push_back(Primitive);
+			}
 		}
 	}
+}
+
+/**
+ * @brief Axis Line 그리는 함수
+ */
+void URenderer::RenderLines() const
+{
+	FPipelineInfo PipelineInfo = {
+		DefaultInputLayout,
+		DefaultVertexShader,
+		RasterizerState,
+		DepthStencilState,
+		DefaultPixelShader,
+		nullptr,
+		D3D11_PRIMITIVE_TOPOLOGY_LINELIST
+	};
+	Pipeline->UpdatePipeline(PipelineInfo);
+
+	UpdateConstant(
+		{0.f,0.f,0.f},
+		{0.f,0.f,0.f},
+		{10000.f,10000.f,10000.f});
+
+	UINT Offset = 0;
+	ID3D11Buffer* Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::LineR);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(2, 0);
+	}
+
+	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::LineG);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(2, 0);
+	}
+
+	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::LineB);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(2, 0);
+	}
+
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 /**
@@ -195,6 +330,7 @@ void URenderer::Render()
 			DefaultInputLayout,
 			DefaultVertexShader,
 			RasterizerState,
+			DepthStencilState,
 			DefaultPixelShader,
 			nullptr,
 		};
@@ -217,31 +353,6 @@ void URenderer::Render()
 void URenderer::RenderEnd()
 {
 	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
-}
-
-/**
- * @brief Line Segments 그리는 함수
- * Concave Collider를 위해 구현되었음
- */
-void URenderer::RenderLines(const FVertex* InVertices, UINT InCount) const
-{
-	if (!InVertices || InCount == 0)
-	{
-		return;
-	}
-
-	ID3D11Buffer* tempVB = CreateVertexBuffer(const_cast<FVertex*>(InVertices),
-	                                          sizeof(FVertex) * InCount);
-
-	UINT Offset = 0;
-	GetDeviceContext()->IASetVertexBuffers(0, 1, &tempVB, &Stride, &Offset);
-	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	GetDeviceContext()->Draw(InCount, 0);
-
-	ReleaseVertexBuffer(tempVB);
-
-	// 복원: 이후 삼각형 렌더링을 위해 TRIANGLE LIST로 되돌림
-	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 /**

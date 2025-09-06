@@ -179,6 +179,8 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Core\Public\AppWindow.h" />
     <ClInclude Include="Core\Public\ClientApp.h" />
+    <ClInclude Include="Render\Gizmo\Public\Gizmo.h" />
+    <ClInclude Include="Render\Gizmo\Public\GizmoArrow.h" />
     <ClInclude Include="Render\Public\DeviceResources.h" />
     <ClInclude Include="Render\Public\Pipeline.h" />
     <ClInclude Include="Render\Public\Renderer.h" />
@@ -216,6 +218,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Core\Private\AppWindow.cpp" />
     <ClCompile Include="Core\Private\ClientApp.cpp" />
+    <ClCompile Include="Render\Gizmo\Private\Gizmo.cpp" />
+    <ClCompile Include="Render\Gizmo\Private\GizmoArrow.cpp" />
     <ClCompile Include="Render\Private\DeviceResources.cpp" />
     <ClCompile Include="Render\Private\Pipeline.cpp" />
     <ClCompile Include="Render\Private\Renderer.cpp" />

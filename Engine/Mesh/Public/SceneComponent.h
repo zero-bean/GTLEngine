@@ -16,7 +16,7 @@ public:
 	FVector& GetRelativeScale3D();
 private:
 	FVector RelativeLocation = FVector{ 0,0,0.5f };
-	FVector RelativeRotation = FVector{ 0,0,30.f };
+	FVector RelativeRotation = FVector{ 0,0,0.f };
 	FVector RelativeScale3D = FVector{ 0.3f,0.3f,0.3f };
 };
 

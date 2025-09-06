@@ -7,7 +7,7 @@
 class AActor : public UObject
 {
 	//UWorld로부터 업데이트 함수가 호출되면 component들을 순회하며 위치, 애니메이션, 상태 처리
-	
+
 public:
 	~AActor();
 
@@ -36,11 +36,18 @@ public:
 		return NewComponent;
 	}
 
+	virtual void BeginPlay();
+	virtual void Tick(float DeltaTime);
+	virtual void EndPlay();
+
 	USceneComponent* RootComponent = nullptr;
 	TArray<UActorComponent*> OwnedComponents;
+protected:
+
+
 private:
-	
-	
+
+
 
 };
 

@@ -438,5 +438,13 @@ enum class EPrimitiveType : uint8_t
 	Cube,
 	Triangle,
 
+	LineR,
+	LineG,
+	LineB,
+
+	GizmoR,
+	GizmoG,
+	GizmoB,
+
 	End = 0xFF
 };

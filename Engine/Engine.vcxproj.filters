@@ -33,7 +33,11 @@
     <ClCompile Include="Render\Private\Pipeline.cpp" />
     <ClCompile Include="Render\Private\Renderer.cpp" />
     <ClCompile Include="UI\Private\UI.cpp" />
-    <ClCompile Include="Camera\Public\Camera.cpp" />
+    <ClCompile Include="Camera\Private\Camera.cpp" />
+    <ClCompile Include="Manager\Path\Private\PathManager.cpp" />
+    <ClCompile Include="Render\Gizmo\Private\Gizmo.cpp" />
+    <ClCompile Include="Utility\Private\LevelSerializer.cpp" />
+    <ClCompile Include="Render\Gizmo\Private\GizmoArrow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Public\Object.h" />
@@ -74,5 +78,10 @@
     <ClInclude Include="Render\Public\Renderer.h" />
     <ClInclude Include="UI\Public\UI.h" />
     <ClInclude Include="Camera\Public\Camera.h" />
+    <ClInclude Include="Manager\Path\Public\PathManager.h" />
+    <ClInclude Include="Render\Gizmo\Public\Gizmo.h" />
+    <ClInclude Include="Render\Gizmo\Public\GizmoArrow.h" />
+    <ClInclude Include="Utility\Public\LevelSerializer.h" />
+    <ClInclude Include="Utility\Public\Metadata.h" />
   </ItemGroup>
 </Project>

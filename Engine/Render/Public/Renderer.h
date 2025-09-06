@@ -7,7 +7,8 @@ class UPipeline;
 class UDeviceResources;
 class UPrimitiveComponent;
 class Camera;
-
+class AActor;
+class AGizmo;
 /**
  * @brief Rendering Pipeline 전반을 처리하는 클래스
  *
@@ -43,12 +44,15 @@ public:
 	void Release();
 
 	void CreateRasterizerState();
+	void CreateDepthStencilState();
 	void ReleaseRasterizerState();
 
 	void ReleaseResource();
 
 	void CreateDefaultShader();
 	void ReleaseDefaultShader();
+	void RenderLines() const;
+	void RenderGizmo(AActor* SelectedActor);
 	void Update();
 	void RenderBegin();
 	void GatherRenderableObjects();
@@ -56,7 +60,6 @@ public:
 	void RenderEnd();
 
 	//Testing Func
-	void RenderLines(const FVertex* InVertices, UINT InCount) const;
 	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, UINT InByteWidth) const;
 	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, UINT InByteWidth) const;
 	static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
@@ -72,13 +75,15 @@ public:
 	ID3D11RenderTargetView* GetRenderTargetView() const { return DeviceResources->GetRenderTargetView(); }
 
 private:
-	UPipeline* Pipeline;
-	UDeviceResources* DeviceResources;
+	UPipeline* Pipeline = nullptr;
+	UDeviceResources* DeviceResources = nullptr;
 
 	TArray<UPrimitiveComponent*> PrimitiveComponents;
 
+	//AGizmo* Gizmo = nullptr;
 private:
 	ID3D11RasterizerState* RasterizerState = nullptr;
+	ID3D11DepthStencilState* DepthStencilState = nullptr;
 	ID3D11Buffer* ConstantBufferModels = nullptr;
 	ID3D11Buffer* ConstantBufferViewProj = nullptr;
 
