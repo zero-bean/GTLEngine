@@ -3,6 +3,12 @@ cbuffer constants : register(b0)
     row_major float4x4 world;
 }
 
+cbuffer PerFrame : register(b1)
+{
+    row_major float4x4 View;        // View Matrix Calculation of MVP Matrix
+    row_major float4x4 Projection;  // Projection Matrix Calculation of MVP Matrix
+};
+
 struct VS_INPUT
 {
     float4 position : POSITION; // Input position from vertex buffer
@@ -18,11 +24,12 @@ struct PS_INPUT
 PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
+	float4 tmp = input.position;
+    tmp = mul(tmp, world);     
+    tmp = mul(tmp, View);       
+    tmp = mul(tmp, Projection);
 
-	// SRT 행렬 연산을 진행합니다.
-    output.position = mul(input.position, world);
-
-    // 색상은 그대로 전달합니다.
+	output.position = tmp;
     output.color = input.color;
 
     return output;
