@@ -46,7 +46,7 @@ void UImGuiManager::Release()
 /**
  * @brief ImGui Process
  */
-void UImGuiManager::Render(ACubeActor& Cube)
+void UImGuiManager::Render()
 {
 	// Get New Frame
 	ImGui_ImplDX11_NewFrame();
@@ -152,7 +152,7 @@ void UImGuiManager::Render(ACubeActor& Cube)
 
 	ImGui::End();
 
-	FVector CubeLocation = Cube.GetActorLocation();
+	/*FVector CubeLocation = Cube.GetActorLocation();
 	FVector CubeRotation = Cube.GetActorRotation();
 	FVector CubeScale3D = Cube.GetActorScale3D();
 	ImGui::SetNextWindowPos(ImVec2(0,0));
@@ -190,7 +190,7 @@ void UImGuiManager::Render(ACubeActor& Cube)
 
 	Cube.SetActorLocation(CubeLocation);
 	Cube.SetActorRotation(CubeRotation);
-	Cube.SetActorScale3D(CubeScale3D);
+	Cube.SetActorScale3D(CubeScale3D);*/
 	// Render ImGui
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

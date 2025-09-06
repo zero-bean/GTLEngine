@@ -38,10 +38,10 @@ const TArray<FVertex>* UPrimitiveComponent::GetVerticesData() const
     return ResourceManager.GetVertexData(Type);
 }
 
-void UPrimitiveComponent::Render(const URenderer& Renderer) const
-{
-	Renderer.RenderPrimitive(Vertexbuffer, NumVertices);
-}
+//void UPrimitiveComponent::Render(const URenderer& Renderer) const
+//{
+//	Renderer.RenderPrimitive(Vertexbuffer, NumVertices);
+//}
 
 
 /*

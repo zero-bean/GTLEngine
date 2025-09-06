@@ -20,7 +20,7 @@ public:
 	FVector& GetActorScale3D();
 
 	//테스트용 코드
-	void Render(const URenderer& Renderer);
+	//void Render(const URenderer& Renderer);
 
 	template<typename T>
 	T* CreateDefaultSubobject(const FString& Name)

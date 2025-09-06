@@ -17,7 +17,7 @@ public:
 	static void Init(HWND InWindowHandle);
 	static void Release();
 	//테스트용 actor parameter
-	static void Render(ACubeActor& Cube);
+	static void Render();
 
 	static LRESULT WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };

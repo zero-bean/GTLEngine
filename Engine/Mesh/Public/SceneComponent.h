@@ -27,7 +27,7 @@ class UPrimitiveComponent : public USceneComponent
 {
 public:
 	const TArray<FVertex>* GetVerticesData() const;
-	void Render(const URenderer& Renderer) const override;
+	//void Render(const URenderer& Renderer) const override;
 
 protected:
 	const TArray<FVertex>* Vertices;

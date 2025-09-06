@@ -12,17 +12,17 @@ AActor::~AActor()
 }
 
 //테스트용 렌더링 코드
-void AActor::Render(const URenderer& Renderer)
-{
-	if (RootComponent)
-	{
-		Renderer.UpdateConstant(RootComponent->GetRelativeLocation(), RootComponent->GetRelativeRotation(), RootComponent->GetRelativeScale3D());
-		for (auto& Components : OwnedComponents)
-		{
-			Components->Render(Renderer);
-		}
-	}
-}
+//void AActor::Render(const URenderer& Renderer)
+//{
+//	if (RootComponent)
+//	{
+//		Renderer.UpdateConstant(RootComponent->GetRelativeLocation(), RootComponent->GetRelativeRotation(), RootComponent->GetRelativeScale3D());
+//		for (auto& Components : OwnedComponents)
+//		{
+//			Components->Render(Renderer);
+//		}
+//	}
+//}
 
 void AActor::SetActorLocation(const FVector& Location)
 {

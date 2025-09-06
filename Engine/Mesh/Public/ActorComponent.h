@@ -5,8 +5,8 @@
 class UActorComponent : public UObject
 {
 public:
-	virtual void Render(const URenderer& Renderer) const
+	/*virtual void Render(const URenderer& Renderer) const
 	{
 
-	}
+	}*/
 };

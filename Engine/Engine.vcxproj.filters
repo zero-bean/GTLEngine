@@ -18,6 +18,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Core\Private\AppWindow.cpp" />
     <ClCompile Include="Core\Private\ClientApp.cpp" />
+<<<<<<< HEAD
     <ClCompile Include="Render\Private\Pipeline.cpp" />
     <ClCompile Include="Render\Private\Renderer.cpp" />
     <ClCompile Include="UI\Private\UI.cpp" />
@@ -29,6 +30,12 @@
     <ClCompile Include="Mesh\Private\TriangleActor.cpp" />
     <ClCompile Include="Mesh\Private\VertexDatas.cpp" />
     <ClCompile Include="Mesh\Private\ActorComponent.cpp" />
+=======
+    <ClCompile Include="Render\Private\DeviceResources.cpp" />
+    <ClCompile Include="Render\Private\Pipeline.cpp" />
+    <ClCompile Include="Render\Private\Renderer.cpp" />
+    <ClCompile Include="UI\Private\UI.cpp" />
+>>>>>>> develop
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Public\Object.h" />
@@ -56,6 +63,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Core\Public\AppWindow.h" />
     <ClInclude Include="Core\Public\ClientApp.h" />
+<<<<<<< HEAD
     <ClInclude Include="Render\Public\Pipeline.h" />
     <ClInclude Include="Render\Public\Renderer.h" />
     <ClInclude Include="UI\Public\UI.h" />
@@ -67,5 +75,11 @@
     <ClInclude Include="Mesh\Public\CubeActor.h" />
     <ClInclude Include="Mesh\Public\SphereActor.h" />
     <ClInclude Include="Mesh\Public\TriangleActor.h" />
+=======
+    <ClInclude Include="Render\Public\DeviceResources.h" />
+    <ClInclude Include="Render\Public\Pipeline.h" />
+    <ClInclude Include="Render\Public\Renderer.h" />
+    <ClInclude Include="UI\Public\UI.h" />
+>>>>>>> develop
   </ItemGroup>
 </Project>

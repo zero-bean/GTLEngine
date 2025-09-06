@@ -90,26 +90,10 @@ void FClientApp::UpdateSystem(ACubeActor& Cube)
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
-	auto& ImGuiManager = UImGuiManager::GetInstance();
-	
 
 	TimeManager.Update();
 	InputManager.Update();
-
-	Renderer.Prepare();
-	Renderer.PrepareShader();
-
-
-	//테스트용, 추후 Level사용해서 동적으로 Actor 관리 예정
-	
-	Cube.Render(Renderer);
-
-	
-
-	// TODO(KHJ): 실제 나머지 렌더링 가져올 것(Cube 테스트용)
-	ImGuiManager.Render(Cube);
-
-	Renderer.SwapBuffer();
+	Renderer.Update();
 }
 
 /**
