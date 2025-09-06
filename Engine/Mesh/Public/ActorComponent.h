@@ -11,6 +11,9 @@ public:
 
 	}*/
 
+	virtual void BeginPlay();
+	virtual void TickComponent(float DeltaTime);
+	virtual void EndPlay();
 private:
 
 };

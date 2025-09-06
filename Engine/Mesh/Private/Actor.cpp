@@ -66,4 +66,23 @@ FVector& AActor::GetActorScale3D()
 	return RootComponent->GetRelativeScale3D();
 }
 
+void AActor::BeginPlay()
+{
+}
+
+void AActor::Tick(float DeltaTime)
+{
+	for (auto& Component : OwnedComponents)
+	{
+		if (Component)
+		{
+			Component->TickComponent(DeltaTime);
+		}
+	}
+}
+
+void AActor::EndPlay()
+{
+}
+
 

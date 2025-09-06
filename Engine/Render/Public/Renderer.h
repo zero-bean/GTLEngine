@@ -8,7 +8,7 @@ class UDeviceResources;
 class UPrimitiveComponent;
 class Camera;
 class AActor;
-class UGizmo;
+class AGizmo;
 /**
  * @brief Rendering Pipeline 전반을 처리하는 클래스
  *
@@ -79,7 +79,7 @@ private:
 
 	TArray<UPrimitiveComponent*> PrimitiveComponents;
 
-	UGizmo* Gizmo = nullptr;
+	//AGizmo* Gizmo = nullptr;
 private:
 	ID3D11RasterizerState* RasterizerState = nullptr;
 	ID3D11Buffer* ConstantBufferModels = nullptr;

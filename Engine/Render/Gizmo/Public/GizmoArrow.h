@@ -1,12 +1,9 @@
 #pragma once
+#include "Mesh/Public/SceneComponent.h"
 
-class GizmoArrow
+class UGizmoArrowComponent : public UPrimitiveComponent
 {
 public:
-
-private:
-	const TArray<FVertex>* Vertices = nullptr;
-	ID3D11Buffer* Vertexbuffer = nullptr;
-	UINT NumVertices = 0;
+	void LoadMeshResource(const EPrimitiveType& InType);
 };
 

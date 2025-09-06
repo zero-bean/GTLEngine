@@ -137,27 +137,6 @@ void URenderer::ReleaseDefaultShader()
 
 void URenderer::RenderGizmo(AActor* SelectedActor)
 {
-	// for (auto& GizmoArrow : )
-	// {
-	// 	FPipelineInfo PipelineInfo = {
-	// 		DefaultInputLayout,
-	// 		DefaultVertexShader,
-	// 		RasterizerState,
-	// 		DefaultPixelShader,
-	// 		nullptr,
-	// 	};
-	// 	Pipeline->UpdatePipeline(PipelineInfo);
-	//
-	// 	Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
-	// 	UpdateConstant(
-	// 		SelectedActor->GetActorLocation(),
-	// 		SelectedActor->GetActorRotation(),
-	// 		SelectedActor->GetActorScale3D() );
-	//
-	// 	Pipeline->SetVertexBuffer(GizmoArrow->GetVertexBuffer(), Stride);
-	// 	Pipeline->Draw(GizmoArrow->GetVerticesData()->size(), 0);
-	// }
-
 	FPipelineInfo PipelineInfo = {
 		DefaultInputLayout,
 		DefaultVertexShader,
@@ -169,8 +148,8 @@ void URenderer::RenderGizmo(AActor* SelectedActor)
 
 	UpdateConstant(
 		SelectedActor->GetActorLocation(),
-		SelectedActor->GetActorRotation(),
-		SelectedActor->GetActorScale3D() );
+		{ 0.f, 0.f, 0.f},
+		{0.3f, 0.3f, 0.3f} );
 
 	UINT Offset = 0;
 	ID3D11Buffer* Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::GizmoR);
@@ -208,7 +187,7 @@ void URenderer::Update()
 	GatherRenderableObjects();
 	Render();
 	UImGuiManager::GetInstance().Render(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
-	RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
+	//RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
 
 	RenderEnd();
 }
@@ -232,18 +211,37 @@ void URenderer::RenderBegin()
  */
 void URenderer::GatherRenderableObjects()
 {
+	if (!ULevelManager::GetInstance().GetCurrentLevel())
+		return;
+
 	PrimitiveComponents.clear();
 	for (auto& Object : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelObjects())
 	{
 		AActor* Actor = dynamic_cast<AActor*>(Object);
 		if (!Actor)
 			continue;
-		for (auto& Component : Actor->OwnedComponents)
+		if (const AGizmo* Gizmo = dynamic_cast<AGizmo*>(Actor))
 		{
-			UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Component);
-			if (!Primitive)
-				continue;
-			PrimitiveComponents.push_back(Primitive);
+			if (ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor())
+			{
+				for (auto& Component : Gizmo->OwnedComponents)
+				{
+					UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Component);
+					if (!Primitive)
+						continue;
+					PrimitiveComponents.push_back(Primitive);
+				}
+			}
+		}
+		else
+		{
+			for (auto& Component : Actor->OwnedComponents)
+			{
+				UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Component);
+				if (!Primitive)
+					continue;
+				PrimitiveComponents.push_back(Primitive);
+			}
 		}
 	}
 }

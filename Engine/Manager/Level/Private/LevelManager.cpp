@@ -60,7 +60,7 @@ void ULevelManager::CreateDefaultLevel()
 
 void ULevelManager::Update()
 {
-	if (!CurrentLevel)
+	if (CurrentLevel)
 	{
 		CurrentLevel->Update();
 	}

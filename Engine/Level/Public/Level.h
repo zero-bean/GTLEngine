@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Public/Object.h"
 
+class AGizmo;
 class AActor;
 
 class ULevel :
@@ -23,9 +24,11 @@ public:
 
 	void SetSelectedActor(AActor* InActor) { SelectedActor = InActor; }
 	AActor* GetSelectedActor() const { return SelectedActor; }
+	AGizmo* GetGizmo() const { return Gizmo; };
+
 private:
 	wstring Name;
 	TArray<UObject*> LevelObjects;
 	AActor* SelectedActor = nullptr;
-
+	AGizmo* Gizmo = nullptr;
 };
