@@ -8,7 +8,12 @@
 #include "Manager/Time/Public/TimeManager.h"
 #include "Render/Public/Renderer.h"
 #include "Mesh/Public/CubeActor.h"
+#include "Camera/Public/Camera.h"
 
+///////////////////////////////////
+// 테스트용 카메라 전역 변수로 선언
+Camera MyCamera;
+///////////////////////////////////
 FClientApp::FClientApp() = default;
 
 FClientApp::~FClientApp() = default;
@@ -96,6 +101,8 @@ void FClientApp::UpdateSystem(ACubeActor& Cube)
 	TimeManager.Update();
 	InputManager.Update();
 	LevelManager.Update();
+	MyCamera.UpdateMatrix();
+	Renderer.UpdateConstant(MyCamera.GetFViewProjConstants());
 	Renderer.Update();
 }
 

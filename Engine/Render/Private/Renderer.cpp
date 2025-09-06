@@ -185,6 +185,10 @@ void URenderer::GatherRenderableObjects()
  */
 void URenderer::Render()
 {
+	//
+	// 여기에 카메라 VP 업데이트 한 번 싹 
+	//
+
 	for (auto& PrimitiveComponent : PrimitiveComponents)
 	{
 		FPipelineInfo PipelineInfo = {
@@ -196,7 +200,7 @@ void URenderer::Render()
 		};
 		Pipeline->UpdatePipeline(PipelineInfo);
 
-		Pipeline->SetConstantBuffer(0, true, ConstantBuffer);
+		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
 		UpdateConstant(
 			PrimitiveComponent->GetRelativeLocation(),
 			PrimitiveComponent->GetRelativeRotation(),
@@ -298,14 +302,33 @@ void URenderer::ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer)
  */
 void URenderer::CreateConstantBuffer()
 {
-	D3D11_BUFFER_DESC constantbufferdesc = {};
-	constantbufferdesc.ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0;
-	// ensure constant buffer size is multiple of 16 bytes
-	constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
-	constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	/**
+	 * @brief 모델에 사용될 상수 버퍼 생성
+	 */
+	{
+		D3D11_BUFFER_DESC ConstantBufferDesc = {};
+		ConstantBufferDesc.ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0;
+		// ensure constant buffer size is multiple of 16 bytes
+		ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
+		ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
-	GetDevice()->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
+		GetDevice()->CreateBuffer(&ConstantBufferDesc, nullptr, &ConstantBufferModels);
+	}
+
+	/**
+	 * @brief 카메라에 사용될 상수 버퍼 생성
+	 */
+	{
+		D3D11_BUFFER_DESC ConstantBufferDesc = {};
+		ConstantBufferDesc.ByteWidth = sizeof(FViewProjConstants) + 0xf & 0xfffffff0;
+		// ensure constant buffer size is multiple of 16 bytes
+		ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
+		ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+		GetDevice()->CreateBuffer(&ConstantBufferDesc, nullptr, &ConstantBufferViewProj);
+	}
 }
 
 /**
@@ -313,10 +336,16 @@ void URenderer::CreateConstantBuffer()
  */
 void URenderer::ReleaseConstantBuffer()
 {
-	if (ConstantBuffer)
+	if (ConstantBufferModels)
 	{
-		ConstantBuffer->Release();
-		ConstantBuffer = nullptr;
+		ConstantBufferModels->Release();
+		ConstantBufferModels = nullptr;
+	}
+
+	if (ConstantBufferViewProj)
+	{
+		ConstantBufferViewProj->Release();
+		ConstantBufferViewProj = nullptr;
 	}
 }
 
@@ -327,11 +356,11 @@ void URenderer::ReleaseConstantBuffer()
  */
 void URenderer::UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const
 {
-	if (ConstantBuffer)
+	if (ConstantBufferModels)
 	{
 		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
 
-		GetDeviceContext()->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
+		GetDeviceContext()->Map(ConstantBufferModels, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
 		// update constant buffer every frame
 		FConstants* constants = (FConstants*)constantbufferMSR.pData;
 		{
@@ -345,6 +374,25 @@ void URenderer::UpdateConstant(const FVector& InPosition, const FVector& InRotat
 			FConstants T = FConstants::TranslationMatrix(InPosition);
 			*constants = C * S * R * T;
 		}
-		GetDeviceContext()->Unmap(ConstantBuffer, 0);
+		GetDeviceContext()->Unmap(ConstantBufferModels, 0);
+	}
+}
+
+void URenderer::UpdateConstant(const FViewProjConstants& InViewProjConstants) const
+{
+	Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
+
+	if (ConstantBufferViewProj)
+	{
+		D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR = {};
+
+		GetDeviceContext()->Map(ConstantBufferViewProj, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR);
+		// update constant buffer every frame
+		FViewProjConstants* ViewProjectionConstants = (FViewProjConstants*)ConstantBufferMSR.pData;
+		{
+			ViewProjectionConstants->View = InViewProjConstants.View;
+			ViewProjectionConstants->Projection = InViewProjConstants.Projection;
+		}
+		GetDeviceContext()->Unmap(ConstantBufferViewProj, 0);
 	}
 }

@@ -415,3 +415,15 @@ struct FConstants
 		return Result;
 	}
 };
+
+struct FViewProjConstants
+{
+	FViewProjConstants()
+	{
+		View = FConstants::Identity();
+		Projection = FConstants::Identity();
+	}
+
+	FConstants View;
+	FConstants Projection;
+};

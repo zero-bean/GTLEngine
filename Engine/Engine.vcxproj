@@ -181,6 +181,7 @@
     <ClInclude Include="UI\Public\UI.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera\Public\Camera.cpp" />
     <ClCompile Include="Core\Private\Object.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
