@@ -47,6 +47,7 @@ public:
 
 	void CreateDefaultShader();
 	void ReleaseDefaultShader();
+	void RenderGizmoNAxis();
 	void Update();
 	void RenderBegin();
 	void GatherRenderableObjects();

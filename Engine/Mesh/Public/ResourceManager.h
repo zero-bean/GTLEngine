@@ -8,6 +8,7 @@ enum class EPrimitiveType
 	Sphere,
 	Triangle,
 	Cube,
+	Gizmo
 };
 
 class UResourceManager : public UObject

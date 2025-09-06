@@ -134,11 +134,17 @@ void URenderer::ReleaseDefaultShader()
 	}
 }
 
+void URenderer::RenderGizmoNAxis()
+{
+
+}
+
 void URenderer::Update()
 {
 	RenderBegin();
 
 	GatherRenderableObjects();
+	RenderGizmoNAxis();
 	Render();
 	UImGuiManager::GetInstance().Render(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
 
