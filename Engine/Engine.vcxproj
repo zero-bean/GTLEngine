@@ -85,6 +85,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)External\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -99,6 +100,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)External\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -112,7 +114,7 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)External\Include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -131,7 +133,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)External\Include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -160,6 +162,7 @@
     <ClInclude Include="Manager\ImGui\Public\ImGuiManager.h" />
     <ClInclude Include="Manager\Input\Public\InputManager.h" />
     <ClInclude Include="Manager\Level\Public\LevelManager.h" />
+    <ClInclude Include="Manager\Path\Public\PathManager.h" />
     <ClInclude Include="Manager\Time\Public\TimeManager.h" />
     <ClInclude Include="Mesh\Public\Actor.h" />
     <ClInclude Include="Mesh\Public\ActorComponent.h" />
@@ -179,6 +182,8 @@
     <ClInclude Include="Render\Public\Pipeline.h" />
     <ClInclude Include="Render\Public\Renderer.h" />
     <ClInclude Include="UI\Public\UI.h" />
+    <ClInclude Include="Utility\Public\LevelSerializer.h" />
+    <ClInclude Include="Utility\Public\Metadata.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera\Public\Camera.cpp" />
@@ -194,6 +199,7 @@
     <ClCompile Include="Manager\ImGui\Private\ImGuiManager.cpp" />
     <ClCompile Include="Manager\Input\Private\InputManager.cpp" />
     <ClCompile Include="Manager\Level\Private\LevelManager.cpp" />
+    <ClCompile Include="Manager\Path\Private\PathManager.cpp" />
     <ClCompile Include="Manager\Time\Private\TimeManager.cpp" />
     <ClCompile Include="Mesh\Private\Actor.cpp" />
     <ClCompile Include="Mesh\Private\ActorComponent.cpp" />
@@ -213,6 +219,7 @@
     <ClCompile Include="Render\Private\Pipeline.cpp" />
     <ClCompile Include="Render\Private\Renderer.cpp" />
     <ClCompile Include="UI\Private\UI.cpp" />
+    <ClCompile Include="Utility\Private\LevelSerializer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

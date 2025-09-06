@@ -35,31 +35,3 @@ private:
 	void GetEssentialPath();
 	void ValidateAndCreateDirectories() const;
 };
-
-// path SolutionPath;
-// path ProjectPath;
-// path EnginePath;
-// path ExternalPath;
-//
-// // Asset 관련 경로들
-//
-
-
-// const path& GetProjectPath() const { return ProjectPath; }
-// const path& GetEnginePath() const { return EnginePath; }
-// const path& GetExternalPath() const { return ExternalPath; }
-//
-// // Asset 관련 경로들
-// const path& GetTexturePath() const { return TexturePath; }
-// const path& GetModelPath() const { return ModelPath; }
-// const path& GetAudioPath() const { return AudioPath; }
-// const path& GetScenePath() const { return ScenePath; }
-// const path& GetConfigPath() const { return ConfigPath; }
-//
-// // 유틸리티 함수들
-// string GetRelativeAssetPath(const path& AssetFilePath) const;
-// string GetAbsoluteAssetPath(const string& RelativeAssetPath) const;
-// bool IsValidAssetPath(const path& AssetFilePath) const;
-// bool CreateAssetDirectories() const;
-//
-// // Asset 타입별 경로 반환

@@ -1,14 +1,5 @@
 #pragma once
-#include "pch.h"
 #include "Core/Public/Object.h"
-
-
-enum class EPrimitiveType
-{
-	Sphere,
-	Triangle,
-	Cube,
-};
 
 class UResourceManager : public UObject
 {
