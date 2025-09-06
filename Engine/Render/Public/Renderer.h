@@ -6,6 +6,8 @@
 class UPipeline;
 class UDeviceResources;
 class UPrimitiveComponent;
+class Camera;
+
 /**
  * @brief Rendering Pipeline 전반을 처리하는 클래스
  *
@@ -63,6 +65,7 @@ public:
 	void CreateConstantBuffer();
 	void ReleaseConstantBuffer();
 	void UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
+	void UpdateConstant(const FViewProjConstants& InViewProjConstants) const;
 
 	ID3D11Device* GetDevice() const { return DeviceResources->GetDevice(); }
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceResources->GetDeviceContext(); }
@@ -77,7 +80,8 @@ private:
 
 private:
 	ID3D11RasterizerState* RasterizerState = nullptr;
-	ID3D11Buffer* ConstantBuffer = nullptr;
+	ID3D11Buffer* ConstantBufferModels = nullptr;
+	ID3D11Buffer* ConstantBufferViewProj = nullptr;
 
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};
 
@@ -87,4 +91,10 @@ private:
 	unsigned int Stride;
 
 	ID3D11Buffer* vertexBufferSphere;
+
+	///////////////////////////////////////////
+	// 카메라 VP Matrix 값 전달 받는 용도
+	// (차후 리팩터링이 필요합니다)
+	FViewProjConstants ViewProjConstants;
+	///////////////////////////////////////////
 };
