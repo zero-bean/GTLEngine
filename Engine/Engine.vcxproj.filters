@@ -1,3 +1,57 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Core\Private\Object.cpp" />
+    <ClCompile Include="ImGui\imgui.cpp" />
+    <ClCompile Include="ImGui\imgui_demo.cpp" />
+    <ClCompile Include="ImGui\imgui_draw.cpp" />
+    <ClCompile Include="ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="ImGui\imgui_tables.cpp" />
+    <ClCompile Include="ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="Level\Private\Level.cpp" />
+    <ClCompile Include="Manager\ImGui\Private\ImGuiManager.cpp" />
+    <ClCompile Include="Manager\Input\Private\InputManager.cpp" />
+    <ClCompile Include="Manager\Level\Private\LevelManager.cpp" />
+    <ClCompile Include="Manager\Time\Private\TimeManager.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Core\Private\AppWindow.cpp" />
+    <ClCompile Include="Core\Private\ClientApp.cpp" />
+    <ClCompile Include="Render\Private\DeviceResources.cpp" />
+    <ClCompile Include="Render\Private\Pipeline.cpp" />
+    <ClCompile Include="Render\Private\Renderer.cpp" />
+    <ClCompile Include="UI\Private\UI.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\Public\Object.h" />
+    <ClInclude Include="Global\Constant.h" />
+    <ClInclude Include="Global\Enum.h" />
+    <ClInclude Include="Global\Function.h" />
+    <ClInclude Include="Global\Macro.h" />
+    <ClInclude Include="Global\Struct.h" />
+    <ClInclude Include="ImGui\imconfig.h" />
+    <ClInclude Include="ImGui\imgui.h" />
+    <ClInclude Include="ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="ImGui\imgui_internal.h" />
+    <ClInclude Include="ImGui\imstb_rectpack.h" />
+    <ClInclude Include="ImGui\imstb_textedit.h" />
+    <ClInclude Include="ImGui\imstb_truetype.h" />
+    <ClInclude Include="Level\Public\Level.h" />
+    <ClInclude Include="Manager\ImGui\Public\ImGuiManager.h" />
+    <ClInclude Include="Manager\Input\Public\InputManager.h" />
+    <ClInclude Include="Manager\Level\Public\LevelManager.h" />
+    <ClInclude Include="Manager\Time\Public\TimeManager.h" />
+    <ClInclude Include="Mesh\Sample\Rectangle.h" />
+    <ClInclude Include="Mesh\Sample\Sphere.h" />
+    <ClInclude Include="Mesh\Sample\Triangle.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Core\Public\AppWindow.h" />
+    <ClInclude Include="Core\Public\ClientApp.h" />
+    <ClInclude Include="Render\Public\DeviceResources.h" />
+    <ClInclude Include="Render\Public\Pipeline.h" />
+    <ClInclude Include="Render\Public\Renderer.h" />
+    <ClInclude Include="UI\Public\UI.h" />
+  </ItemGroup>
 </Project>
