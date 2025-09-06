@@ -12,6 +12,9 @@
 
 #include "Render/Public/Renderer.h"
 
+// 테스트용 Camera
+#include "Camera/Public/Camera.h"
+
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 IMPLEMENT_SINGLETON(UImGuiManager)
@@ -193,6 +196,14 @@ void UImGuiManager::Render(AActor* SelectedActor)
 		SelectedActor->SetActorLocation(ActorLocation);
 		SelectedActor->SetActorRotation(ActorRotation);
 		SelectedActor->SetActorScale3D(ActorScale3D);
+	}
+
+	if (MyCamera != nullptr)
+	{
+		ImGui::SetNextItemWidth(300);
+		ImGui::SliderFloat3("CamPosition", &MyCamera->GetLocation().X, -10.0f, 10.0f, "%.3f");
+		ImGui::SetNextItemWidth(300);
+		ImGui::SliderFloat3("CamRotation", &MyCamera->GetRotation().X, -180.0f, 180.0f, "%.3f");
 	}
 
 	// Render ImGui

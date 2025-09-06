@@ -142,6 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Camera\Public\Camera.h" />
     <ClInclude Include="Core\Public\Object.h" />
     <ClInclude Include="Global\Constant.h" />
     <ClInclude Include="Global\Enum.h" />

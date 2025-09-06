@@ -2454,9 +2454,8 @@
 		{{ 0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.5f, 1.0f }}, // Bottom-right (purple)
 		{{ 0.5f, -0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f }}, // Top-right (green)
 	};
-	TArray<FVertex> VerticesTriangle={
+	TArray<FVertex> VerticesTriangle= {
 	{{ 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }}, // Top vertex (red)
 	{{ 1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f }}, // Bottom-right vertex (green)
 	{{ -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f }}  // Bottom-left vertex (blue)
 	};
-

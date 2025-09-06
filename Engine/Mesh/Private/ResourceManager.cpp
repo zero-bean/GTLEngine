@@ -18,15 +18,18 @@ void UResourceManager::Initialize()
 	VertexDatas.emplace( EPrimitiveType::Cube, &VerticesCube );
 	VertexDatas.emplace(EPrimitiveType::Sphere, &VerticesSphere);
 	VertexDatas.emplace(EPrimitiveType::Triangle, &VerticesTriangle);
+	VertexDatas.emplace(EPrimitiveType::Arrow, &VerticesArrow);
 
 	//TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
 	Vertexbuffers.emplace(EPrimitiveType::Cube, Renderer.CreateVertexBuffer(VerticesCube.data(), VerticesCube.size()*sizeof(FVertex)));
 	Vertexbuffers.emplace(EPrimitiveType::Sphere, Renderer.CreateVertexBuffer(VerticesSphere.data(), VerticesSphere.size() * sizeof(FVertex)));
 	Vertexbuffers.emplace(EPrimitiveType::Triangle, Renderer.CreateVertexBuffer(VerticesTriangle.data(), VerticesTriangle.size() * sizeof(FVertex)));
-	
+	Vertexbuffers.emplace(EPrimitiveType::Arrow, Renderer.CreateVertexBuffer(VerticesArrow.data(), VerticesArrow.size() * sizeof(FVertex)));
+
 	NumVertices.emplace(EPrimitiveType::Cube, VerticesCube.size());
 	NumVertices.emplace(EPrimitiveType::Sphere, VerticesSphere.size());
 	NumVertices.emplace(EPrimitiveType::Triangle, VerticesTriangle.size());
+	NumVertices.emplace(EPrimitiveType::Arrow, VerticesArrow.size());
 }
 
 void UResourceManager::Release()

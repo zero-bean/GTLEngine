@@ -1,5 +1,62 @@
 #include "pch.h"
 #include "Camera.h"
+#include "Manager/Input/Public/InputManager.h"
+#include "Manager/Time/Public/TimeManager.h"  
+
+void Camera::Update()
+{
+	const float DeltaTime = UTimeManager::GetInstance().GetDeltaTime();
+	const UInputManager& Input = UInputManager::GetInstance();
+
+	/**
+	 * @brief 마우스 우클릭을 하고 있는 동안 카메라 제어가 가능합니다.
+	 */
+	if (Input.IsKeyDown(EKeyInput::MouseRight))
+	{
+		/**
+		 * @brief W, A, S, D 는 각각 카메라의 상, 하, 좌, 우 이동을 담당합니다.
+		 */
+
+		FVector Move = { 0,0,0 };
+
+		const float Roll = FVector::GetDegreeToRadian(Rotation.X);
+		const float Yaw = FVector::GetDegreeToRadian(Rotation.Y);
+		const float Pitch = FVector::GetDegreeToRadian(Rotation.Z);
+
+		FVector Forward = {
+		std::cos(Roll) * std::sin(Yaw), // X
+		std::sin(Roll),                 // Y
+		std::cos(Roll) * std::cos(Yaw)  // Z
+		};
+		Forward.Normalize();
+		FVector Up = { 0,1,0 };
+		FVector Right = Forward.Cross(Up);
+
+		if (Input.IsKeyDown(EKeyInput::A)) { Move -= Right; }
+		else if (Input.IsKeyDown(EKeyInput::D)) { Move += Right; }
+		else if (Input.IsKeyDown(EKeyInput::W)) { Move += Forward; }
+		else if (Input.IsKeyDown(EKeyInput::S)) { Move -= Forward; }
+		else if (Input.IsKeyDown(EKeyInput::Q)) { Move -= Up; }
+		else if (Input.IsKeyDown(EKeyInput::E)) { Move += Up; }
+		Move.Normalize();
+		Position += Move * CameraSpeed * DeltaTime;
+
+		/**
+		* @brief 마우스 위치 변화량을 감지하여 카메라의 회전을 담당합니다.
+		*/
+		const FVector MouseDelta = UInputManager::GetInstance().GetMouseDelta();
+		Rotation.X -= MouseDelta.Y * KeySensitivityDegPerPixel; 
+		Rotation.Y -= MouseDelta.X * KeySensitivityDegPerPixel;
+
+		// Pitch 클램프(짐벌 플립 방지)
+		if (Rotation.X > 89.0f) Rotation.X = 89.0f;
+		if (Rotation.X < -89.0f) Rotation.X = -89.0f;
+
+		// Yaw 래핑(값이 무한히 커지지 않도록)
+		if (Rotation.Y > 180.0f)  Rotation.Y -= 360.0f;
+		if (Rotation.Y < -180.0f) Rotation.Y += 360.0f;
+	}
+}
 
 void Camera::UpdateMatrix()
 {

@@ -7,6 +7,8 @@ enum class EKeyInput : UINT8
 	A,
 	S,
 	D,
+	Q,
+	E,
 
 	// 화살표 키
 	Up,

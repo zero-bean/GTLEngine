@@ -1,5 +1,4 @@
 #pragma once
-#include "pch.h"
 
 class Camera
 {
@@ -13,6 +12,7 @@ public:
 	}
 	~Camera() {};
 
+	void Update();
 	void UpdateMatrix();
 
 	void SetLocation(const FVector& InOtherPosition) { Position = InOtherPosition; }
@@ -23,8 +23,8 @@ public:
 	void SetFarZ(const float InOtherFarZ) { FarZ = InOtherFarZ; }
 
 	const FViewProjConstants& GetFViewProjConstants() const { return ViewProjConstants; }
-	const FVector& GetLocation() const { return Position; }
-	const FVector& GetRotation() const { return Rotation; }
+	FVector& GetLocation() { return Position; }
+	FVector& GetRotation() { return Rotation; }
 	const float GetFovY() const { return FovY; }
 	const float GetAspect() const { return Aspect; }
 	const float GetNearZ() const { return NearZ; }

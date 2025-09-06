@@ -6,13 +6,14 @@
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/Time/Public/TimeManager.h"
+#include "Manager/ImGui/Public/ImGuiManager.h"
 #include "Render/Public/Renderer.h"
 #include "Mesh/Public/CubeActor.h"
 #include "Camera/Public/Camera.h"
 
 ///////////////////////////////////
 // 테스트용 카메라 전역 변수로 선언
-Camera MyCamera;
+Camera* MyCamera;
 ///////////////////////////////////
 FClientApp::FClientApp() = default;
 
@@ -80,6 +81,13 @@ int FClientApp::InitializeSystem() const
 
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
+
+	////////////////////////////////////////
+	// TEST CODE - 거슬리면 나중에 리팩터링
+	MyCamera = new Camera();
+	UImGuiManager::GetInstance().SetCamera(MyCamera);
+	////////////////////////////////////////
+	// 
 	//renderer Init 후에 실행해야함.
 	UResourceManager::GetInstance().Initialize();
 
@@ -101,8 +109,9 @@ void FClientApp::UpdateSystem(ACubeActor& Cube)
 	TimeManager.Update();
 	InputManager.Update();
 	LevelManager.Update();
-	MyCamera.UpdateMatrix();
-	Renderer.UpdateConstant(MyCamera.GetFViewProjConstants());
+	MyCamera->Update();
+	MyCamera->UpdateMatrix();
+	Renderer.UpdateConstant(MyCamera->GetFViewProjConstants());
 	Renderer.Update();
 }
 
@@ -137,4 +146,10 @@ void FClientApp::MainLoop()
 			UpdateSystem(Cube);
 		}
 	}
+
+	////////////////////////////////////////
+	// TEST CODE - 거슬리면 나중에 리팩터링
+	delete MyCamera;
+	MyCamera = nullptr;
+	////////////////////////////////////////
 }

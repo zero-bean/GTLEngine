@@ -18,6 +18,8 @@ void UInputManager::InitializeKeyMapping()
 	VirtualKeyMap['A'] = EKeyInput::A;
 	VirtualKeyMap['S'] = EKeyInput::S;
 	VirtualKeyMap['D'] = EKeyInput::D;
+	VirtualKeyMap['Q'] = EKeyInput::Q;
+	VirtualKeyMap['E'] = EKeyInput::E;
 
 	// 화살표 키 매핑
 	VirtualKeyMap[VK_UP] = EKeyInput::Up;
@@ -45,6 +47,8 @@ void UInputManager::InitializeKeyMapping()
 	VirtualKeyMap['7'] = EKeyInput::Num7;
 	VirtualKeyMap['8'] = EKeyInput::Num8;
 	VirtualKeyMap['9'] = EKeyInput::Num9;
+
+
 
 	// 마우스 버튼 (특별 처리 필요)
 	VirtualKeyMap[VK_LBUTTON] = EKeyInput::MouseLeft;
@@ -281,6 +285,8 @@ const wchar_t* UInputManager::KeyInputToString(EKeyInput InKey)
 	case EKeyInput::A: return L"A";
 	case EKeyInput::S: return L"S";
 	case EKeyInput::D: return L"D";
+	case EKeyInput::Q: return L"Q";
+	case EKeyInput::E: return L"E";
 	case EKeyInput::Space: return L"Space";
 	case EKeyInput::Enter: return L"Enter";
 	case EKeyInput::Esc: return L"Esc";
