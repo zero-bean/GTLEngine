@@ -31,7 +31,7 @@ struct FVector
 		: X(InOther.X), Y(InOther.Y), Z(InOther.Z)
 	{
 	}
-	
+
 	/**
 	 * @brief 벡터의 길이 연산 함수
 	 * @return 벡터의 길이
@@ -426,4 +426,25 @@ struct FViewProjConstants
 
 	FConstants View;
 	FConstants Projection;
+};
+
+/**
+ * @brief UObject Primitive Type Enum
+ */
+enum class EPrimitiveType : uint8_t
+{
+	None = 0,
+	Sphere,
+	Cube,
+	Triangle,
+
+	LineR,
+	LineG,
+	LineB,
+
+	GizmoR,
+	GizmoG,
+	GizmoB,
+
+	End = 0xFF
 };

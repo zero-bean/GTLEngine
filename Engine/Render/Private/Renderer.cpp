@@ -320,7 +320,7 @@ void URenderer::Render()
 			PrimitiveComponent->GetRelativeScale3D() );
 
 		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
-		Pipeline->Draw(PrimitiveComponent->GetVerticesData()->size(), 0);
+		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
 	}
 }
 

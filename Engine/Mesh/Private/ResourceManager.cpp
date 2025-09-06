@@ -3,19 +3,17 @@
 #include "Mesh/Public/VertexDatas.h"
 #include "Render/Public/Renderer.h"
 
+IMPLEMENT_SINGLETON(UResourceManager)
 
+UResourceManager::UResourceManager() = default;
 
-UResourceManager& UResourceManager::GetInstance()
-{
-	static UResourceManager Instance;
-	return Instance;
-}
+UResourceManager::~UResourceManager() = default;
 
 void UResourceManager::Initialize()
 {
 	URenderer& Renderer = URenderer::GetInstance();
 	//TMap.Add()
-	VertexDatas.emplace( EPrimitiveType::Cube, &VerticesCube );
+	VertexDatas.emplace(EPrimitiveType::Cube, &VerticesCube);
 	VertexDatas.emplace(EPrimitiveType::Sphere, &VerticesSphere);
 	VertexDatas.emplace(EPrimitiveType::Triangle, &VerticesTriangle);
 
@@ -65,16 +63,16 @@ void UResourceManager::Release()
 	Vertexbuffers.clear();
 }
 
-
-
 TArray<FVertex>* UResourceManager::GetVertexData(EPrimitiveType Type)
 {
 	return VertexDatas[Type];
 }
+
 ID3D11Buffer* UResourceManager::GetVertexbuffer(EPrimitiveType Type)
 {
 	return Vertexbuffers[Type];
 }
+
 UINT UResourceManager::GetNumVertices(EPrimitiveType Type)
 {
 	return NumVertices[Type];
