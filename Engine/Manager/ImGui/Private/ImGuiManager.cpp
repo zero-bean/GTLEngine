@@ -46,7 +46,7 @@ void UImGuiManager::Release()
 /**
  * @brief ImGui Process
  */
-void UImGuiManager::Render()
+void UImGuiManager::Render(AActor* SelectedActor)
 {
 	// Get New Frame
 	ImGui_ImplDX11_NewFrame();
@@ -63,7 +63,7 @@ void UImGuiManager::Render()
 	float CurrentY = 10.0f;
 	float WindowPadding = 10.0f;
 	float RightPanelX = ScreenWidth - RightPanelWidth - WindowPadding;
-	
+
 
 	// Show Demo
 	// Frame Performance Info
@@ -152,45 +152,49 @@ void UImGuiManager::Render()
 
 	ImGui::End();
 
-	/*FVector CubeLocation = Cube.GetActorLocation();
-	FVector CubeRotation = Cube.GetActorRotation();
-	FVector CubeScale3D = Cube.GetActorScale3D();
-	ImGui::SetNextWindowPos(ImVec2(0,0));
-	ImGui::SetNextWindowSize(ImVec2(300,100));
-	ImGui::Text("Position");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ImGui::DragFloat("x##Position", &CubeLocation.X,0.1f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ImGui::DragFloat("y##Position", &CubeLocation.Y, 0.1f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ImGui::DragFloat("z##Position", &CubeLocation.Z, 0.1f);
-	ImGui::Text("Rotation");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ImGui::DragFloat("x##Rotation", &CubeRotation.X, 0.1f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ImGui::DragFloat("y##Rotation", &CubeRotation.Y, 0.1f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ImGui::DragFloat("z##Rotation", &CubeRotation.Z, 0.1f);
-	ImGui::Text("Scale");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ImGui::DragFloat("x##Scale", &CubeScale3D.X, 0.1f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ImGui::DragFloat("y##Scale", &CubeScale3D.Y, 0.1f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ImGui::DragFloat("z##Scale", &CubeScale3D.Z, 0.1f);
+	if (SelectedActor)
+	{ //SceneComponent 포함하는지 확인 핋요
+		FVector ActorLocation = SelectedActor->GetActorLocation();
+		FVector ActorRotation = SelectedActor->GetActorRotation();
+		FVector ActorScale3D = SelectedActor->GetActorScale3D();
+		ImGui::SetNextWindowPos(ImVec2(0,0));
+		ImGui::SetNextWindowSize(ImVec2(300,100));
+		ImGui::Text("Position");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ImGui::DragFloat("x##Position", &ActorLocation.X,0.1f);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ImGui::DragFloat("y##Position", &ActorLocation.Y, 0.1f);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ImGui::DragFloat("z##Position", &ActorLocation.Z, 0.1f);
+		ImGui::Text("Rotation");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ImGui::DragFloat("x##Rotation", &ActorRotation.X, 0.1f);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ImGui::DragFloat("y##Rotation", &ActorRotation.Y, 0.1f);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ImGui::DragFloat("z##Rotation", &ActorRotation.Z, 0.1f);
+		ImGui::Text("Scale");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ImGui::DragFloat("x##Scale", &ActorScale3D.X, 0.1f);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ImGui::DragFloat("y##Scale", &ActorScale3D.Y, 0.1f);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ImGui::DragFloat("z##Scale", &ActorScale3D.Z, 0.1f);
 
-	Cube.SetActorLocation(CubeLocation);
-	Cube.SetActorRotation(CubeRotation);
-	Cube.SetActorScale3D(CubeScale3D);*/
+		SelectedActor->SetActorLocation(ActorLocation);
+		SelectedActor->SetActorRotation(ActorRotation);
+		SelectedActor->SetActorScale3D(ActorScale3D);
+	}
+
 	// Render ImGui
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

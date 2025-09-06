@@ -1,9 +1,11 @@
 #pragma once
 #include "DeviceResources.h"
 #include "Core/Public/Object.h"
+#include "Mesh/Public/SceneComponent.h"
 
 class UPipeline;
 class UDeviceResources;
+class UPrimitiveComponent;
 /**
  * @brief Rendering Pipeline 전반을 처리하는 클래스
  *
@@ -45,10 +47,11 @@ public:
 
 	void CreateDefaultShader();
 	void ReleaseDefaultShader();
-	void Update() const;
-	void RenderBegin() const;
-	void Render() const;
-	void RenderEnd() const;
+	void Update();
+	void RenderBegin();
+	void GatherRenderableObjects();
+	void Render();
+	void RenderEnd();
 
 	//Testing Func
 	void RenderLines(const FVertex* InVertices, UINT InCount) const;
@@ -68,6 +71,8 @@ public:
 private:
 	UPipeline* Pipeline;
 	UDeviceResources* DeviceResources;
+
+	TArray<UPrimitiveComponent*> PrimitiveComponents;
 
 private:
 	ID3D11RasterizerState* RasterizerState = nullptr;

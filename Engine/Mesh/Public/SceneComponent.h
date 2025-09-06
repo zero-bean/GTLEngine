@@ -1,10 +1,7 @@
 #pragma once
 #include "pch.h"
-#include "core/Public/Object.h"
-#include "Render/Public/Renderer.h"
 #include "Mesh/Public/ActorComponent.h"
 #include "ResourceManager.h"
-#include "Global/Constant.h"
 
 
 class USceneComponent : public UActorComponent
@@ -19,7 +16,7 @@ public:
 	FVector& GetRelativeScale3D();
 private:
 	FVector RelativeLocation = FVector{ 0,0,0.5f };
-	FVector RelativeRotation = FVector{ 0,0,0.5f };
+	FVector RelativeRotation = FVector{ 0,0,30.f };
 	FVector RelativeScale3D = FVector{ 0.3f,0.3f,0.3f };
 };
 
@@ -27,19 +24,20 @@ class UPrimitiveComponent : public USceneComponent
 {
 public:
 	const TArray<FVertex>* GetVerticesData() const;
+	ID3D11Buffer* GetVertexBuffer() const;
 	//void Render(const URenderer& Renderer) const override;
 
 protected:
-	const TArray<FVertex>* Vertices;
-	ID3D11Buffer* Vertexbuffer;   
-	UINT NumVertices;
-	EPrimitiveType Type;
+	const TArray<FVertex>* Vertices = nullptr;
+	ID3D11Buffer* Vertexbuffer = nullptr;
+	UINT NumVertices = 0;
+	EPrimitiveType Type = EPrimitiveType::Cube;
 };
 
 class UCubeComponent : public UPrimitiveComponent
 {
 public:
-	UCubeComponent(); 
+	UCubeComponent();
 
 };
 

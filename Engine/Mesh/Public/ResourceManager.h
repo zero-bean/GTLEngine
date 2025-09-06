@@ -1,8 +1,6 @@
 #pragma once
 #include "pch.h"
-#include "VertexDatas.h"
 #include "Core/Public/Object.h"
-#include "Render/Public/Renderer.h"
 
 
 enum class EPrimitiveType
@@ -15,7 +13,7 @@ enum class EPrimitiveType
 class UResourceManager : public UObject
 {
 public:
-	
+
 	static UResourceManager& GetInstance();
 	void Initialize();
 

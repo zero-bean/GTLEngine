@@ -15,3 +15,19 @@ ULevel::~ULevel()
 		SafeDelete(Object);
 	}
 }
+
+void ULevel::Init()
+{
+}
+
+void ULevel::Update()
+{
+}
+
+void ULevel::Render()
+{
+}
+
+void ULevel::Cleanup()
+{
+}
