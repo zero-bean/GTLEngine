@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Mesh/Public/Actor.h"
 #include "Mesh/Public/SceneComponent.h"
 
@@ -10,19 +11,17 @@ AActor::~AActor()
 	OwnedComponents.clear();
 }
 
-
-template<typename T>
-T* AActor::CreateDefaultSubobject(const FString& Name)
+//테스트용 렌더링 코드
+void AActor::Render(const URenderer& Renderer)
 {
-	T* NewComponent = new T();
-
-	NewComponent.Outer = this;
-
-	NewComponent.Name = Name;
-
-	OwnedComponents.push_back(NewComponent);
-
-	return NewComponent;
+	if (RootComponent)
+	{
+		Renderer.UpdateConstant(RootComponent->GetRelativeLocation(), RootComponent->GetRelativeRotation(), RootComponent->GetRelativeScale3D());
+		for (auto& Components : OwnedComponents)
+		{
+			Components->Render(Renderer);
+		}
+	}
 }
 
 void AActor::SetActorLocation(const FVector& Location)
@@ -49,31 +48,22 @@ void AActor::SetActorScale3D(const FVector& Scale)
 	}
 }
 
-const FVector& AActor::GetActorLocation()
+FVector& AActor::GetActorLocation()
 {
-	if (RootComponent)
-	{
-		return RootComponent->GetRelativeLocation();
-	}
-	return FVector{ 0,0,0 };
+	assert(RootComponent);
+	return RootComponent->GetRelativeLocation();
 }
 
-const FVector& AActor::GetActorRotation()
+FVector& AActor::GetActorRotation()
 {
-	if (RootComponent)
-	{
-		return RootComponent->GetRelativeRotation();
-	}
-	return FVector{ 0,0,0 };
+	assert(RootComponent);
+	return RootComponent->GetRelativeRotation();
 }
 
-const FVector& AActor::GetActorScale3D()
+FVector& AActor::GetActorScale3D()
 {
-	if (RootComponent)
-	{
-		return RootComponent->GetRelativeScale3D();
-	}
-	return FVector{ 0,0,0 };
+	assert(RootComponent);
+	return RootComponent->GetRelativeScale3D();
 }
 
 

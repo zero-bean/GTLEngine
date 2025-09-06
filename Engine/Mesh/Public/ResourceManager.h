@@ -1,6 +1,8 @@
 #pragma once
+#include "pch.h"
 #include "VertexDatas.h"
-#include "../Engine/pch.h"
+#include "Core/Public/Object.h"
+#include "Render/Public/Renderer.h"
 
 
 enum class EPrimitiveType
@@ -15,10 +17,11 @@ class UResourceManager : public UObject
 public:
 	
 	static UResourceManager& GetInstance();
-	void Initialize(URenderer& Renderer);
-	void Release(URenderer& Renderer);
+	void Initialize();
 
-	TArray<FVertexSimple>* GetVertexData(EPrimitiveType Type);
+	void Release();
+
+	TArray<FVertex>* GetVertexData(EPrimitiveType Type);
 	ID3D11Buffer* GetVertexbuffer(EPrimitiveType Type);
 	UINT GetNumVertices(EPrimitiveType Type);
 
@@ -27,6 +30,5 @@ private:
 	~UResourceManager() = default;
 	TMap<EPrimitiveType, ID3D11Buffer*> Vertexbuffers;
 	TMap<EPrimitiveType, UINT> NumVertices;
-	TMap<EPrimitiveType, TArray<FVertexSimple>*> VertexDatas;
-
+	TMap<EPrimitiveType, TArray<FVertex>*> VertexDatas;
 };

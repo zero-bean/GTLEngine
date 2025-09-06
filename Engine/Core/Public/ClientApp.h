@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Mesh/Public/CubeActor.h"
 class FAppWindow;
 
 /**
@@ -21,7 +22,7 @@ public:
 
 private:
     int InitializeSystem() const;
-    static void UpdateSystem();
+    static void UpdateSystem(ACubeActor& Cube);
     void MainLoop();
     
     HACCEL AcceleratorTable;

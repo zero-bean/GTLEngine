@@ -1,6 +1,7 @@
-#include "../Engine/Mesh/Public/ResourceManager.h"
-#include "../Engine/Mesh/Public/VertexDatas.h"
-#include "../Engine/Render/Public/Renderer.h"
+#include "pch.h"
+#include "Mesh/Public/ResourceManager.h"
+#include "Mesh/Public/VertexDatas.h"
+#include "Render/Public/Renderer.h"
 
 
 
@@ -10,35 +11,39 @@ UResourceManager& UResourceManager::GetInstance()
 	return Instance;
 }
 
-void UResourceManager::Initialize(URenderer& Renderer)
+void UResourceManager::Initialize()
 {
+	URenderer& Renderer = URenderer::GetInstance();
 	//TMap.Add()
 	VertexDatas.emplace( EPrimitiveType::Cube, &VerticesCube );
 	VertexDatas.emplace(EPrimitiveType::Sphere, &VerticesSphere);
 	VertexDatas.emplace(EPrimitiveType::Triangle, &VerticesTriangle);
 
 	//TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
-	Vertexbuffers.emplace(EPrimitiveType::Cube, Renderer.CreateVertexBuffer(VerticesCube.data(), VerticesCube.size()*sizeof(FVertexSimple)));
-	Vertexbuffers.emplace(EPrimitiveType::Sphere, Renderer.CreateVertexBuffer(VerticesSphere.data(), VerticesSphere.size() * sizeof(FVertexSimple)));
-	Vertexbuffers.emplace(EPrimitiveType::Triangle, Renderer.CreateVertexBuffer(VerticesTriangle.data(), VerticesTriangle.size() * sizeof(FVertexSimple)));
+	Vertexbuffers.emplace(EPrimitiveType::Cube, Renderer.CreateVertexBuffer(VerticesCube.data(), VerticesCube.size()*sizeof(FVertex)));
+	Vertexbuffers.emplace(EPrimitiveType::Sphere, Renderer.CreateVertexBuffer(VerticesSphere.data(), VerticesSphere.size() * sizeof(FVertex)));
+	Vertexbuffers.emplace(EPrimitiveType::Triangle, Renderer.CreateVertexBuffer(VerticesTriangle.data(), VerticesTriangle.size() * sizeof(FVertex)));
 	
 	NumVertices.emplace(EPrimitiveType::Cube, VerticesCube.size());
 	NumVertices.emplace(EPrimitiveType::Sphere, VerticesSphere.size());
 	NumVertices.emplace(EPrimitiveType::Triangle, VerticesTriangle.size());
 }
 
-void UResourceManager::Release(URenderer& Renderer)
+void UResourceManager::Release()
 {
+	URenderer& Renderer = URenderer::GetInstance();
 	//TMap.Value()
-	for (auto& pair : Vertexbuffers)
+	for (auto& Pair : Vertexbuffers)
 	{
-		Renderer.ReleaseVertexBuffer(pair.second);
+		Renderer.ReleaseVertexBuffer(Pair.second);
 	}
 	//TMap.Empty()
 	Vertexbuffers.clear();
 }
 
-TArray<FVertexSimple>* UResourceManager::GetVertexData(EPrimitiveType Type)
+
+
+TArray<FVertex>* UResourceManager::GetVertexData(EPrimitiveType Type)
 {
 	return VertexDatas[Type];
 }

@@ -1,7 +1,8 @@
 #pragma once
-#include "../Engine/pch.h"
+#include "pch.h"
+#include "Global/Constant.h"
 
 
-extern TArray<FVertexSimple> VerticesSphere;
-extern TArray<FVertexSimple> VerticesCube;
-extern TArray<FVertexSimple> VerticesTriangle;
+extern TArray<FVertex> VerticesSphere;
+extern TArray<FVertex> VerticesCube;
+extern TArray<FVertex> VerticesTriangle;

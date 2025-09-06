@@ -1,49 +1,50 @@
 #pragma once
-#include "../Engine/core/Public/Object.h"
-#include "../Engine/pch.h"
-#include "../Engine/Render/Public/Renderer.h"
+#include "pch.h"
+#include "core/Public/Object.h"
+#include "Render/Public/Renderer.h"
 #include "Mesh/Public/ActorComponent.h"
 #include "ResourceManager.h"
+#include "Global/Constant.h"
 
 
-class USceneComponent : public 
+class USceneComponent : public UActorComponent
 {
 public:
 	void SetRelativeLocation(const FVector& Location);
 	void SetRelativeRotation(const FVector& Rotation);
 	void SetRelativeScale3D(const FVector& Scale);
 
-	const FVector& GetRelativeLocation();
-	const FVector& GetRelativeRotation();
-	const FVector& GetRelativeScale3D();
+	FVector& GetRelativeLocation();
+	FVector& GetRelativeRotation();
+	FVector& GetRelativeScale3D();
 private:
-	FVector RelativeLocation = FVector{ 0,0,0 };
-	FVector RelativeRotation = FVector{ 0,0,0 };
-	FVector RelativeScale3D = FVector{ 0,0,0 };
+	FVector RelativeLocation = FVector{ 0,0,0.5f };
+	FVector RelativeRotation = FVector{ 0,0,0.5f };
+	FVector RelativeScale3D = FVector{ 0.3f,0.3f,0.3f };
 };
 
 class UPrimitiveComponent : public USceneComponent
 {
 public:
-	const TArray<FVertexSimple>* GetVerticesData() const;
-	const void Render(URenderer& Renderer) const;
+	const TArray<FVertex>* GetVerticesData() const;
+	void Render(const URenderer& Renderer) const override;
 
 protected:
-	const TArray<FVertexSimple>* Vertices;
-	ID3D11Buffer* Vertexbuffer;
+	const TArray<FVertex>* Vertices;
+	ID3D11Buffer* Vertexbuffer;   
 	UINT NumVertices;
 	EPrimitiveType Type;
 };
 
-class UCubeComp : public UPrimitiveComponent
+class UCubeComponent : public UPrimitiveComponent
 {
 public:
-	UCubeComp(); 
+	UCubeComponent(); 
 
 };
 
-class USphereComp : public UPrimitiveComponent
+class USphereComponent : public UPrimitiveComponent
 {
 public:
-	USphereComp();
+	USphereComponent();
 };

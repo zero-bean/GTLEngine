@@ -1,6 +1,9 @@
+#include "pch.h"
 #include "Mesh/Public/SceneComponent.h"
 #include "Mesh/Public/ResourceManager.h"
 #include "Render/Public/Renderer.h"
+#include "Global/Constant.h"
+
 
 void USceneComponent::SetRelativeLocation(const FVector& Location)
 {
@@ -16,28 +19,28 @@ void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 	RelativeScale3D = Scale;
 }
 
-const FVector& USceneComponent::GetRelativeLocation()
+FVector& USceneComponent::GetRelativeLocation()
 {
 	return RelativeLocation;
 }
-const FVector& USceneComponent::GetRelativeRotation()
+FVector& USceneComponent::GetRelativeRotation()
 {
 	return RelativeRotation;
 }
-const FVector& USceneComponent::GetRelativeScale3D()
+FVector& USceneComponent::GetRelativeScale3D()
 {
 	return RelativeScale3D;
 }
 
-const TArray<FVertexSimple>* UPrimitiveComponent::GetVerticesData() const
+const TArray<FVertex>* UPrimitiveComponent::GetVerticesData() const
 {
     UResourceManager& ResourceManager = UResourceManager::GetInstance();
     return ResourceManager.GetVertexData(Type);
 }
 
-const void UPrimitiveComponent::Render(URenderer& Renderer) const
+void UPrimitiveComponent::Render(const URenderer& Renderer) const
 {
-    Renderer.RenderPrimitive(Vertexbuffer, NumVertices);
+	Renderer.RenderPrimitive(Vertexbuffer, NumVertices);
 }
 
 
@@ -45,20 +48,22 @@ const void UPrimitiveComponent::Render(URenderer& Renderer) const
 * 리소스는 Manager가 관리하고 component는 참조만 함.
 *
 */
-UCubeComp::UCubeComp()
-{
-    UResourceManager& ResourceManager = UResourceManager::GetInstance();
-    Type = EPrimitiveType::Cube;
-    Vertices = ResourceManager.GetVertexData(Type);
-    Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
-    NumVertices = ResourceManager.GetNumVertices(Type);
-}
 
-USphereComp::USphereComp()
+
+USphereComponent::USphereComponent()
 {
     UResourceManager& ResourceManager = UResourceManager::GetInstance();
     Type = EPrimitiveType::Sphere;
     Vertices = ResourceManager.GetVertexData(Type);
     Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
     NumVertices = ResourceManager.GetNumVertices(Type);
+}
+
+UCubeComponent::UCubeComponent()
+{
+	UResourceManager& ResourceManager = UResourceManager::GetInstance();
+	Type = EPrimitiveType::Cube;
+	Vertices = ResourceManager.GetVertexData(Type);
+	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
+	NumVertices = ResourceManager.GetNumVertices(Type);
 }

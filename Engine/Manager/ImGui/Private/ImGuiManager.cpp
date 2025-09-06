@@ -8,6 +8,8 @@
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Time/Public/TimeManager.h"
 
+#include "Mesh/Public/CubeActor.h"
+
 #include "Render/Public/Renderer.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -44,7 +46,7 @@ void UImGuiManager::Release()
 /**
  * @brief ImGui Process
  */
-void UImGuiManager::Render()
+void UImGuiManager::Render(ACubeActor& Cube)
 {
 	// Get New Frame
 	ImGui_ImplDX11_NewFrame();
@@ -61,6 +63,7 @@ void UImGuiManager::Render()
 	float CurrentY = 10.0f;
 	float WindowPadding = 10.0f;
 	float RightPanelX = ScreenWidth - RightPanelWidth - WindowPadding;
+	
 
 	// Show Demo
 	// Frame Performance Info
@@ -149,6 +152,45 @@ void UImGuiManager::Render()
 
 	ImGui::End();
 
+	FVector CubeLocation = Cube.GetActorLocation();
+	FVector CubeRotation = Cube.GetActorRotation();
+	FVector CubeScale3D = Cube.GetActorScale3D();
+	ImGui::SetNextWindowPos(ImVec2(0,0));
+	ImGui::SetNextWindowSize(ImVec2(300,100));
+	ImGui::Text("Position");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(70);
+	ImGui::DragFloat("x##Position", &CubeLocation.X,0.1f);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(70);
+	ImGui::DragFloat("y##Position", &CubeLocation.Y, 0.1f);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(70);
+	ImGui::DragFloat("z##Position", &CubeLocation.Z, 0.1f);
+	ImGui::Text("Rotation");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(70);
+	ImGui::DragFloat("x##Rotation", &CubeRotation.X, 0.1f);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(70);
+	ImGui::DragFloat("y##Rotation", &CubeRotation.Y, 0.1f);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(70);
+	ImGui::DragFloat("z##Rotation", &CubeRotation.Z, 0.1f);
+	ImGui::Text("Scale");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(70);
+	ImGui::DragFloat("x##Scale", &CubeScale3D.X, 0.1f);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(70);
+	ImGui::DragFloat("y##Scale", &CubeScale3D.Y, 0.1f);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(70);
+	ImGui::DragFloat("z##Scale", &CubeScale3D.Z, 0.1f);
+
+	Cube.SetActorLocation(CubeLocation);
+	Cube.SetActorRotation(CubeRotation);
+	Cube.SetActorScale3D(CubeScale3D);
 	// Render ImGui
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

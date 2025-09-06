@@ -6,11 +6,11 @@
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Time/Public/TimeManager.h"
 #include "Render/Public/Renderer.h"
+#include "Mesh/Public/CubeActor.h"
 
 FClientApp::FClientApp() = default;
 
 FClientApp::~FClientApp() = default;
-
 /**
  * @brief Client Main Runtime Function
  * App 초기화, Main Loop 실행을 통한 전체 Cycle
@@ -58,6 +58,7 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 
 	// Termination Process
 	delete Window;
+	UResourceManager::GetInstance().Release();
 
 	return static_cast<int>(MainMessage.wParam);
 }
@@ -71,8 +72,12 @@ int FClientApp::InitializeSystem() const
 	UTimeManager::GetInstance();
 	UInputManager::GetInstance();
 
+
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
+	//renderer Init 후에 실행해야함.
+	UResourceManager::GetInstance().Initialize();
+
 
 	return S_OK;
 }
@@ -80,12 +85,13 @@ int FClientApp::InitializeSystem() const
 /**
  * @brief Update System While Game Processing
  */
-void FClientApp::UpdateSystem()
+void FClientApp::UpdateSystem(ACubeActor& Cube)
 {
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
 	auto& ImGuiManager = UImGuiManager::GetInstance();
+	
 
 	TimeManager.Update();
 	InputManager.Update();
@@ -93,8 +99,15 @@ void FClientApp::UpdateSystem()
 	Renderer.Prepare();
 	Renderer.PrepareShader();
 
-	// TODO(KHJ): 실제 나머지 렌더링 가져올 것
-	ImGuiManager.Render();
+
+	//테스트용, 추후 Level사용해서 동적으로 Actor 관리 예정
+	
+	Cube.Render(Renderer);
+
+	
+
+	// TODO(KHJ): 실제 나머지 렌더링 가져올 것(Cube 테스트용)
+	ImGuiManager.Render(Cube);
 
 	Renderer.SwapBuffer();
 }
@@ -105,6 +118,8 @@ void FClientApp::UpdateSystem()
  */
 void FClientApp::MainLoop()
 {
+	//테스트용
+	ACubeActor Cube;
 	while (true)
 	{
 		// Async Message Process
@@ -125,7 +140,7 @@ void FClientApp::MainLoop()
 		// Game System Update
 		else
 		{
-			UpdateSystem();
+			UpdateSystem(Cube);
 		}
 	}
 }
