@@ -36,8 +36,8 @@
     <ClCompile Include="Camera\Private\Camera.cpp" />
     <ClCompile Include="Manager\Path\Private\PathManager.cpp" />
     <ClCompile Include="Render\Gizmo\Private\Gizmo.cpp" />
-    <ClCompile Include="Render\Gizmo\Private\GizmoArrow.cpp" />
     <ClCompile Include="Utility\Private\LevelSerializer.cpp" />
+    <ClCompile Include="Render\Gizmo\Private\GizmoArrow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Public\Object.h" />
