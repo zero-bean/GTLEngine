@@ -29,4 +29,3 @@ private:
 
 	D3D11_VIEWPORT ViewportInfo = { 0 };
 };
-
