@@ -27,4 +27,5 @@ private:
 	wstring Name;
 	TArray<UObject*> LevelObjects;
 	AActor* SelectedActor = nullptr;
+
 };

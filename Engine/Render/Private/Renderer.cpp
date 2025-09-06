@@ -7,6 +7,7 @@
 #include "Manager/Level/Public/LevelManager.h"
 #include "Render/Public/DeviceResources.h"
 #include "Mesh/Public/Actor.h"
+#include "Render/Gizmo/Public/Gizmo.h"
 
 IMPLEMENT_SINGLETON(URenderer)
 
@@ -134,19 +135,80 @@ void URenderer::ReleaseDefaultShader()
 	}
 }
 
-void URenderer::RenderGizmoNAxis()
+void URenderer::RenderGizmo(AActor* SelectedActor)
 {
+	// for (auto& GizmoArrow : )
+	// {
+	// 	FPipelineInfo PipelineInfo = {
+	// 		DefaultInputLayout,
+	// 		DefaultVertexShader,
+	// 		RasterizerState,
+	// 		DefaultPixelShader,
+	// 		nullptr,
+	// 	};
+	// 	Pipeline->UpdatePipeline(PipelineInfo);
+	//
+	// 	Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
+	// 	UpdateConstant(
+	// 		SelectedActor->GetActorLocation(),
+	// 		SelectedActor->GetActorRotation(),
+	// 		SelectedActor->GetActorScale3D() );
+	//
+	// 	Pipeline->SetVertexBuffer(GizmoArrow->GetVertexBuffer(), Stride);
+	// 	Pipeline->Draw(GizmoArrow->GetVerticesData()->size(), 0);
+	// }
 
+	FPipelineInfo PipelineInfo = {
+		DefaultInputLayout,
+		DefaultVertexShader,
+		RasterizerState,
+		DefaultPixelShader,
+		nullptr,
+	};
+	Pipeline->UpdatePipeline(PipelineInfo);
+
+	UpdateConstant(
+		SelectedActor->GetActorLocation(),
+		SelectedActor->GetActorRotation(),
+		SelectedActor->GetActorScale3D() );
+
+	UINT Offset = 0;
+	ID3D11Buffer* Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::GizmoR);
+	UINT VertexCount = UResourceManager::GetInstance().GetNumVertices(EPrimitiveType::GizmoR);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(VertexCount, 0);
+	}
+
+	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::GizmoG);
+	VertexCount = UResourceManager::GetInstance().GetNumVertices(EPrimitiveType::GizmoG);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(VertexCount, 0);
+	}
+
+	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::GizmoB);
+	VertexCount = UResourceManager::GetInstance().GetNumVertices(EPrimitiveType::GizmoB);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(VertexCount, 0);
+	}
+
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void URenderer::Update()
 {
 	RenderBegin();
 
+	RenderLines();
 	GatherRenderableObjects();
-	RenderGizmoNAxis();
 	Render();
 	UImGuiManager::GetInstance().Render(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
+	RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
 
 	RenderEnd();
 }
@@ -187,12 +249,57 @@ void URenderer::GatherRenderableObjects()
 }
 
 /**
+ * @brief Axis Line 그리는 함수
+ */
+void URenderer::RenderLines() const
+{
+	FPipelineInfo PipelineInfo = {
+		DefaultInputLayout,
+		DefaultVertexShader,
+		RasterizerState,
+		DefaultPixelShader,
+		nullptr,
+		D3D11_PRIMITIVE_TOPOLOGY_LINELIST
+	};
+	Pipeline->UpdatePipeline(PipelineInfo);
+
+	UpdateConstant(
+		{0.f,0.f,0.f},
+		{0.f,0.f,0.f},
+		{10000.f,10000.f,10000.f});
+
+	UINT Offset = 0;
+	ID3D11Buffer* Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::LineR);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(2, 0);
+	}
+
+	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::LineG);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(2, 0);
+	}
+
+	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::LineB);
+	if (Buffer)
+	{
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
+		GetDeviceContext()->Draw(2, 0);
+	}
+
+	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+/**
  * @brief Buffer에 데이터 입력 및 Draw
  */
 void URenderer::Render()
 {
 	//
-	// 여기에 카메라 VP 업데이트 한 번 싹 
+	// 여기에 카메라 VP 업데이트 한 번 싹
 	//
 
 	for (auto& PrimitiveComponent : PrimitiveComponents)
@@ -223,31 +330,6 @@ void URenderer::Render()
 void URenderer::RenderEnd()
 {
 	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
-}
-
-/**
- * @brief Line Segments 그리는 함수
- * Concave Collider를 위해 구현되었음
- */
-void URenderer::RenderLines(const FVertex* InVertices, UINT InCount) const
-{
-	if (!InVertices || InCount == 0)
-	{
-		return;
-	}
-
-	ID3D11Buffer* tempVB = CreateVertexBuffer(const_cast<FVertex*>(InVertices),
-	                                          sizeof(FVertex) * InCount);
-
-	UINT Offset = 0;
-	GetDeviceContext()->IASetVertexBuffers(0, 1, &tempVB, &Stride, &Offset);
-	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	GetDeviceContext()->Draw(InCount, 0);
-
-	ReleaseVertexBuffer(tempVB);
-
-	// 복원: 이후 삼각형 렌더링을 위해 TRIANGLE LIST로 되돌림
-	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 /**
