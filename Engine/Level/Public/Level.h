@@ -1,6 +1,8 @@
 #pragma once
 #include "Core/Public/Object.h"
 
+class AActor;
+
 class ULevel :
 	public UObject
 {
@@ -18,8 +20,11 @@ public:
 	TArray<UObject*> GetLevelObjects() const { return LevelObjects; }
 
 	void AddObject(UObject* Object) { LevelObjects.push_back(Object); }
+
+	void SetSelectedActor(AActor* InActor) { SelectedActor = InActor; }
+	AActor* GetSelectedActor() const { return SelectedActor; }
 private:
 	wstring Name;
 	TArray<UObject*> LevelObjects;
-
+	AActor* SelectedActor = nullptr;
 };

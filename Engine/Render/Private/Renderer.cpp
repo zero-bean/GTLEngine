@@ -140,7 +140,7 @@ void URenderer::Update()
 
 	GatherRenderableObjects();
 	Render();
-	UImGuiManager::GetInstance().Render();
+	UImGuiManager::GetInstance().Render(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
 
 	RenderEnd();
 }
