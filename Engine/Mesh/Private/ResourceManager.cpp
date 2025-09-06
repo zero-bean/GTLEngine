@@ -16,7 +16,6 @@ void UResourceManager::Initialize()
 	VertexDatas.emplace(EPrimitiveType::Cube, &VerticesCube);
 	VertexDatas.emplace(EPrimitiveType::Sphere, &VerticesSphere);
 	VertexDatas.emplace(EPrimitiveType::Triangle, &VerticesTriangle);
-	VertexDatas.emplace(EPrimitiveType::Arrow, &VerticesArrow);
 
 	//TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
 	Vertexbuffers.emplace(EPrimitiveType::Cube,
