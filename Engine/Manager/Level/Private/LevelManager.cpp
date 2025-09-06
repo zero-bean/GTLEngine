@@ -3,6 +3,7 @@
 
 #include "Level/Public/Level.h"
 #include "Mesh/Public/CubeActor.h"
+#include "Mesh/Public/SphereActor.h"
 
 IMPLEMENT_SINGLETON(ULevelManager)
 
@@ -41,6 +42,11 @@ void ULevelManager::CreateDefaultLevel()
 {
 	Levels[L"Default"] = new ULevel();
 	LoadLevel(L"Default");
+
+	ASphereActor* Sphere1 = new ASphereActor();
+	Sphere1->SetActorLocation({1,0,0});
+	CurrentLevel->AddObject(Sphere1);
+	CurrentLevel->SetSelectedActor(Sphere1);
 
 	ACubeActor* Cube1 = new ACubeActor();
 	Cube1->SetActorLocation({1,0,0});
