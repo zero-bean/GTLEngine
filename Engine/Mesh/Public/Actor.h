@@ -15,16 +15,32 @@ public:
 	void SetActorRotation(const FVector& Rotation);
 	void SetActorScale3D(const FVector& Scale);
 
-	const FVector& GetActorLocation();
-	const FVector& GetActorRotation();
-	const FVector& GetActorScale3D();
+	FVector& GetActorLocation();
+	FVector& GetActorRotation();
+	FVector& GetActorScale3D();
+
+	//테스트용 코드
+	//void Render(const URenderer& Renderer);
 
 	template<typename T>
-	T* CreateDefaultSubobject(const FString& Name);
+	T* CreateDefaultSubobject(const FString& Name)
+	{
+		T* NewComponent = new T();
 
-private:
+		NewComponent->Outer = this;
+
+		NewComponent->Name = Name;
+
+		OwnedComponents.push_back(NewComponent);
+
+		return NewComponent;
+	}
+
 	USceneComponent* RootComponent = nullptr;
 	TArray<UActorComponent*> OwnedComponents;
+private:
+	
+	
 
 };
 
