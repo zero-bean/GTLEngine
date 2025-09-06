@@ -5,6 +5,7 @@ struct FPipelineInfo
 	ID3D11InputLayout* InputLayout;
 	ID3D11VertexShader* VertexShader;
 	ID3D11RasterizerState* RasterizerState;
+	ID3D11DepthStencilState* DepthStencilState;
 	ID3D11PixelShader* PixelShader;
 	ID3D11BlendState* BlendState;
 	D3D11_PRIMITIVE_TOPOLOGY Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;

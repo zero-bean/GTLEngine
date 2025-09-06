@@ -21,6 +21,8 @@ void UPipeline::UpdatePipeline(FPipelineInfo Info)
 		DeviceContext->VSSetShader(Info.VertexShader, nullptr, 0);
 	if (Info.RasterizerState)
 		DeviceContext->RSSetState(Info.RasterizerState);
+	if (Info.DepthStencilState)
+		DeviceContext->OMSetDepthStencilState(Info.DepthStencilState, 0);
 	if (Info.PixelShader)
 		DeviceContext->PSSetShader(Info.PixelShader, nullptr, 0);
 	if (Info.BlendState)

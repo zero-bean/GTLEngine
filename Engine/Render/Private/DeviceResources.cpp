@@ -13,13 +13,20 @@ UDeviceResources::~UDeviceResources()
 
 void UDeviceResources::Create(HWND InWindowHandle)
 {
+	RECT ClientRect;
+	GetClientRect(InWindowHandle, &ClientRect);
+	Width = ClientRect.right - ClientRect.left;
+	Height = ClientRect.bottom - ClientRect.top;
+
 	CreateDeviceAndSwapChain(InWindowHandle);
 	CreateFrameBuffer();
+	CreateDepthBuffer();
 }
 
 void UDeviceResources::Release()
 {
 	ReleaseFrameBuffer();
+	ReleaseDepthBuffer();
 	ReleaseDeviceAndSwapChain();
 }
 
@@ -120,5 +127,45 @@ void UDeviceResources::ReleaseFrameBuffer()
 	{
 		FrameBufferRTV->Release();
 		FrameBufferRTV = nullptr;
+	}
+}
+
+void UDeviceResources::CreateDepthBuffer()
+{
+	D3D11_TEXTURE2D_DESC dsDesc = {};
+
+	dsDesc.Width = Width;
+	dsDesc.Height = Height;
+	dsDesc.MipLevels = 1;
+	dsDesc.ArraySize = 1;
+	dsDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	dsDesc.SampleDesc.Count = 1;
+	dsDesc.SampleDesc.Quality = 0;
+	dsDesc.Usage = D3D11_USAGE_DEFAULT;
+	dsDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	dsDesc.CPUAccessFlags = 0;
+	dsDesc.MiscFlags = 0;
+
+	HRESULT hr = Device->CreateTexture2D(&dsDesc, nullptr, &DepthBuffer);
+
+	hr = Device->CreateDepthStencilView(
+		DepthBuffer,
+		nullptr,
+		&DepthStencilView
+		);
+}
+
+
+void UDeviceResources::ReleaseDepthBuffer()
+{
+	if (DepthStencilView)
+	{
+		DepthStencilView->Release();
+		DepthStencilView = nullptr;
+	}
+	if (DepthBuffer)
+	{
+		DepthBuffer->Release();
+		DepthBuffer = nullptr;
 	}
 }

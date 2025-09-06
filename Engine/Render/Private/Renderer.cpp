@@ -22,6 +22,7 @@ void URenderer::Init(HWND InWindowHandle)
 
 	// 래스터라이저 상태 생성
 	CreateRasterizerState();
+	CreateDepthStencilState();
 	CreateDefaultShader();
 	CreateConstantBuffer();
 
@@ -48,6 +49,24 @@ void URenderer::CreateRasterizerState()
 	rasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
 
 	GetDevice()->CreateRasterizerState(&rasterizerdesc, &RasterizerState);
+}
+
+void URenderer::CreateDepthStencilState()
+{
+	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+
+	depthStencilDesc.DepthEnable = TRUE;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	depthStencilDesc.StencilEnable = FALSE;
+	depthStencilDesc.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	depthStencilDesc.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+
+	HRESULT hr = DeviceResources->GetDevice()->CreateDepthStencilState(
+		&depthStencilDesc,
+		&DepthStencilState
+	);
 }
 
 /**
@@ -141,6 +160,7 @@ void URenderer::RenderGizmo(AActor* SelectedActor)
 		DefaultInputLayout,
 		DefaultVertexShader,
 		RasterizerState,
+		DepthStencilState,
 		DefaultPixelShader,
 		nullptr,
 	};
@@ -199,11 +219,14 @@ void URenderer::RenderBegin()
 {
 	auto* rtv = DeviceResources->GetRenderTargetView();
 	GetDeviceContext()->ClearRenderTargetView(rtv, ClearColor);
+	auto* dsv = DeviceResources->GetDepthStencilView();
+	GetDeviceContext()->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	GetDeviceContext()->RSSetViewports(1, &DeviceResources->GetViewportInfo());
 
 	ID3D11RenderTargetView* rtvs[] = { rtv };  // 배열 생성
-	GetDeviceContext()->OMSetRenderTargets(1, rtvs, nullptr);
+
+	GetDeviceContext()->OMSetRenderTargets(1, rtvs, DeviceResources->GetDepthStencilView());
 }
 
 /**
@@ -255,6 +278,7 @@ void URenderer::RenderLines() const
 		DefaultInputLayout,
 		DefaultVertexShader,
 		RasterizerState,
+		DepthStencilState,
 		DefaultPixelShader,
 		nullptr,
 		D3D11_PRIMITIVE_TOPOLOGY_LINELIST
@@ -306,6 +330,7 @@ void URenderer::Render()
 			DefaultInputLayout,
 			DefaultVertexShader,
 			RasterizerState,
+			DepthStencilState,
 			DefaultPixelShader,
 			nullptr,
 		};

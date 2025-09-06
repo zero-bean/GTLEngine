@@ -44,6 +44,7 @@ public:
 	void Release();
 
 	void CreateRasterizerState();
+	void CreateDepthStencilState();
 	void ReleaseRasterizerState();
 
 	void ReleaseResource();
@@ -82,6 +83,7 @@ private:
 	//AGizmo* Gizmo = nullptr;
 private:
 	ID3D11RasterizerState* RasterizerState = nullptr;
+	ID3D11DepthStencilState* DepthStencilState = nullptr;
 	ID3D11Buffer* ConstantBufferModels = nullptr;
 	ID3D11Buffer* ConstantBufferViewProj = nullptr;
 
