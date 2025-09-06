@@ -144,6 +144,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Camera\Public\Camera.h" />
     <ClInclude Include="Core\Public\Object.h" />
     <ClInclude Include="Global\Constant.h" />
     <ClInclude Include="Global\Enum.h" />
@@ -186,7 +187,7 @@
     <ClInclude Include="Utility\Public\Metadata.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Camera\Public\Camera.cpp" />
+    <ClCompile Include="Camera\Private\Camera.cpp" />
     <ClCompile Include="Core\Private\Object.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
