@@ -30,6 +30,7 @@ void ULevelManager::LoadLevel(const wstring& InName)
 		CurrentLevel->Cleanup();
 
 	CurrentLevel = Levels[InName];
+
 	CurrentLevel->Init();
 }
 
