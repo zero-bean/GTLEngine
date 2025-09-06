@@ -85,18 +85,10 @@ void FClientApp::UpdateSystem()
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
-	auto& ImGuiManager = UImGuiManager::GetInstance();
 
 	TimeManager.Update();
 	InputManager.Update();
-
-	Renderer.Prepare();
-	Renderer.PrepareShader();
-
-	// TODO(KHJ): 실제 나머지 렌더링 가져올 것
-	ImGuiManager.Render();
-
-	Renderer.SwapBuffer();
+	Renderer.Update();
 }
 
 /**

@@ -14,7 +14,7 @@ UPipeline::~UPipeline()
 /// @brief 파이프라인 상태를 업데이트
 void UPipeline::UpdatePipeline(FPipelineInfo Info)
 {
-	DeviceContext->IASetPrimitiveTopology(Info.topology);
+	DeviceContext->IASetPrimitiveTopology(Info.Topology);
 	if (Info.InputLayout)
 		DeviceContext->IASetInputLayout(Info.InputLayout);
 	if (Info.VertexShader)

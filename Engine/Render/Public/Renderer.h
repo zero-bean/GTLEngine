@@ -1,8 +1,9 @@
 #pragma once
+#include "DeviceResources.h"
 #include "Core/Public/Object.h"
 
 class UPipeline;
-
+class UDeviceResources;
 /**
  * @brief Rendering Pipeline 전반을 처리하는 클래스
  *
@@ -34,57 +35,45 @@ class URenderer :
 DECLARE_SINGLETON(URenderer)
 
 public:
-	void Create(HWND InWindowHandle);
-	void CreateDeviceAndSwapChain(HWND InWindowHandle);
-	void ReleaseDeviceAndSwapChain();
-	void CreateFrameBuffer();
-	void ReleaseFrameBuffer();
+	void Init(HWND InWindowHandle);
+	void Release();
+
 	void CreateRasterizerState();
 	void ReleaseRasterizerState();
 
 	void ReleaseResource();
 
-	// 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
-	void SwapBuffer() const;
+	void CreateDefaultShader();
+	void ReleaseDefaultShader();
+	void Update() const;
+	void RenderBegin() const;
+	void Render() const;
+	void RenderEnd() const;
 
-	void CreateShader();
-	void ReleaseShader();
-	void Prepare() const;
-	void PrepareShader() const;
-	void RenderPrimitive(ID3D11Buffer* Vertexbuffer, UINT NumVertices) const;
-	void RenderRectangle() const;
-	void RenderTriangle() const;
+	//Testing Func
 	void RenderLines(const FVertex* InVertices, UINT InCount) const;
-
 	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, UINT InByteWidth) const;
 	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, UINT InByteWidth) const;
 	static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
+
 	void CreateConstantBuffer();
 	void ReleaseConstantBuffer();
 	void UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
 
-	void Init(HWND InWindowHandle);
-	void Release();
-
-	ID3D11Device* GetDevice() const { return Device; }
-	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
+	ID3D11Device* GetDevice() const { return DeviceResources->GetDevice(); }
+	ID3D11DeviceContext* GetDeviceContext() const { return DeviceResources->GetDeviceContext(); }
+	IDXGISwapChain* GetSwapChain() const { return DeviceResources->GetSwapChain();}
+	ID3D11RenderTargetView* GetRenderTargetView() const { return DeviceResources->GetRenderTargetView(); }
 
 private:
 	UPipeline* Pipeline;
+	UDeviceResources* DeviceResources;
 
 private:
-	ID3D11Device* Device = nullptr;
-	ID3D11DeviceContext* DeviceContext = nullptr;
-	IDXGISwapChain* SwapChain = nullptr;
-
-	ID3D11Texture2D* FrameBuffer = nullptr;
-	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 	ID3D11RasterizerState* RasterizerState = nullptr;
 	ID3D11Buffer* ConstantBuffer = nullptr;
 
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};
-	D3D11_VIEWPORT ViewportInfo;
-	D3D11_VIEWPORT UIViewportInfo;
 
 	ID3D11VertexShader* DefaultVertexShader;
 	ID3D11PixelShader* DefaultPixelShader;
@@ -92,13 +81,4 @@ private:
 	unsigned int Stride;
 
 	ID3D11Buffer* vertexBufferSphere;
-	UINT numVerticesSphere;
-
-	// Rectangle용 버퍼
-	ID3D11Buffer* vertexBufferRectangle = nullptr;
-	ID3D11Buffer* indexBufferRectangle = nullptr;
-	UINT numIndicesRectangle = 0;
-
-	// Triangle용 버퍼
-	ID3D11Buffer* vertexBufferTriangle = nullptr;
 };
