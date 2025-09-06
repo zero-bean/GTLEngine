@@ -7,7 +7,7 @@ struct FPipelineInfo
 	ID3D11RasterizerState* RasterizerState;
 	ID3D11PixelShader* PixelShader;
 	ID3D11BlendState* BlendState;
-	D3D11_PRIMITIVE_TOPOLOGY topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	D3D11_PRIMITIVE_TOPOLOGY Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 };
 
 class UPipeline

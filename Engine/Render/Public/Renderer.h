@@ -74,7 +74,6 @@ private:
 	ID3D11Buffer* ConstantBuffer = nullptr;
 
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};
-	D3D11_VIEWPORT ViewportInfo;
 
 	ID3D11VertexShader* DefaultVertexShader;
 	ID3D11PixelShader* DefaultPixelShader;

@@ -72,14 +72,6 @@ void URenderer::ReleaseResource()
 }
 
 /**
- * @brief 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
- */
-void URenderer::RenderEnd() const
-{
-	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
-}
-
-/**
  * @brief Shader 기반의 CSO 생성 함수
  */
 void URenderer::CreateDefaultShader()
@@ -156,7 +148,7 @@ void URenderer::RenderBegin() const
 	auto* rtv = DeviceResources->GetRenderTargetView();
 	GetDeviceContext()->ClearRenderTargetView(rtv, ClearColor);
 
-	GetDeviceContext()->RSSetViewports(1, &ViewportInfo);
+	GetDeviceContext()->RSSetViewports(1, &DeviceResources->GetViewportInfo());
 
 	ID3D11RenderTargetView* rtvs[] = { rtv };  // 배열 생성
 	GetDeviceContext()->OMSetRenderTargets(1, rtvs, nullptr);
@@ -186,10 +178,18 @@ void URenderer::Render() const
 		UpdateConstant({}, {}, {1,1,1});
 		FVertex vert[] = {
 			{
-				{0,0,0}, {1, 1,1,1}},
+				{-1,-1,-1}, {1, 1,1,1}},
 			{{1,1,1},{1,1,1,1}}};
 		RenderLines(vert, 2);
 	}
+}
+
+/**
+ * @brief 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
+ */
+void URenderer::RenderEnd() const
+{
+	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
 }
 
 /**

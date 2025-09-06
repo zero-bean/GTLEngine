@@ -52,6 +52,12 @@ void UDeviceResources::CreateDeviceAndSwapChain(HWND InWindowHandle)
 
 	// 생성된 스왑 체인의 정보 가져오기
 	SwapChain->GetDesc(&swapchaindesc);
+
+	// Viewport Info 업데이트
+	ViewportInfo = {
+		0.0f, 0.0f, static_cast<float>(swapchaindesc.BufferDesc.Width),
+		static_cast<float>(swapchaindesc.BufferDesc.Height), 0.0f, 1.0f
+	};
 }
 
 /**

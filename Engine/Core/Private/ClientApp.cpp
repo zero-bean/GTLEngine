@@ -85,17 +85,10 @@ void FClientApp::UpdateSystem()
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
-	auto& ImGuiManager = UImGuiManager::GetInstance();
 
 	TimeManager.Update();
 	InputManager.Update();
-
-	Renderer.RenderBegin();
-
-	Renderer.Render();
-	ImGuiManager.Render();
-
-	Renderer.RenderEnd();
+	Renderer.Update();
 }
 
 /**
