@@ -63,7 +63,7 @@ void UImGuiManager::Render()
 	float CurrentY = 10.0f;
 	float WindowPadding = 10.0f;
 	float RightPanelX = ScreenWidth - RightPanelWidth - WindowPadding;
-	
+
 
 	// Show Demo
 	// Frame Performance Info
@@ -191,6 +191,7 @@ void UImGuiManager::Render()
 	Cube.SetActorLocation(CubeLocation);
 	Cube.SetActorRotation(CubeRotation);
 	Cube.SetActorScale3D(CubeScale3D);*/
+
 	// Render ImGui
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

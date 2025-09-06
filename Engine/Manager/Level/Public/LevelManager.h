@@ -16,6 +16,9 @@ public:
 	// Getter
 	ULevel* GetCurrentLevel() const { return CurrentLevel; }
 
+	//test
+	void CreateDefaultLevel();
+
 private:
 	ULevel* CurrentLevel;
 	TMap<wstring, ULevel*> Levels;

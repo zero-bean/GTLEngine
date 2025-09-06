@@ -4,6 +4,7 @@
 #include "Core/Public/AppWindow.h"
 #include "Manager/ImGui/Public/ImGuiManager.h"
 #include "Manager/Input/Public/InputManager.h"
+#include "Manager/Level/Public/LevelManager.h"
 #include "Manager/Time/Public/TimeManager.h"
 #include "Render/Public/Renderer.h"
 #include "Mesh/Public/CubeActor.h"
@@ -72,12 +73,12 @@ int FClientApp::InitializeSystem() const
 	UTimeManager::GetInstance();
 	UInputManager::GetInstance();
 
-
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
 	//renderer Init 후에 실행해야함.
 	UResourceManager::GetInstance().Initialize();
 
+	ULevelManager::GetInstance().CreateDefaultLevel();
 
 	return S_OK;
 }
@@ -90,9 +91,11 @@ void FClientApp::UpdateSystem(ACubeActor& Cube)
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
+	auto& LevelManager = ULevelManager::GetInstance();
 
 	TimeManager.Update();
 	InputManager.Update();
+	LevelManager.Update();
 	Renderer.Update();
 }
 

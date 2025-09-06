@@ -1,8 +1,7 @@
 #include "pch.h"
 #include "Mesh/Public/SceneComponent.h"
 #include "Mesh/Public/ResourceManager.h"
-#include "Render/Public/Renderer.h"
-#include "Global/Constant.h"
+
 
 
 void USceneComponent::SetRelativeLocation(const FVector& Location)
@@ -36,6 +35,11 @@ const TArray<FVertex>* UPrimitiveComponent::GetVerticesData() const
 {
     UResourceManager& ResourceManager = UResourceManager::GetInstance();
     return ResourceManager.GetVertexData(Type);
+}
+
+ID3D11Buffer* UPrimitiveComponent::GetVertexBuffer() const
+{
+	return Vertexbuffer;
 }
 
 //void UPrimitiveComponent::Render(const URenderer& Renderer) const

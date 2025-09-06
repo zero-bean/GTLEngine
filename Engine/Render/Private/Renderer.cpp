@@ -1,8 +1,12 @@
 #include "pch.h"
 #include "Render/Public/Renderer.h"
+
+#include "Level/Public/Level.h"
 #include "Render/Public/Pipeline.h"
 #include "Manager/ImGui/Public/ImGuiManager.h"
+#include "Manager/Level/Public/LevelManager.h"
 #include "Render/Public/DeviceResources.h"
+#include "Mesh/Public/Actor.h"
 
 IMPLEMENT_SINGLETON(URenderer)
 
@@ -130,10 +134,11 @@ void URenderer::ReleaseDefaultShader()
 	}
 }
 
-void URenderer::Update() const
+void URenderer::Update()
 {
 	RenderBegin();
 
+	GatherRenderableObjects();
 	Render();
 	UImGuiManager::GetInstance().Render();
 
@@ -143,7 +148,7 @@ void URenderer::Update() const
 /**
  * @brief Render Prepare Step
  */
-void URenderer::RenderBegin() const
+void URenderer::RenderBegin()
 {
 	auto* rtv = DeviceResources->GetRenderTargetView();
 	GetDeviceContext()->ClearRenderTargetView(rtv, ClearColor);
@@ -155,39 +160,57 @@ void URenderer::RenderBegin() const
 }
 
 /**
+ * @brief Gathering Renderable Object
+ */
+void URenderer::GatherRenderableObjects()
+{
+	PrimitiveComponents.clear();
+	for (auto& Object : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelObjects())
+	{
+		AActor* Actor = dynamic_cast<AActor*>(Object);
+		if (!Actor)
+			continue;
+		for (auto& Component : Actor->OwnedComponents)
+		{
+			UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Component);
+			if (!Primitive)
+				continue;
+			PrimitiveComponents.push_back(Primitive);
+		}
+	}
+}
+
+/**
  * @brief Buffer에 데이터 입력 및 Draw
  */
-void URenderer::Render() const
+void URenderer::Render()
 {
-	//Gather All Renderable Objects and Render
+	for (auto& PrimitiveComponent : PrimitiveComponents)
 	{
-		Pipeline->UpdatePipeline({
+		FPipelineInfo PipelineInfo = {
 			DefaultInputLayout,
 			DefaultVertexShader,
 			RasterizerState,
 			DefaultPixelShader,
 			nullptr,
-		});
+		};
+		Pipeline->UpdatePipeline(PipelineInfo);
 
 		Pipeline->SetConstantBuffer(0, true, ConstantBuffer);
-		//UpdateConstant(~~);
-		// Pipeline->SetVertexBuffer(Vertexbuffer, Stride);
-		// Pipeline->Draw(NumVertices, 0);
+		UpdateConstant(
+			PrimitiveComponent->GetRelativeLocation(),
+			PrimitiveComponent->GetRelativeRotation(),
+			PrimitiveComponent->GetRelativeScale3D() );
 
-		//Test Code
-		UpdateConstant({}, {}, {1,1,1});
-		FVertex vert[] = {
-			{
-				{-1,-1,-1}, {1, 1,1,1}},
-			{{1,1,1},{1,1,1,1}}};
-		RenderLines(vert, 2);
+		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
+		Pipeline->Draw(PrimitiveComponent->GetVerticesData()->size(), 0);
 	}
 }
 
 /**
  * @brief 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
  */
-void URenderer::RenderEnd() const
+void URenderer::RenderEnd()
 {
 	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
 }
