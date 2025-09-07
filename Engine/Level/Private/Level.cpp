@@ -7,7 +7,7 @@
 ULevel::ULevel()
 {
 	Gizmo = new AGizmo();
-	AddObject(Gizmo);
+	AddActor(Gizmo);
 }
 
 ULevel::ULevel(const wstring& InName)
@@ -18,14 +18,15 @@ ULevel::ULevel(const wstring& InName)
 
 ULevel::~ULevel()
 {
-	for (auto Object : LevelObjects)
+	for (auto Actor : LevelActors)
 	{
-		SafeDelete(Object);
+		SafeDelete(Actor);
 	}
 }
 
 void ULevel::Init()
 {
+
 }
 
 void ULevel::Update()
@@ -34,7 +35,7 @@ void ULevel::Update()
 	{
 		Gizmo->SetTargetActor(SelectedActor);
 	}
-	for (auto& Object : LevelObjects)
+	for (auto& Object : LevelActors)
 	{
 		AActor* Actor = dynamic_cast<AActor*>(Object);
 		if (Actor)

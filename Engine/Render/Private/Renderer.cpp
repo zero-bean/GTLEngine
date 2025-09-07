@@ -238,9 +238,8 @@ void URenderer::GatherRenderableObjects()
 		return;
 
 	PrimitiveComponents.clear();
-	for (auto& Object : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelObjects())
+	for (auto& Actor : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelActors())
 	{
-		AActor* Actor = dynamic_cast<AActor*>(Object);
 		if (!Actor)
 			continue;
 		if (const AGizmo* Gizmo = dynamic_cast<AGizmo*>(Actor))

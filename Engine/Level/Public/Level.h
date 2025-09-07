@@ -18,9 +18,12 @@ public:
 	virtual void Cleanup();
 
 	const wstring& GetName() const { return Name; }
-	TArray<UObject*> GetLevelObjects() const { return LevelObjects; }
+	TArray<AActor*> GetLevelActors() const { return LevelActors; }
 
-	void AddObject(UObject* Object) { LevelObjects.push_back(Object); }
+	template<typename T, typename... Args>
+	T* SpawnActor(Args&&... args);
+
+	void AddActor(AActor* Actor) { LevelActors.push_back(Actor); }
 
 	void SetSelectedActor(AActor* InActor) { SelectedActor = InActor; }
 	AActor* GetSelectedActor() const { return SelectedActor; }
@@ -28,7 +31,19 @@ public:
 
 private:
 	wstring Name;
-	TArray<UObject*> LevelObjects;
+	TArray<AActor*> LevelActors;
 	AActor* SelectedActor = nullptr;
 	AGizmo* Gizmo = nullptr;
 };
+
+template <typename T, typename ... Args>
+T* ULevel::SpawnActor(Args&&... args)
+{
+	T* NewActor = new T(std::forward<Args>(args)...);
+
+	LevelActors.push_back(NewActor);
+
+	NewActor->BeginPlay();
+
+	return NewActor;
+}
