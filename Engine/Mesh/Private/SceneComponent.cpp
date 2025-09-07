@@ -18,15 +18,15 @@ void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 	RelativeScale3D = Scale;
 }
 
-FVector& USceneComponent::GetRelativeLocation()
+const FVector& USceneComponent::GetRelativeLocation() const
 {
 	return RelativeLocation;
 }
-FVector& USceneComponent::GetRelativeRotation()
+const FVector& USceneComponent::GetRelativeRotation() const
 {
 	return RelativeRotation;
 }
-FVector& USceneComponent::GetRelativeScale3D()
+const FVector& USceneComponent::GetRelativeScale3D() const
 {
 	return RelativeScale3D;
 }

@@ -1,5 +1,4 @@
 #pragma once
-#include "pch.h"
 #include "Core/Public/Object.h"
 
 class UResourceManager : public UObject

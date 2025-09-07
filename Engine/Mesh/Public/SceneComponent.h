@@ -1,5 +1,4 @@
 #pragma once
-#include "pch.h"
 #include "Mesh/Public/ActorComponent.h"
 #include "ResourceManager.h"
 
@@ -11,9 +10,9 @@ public:
 	void SetRelativeRotation(const FVector& Rotation);
 	void SetRelativeScale3D(const FVector& Scale);
 
-	FVector& GetRelativeLocation();
-	FVector& GetRelativeRotation();
-	FVector& GetRelativeScale3D();
+	const FVector& GetRelativeLocation() const;
+	const FVector& GetRelativeRotation() const;
+	const FVector& GetRelativeScale3D() const;
 private:
 	FVector RelativeLocation = FVector{ 0,0,0.5f };
 	FVector RelativeRotation = FVector{ 0,0,0.f };
