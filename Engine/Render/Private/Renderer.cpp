@@ -204,8 +204,7 @@ void URenderer::Update()
 	RenderBegin();
 
 	RenderLines();
-	GatherRenderableObjects();
-	Render();
+	RenderLevel();
 	UImGuiManager::GetInstance().Render(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
 	//RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
 
@@ -317,14 +316,18 @@ void URenderer::RenderLines() const
 /**
  * @brief Buffer에 데이터 입력 및 Draw
  */
-void URenderer::Render()
+void URenderer::RenderLevel()
 {
 	//
 	// 여기에 카메라 VP 업데이트 한 번 싹
 	//
+	if (!ULevelManager::GetInstance().GetCurrentLevel())
+		return;
 
-	for (auto& PrimitiveComponent : PrimitiveComponents)
+	for (auto& PrimitiveComponent : ULevelManager::GetInstance().GetCurrentLevel()->GetPrimitiveComponent())
 	{
+		if (!PrimitiveComponent) continue;
+		
 		FPipelineInfo PipelineInfo = {
 			DefaultInputLayout,
 			DefaultVertexShader,
@@ -344,6 +347,11 @@ void URenderer::Render()
 		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
 		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
 	}
+}
+
+void URenderer::RenderEditor()
+{
+	//TODO
 }
 
 /**

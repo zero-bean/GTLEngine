@@ -6,8 +6,7 @@
 
 ULevel::ULevel()
 {
-	Gizmo = new AGizmo();
-	AddActor(Gizmo);
+	Gizmo = SpawnActor<AGizmo>();
 }
 
 ULevel::ULevel(const wstring& InName)
@@ -51,4 +50,18 @@ void ULevel::Render()
 
 void ULevel::Cleanup()
 {
+}
+
+void ULevel::AddPrimitiveComponent(AActor* Actor)
+{
+	if (!Actor) return;
+
+	for (auto& Component : Actor->GetOwnedComponents())
+	{
+		UPrimitiveComponent* Comp = dynamic_cast<UPrimitiveComponent*>(Component);
+		if (Comp)
+		{
+			PrimitiveComponents.push_back(Comp);
+		}
+	}
 }

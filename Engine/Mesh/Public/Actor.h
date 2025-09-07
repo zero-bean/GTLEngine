@@ -40,6 +40,9 @@ public:
 	virtual void Tick(float DeltaTime);
 	virtual void EndPlay();
 
+	USceneComponent* GetRootComponent() {return RootComponent;}
+	TArray<UActorComponent*> GetOwnedComponents() {return OwnedComponents;}
+
 	USceneComponent* RootComponent = nullptr;
 	TArray<UActorComponent*> OwnedComponents;
 protected:
