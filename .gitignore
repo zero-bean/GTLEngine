@@ -520,3 +520,6 @@ Build/
 
 # ImGui
 imgui.ini
+
+# Warp
+WARP.md

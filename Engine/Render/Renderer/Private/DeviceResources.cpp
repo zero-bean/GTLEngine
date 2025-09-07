@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Render/Public/DeviceResources.h"
+#include "Render/Renderer/Public/DeviceResources.h"
 
 UDeviceResources::UDeviceResources(HWND InWindowHandle)
 {
