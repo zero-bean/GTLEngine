@@ -90,7 +90,7 @@ struct FVector
 	/**
 	 * @brief 자신의 벡터에서 배율을 곱한 뒤 자신을 반환
 	 */
-	FVector& operator-=(const float Ratio)
+	FVector& operator*=(const float Ratio)
 	{
 		X *= Ratio;
 		Y *= Ratio;
@@ -361,7 +361,12 @@ struct FConstants
 	*/
 	static FConstants RotationMatrix(const FVector& InOtherVector)
 	{
-		return RotationX(InOtherVector.X) * RotationY(InOtherVector.Y) * RotationZ(InOtherVector.Z);
+		return    RotationX(InOtherVector.X)* RotationY(InOtherVector.Y) * RotationZ(InOtherVector.Z);
+	}
+
+	static FConstants RotationMatrixReverse(const FVector& InOtherVector)
+	{
+		return    RotationZ(InOtherVector.Z) * RotationY(InOtherVector.Y) * RotationX(InOtherVector.X);
 	}
 
 	/**
