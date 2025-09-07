@@ -147,10 +147,12 @@
     <ClInclude Include="Camera\Public\Camera.h" />
     <ClInclude Include="Core\Public\Object.h" />
     <ClInclude Include="Global\Constant.h" />
+    <ClInclude Include="Global\CoreTypes.h" />
     <ClInclude Include="Global\Enum.h" />
     <ClInclude Include="Global\Function.h" />
     <ClInclude Include="Global\Macro.h" />
-    <ClInclude Include="Global\Struct.h" />
+    <ClInclude Include="Global\Matrix.h" />
+    <ClInclude Include="Global\Vector.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_impl_dx11.h" />
@@ -176,6 +178,7 @@
     <ClInclude Include="Mesh\Sample\Rectangle.h" />
     <ClInclude Include="Mesh\Sample\Sphere.h" />
     <ClInclude Include="Mesh\Sample\Triangle.h" />
+    <ClInclude Include="ObjectPicking.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Core\Public\AppWindow.h" />
     <ClInclude Include="Core\Public\ClientApp.h" />
@@ -191,6 +194,8 @@
   <ItemGroup>
     <ClCompile Include="Camera\Private\Camera.cpp" />
     <ClCompile Include="Core\Private\Object.cpp" />
+    <ClCompile Include="Global\Matrix.cpp" />
+    <ClCompile Include="Global\Vector.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
     <ClCompile Include="ImGui\imgui_draw.cpp" />
@@ -212,6 +217,7 @@
     <ClCompile Include="Mesh\Private\SphereActor.cpp" />
     <ClCompile Include="Mesh\Private\TriangleActor.cpp" />
     <ClCompile Include="Mesh\Private\VertexDatas.cpp" />
+    <ClCompile Include="ObjectPicking.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
