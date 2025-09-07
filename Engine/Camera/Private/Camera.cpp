@@ -67,8 +67,8 @@ void Camera::UpdateMatrix()
 	const float Yaw = FVector::GetDegreeToRadian(-Rotation.Y);
 	const float Pitch = FVector::GetDegreeToRadian(-Rotation.Z);
 
-	FConstants T = FConstants::TranslationMatrix(-Position);
-	FConstants R = FConstants::RotationMatrixReverse({ Roll, Yaw, Pitch });
+	FMatrix T = FMatrix::TranslationMatrix(-Position);
+	FMatrix R = FMatrix::RotationMatrixReverse({ Roll, Yaw, Pitch });
 	ViewProjConstants.View = T * R;
 
 	/**
@@ -79,7 +79,7 @@ void Camera::UpdateMatrix()
 	const float RadianFovY = FVector::GetDegreeToRadian(FovY);
 	const float F = 1.0f / std::tanf(RadianFovY * 0.5f);
 
-	FConstants P = FConstants::Identity();
+	FMatrix P = FMatrix::Identity();
 	// | f/aspect   0        0         0 |
 	// |    0       f        0         0 |
 	// |    0       0   zf/(zf-zn)     1 |

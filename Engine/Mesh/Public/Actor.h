@@ -1,8 +1,7 @@
 #pragma once
-
 #include "Core/Public/Object.h"
 #include "Mesh/Public/SceneComponent.h"
-#include "pch.h"
+
 
 class AActor : public UObject
 {
@@ -15,9 +14,9 @@ public:
 	void SetActorRotation(const FVector& Rotation);
 	void SetActorScale3D(const FVector& Scale);
 
-	FVector& GetActorLocation();
-	FVector& GetActorRotation();
-	FVector& GetActorScale3D();
+	const FVector& GetActorLocation() const;
+	const FVector& GetActorRotation() const;
+	const FVector& GetActorScale3D() const;
 
 	//테스트용 코드
 	//void Render(const URenderer& Renderer);

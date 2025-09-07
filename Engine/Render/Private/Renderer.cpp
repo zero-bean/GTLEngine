@@ -425,7 +425,7 @@ void URenderer::CreateConstantBuffer()
 	 */
 	{
 		D3D11_BUFFER_DESC ConstantBufferDesc = {};
-		ConstantBufferDesc.ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0;
+		ConstantBufferDesc.ByteWidth = sizeof(FMatrix) + 0xf & 0xfffffff0;
 		// ensure constant buffer size is multiple of 16 bytes
 		ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
 		ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -480,16 +480,16 @@ void URenderer::UpdateConstant(const FVector& InPosition, const FVector& InRotat
 
 		GetDeviceContext()->Map(ConstantBufferModels, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
 		// update constant buffer every frame
-		FConstants* constants = (FConstants*)constantbufferMSR.pData;
+		FMatrix* constants = (FMatrix*)constantbufferMSR.pData;
 		{
 			const float Pitch = FVector::GetDegreeToRadian(InRotation.X);
 			const float Yaw = FVector::GetDegreeToRadian(InRotation.Y);
 			const float Roll = FVector::GetDegreeToRadian(InRotation.Z);
 
-			FConstants C = FConstants::TranslationMatrix(FVector(0, 0, 0));
-			FConstants S = FConstants::ScaleMatrix(InScale);
-			FConstants R = FConstants::RotationMatrix({ Pitch, Yaw, Pitch });
-			FConstants T = FConstants::TranslationMatrix(InPosition);
+			FMatrix C = FMatrix::TranslationMatrix(FVector(0, 0, 0));
+			FMatrix S = FMatrix::ScaleMatrix(InScale);
+			FMatrix R = FMatrix::RotationMatrix({ Pitch, Yaw, Pitch });
+			FMatrix T = FMatrix::TranslationMatrix(InPosition);
 			*constants = S * R * T;
 		}
 		GetDeviceContext()->Unmap(ConstantBufferModels, 0);
