@@ -94,6 +94,11 @@ FMatrix FMatrix::RotationMatrix(const FVector& InOtherVector)
 	return RotationX(InOtherVector.X) * RotationY(InOtherVector.Y) * RotationZ(InOtherVector.Z);
 }
 
+FMatrix FMatrix::RotationMatrixReverse(const FVector& InOtherVector)
+{
+	return RotationZ(InOtherVector.Z) * RotationY(InOtherVector.Y) * RotationX(InOtherVector.X);
+}
+
 /**
 * @brief X의 회전 정보를 행렬로 변환
 */

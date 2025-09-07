@@ -475,15 +475,15 @@ void URenderer::UpdateConstant(const FVector& InPosition, const FVector& InRotat
 		// update constant buffer every frame
 		FMatrix* constants = (FMatrix*)constantbufferMSR.pData;
 		{
-			const float Roll = FVector::GetDegreeToRadian(InRotation.X);
-			const float Pitch = FVector::GetDegreeToRadian(InRotation.Y);
-			const float Yaw = FVector::GetDegreeToRadian(InRotation.Z);
+			const float Pitch = FVector::GetDegreeToRadian(InRotation.X);
+			const float Yaw = FVector::GetDegreeToRadian(InRotation.Y);
+			const float Roll = FVector::GetDegreeToRadian(InRotation.Z);
 
 			FMatrix C = FMatrix::TranslationMatrix(FVector(0, 0, 0));
 			FMatrix S = FMatrix::ScaleMatrix(InScale);
-			FMatrix R = FMatrix::RotationMatrix({ Roll, Pitch, Yaw });
+			FMatrix R = FMatrix::RotationMatrix({ Pitch, Yaw, Pitch });
 			FMatrix T = FMatrix::TranslationMatrix(InPosition);
-			*constants = C * S * R * T;
+			*constants = S * R * T;
 		}
 		GetDeviceContext()->Unmap(ConstantBufferModels, 0);
 	}

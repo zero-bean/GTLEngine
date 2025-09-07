@@ -50,6 +50,8 @@ struct FMatrix
 	*/
 	static FMatrix RotationMatrix(const FVector& InOtherVector);
 
+	static FMatrix RotationMatrixReverse(const FVector& InOtherVector);
+
 	/**
 	* @brief X의 회전 정보를 행렬로 변환
 	*/
