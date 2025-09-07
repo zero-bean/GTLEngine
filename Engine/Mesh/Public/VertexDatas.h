@@ -1,6 +1,4 @@
 #pragma once
-#include "pch.h"
-
 
 extern TArray<FVertex> VerticesSphere;
 extern TArray<FVertex> VerticesCube;

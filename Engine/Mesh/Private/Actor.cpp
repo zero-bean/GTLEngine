@@ -48,19 +48,19 @@ void AActor::SetActorScale3D(const FVector& Scale)
 	}
 }
 
-FVector& AActor::GetActorLocation()
+const FVector& AActor::GetActorLocation() const
 {
 	assert(RootComponent);
 	return RootComponent->GetRelativeLocation();
 }
 
-FVector& AActor::GetActorRotation()
+const FVector& AActor::GetActorRotation() const
 {
 	assert(RootComponent);
 	return RootComponent->GetRelativeRotation();
 }
 
-FVector& AActor::GetActorScale3D()
+const FVector& AActor::GetActorScale3D() const
 {
 	assert(RootComponent);
 	return RootComponent->GetRelativeScale3D();

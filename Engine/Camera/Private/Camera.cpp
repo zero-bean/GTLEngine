@@ -32,12 +32,12 @@ void Camera::Update()
 		FVector Up = { 0,1,0 };
 		FVector Right = Forward.Cross(Up);
 
-		if (Input.IsKeyDown(EKeyInput::A)) { Move -= Right; }
-		else if (Input.IsKeyDown(EKeyInput::D)) { Move += Right; }
-		else if (Input.IsKeyDown(EKeyInput::W)) { Move += Forward; }
-		else if (Input.IsKeyDown(EKeyInput::S)) { Move -= Forward; }
-		else if (Input.IsKeyDown(EKeyInput::Q)) { Move -= Up; }
-		else if (Input.IsKeyDown(EKeyInput::E)) { Move += Up; }
+		if (Input.IsKeyDown(EKeyInput::A)) { Move = -Right; }
+		else if (Input.IsKeyDown(EKeyInput::D)) { Move = Right; }
+		else if (Input.IsKeyDown(EKeyInput::W)) { Move = Forward; }
+		else if (Input.IsKeyDown(EKeyInput::S)) { Move = -Forward; }
+		else if (Input.IsKeyDown(EKeyInput::Q)) { Move = -Up; }
+		else if (Input.IsKeyDown(EKeyInput::E)) { Move = Up; }
 		Move.Normalize();
 		Position += Move * CameraSpeed * DeltaTime;
 
@@ -45,8 +45,8 @@ void Camera::Update()
 		* @brief 마우스 위치 변화량을 감지하여 카메라의 회전을 담당합니다.
 		*/
 		const FVector MouseDelta = UInputManager::GetInstance().GetMouseDelta();
-		Rotation.X -= MouseDelta.Y * KeySensitivityDegPerPixel;
-		Rotation.Y -= MouseDelta.X * KeySensitivityDegPerPixel;
+		Rotation.X += MouseDelta.Y * KeySensitivityDegPerPixel;
+		Rotation.Y += MouseDelta.X * KeySensitivityDegPerPixel;
 
 		// Pitch 클램프(짐벌 플립 방지)
 		if (Rotation.X > 89.0f) Rotation.X = 89.0f;
@@ -64,11 +64,11 @@ void Camera::UpdateMatrix()
 	 * @brief View 행렬 연산
 	 */
 	const float Roll = FVector::GetDegreeToRadian(-Rotation.X);
-	const float Pitch = FVector::GetDegreeToRadian(-Rotation.Y);
-	const float Yaw = FVector::GetDegreeToRadian(-Rotation.Z);
+	const float Yaw = FVector::GetDegreeToRadian(-Rotation.Y);
+	const float Pitch = FVector::GetDegreeToRadian(-Rotation.Z);
 
-	FConstants T = FConstants::TranslationMatrix(-Position);
-	FConstants R = FConstants::RotationMatrix({ Roll, Pitch, Yaw });
+	FMatrix T = FMatrix::TranslationMatrix(-Position);
+	FMatrix R = FMatrix::RotationMatrixReverse({ Roll, Yaw, Pitch });
 	ViewProjConstants.View = T * R;
 
 	/**
@@ -79,7 +79,7 @@ void Camera::UpdateMatrix()
 	const float RadianFovY = FVector::GetDegreeToRadian(FovY);
 	const float F = 1.0f / std::tanf(RadianFovY * 0.5f);
 
-	FConstants P = FConstants::Identity();
+	FMatrix P = FMatrix::Identity();
 	// | f/aspect   0        0         0 |
 	// |    0       f        0         0 |
 	// |    0       0   zf/(zf-zn)     1 |

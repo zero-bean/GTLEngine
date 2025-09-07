@@ -38,6 +38,9 @@
     <ClCompile Include="Render\Gizmo\Private\Gizmo.cpp" />
     <ClCompile Include="Utility\Private\LevelSerializer.cpp" />
     <ClCompile Include="Render\Gizmo\Private\GizmoArrow.cpp" />
+    <ClCompile Include="ObjectPicking.cpp" />
+    <ClCompile Include="Global\Matrix.cpp" />
+    <ClCompile Include="Global\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Public\Object.h" />
@@ -45,7 +48,6 @@
     <ClInclude Include="Global\Enum.h" />
     <ClInclude Include="Global\Function.h" />
     <ClInclude Include="Global\Macro.h" />
-    <ClInclude Include="Global\Struct.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_impl_dx11.h" />
@@ -83,5 +85,9 @@
     <ClInclude Include="Render\Gizmo\Public\GizmoArrow.h" />
     <ClInclude Include="Utility\Public\LevelSerializer.h" />
     <ClInclude Include="Utility\Public\Metadata.h" />
+    <ClInclude Include="ObjectPicking.h" />
+    <ClInclude Include="Global\CoreTypes.h" />
+    <ClInclude Include="Global\Matrix.h" />
+    <ClInclude Include="Global\Vector.h" />
   </ItemGroup>
 </Project>
