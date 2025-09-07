@@ -7,9 +7,11 @@
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/Time/Public/TimeManager.h"
 #include "Manager/ImGui/Public/ImGuiManager.h"
-#include "Render/Public/Renderer.h"
+#include "Manager/UI/Public/UIManager.h"
 #include "Mesh/Public/CubeActor.h"
 #include "Camera/Public/Camera.h"
+#include "Render/Renderer/Public/Renderer.h"
+#include "Render/UI/Public/PerformanceWindow.h"
 
 ///////////////////////////////////
 // 테스트용 카메라 전역 변수로 선언
@@ -78,6 +80,7 @@ int FClientApp::InitializeSystem() const
 	// Initialize By Get Instance
 	UTimeManager::GetInstance();
 	UInputManager::GetInstance();
+	UUIManager::GetInstance();
 
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
@@ -87,7 +90,7 @@ int FClientApp::InitializeSystem() const
 	MyCamera = new Camera();
 	UImGuiManager::GetInstance().SetCamera(MyCamera);
 	////////////////////////////////////////
-	// 
+	//
 	//renderer Init 후에 실행해야함.
 	UResourceManager::GetInstance().Initialize();
 
@@ -99,18 +102,20 @@ int FClientApp::InitializeSystem() const
 /**
  * @brief Update System While Game Processing
  */
-void FClientApp::UpdateSystem(ACubeActor& Cube)
+void FClientApp::UpdateSystem()
 {
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
 	auto& LevelManager = ULevelManager::GetInstance();
+	auto& UIManager = UUIManager::GetInstance();
 
 	TimeManager.Update();
 	InputManager.Update();
 	LevelManager.Update();
 	MyCamera->Update();
 	MyCamera->UpdateMatrix();
+	UIManager.Update();
 	Renderer.UpdateConstant(MyCamera->GetFViewProjConstants());
 	Renderer.Update();
 }
@@ -121,8 +126,6 @@ void FClientApp::UpdateSystem(ACubeActor& Cube)
  */
 void FClientApp::MainLoop()
 {
-	//테스트용
-	ACubeActor Cube;
 	while (true)
 	{
 		// Async Message Process
@@ -143,7 +146,7 @@ void FClientApp::MainLoop()
 		// Game System Update
 		else
 		{
-			UpdateSystem(Cube);
+			UpdateSystem();
 		}
 	}
 

@@ -22,9 +22,9 @@ public:
 
 private:
     int InitializeSystem() const;
-    static void UpdateSystem(ACubeActor& Cube);
+    static void UpdateSystem();
     void MainLoop();
-    
+
     HACCEL AcceleratorTable;
     MSG MainMessage;
     FAppWindow* Window;

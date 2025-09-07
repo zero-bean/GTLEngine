@@ -7,10 +7,11 @@
 
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Time/Public/TimeManager.h"
+#include "Manager/UI/Public/UIManager.h"
 
 #include "Mesh/Public/CubeActor.h"
 
-#include "Render/Public/Renderer.h"
+#include "Render/Renderer/Public/Renderer.h"
 
 // 테스트용 Camera
 #include "Camera/Public/Camera.h"
@@ -205,6 +206,10 @@ void UImGuiManager::Render(AActor* SelectedActor)
 		ImGui::SetNextItemWidth(300);
 		ImGui::SliderFloat3("CamRotation", &MyCamera->GetRotation().X, -180.0f, 180.0f, "%.3f");
 	}
+
+	// UIManager 윈도우들 렌더링
+	auto& UIManager = UUIManager::GetInstance();
+	UIManager.Render();
 
 	// Render ImGui
 	ImGui::Render();

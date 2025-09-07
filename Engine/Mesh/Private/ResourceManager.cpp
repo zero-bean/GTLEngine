@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Mesh/Public/ResourceManager.h"
 #include "Mesh/Public/VertexDatas.h"
-#include "Render/Public/Renderer.h"
+#include "Render/Renderer/Public/Renderer.h"
 
 IMPLEMENT_SINGLETON(UResourceManager)
 

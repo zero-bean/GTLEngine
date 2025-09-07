@@ -51,6 +51,7 @@ using std::stoul;
 using std::ofstream;
 using std::ifstream;
 using std::setw;
+using std::sort;
 
 // File System
 namespace filesystem = std::filesystem;
