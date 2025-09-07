@@ -3,8 +3,8 @@
 
 #include "Level/Public/Level.h"
 
-#include "Manager/ImGui/Public/ImGuiManager.h"
 #include "Manager/Level/Public/LevelManager.h"
+#include "Manager/UI/Public/UIManager.h"
 #include "Mesh/Public/Actor.h"
 #include "Render/Gizmo/Public/Gizmo.h"
 #include "Render/Renderer/Public/Pipeline.h"
@@ -25,14 +25,10 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateDepthStencilState();
 	CreateDefaultShader();
 	CreateConstantBuffer();
-
-	UImGuiManager::GetInstance().Init(InWindowHandle);
 }
 
 void URenderer::Release()
 {
-	UImGuiManager::GetInstance().Release();
-
 	ReleaseVertexBuffer(this->vertexBufferSphere);
 	ReleaseConstantBuffer();
 	ReleaseDefaultShader();
@@ -206,8 +202,7 @@ void URenderer::Update()
 	RenderLines();
 	GatherRenderableObjects();
 	Render();
-	UImGuiManager::GetInstance().Render(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
-	//RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
+	UUIManager::GetInstance().Render();
 
 	RenderEnd();
 }

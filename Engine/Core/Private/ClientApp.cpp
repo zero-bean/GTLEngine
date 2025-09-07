@@ -1,22 +1,21 @@
 #include "pch.h"
 #include "Core/Public/ClientApp.h"
 
+#include "Camera/Public/Camera.h"
 #include "Core/Public/AppWindow.h"
-#include "Manager/ImGui/Public/ImGuiManager.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/Time/Public/TimeManager.h"
-#include "Manager/ImGui/Public/ImGuiManager.h"
 #include "Manager/UI/Public/UIManager.h"
-#include "Mesh/Public/CubeActor.h"
-#include "Camera/Public/Camera.h"
 #include "Render/Renderer/Public/Renderer.h"
-#include "Render/UI/Public/PerformanceWindow.h"
+#include "Render/UI/Window/Public/PerformanceWindow.h"
 
+// TODO(KHJ): 제거 대상
 ///////////////////////////////////
 // 테스트용 카메라 전역 변수로 선언
 Camera* MyCamera;
 ///////////////////////////////////
+
 FClientApp::FClientApp() = default;
 
 FClientApp::~FClientApp() = default;
@@ -80,20 +79,22 @@ int FClientApp::InitializeSystem() const
 	// Initialize By Get Instance
 	UTimeManager::GetInstance();
 	UInputManager::GetInstance();
-	UUIManager::GetInstance();
 
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
 
-	////////////////////////////////////////
 	// TEST CODE - 거슬리면 나중에 리팩터링
 	MyCamera = new Camera();
-	UImGuiManager::GetInstance().SetCamera(MyCamera);
-	////////////////////////////////////////
-	//
-	//renderer Init 후에 실행해야함.
+
+	// UIManager Initialize
+	auto& UIManager = UUIManager::GetInstance();
+	UIManager.Initialize(Window->GetWindowHandle());
+	UUIWindowFactory::CreateDefaultUILayout();
+
 	UResourceManager::GetInstance().Initialize();
 
+	// Create Default Level
+	// TODO(KHJ): 나중에 Init에서 처리하도록 하는 게 맞을 듯
 	ULevelManager::GetInstance().CreateDefaultLevel();
 
 	return S_OK;
@@ -102,7 +103,7 @@ int FClientApp::InitializeSystem() const
 /**
  * @brief Update System While Game Processing
  */
-void FClientApp::UpdateSystem()
+void FClientApp::UpdateSystem() const
 {
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
@@ -150,6 +151,7 @@ void FClientApp::MainLoop()
 		}
 	}
 
+	// TODO(KHJ): 제거 대상
 	////////////////////////////////////////
 	// TEST CODE - 거슬리면 나중에 리팩터링
 	delete MyCamera;

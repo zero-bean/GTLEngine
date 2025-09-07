@@ -22,7 +22,7 @@ public:
 
 private:
     int InitializeSystem() const;
-    static void UpdateSystem();
+    void UpdateSystem() const;
     void MainLoop();
 
     HACCEL AcceleratorTable;

@@ -2,6 +2,8 @@
 #include "Core/Public/Object.h"
 
 class UUIWindow;
+class UImGuiHelper;
+
 /**
  * @brief UI 매니저 클래스
  * 모든 UI 윈도우를 관리하는 싱글톤 클래스
@@ -16,6 +18,7 @@ class UUIManager : public UObject
 
 public:
 	void Initialize();
+	void Initialize(HWND InWindowHandle);
 	void Shutdown();
 	void Update();
 	void Render();
@@ -32,13 +35,19 @@ public:
 	const TArray<UUIWindow*>& GetAllUIWindows() const { return UIWindows; }
 	UUIWindow* GetFocusedWindow() const { return FocusedWindow; }
 
-	void SetFocusedWindow(UUIWindow* Window);
+	void SetFocusedWindow(UUIWindow* InWindow);
+
+	// ImGui 관련 메서드
+	static LRESULT WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 private:
 	TArray<UUIWindow*> UIWindows;
 	UUIWindow* FocusedWindow = nullptr;
 	bool bIsInitialized = false;
 	float TotalTime = 0.0f;
+
+	// ImGui Helper
+	UImGuiHelper* ImGuiHelper = nullptr;
 
 	void SortUIWindowsByPriority();
 	void UpdateFocusState();

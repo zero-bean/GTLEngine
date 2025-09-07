@@ -2,7 +2,7 @@
 #include "Core/Public/AppWindow.h"
 
 #include "ImGui/imgui.h"
-#include "Manager/ImGui/Public/ImGuiManager.h"
+#include "Manager/UI/Public/UIManager.h"
 #include "Manager/Input/Public/InputManager.h"
 
 FAppWindow::FAppWindow(FClientApp* InOwner)
@@ -83,7 +83,7 @@ FAppWindow* FAppWindow::GetWindowInstance(HWND InWindowHandle, UINT InMessage, L
 LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, UINT InMessage, WPARAM InWParam,
                                      LPARAM InLParam)
 {
-	if (UImGuiManager::GetInstance().WndProcHandler(InWindowHandle, InMessage, InWParam, InLParam))
+	if (UUIManager::WndProcHandler(InWindowHandle, InMessage, InWParam, InLParam))
 	{
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
