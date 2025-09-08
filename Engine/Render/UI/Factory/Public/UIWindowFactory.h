@@ -1,6 +1,6 @@
 #pragma once
 
-class UActorInspectorWindow;
+class UControlPanelWindow;
 class UInputStatusWindow;
 class UPerformanceWindow;
 
@@ -26,6 +26,6 @@ public:
 	static void CreateDefaultUILayout();
 	static UPerformanceWindow* CreatePerformanceWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
 	static UInputStatusWindow* CreateInputStatusWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
-	static UActorInspectorWindow* CreateActorInspectorWindow(EUIDockDirection InDockDirection = EUIDockDirection::Left);
+	static UControlPanelWindow* CreateActorInspectorWindow(EUIDockDirection InDockDirection = EUIDockDirection::Left);
 };
 

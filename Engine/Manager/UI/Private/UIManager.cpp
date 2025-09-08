@@ -31,7 +31,7 @@ void UUIManager::Initialize()
 		return;
 	}
 
-	cout << "[UIManager] Initializing UI System..." << endl;
+	cout << "[UIManager] Initializing UI System..." << "\n";
 
 	UIWindows.clear();
 	FocusedWindow = nullptr;
@@ -39,7 +39,7 @@ void UUIManager::Initialize()
 
 	bIsInitialized = true;
 
-	cout << "[UIManager] UI system initialized successfully." << endl;
+	cout << "[UIManager] UI System Initialized Successfully." << "\n";
 }
 
 /**
@@ -52,7 +52,7 @@ void UUIManager::Initialize(HWND InWindowHandle)
 	if (ImGuiHelper)
 	{
 		ImGuiHelper->Initialize(InWindowHandle);
-		cout << "[UIManager] ImGui Initialized Successfully." << endl;
+		cout << "[UIManager] ImGui Initialized Successfully." << "\n";
 	}
 }
 
@@ -66,7 +66,7 @@ void UUIManager::Shutdown()
 		return;
 	}
 
-	cout << "[UIManager] Shutting Down UI system..." << endl;
+	cout << "[UIManager] Shutting Down UI system..." << "\n";
 
 	// ImGui 정리
 	if (ImGuiHelper)
@@ -88,7 +88,7 @@ void UUIManager::Shutdown()
 	FocusedWindow = nullptr;
 	bIsInitialized = false;
 
-	cout << "[UIManager] UI System Shut Down Successfully." << endl;
+	cout << "[UIManager] UI System Shut Down Successfully." << "\n";
 }
 
 /**
@@ -159,7 +159,7 @@ bool UUIManager::RegisterUIWindow(UUIWindow* InWindow)
 {
 	if (!InWindow)
 	{
-		cout << "[UIManager] Error: Attempted To Register Null Window!" << endl;
+		cout << "[UIManager] Error: Attempted To Register Null Window!" << "\n";
 		return false;
 	}
 
@@ -167,7 +167,7 @@ bool UUIManager::RegisterUIWindow(UUIWindow* InWindow)
 	auto Iter = std::find(UIWindows.begin(), UIWindows.end(), InWindow);
 	if (Iter != UIWindows.end())
 	{
-		cout << "[UIManager] Warning: Window Already Registered: " << InWindow->GetWindowID() << endl;
+		cout << "[UIManager] Warning: Window Already Registered: " << InWindow->GetWindowID() << "\n";
 		return false;
 	}
 
@@ -179,15 +179,15 @@ bool UUIManager::RegisterUIWindow(UUIWindow* InWindow)
 	catch (const std::exception& e)
 	{
 		cout << "[UIManager] Error: Failed To Initialize Window " << InWindow->GetWindowID() << ": " << e.what() <<
-			endl;
+			"\n";
 		return false;
 	}
 
 	UIWindows.push_back(InWindow);
 
 	cout << "[UIManager] Registered UI Window: " << InWindow->GetWindowID() << " (" << InWindow->GetWindowTitle() << ")"
-		<< endl;
-	cout << "[UIManager] Total Registered Windows: " << UIWindows.size() << endl;
+		<< "\n";
+	cout << "[UIManager] Total Registered Windows: " << UIWindows.size() << "\n";
 
 	return true;
 }
@@ -207,7 +207,7 @@ bool UUIManager::UnregisterUIWindow(UUIWindow* InWindow)
 	auto It = std::find(UIWindows.begin(), UIWindows.end(), InWindow);
 	if (It == UIWindows.end())
 	{
-		cout << "[UIManager] Warning: Attempted to unregister non-existent window: " << InWindow->GetWindowID() << endl;
+		cout << "[UIManager] Warning: Attempted to unregister non-existent window: " << InWindow->GetWindowID() << "\n";
 		return false;
 	}
 
@@ -222,8 +222,8 @@ bool UUIManager::UnregisterUIWindow(UUIWindow* InWindow)
 
 	UIWindows.erase(It);
 
-	cout << "[UIManager] Unregistered UI window: " << InWindow->GetWindowID() << endl;
-	cout << "[UIManager] Total registered windows: " << UIWindows.size() << endl;
+	cout << "[UIManager] Unregistered UI window: " << InWindow->GetWindowID() << "\n";
+	cout << "[UIManager] Total registered windows: " << UIWindows.size() << "\n";
 
 	return true;
 }
@@ -257,7 +257,7 @@ void UUIManager::HideAllWindows() const
 			Window->SetWindowState(EUIWindowState::Hidden);
 		}
 	}
-	cout << "[UIManager] All windows hidden." << endl;
+	cout << "[UIManager] All windows hidden." << "\n";
 }
 
 /**
@@ -272,7 +272,7 @@ void UUIManager::ShowAllWindows() const
 			Window->SetWindowState(EUIWindowState::Visible);
 		}
 	}
-	cout << "[UIManager] All windows shown." << endl;
+	cout << "[UIManager] All windows shown." << "\n";
 }
 
 /**
@@ -302,25 +302,25 @@ void UUIManager::SetFocusedWindow(UUIWindow* InWindow)
  */
 void UUIManager::PrintDebugInfo() const
 {
-	cout << "\n=== UI Manager Debug Info ===" << endl;
-	cout << "Initialized: " << (bIsInitialized ? "Yes" : "No") << endl;
-	cout << "Total Time: " << TotalTime << "s" << endl;
-	cout << "Registered Windows: " << UIWindows.size() << endl;
-	cout << "Focused Window: " << (FocusedWindow ? FocusedWindow->GetWindowID() : "None") << endl;
+	cout << "\n=== UI Manager Debug Info ===" << "\n";
+	cout << "Initialized: " << (bIsInitialized ? "Yes" : "No") << "\n";
+	cout << "Total Time: " << TotalTime << "s" << "\n";
+	cout << "Registered Windows: " << UIWindows.size() << "\n";
+	cout << "Focused Window: " << (FocusedWindow ? FocusedWindow->GetWindowID() : "None") << "\n";
 
-	cout << "\n--- Window List ---" << endl;
+	cout << "\n--- Window List ---" << "\n";
 	for (size_t i = 0; i < UIWindows.size(); ++i)
 	{
 		auto* Window = UIWindows[i];
 		if (Window)
 		{
-			cout << "[" << i << "] " << Window->GetWindowID() << " (" << Window->GetWindowTitle() << ")" << endl;
-			cout << "    State: " << (Window->IsVisible() ? "Visible" : "Hidden") << endl;
-			cout << "    Priority: " << Window->GetPriority() << endl;
-			cout << "    Focused: " << (Window->IsFocused() ? "Yes" : "No") << endl;
+			cout << "[" << i << "] " << Window->GetWindowID() << " (" << Window->GetWindowTitle() << ")" << "\n";
+			cout << "    State: " << (Window->IsVisible() ? "Visible" : "Hidden") << "\n";
+			cout << "    Priority: " << Window->GetPriority() << "\n";
+			cout << "    Focused: " << (Window->IsFocused() ? "Yes" : "No") << "\n";
 		}
 	}
-	cout << "===========================\n" << endl;
+	cout << "===========================\n" << "\n";
 }
 
 /**

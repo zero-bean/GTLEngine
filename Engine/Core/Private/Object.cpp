@@ -6,6 +6,8 @@ UINT UEngineStatics::NextUUID = 0;
 TArray<UObject*> GUObjectArray;
 
 UObject::UObject()
+	: Name("")
+	  , Outer(nullptr)
 {
 	UUID = UEngineStatics::GenUUID();
 
@@ -13,7 +15,9 @@ UObject::UObject()
 	InternalIndex = static_cast<UINT>(GUObjectArray.size()) - 1;
 }
 
-UObject::~UObject()
+UObject::UObject(const FString& InString)
+	: Name(InString)
+	  , Outer(nullptr)
 {
-
+	UObject();
 }

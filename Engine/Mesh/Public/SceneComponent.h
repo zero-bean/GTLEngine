@@ -24,7 +24,7 @@ public:
 	const FMatrix& GetWorldTransformMatrixInverse() const;
 
 private:
-	mutable bool bIsTransformDirty = true; //transform 캐시를 위한 더티플래그
+	mutable bool bIsTransformDirty = true;
 	mutable bool bIsTransformDirtyInverse = true;
 	mutable FMatrix WorldTransformMatrix;
 	mutable FMatrix WorldTransformMatrixInverse;

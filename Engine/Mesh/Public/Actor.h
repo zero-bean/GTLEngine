@@ -43,9 +43,9 @@ T* AActor::CreateDefaultSubobject(const FString& InName)
 {
 	T* NewComponent = new T();
 
-	NewComponent->Outer = this;
+	NewComponent->SetOuter(this);
 	NewComponent->SetOwner(this);
-	NewComponent->Name = InName;
+	NewComponent->SetName(InName);
 	OwnedComponents.push_back(NewComponent);
 
 	return NewComponent;
