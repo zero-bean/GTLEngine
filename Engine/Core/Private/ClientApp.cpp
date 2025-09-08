@@ -10,6 +10,7 @@
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
+#include "Render/UI/Window/Public/ConsoleWindow.h"
 #include "ObjectPicking.h"
 
 // TODO(KHJ): 제거 대상
@@ -48,9 +49,9 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 	}
 
 	// Create Console
-	#ifdef _DEBUG
-		Window->InitializeConsole();
-	#endif
+	// #ifdef _DEBUG
+	// 	Window->InitializeConsole();
+	// #endif
 
 	// Keyboard Accelerator Table Setting
 	// AcceleratorTable = LoadAccelerators(InInstanceHandle, MAKEINTRESOURCE(IDC_CLIENT));
@@ -94,6 +95,17 @@ int FClientApp::InitializeSystem() const
 	UUIWindowFactory::CreateDefaultUILayout();
 
 	UResourceManager::GetInstance().Initialize();
+
+	// UE_LOG 테스트
+	// UE_LOG("=== Engine Initialization Started ===");
+	// UE_LOG("Window Handle: %p", Window->GetWindowHandle());
+	// UE_LOG("Renderer initialized successfully");
+
+	// Console Window 테스트
+	// cout << "[System] This is cout output test\n";
+	// cerr << "[System] This is cerr output test\n";
+
+	// UE_LOG("=== Engine Initialization Completed ===");
 
 	// Create Default Level
 	// TODO(KHJ): 나중에 Init에서 처리하도록 하는 게 맞을 듯

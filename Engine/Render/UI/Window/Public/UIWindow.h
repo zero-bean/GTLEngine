@@ -14,7 +14,6 @@ enum class EUIWindowState : uint8_t
 	Maximized // 최대화
 };
 
-
 /**
  * @brief UI 윈도우 설정 구조체
  */
@@ -104,7 +103,7 @@ public:
 	const FUIWindowConfig& GetConfig() const { return Config; }
 	FUIWindowConfig& GetMutableConfig() { return Config; }
 	EUIWindowState GetWindowState() const { return CurrentState; }
-	const FString& GetWindowID() const { return WindowID; }
+	const UINT& GetWindowID() const { return WindowID; }
 	const FString& GetWindowTitle() const { return Config.WindowTitle; }
 	int GetPriority() const { return Config.Priority; }
 	float GetLastFocusTime() const { return LastFocusTime; }
@@ -131,7 +130,7 @@ private:
 
 	FUIWindowConfig Config;
 	EUIWindowState CurrentState;
-	FString WindowID;
+	UINT WindowID;
 
 	bool bIsFocused = false;
 	float LastFocusTime = 0.0f;

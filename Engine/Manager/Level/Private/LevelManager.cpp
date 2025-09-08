@@ -370,6 +370,7 @@ bool ULevelManager::LoadLevelFromMetadata(ULevel* InLevel, const FLevelMetadata&
 		}
 	}
 
+	UE_LOG("[LevelManager] Level Loaded From Metadata Successfully");
 	cout << "[LevelManager] Level Loaded From Metadata Successfully" << "\n";
 	return true;
 }
