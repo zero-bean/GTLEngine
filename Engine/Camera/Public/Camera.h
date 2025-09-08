@@ -36,7 +36,9 @@ private:
 	FViewProjConstants ViewProjConstants = {};
 	FVector Position = {};
 	FVector Rotation = {};
-	FVector Forward = {};
+	FVector Forward = {0,0,1};
+	FVector Up = {};
+	FVector Right = {};
 	float FovY = {};
 	float Aspect = {};
 	float NearZ = {};

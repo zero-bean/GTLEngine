@@ -5,20 +5,12 @@
 
 void Camera::Update()
 {
-	const float DeltaTime = UTimeManager::GetInstance().GetDeltaTime();
 	const UInputManager& Input = UInputManager::GetInstance();
 
-
-	const float Roll = FVector::GetDegreeToRadian(Rotation.X);
-	const float Yaw = FVector::GetDegreeToRadian(Rotation.Y);
-	const float Pitch = FVector::GetDegreeToRadian(Rotation.Z);
-
-	Forward = {
-		std::cos(Roll) * std::sin(Yaw), // X
-		std::sin(Roll),                 // Y
-		std::cos(Roll) * std::cos(Yaw)  // Z
-	};
-	Forward.Normalize();
+	FVector4 Forward4 = FVector4(0, 0, 1, 1) * FMatrix::RotationMatrix(FVector::GetDegreeToRadian(Rotation));
+	Forward = FVector(Forward4.X, Forward4.Y, Forward4.Z);
+	Up = FVector(0, 1, 0);
+	Right = Forward.Cross(Up);
 
 	/**
 	 * @brief 마우스 우클릭을 하고 있는 동안 카메라 제어가 가능합니다.
@@ -28,12 +20,7 @@ void Camera::Update()
 		/**
 		 * @brief W, A, S, D 는 각각 카메라의 상, 하, 좌, 우 이동을 담당합니다.
 		 */
-
 		FVector Move = { 0,0,0 };
-
-		
-		FVector Up = { 0,1,0 };
-		FVector Right = Forward.Cross(Up);
 
 		if (Input.IsKeyDown(EKeyInput::A)) { Move = -Right; }
 		else if (Input.IsKeyDown(EKeyInput::D)) { Move = Right; }
@@ -42,7 +29,7 @@ void Camera::Update()
 		else if (Input.IsKeyDown(EKeyInput::Q)) { Move = -Up; }
 		else if (Input.IsKeyDown(EKeyInput::E)) { Move = Up; }
 		Move.Normalize();
-		Position += Move * CameraSpeed * DeltaTime;
+		Position += Move * CameraSpeed * DT;
 
 		/**
 		* @brief 마우스 위치 변화량을 감지하여 카메라의 회전을 담당합니다.
