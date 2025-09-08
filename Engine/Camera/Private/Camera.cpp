@@ -20,16 +20,16 @@ void Camera::Update()
 		/**
 		 * @brief W, A, S, D 는 각각 카메라의 상, 하, 좌, 우 이동을 담당합니다.
 		 */
-		FVector Move = { 0,0,0 };
+		FVector Direction = { 0,0,0 };
 
-		if (Input.IsKeyDown(EKeyInput::A)) { Move = -Right; }
-		else if (Input.IsKeyDown(EKeyInput::D)) { Move = Right; }
-		else if (Input.IsKeyDown(EKeyInput::W)) { Move = Forward; }
-		else if (Input.IsKeyDown(EKeyInput::S)) { Move = -Forward; }
-		else if (Input.IsKeyDown(EKeyInput::Q)) { Move = -Up; }
-		else if (Input.IsKeyDown(EKeyInput::E)) { Move = Up; }
-		Move.Normalize();
-		Position += Move * CameraSpeed * DT;
+		if (Input.IsKeyDown(EKeyInput::A)) { Direction += -Right; }
+		if (Input.IsKeyDown(EKeyInput::D)) { Direction += Right; }
+		if (Input.IsKeyDown(EKeyInput::W)) { Direction += Forward; }
+		if (Input.IsKeyDown(EKeyInput::S)) { Direction += -Forward; }
+		if (Input.IsKeyDown(EKeyInput::Q)) { Direction += -Up; }
+		if (Input.IsKeyDown(EKeyInput::E)) { Direction += Up; }
+		Direction.Normalize();
+		Position += Direction * CameraSpeed * DT;
 
 		/**
 		* @brief 마우스 위치 변화량을 감지하여 카메라의 회전을 담당합니다.

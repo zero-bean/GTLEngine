@@ -108,11 +108,10 @@ void ULevel::SetSelectedActor(AActor* InActor)
 	SelectedActor = InActor;
 
 	// Set Inspector Actor
-	if (SelectedActor)
-	{
-		UUIManager& UIManager = UUIManager::GetInstance();
-		UActorInspectorWindow* InspectorWindow =
-			reinterpret_cast<UActorInspectorWindow*>(UIManager.FindUIWindow("Actor Inspector"));
-		InspectorWindow->SetSelectedActor(SelectedActor);
-	}
+
+	UUIManager& UIManager = UUIManager::GetInstance();
+	UActorInspectorWindow* InspectorWindow =
+		reinterpret_cast<UActorInspectorWindow*>(UIManager.FindUIWindow("Actor Inspector"));
+	InspectorWindow->SetSelectedActor(SelectedActor);
+	
 }
