@@ -39,18 +39,20 @@ struct FMatrix
 	* @brief Position의 정보를 행렬로 변환하여 제공하는 함수
 	*/
 	static FMatrix TranslationMatrix(const FVector& InOtherVector);
+	static FMatrix TranslationMatrixInverse(const FVector& InOtherVector);
 
 	/**
 	* @brief Scale의 정보를 행렬로 변환하여 제공하는 함수
 	*/
 	static FMatrix ScaleMatrix(const FVector& InOtherVector);
+	static FMatrix ScaleMatrixInverse(const FVector& InOtherVector);
 
 	/**
 	* @brief Rotation의 정보를 행렬로 변환하여 제공하는 함수
 	*/
 	static FMatrix RotationMatrix(const FVector& InOtherVector);
 
-	static FMatrix RotationMatrixReverse(const FVector& InOtherVector);
+	static FMatrix RotationMatrixInverse(const FVector& InOtherVector);
 
 	/**
 	* @brief X의 회전 정보를 행렬로 변환
@@ -68,4 +70,6 @@ struct FMatrix
 	static FMatrix RotationZ(float Radian);
 
 	static FMatrix GetModelMatrix(const FVector& Location, const FVector& Rotation, const FVector& Scale);
+
+	static FMatrix GetModelMatrixInverse(const FVector& Location, const FVector& Rotation, const FVector& Scale);
 };

@@ -10,6 +10,7 @@
 #include "Render/Public/Renderer.h"
 #include "Mesh/Public/CubeActor.h"
 #include "Camera/Public/Camera.h"
+#include "ObjectPicking.h"
 
 ///////////////////////////////////
 // 테스트용 카메라 전역 변수로 선언
@@ -143,6 +144,8 @@ void FClientApp::MainLoop()
 		// Game System Update
 		else
 		{
+			auto& LevelManager = ULevelManager::GetInstance();
+			PickActor(LevelManager.GetCurrentLevel());
 			UpdateSystem(Cube);
 		}
 	}

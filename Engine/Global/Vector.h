@@ -198,4 +198,8 @@ struct FVector4
 	{
 		return X * OtherVector.X + Y * OtherVector.Y + Z * OtherVector.Z;
 	}
+	inline float Dot3(const FVector& OtherVector) const
+	{
+		return X * OtherVector.X + Y * OtherVector.Y + Z * OtherVector.Z;
+	}
 };

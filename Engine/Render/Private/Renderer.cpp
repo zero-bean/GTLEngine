@@ -8,6 +8,7 @@
 #include "Render/Public/DeviceResources.h"
 #include "Mesh/Public/Actor.h"
 #include "Render/Gizmo/Public/Gizmo.h"
+#include "Mesh/Public/SceneComponent.h"
 
 IMPLEMENT_SINGLETON(URenderer)
 
@@ -338,9 +339,7 @@ void URenderer::Render()
 
 		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
 		UpdateConstant(
-			PrimitiveComponent->GetRelativeLocation(),
-			PrimitiveComponent->GetRelativeRotation(),
-			PrimitiveComponent->GetRelativeScale3D() );
+			PrimitiveComponent);
 
 		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
 		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
@@ -460,6 +459,22 @@ void URenderer::ReleaseConstantBuffer()
 	}
 }
 
+
+void URenderer::UpdateConstant(const UPrimitiveComponent* Primitive)
+{
+	if (ConstantBufferModels)
+	{
+		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
+
+		GetDeviceContext()->Map(ConstantBufferModels, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
+		// update constant buffer every frame
+		FMatrix* constants = (FMatrix*)constantbufferMSR.pData;
+		{
+			*constants = FMatrix::GetModelMatrix(Primitive->GetRelativeLocation(), FVector::GetDegreeToRadian(Primitive->GetRelativeRotation()), Primitive->GetRelativeScale3D());
+		}
+		GetDeviceContext()->Unmap(ConstantBufferModels, 0);
+	}
+}
 /**
  * @brief 상수 버퍼 업데이트 함수
  * @param InOffset
@@ -475,15 +490,7 @@ void URenderer::UpdateConstant(const FVector& InPosition, const FVector& InRotat
 		// update constant buffer every frame
 		FMatrix* constants = (FMatrix*)constantbufferMSR.pData;
 		{
-			const float Pitch = FVector::GetDegreeToRadian(InRotation.X);
-			const float Yaw = FVector::GetDegreeToRadian(InRotation.Y);
-			const float Roll = FVector::GetDegreeToRadian(InRotation.Z);
-
-			FMatrix C = FMatrix::TranslationMatrix(FVector(0, 0, 0));
-			FMatrix S = FMatrix::ScaleMatrix(InScale);
-			FMatrix R = FMatrix::RotationMatrix({ Pitch, Yaw, Pitch });
-			FMatrix T = FMatrix::TranslationMatrix(InPosition);
-			*constants = S * R * T;
+			*constants = FMatrix::GetModelMatrix(InPosition, FVector::GetDegreeToRadian(InRotation), InScale);
 		}
 		GetDeviceContext()->Unmap(ConstantBufferModels, 0);
 	}
