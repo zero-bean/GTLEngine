@@ -9,12 +9,17 @@ AGizmo::AGizmo()
 
 	GizmoArrowR = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowRed");
 	GizmoArrowR->LoadMeshResource(EPrimitiveType::GizmoR);
+	GizmoArrowR->SetColor({1,1,1,1});
 	GizmoArrowR->SetVisibility(false);
+
 	GizmoArrowG = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowGreen");
 	GizmoArrowG->LoadMeshResource(EPrimitiveType::GizmoG);
+	GizmoArrowG->SetColor({1,1,1,1});
 	GizmoArrowG->SetVisibility(false);
+
 	GizmoArrowB = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowBlue");
 	GizmoArrowB->LoadMeshResource(EPrimitiveType::GizmoB);
+	GizmoArrowB->SetColor({1,1,1,1});
 	GizmoArrowB->SetVisibility(false);
 }
 

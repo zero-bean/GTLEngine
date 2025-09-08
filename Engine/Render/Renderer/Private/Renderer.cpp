@@ -150,51 +150,6 @@ void URenderer::ReleaseDefaultShader()
 	}
 }
 
-void URenderer::RenderGizmo(AActor* SelectedActor)
-{
-	FPipelineInfo PipelineInfo = {
-		DefaultInputLayout,
-		DefaultVertexShader,
-		RasterizerState,
-		DepthStencilState,
-		DefaultPixelShader,
-		nullptr,
-	};
-	Pipeline->UpdatePipeline(PipelineInfo);
-
-	UpdateConstant(
-		SelectedActor->GetActorLocation(),
-		{ 0.f, 0.f, 0.f},
-		{0.3f, 0.3f, 0.3f} );
-
-	UINT Offset = 0;
-	ID3D11Buffer* Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::GizmoR);
-	UINT VertexCount = UResourceManager::GetInstance().GetNumVertices(EPrimitiveType::GizmoR);
-	if (Buffer)
-	{
-		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
-		GetDeviceContext()->Draw(VertexCount, 0);
-	}
-
-	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::GizmoG);
-	VertexCount = UResourceManager::GetInstance().GetNumVertices(EPrimitiveType::GizmoG);
-	if (Buffer)
-	{
-		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
-		GetDeviceContext()->Draw(VertexCount, 0);
-	}
-
-	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::GizmoB);
-	VertexCount = UResourceManager::GetInstance().GetNumVertices(EPrimitiveType::GizmoB);
-	if (Buffer)
-	{
-		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
-		GetDeviceContext()->Draw(VertexCount, 0);
-	}
-
-	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-}
-
 void URenderer::Update()
 {
 	RenderBegin();
@@ -223,45 +178,6 @@ void URenderer::RenderBegin()
 	ID3D11RenderTargetView* rtvs[] = { rtv };  // 배열 생성
 
 	GetDeviceContext()->OMSetRenderTargets(1, rtvs, DeviceResources->GetDepthStencilView());
-}
-
-/**
- * @brief Gathering Renderable Object
- */
-void URenderer::GatherRenderableObjects()
-{
-	if (!ULevelManager::GetInstance().GetCurrentLevel())
-		return;
-
-	PrimitiveComponents.clear();
-	for (auto& Actor : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelActors())
-	{
-		if (!Actor)
-			continue;
-		if (const AGizmo* Gizmo = dynamic_cast<AGizmo*>(Actor))
-		{
-			if (ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor())
-			{
-				for (auto& Component : Gizmo->OwnedComponents)
-				{
-					UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Component);
-					if (!Primitive)
-						continue;
-					PrimitiveComponents.push_back(Primitive);
-				}
-			}
-		}
-		else
-		{
-			for (auto& Component : Actor->OwnedComponents)
-			{
-				UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(Component);
-				if (!Primitive)
-					continue;
-				PrimitiveComponents.push_back(Primitive);
-			}
-		}
-	}
 }
 
 /**
@@ -341,6 +257,9 @@ void URenderer::RenderLevel()
 			PrimitiveComponent->GetRelativeRotation(),
 			PrimitiveComponent->GetRelativeScale3D() );
 
+		Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
+		UpdateConstant(PrimitiveComponent->GetColor());
+
 		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
 		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
 	}
@@ -351,7 +270,7 @@ void URenderer::RenderEditor()
 	if (!ULevelManager::GetInstance().GetCurrentLevel())
 		return;
 
-	for (auto& PrimitiveComponent : PrimitiveComponents)
+	for (auto& PrimitiveComponent :  ULevelManager::GetInstance().GetCurrentLevel()->GetEditorPrimitiveComponents())
 	{
 		if (!PrimitiveComponent) continue;
 
@@ -370,6 +289,9 @@ void URenderer::RenderEditor()
 			PrimitiveComponent->GetRelativeLocation(),
 			PrimitiveComponent->GetRelativeRotation(),
 			PrimitiveComponent->GetRelativeScale3D() );
+
+		Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
+		UpdateConstant(PrimitiveComponent->GetColor());
 
 		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
 		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
@@ -457,6 +379,20 @@ void URenderer::CreateConstantBuffer()
 	}
 
 	/**
+	 * @brief 색상 수정에 사용할 상수 버퍼
+	 */
+	{
+		D3D11_BUFFER_DESC ConstantBufferDesc = {};
+		ConstantBufferDesc.ByteWidth = sizeof(FVector4) + 0xf & 0xfffffff0;
+		// ensure constant buffer size is multiple of 16 bytes
+		ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
+		ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+		GetDevice()->CreateBuffer(&ConstantBufferDesc, nullptr, &ConstantBufferColor);
+	}
+
+	/**
 	 * @brief 카메라에 사용될 상수 버퍼 생성
 	 */
 	{
@@ -480,6 +416,12 @@ void URenderer::ReleaseConstantBuffer()
 	{
 		ConstantBufferModels->Release();
 		ConstantBufferModels = nullptr;
+	}
+
+	if (ConstantBufferColor)
+	{
+		ConstantBufferColor->Release();
+		ConstantBufferColor = nullptr;
 	}
 
 	if (ConstantBufferViewProj)
@@ -534,5 +476,26 @@ void URenderer::UpdateConstant(const FViewProjConstants& InViewProjConstants) co
 			ViewProjectionConstants->Projection = InViewProjConstants.Projection;
 		}
 		GetDeviceContext()->Unmap(ConstantBufferViewProj, 0);
+	}
+}
+
+void URenderer::UpdateConstant(const FVector4& Color) const
+{
+	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
+
+	if (ConstantBufferColor)
+	{
+		D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR = {};
+
+		GetDeviceContext()->Map(ConstantBufferColor, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR);
+		// update constant buffer every frame
+		FVector4* ColorConstants = (FVector4*)ConstantBufferMSR.pData;
+		{
+			ColorConstants->X = Color.X;
+			ColorConstants->Y = Color.Y;
+			ColorConstants->Z = Color.Z;
+			ColorConstants->W = Color.W;
+		}
+		GetDeviceContext()->Unmap(ConstantBufferColor, 0);
 	}
 }

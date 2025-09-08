@@ -190,7 +190,6 @@
     <ClInclude Include="Render\UI\Window\Public\InputStatusWindow.h" />
     <ClInclude Include="Render\UI\Window\Public\PerformanceWindow.h" />
     <ClInclude Include="Render\UI\Window\Public\UIWindow.h" />
-    <ClInclude Include="UI\Public\UI.h" />
     <ClInclude Include="Utility\Public\LevelSerializer.h" />
     <ClInclude Include="Utility\Public\Metadata.h" />
   </ItemGroup>

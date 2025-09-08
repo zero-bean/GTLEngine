@@ -33,6 +33,8 @@ void ULevel::Update()
 {
 	Gizmo->SetTargetActor(SelectedActor);
 	//여기서 해야할까요??
+	LevelPrimitiveComponents.clear();
+	EditorPrimitiveComponents.clear();
 
 	for (auto& Actor : LevelActors)
 	{

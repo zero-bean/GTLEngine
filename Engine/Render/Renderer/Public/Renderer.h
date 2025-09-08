@@ -52,10 +52,8 @@ public:
 	void CreateDefaultShader();
 	void ReleaseDefaultShader();
 	void RenderLines() const;
-	void RenderGizmo(AActor* SelectedActor);
 	void Update();
 	void RenderBegin();
-	void GatherRenderableObjects();
 	void RenderLevel();
 	void RenderEditor();
 	void RenderEnd();
@@ -69,6 +67,7 @@ public:
 	void ReleaseConstantBuffer();
 	void UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
 	void UpdateConstant(const FViewProjConstants& InViewProjConstants) const;
+	void UpdateConstant(const FVector4& Color) const;
 
 	ID3D11Device* GetDevice() const { return DeviceResources->GetDevice(); }
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceResources->GetDeviceContext(); }
@@ -87,6 +86,7 @@ private:
 	ID3D11DepthStencilState* DepthStencilState = nullptr;
 	ID3D11Buffer* ConstantBufferModels = nullptr;
 	ID3D11Buffer* ConstantBufferViewProj = nullptr;
+	ID3D11Buffer* ConstantBufferColor = nullptr;
 
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};
 
