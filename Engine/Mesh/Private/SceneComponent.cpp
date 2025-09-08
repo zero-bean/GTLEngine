@@ -3,6 +3,15 @@
 #include "Mesh/Public/ResourceManager.h"
 
 
+USceneComponent::USceneComponent()
+{
+	ComponentType = EComponentType::Scene;
+}
+
+UPrimitiveComponent::UPrimitiveComponent()
+{
+	ComponentType = EComponentType::Primitive;
+}
 
 void USceneComponent::SetRelativeLocation(const FVector& Location)
 {

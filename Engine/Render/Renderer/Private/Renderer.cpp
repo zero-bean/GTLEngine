@@ -199,9 +199,10 @@ void URenderer::Update()
 {
 	RenderBegin();
 
+	RenderLevel();
+	RenderEditor();
 	RenderLines();
-	GatherRenderableObjects();
-	Render();
+
 	UUIManager::GetInstance().Render();
 
 	RenderEnd();
@@ -233,9 +234,8 @@ void URenderer::GatherRenderableObjects()
 		return;
 
 	PrimitiveComponents.clear();
-	for (auto& Object : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelObjects())
+	for (auto& Actor : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelActors())
 	{
-		AActor* Actor = dynamic_cast<AActor*>(Object);
 		if (!Actor)
 			continue;
 		if (const AGizmo* Gizmo = dynamic_cast<AGizmo*>(Actor))
@@ -313,14 +313,48 @@ void URenderer::RenderLines() const
 /**
  * @brief Buffer에 데이터 입력 및 Draw
  */
-void URenderer::Render()
+void URenderer::RenderLevel()
 {
 	//
 	// 여기에 카메라 VP 업데이트 한 번 싹
 	//
+	if (!ULevelManager::GetInstance().GetCurrentLevel())
+		return;
+
+	for (auto& PrimitiveComponent : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelPrimitiveComponents())
+	{
+		if (!PrimitiveComponent) continue;
+
+		FPipelineInfo PipelineInfo = {
+			DefaultInputLayout,
+			DefaultVertexShader,
+			RasterizerState,
+			DepthStencilState,
+			DefaultPixelShader,
+			nullptr,
+		};
+		Pipeline->UpdatePipeline(PipelineInfo);
+
+		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
+		UpdateConstant(
+			PrimitiveComponent->GetRelativeLocation(),
+			PrimitiveComponent->GetRelativeRotation(),
+			PrimitiveComponent->GetRelativeScale3D() );
+
+		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
+		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
+	}
+}
+
+void URenderer::RenderEditor()
+{
+	if (!ULevelManager::GetInstance().GetCurrentLevel())
+		return;
 
 	for (auto& PrimitiveComponent : PrimitiveComponents)
 	{
+		if (!PrimitiveComponent) continue;
+
 		FPipelineInfo PipelineInfo = {
 			DefaultInputLayout,
 			DefaultVertexShader,

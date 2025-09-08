@@ -56,7 +56,8 @@ public:
 	void Update();
 	void RenderBegin();
 	void GatherRenderableObjects();
-	void Render();
+	void RenderLevel();
+	void RenderEditor();
 	void RenderEnd();
 
 	//Testing Func

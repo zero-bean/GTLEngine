@@ -3,6 +3,7 @@
 
 class AGizmo;
 class AActor;
+class UPrimitiveComponent;
 
 class ULevel :
 	public UObject
@@ -18,9 +19,19 @@ public:
 	virtual void Cleanup();
 
 	const wstring& GetName() const { return Name; }
-	TArray<UObject*> GetLevelObjects() const { return LevelObjects; }
+	TArray<AActor*> GetLevelActors() const { return LevelActors; }
+	TArray<UPrimitiveComponent*> GetLevelPrimitiveComponents() const { return LevelPrimitiveComponents; }
 
-	void AddObject(UObject* Object) { LevelObjects.push_back(Object); }
+	TArray<AActor*> GetEditorActors() const { return EditorActors; }
+	TArray<UPrimitiveComponent*> GetEditorPrimitiveComponents() const { return EditorPrimitiveComponents; }
+
+	void AddLevelPrimitiveComponent(AActor* Actor);
+	void AddEditorPrimitiveComponent(AActor* Actor);
+
+	template<typename T, typename... Args>
+	T* SpawnActor(Args&&... args);
+	template<typename T, typename... Args>
+	T* SpawnEditorActor(Args&&... args);
 
 	void SetSelectedActor(AActor* InActor) { SelectedActor = InActor; }
 	AActor* GetSelectedActor() const { return SelectedActor; }
@@ -28,7 +39,34 @@ public:
 
 private:
 	wstring Name;
-	TArray<UObject*> LevelObjects;
+	TArray<AActor*> LevelActors;
+	TArray<UPrimitiveComponent*> LevelPrimitiveComponents;
+
+	TArray<AActor*> EditorActors;
+	TArray<UPrimitiveComponent*> EditorPrimitiveComponents;
+
 	AActor* SelectedActor = nullptr;
 	AGizmo* Gizmo = nullptr;
 };
+
+template <typename T, typename ... Args>
+T* ULevel::SpawnActor(Args&&... args)
+{
+	T* NewActor = new T(std::forward<Args>(args)...);
+
+	LevelActors.push_back(NewActor);
+	NewActor->BeginPlay();
+
+	return NewActor;
+}
+
+template <typename T, typename ... Args>
+T* ULevel::SpawnEditorActor(Args&&... args)
+{
+	T* NewActor = new T(std::forward<Args>(args)...);
+
+	EditorActors.push_back(NewActor);
+	NewActor->BeginPlay();
+
+	return NewActor;
+}

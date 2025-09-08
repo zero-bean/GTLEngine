@@ -6,8 +6,8 @@
 
 ULevel::ULevel()
 {
-	Gizmo = new AGizmo();
-	AddObject(Gizmo);
+	Gizmo = SpawnEditorActor<AGizmo>();
+
 }
 
 ULevel::ULevel(const wstring& InName)
@@ -18,28 +18,36 @@ ULevel::ULevel(const wstring& InName)
 
 ULevel::~ULevel()
 {
-	for (auto Object : LevelObjects)
+	for (auto Actor : LevelActors)
 	{
-		SafeDelete(Object);
+		SafeDelete(Actor);
 	}
 }
 
 void ULevel::Init()
 {
+
 }
 
 void ULevel::Update()
 {
-	if (SelectedActor)
+	Gizmo->SetTargetActor(SelectedActor);
+	//여기서 해야할까요??
+
+	for (auto& Actor : LevelActors)
 	{
-		Gizmo->SetTargetActor(SelectedActor);
-	}
-	for (auto& Object : LevelObjects)
-	{
-		AActor* Actor = dynamic_cast<AActor*>(Object);
 		if (Actor)
 		{
 			Actor->Tick(UTimeManager::GetInstance().GetDeltaTime());
+			AddLevelPrimitiveComponent(Actor);
+		}
+	}
+	for (auto& Actor : EditorActors)
+	{
+		if (Actor)
+		{
+			Actor->Tick(UTimeManager::GetInstance().GetDeltaTime());
+			AddEditorPrimitiveComponent(Actor);
 		}
 	}
 }
@@ -50,4 +58,38 @@ void ULevel::Render()
 
 void ULevel::Cleanup()
 {
+}
+
+void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
+{
+	if (!Actor) return;
+
+	for (auto& Component: Actor->GetOwnedComponents())
+	{
+		if (Component->GetComponentType() >= EComponentType::Primitive)
+		{
+			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+			if (PrimitiveComponent->IsVisible())
+			{
+				LevelPrimitiveComponents.push_back(PrimitiveComponent);
+			}
+		}
+	}
+}
+
+void ULevel::AddEditorPrimitiveComponent(AActor* Actor)
+{
+	if (!Actor) return;
+
+	for (auto& Component: Actor->GetOwnedComponents())
+	{
+		if (Component->GetComponentType() >= EComponentType::Primitive)
+		{
+			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+			if (PrimitiveComponent->IsVisible())
+			{
+				EditorPrimitiveComponents.push_back(PrimitiveComponent);
+			}
+		}
+	}
 }
