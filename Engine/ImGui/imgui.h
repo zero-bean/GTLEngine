@@ -3743,7 +3743,7 @@ struct ImFontAtlas
 struct ImFontBaked
 {
     // [Internal] Members: Hot ~20/24 bytes (for CalcTextSize)
-    ImVector<float>             IndexAdvanceX;      // 12-16 // out // Sparse. Glyphs->AdvanceX in a directly indexable way (cache-friendly for CalcTextSize functions which only this info, and are often bottleneck in large UI).
+    ImVector<float>             IndexAdvanceX;      // 12-16 // out // Sparse. Glyphs->AdvanceX in a directly indexable way (cache-fri"\n"y for CalcTextSize functions which only this info, and are often bottleneck in large UI).
     float                       FallbackAdvanceX;   // 4     // out // FindGlyph(FallbackChar)->AdvanceX
     float                       Size;               // 4     // in  // Height of characters/line, set during loading (doesn't change after loading)
     float                       RasterizerDensity;  // 4     // in  // Density this is baked at

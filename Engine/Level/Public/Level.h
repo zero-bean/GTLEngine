@@ -12,7 +12,7 @@ class ULevel :
 {
 public:
 	ULevel();
-	ULevel(const wstring& InName);
+	ULevel(const FString& InName);
 	~ULevel() override;
 
 	virtual void Init();
@@ -20,7 +20,6 @@ public:
 	virtual void Render();
 	virtual void Cleanup();
 
-	const wstring& GetName() const { return Name; }
 	TArray<AActor*> GetLevelActors() const { return LevelActors; }
 	TArray<UPrimitiveComponent*> GetLevelPrimitiveComponents() const { return LevelPrimitiveComponents; }
 
@@ -35,22 +34,31 @@ public:
 	template<typename T, typename... Args>
 	T* SpawnEditorActor(Args&&... args);
 
+	// Actor 삭제
+	bool DestroyActor(AActor* InActor);
+	void MarkActorForDeletion(AActor* InActor); // 지연 삭제를 위한 마킹
+
 	void SetSelectedActor(AActor* InActor);
 	AActor* GetSelectedActor() const { return SelectedActor; }
-	AGizmo* GetGizmo() const { return Gizmo; };
+	AGizmo* GetGizmo() const { return Gizmo; }
 
 private:
-	wstring Name;
 	TArray<AActor*> LevelActors;
 	TArray<UPrimitiveComponent*> LevelPrimitiveComponents;
 
 	TArray<AActor*> EditorActors;
 	TArray<UPrimitiveComponent*> EditorPrimitiveComponents;
 
+	// 지연 삭제를 위한 리스트
+	TArray<AActor*> ActorsToDelete;
+
 	AActor* SelectedActor = nullptr;
 	AGizmo* Gizmo = nullptr;
 	AAxis* Axis = nullptr;
 	AGrid* Grid = nullptr;
+
+	// 지연 삭제 처리 함수
+	void ProcessPendingDeletions();
 };
 
 template <typename T, typename ... Args>

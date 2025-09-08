@@ -64,15 +64,18 @@ UPrimitiveComponent::UPrimitiveComponent()
 void USceneComponent::SetRelativeLocation(const FVector& Location)
 {
 	RelativeLocation = Location;
+	MarkAsDirty();
 }
 
 void USceneComponent::SetRelativeRotation(const FVector& Rotation)
 {
 	RelativeRotation = Rotation;
+	MarkAsDirty();
 }
 void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 {
 	RelativeScale3D = Scale;
+	MarkAsDirty();
 }
 
 const FVector& USceneComponent::GetRelativeLocation() const
@@ -94,7 +97,7 @@ const FMatrix& USceneComponent::GetWorldTransformMatrix() const
 	{
 		WorldTransformMatrix = FMatrix::GetModelMatrix(RelativeLocation, FVector::GetDegreeToRadian(RelativeRotation), RelativeScale3D);
 
-		
+
 		for (USceneComponent* Ancester = ParentAttachment; Ancester && Ancester->ParentAttachment; Ancester = Ancester->ParentAttachment)
 		{
 			WorldTransformMatrix *= FMatrix::GetModelMatrix(Ancester->RelativeLocation, FVector::GetDegreeToRadian(Ancester->RelativeRotation), Ancester->RelativeScale3D);
@@ -108,7 +111,7 @@ const FMatrix& USceneComponent::GetWorldTransformMatrix() const
 
 const FMatrix& USceneComponent::GetWorldTransformMatrixInverse() const
 {
-	
+
 	if (bIsTransformDirtyInverse)
 	{
 		WorldTransformMatrixInverse = FMatrix::Identity();
@@ -179,8 +182,8 @@ UCubeComponent::UCubeComponent()
 ULineComponent::ULineComponent()
 {
 	UResourceManager& ResourceManager = UResourceManager::GetInstance();
-	Type = EPrimitiveType::Line;                 
-	Vertices = ResourceManager.GetVertexData(Type);  
+	Type = EPrimitiveType::Line;
+	Vertices = ResourceManager.GetVertexData(Type);
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;

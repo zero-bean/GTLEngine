@@ -176,7 +176,7 @@ FLevelMetadata FLevelSerializer::JsonToLevel(JSON& InJsonData)
 				}
 				catch (const exception&)
 				{
-					cout << "[JSON PARSER] Failed To Load Primitive From JSON" << endl;
+					cout << "[JSON PARSER] Failed To Load Primitive From JSON" << "\n";
 					continue;
 				}
 			}
@@ -184,7 +184,7 @@ FLevelMetadata FLevelSerializer::JsonToLevel(JSON& InJsonData)
 	}
 	catch (const exception&)
 	{
-		cout << "[JSON PARSER] Failed To Load Level From JSON" << endl;
+		cout << "[JSON PARSER] Failed To Load Level From JSON" << "\n";
 	}
 
 	return LevelData;
@@ -205,7 +205,7 @@ bool FLevelSerializer::SaveLevelToFile(const FLevelMetadata& InLevelData, const 
 			return false;
 		}
 
-		File << setw(2) << LevelJson << endl;
+		File << setw(2) << LevelJson << "\n";
 		File.close();
 
 		return true;
@@ -397,41 +397,41 @@ FLevelSerializer::FLevelStats FLevelSerializer::GenerateLevelStats(const FLevelM
  */
 void FLevelSerializer::PrintLevelInfo(const FLevelMetadata& InLevelData)
 {
-	cout << "=== Level Information ===" << endl;
-	cout << "Version: " << InLevelData.Version << endl;
-	cout << "NextUUID: " << InLevelData.NextUUID << endl;
-	cout << "Total Primitives: " << InLevelData.Primitives.size() << endl;
+	cout << "=== Level Information ===" << "\n";
+	cout << "Version: " << InLevelData.Version << "\n";
+	cout << "NextUUID: " << InLevelData.NextUUID << "\n";
+	cout << "Total Primitives: " << InLevelData.Primitives.size() << "\n";
 
 	if (!InLevelData.Primitives.empty())
 	{
 		FLevelStats Stats = GenerateLevelStats(InLevelData);
 
-		cout << "\n--- Primitive Count by Type ---" << endl;
+		cout << "\n--- Primitive Count by Type ---" << "\n";
 		for (const auto& [Type, Count] : Stats.PrimitiveCountByType)
 		{
-			cout << PrimitiveTypeToWideString(Type) << ": " << Count << endl;
+			cout << PrimitiveTypeToWideString(Type) << ": " << Count << "\n";
 		}
 
-		// cout << "\n--- Bounding Box ---" << endl;
+		// cout << "\n--- Bounding Box ---" << "\n";
 		// cout << "Min: (" << Stats.BoundingBoxMin.X << ", " << Stats.BoundingBoxMin.Y
-		// 	<< ", " << Stats.BoundingBoxMin.Z << ")" << endl;
+		// 	<< ", " << Stats.BoundingBoxMin.Z << ")" << "\n";
 		// cout << "Max: (" << Stats.BoundingBoxMax.X << ", " << Stats.BoundingBoxMax.Y
-		// 	<< ", " << Stats.BoundingBoxMax.Z << ")" << endl;
+		// 	<< ", " << Stats.BoundingBoxMax.Z << ")" << "\n";
 
-		cout << "\n--- Detailed Primitive List ---" << endl;
+		cout << "\n--- Detailed Primitive List ---" << "\n";
 		for (const auto& [ID, Primitive] : InLevelData.Primitives)
 		{
-			cout << "ID " << ID << " [" << PrimitiveTypeToWideString(Primitive.Type) << "]" << endl;
+			cout << "ID " << ID << " [" << PrimitiveTypeToWideString(Primitive.Type) << "]" << "\n";
 			cout << "  Location: (" << Primitive.Location.X << ", " << Primitive.Location.Y
-				<< ", " << Primitive.Location.Z << ")" << endl;
+				<< ", " << Primitive.Location.Z << ")" << "\n";
 			cout << "  Rotation: (" << Primitive.Rotation.X << ", " << Primitive.Rotation.Y
-				<< ", " << Primitive.Rotation.Z << ")" << endl;
+				<< ", " << Primitive.Rotation.Z << ")" << "\n";
 			cout << "  Scale: (" << Primitive.Scale.X << ", " << Primitive.Scale.Y
-				<< ", " << Primitive.Scale.Z << ")" << endl;
+				<< ", " << Primitive.Scale.Z << ")" << "\n";
 		}
 	}
 
-	cout << "=========================" << endl;
+	cout << "=========================" << "\n";
 }
 
 /**

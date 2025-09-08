@@ -45,10 +45,12 @@ void ULevelManager::CreateDefaultLevel()
 
 	ASphereActor* Sphere1 = CurrentLevel->SpawnActor<ASphereActor>();
 	Sphere1->SetActorLocation({1,0,0});
+	Sphere1->SetName("Sphere1");
 
 	ACubeActor* Cube1 = CurrentLevel->SpawnActor<ACubeActor>();
 	Cube1->SetActorLocation({1,0,0});
 	CurrentLevel->SetSelectedActor(Cube1);
+	Cube1->SetName("Cube1");
 
 	ACubeActor* Cube2 = CurrentLevel->SpawnActor<ACubeActor>();
 	Cube1->SetActorLocation({0,1,0});

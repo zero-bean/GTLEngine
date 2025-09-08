@@ -16,9 +16,9 @@ void UPathManager::Init()
 	GetEssentialPath();
 	ValidateAndCreateDirectories();
 
-	cout << "[PathManager] Initialized Successfully" << endl;
-	cout << "[PathManager] Solution Path: " << RootPath << endl;
-	cout << "[PathManager] Asset Path: " << AssetPath << endl;
+	cout << "[PathManager] Initialized Successfully" << "\n";
+	cout << "[PathManager] Solution Path: " << RootPath << "\n";
+	cout << "[PathManager] Asset Path: " << AssetPath << "\n";
 }
 
 /**
@@ -72,17 +72,17 @@ void UPathManager::ValidateAndCreateDirectories() const
 			if (!exists(Directory))
 			{
 				create_directories(Directory);
-				cout << "[PathManager] Created Directory: " << Directory << endl;
+				cout << "[PathManager] Created Directory: " << Directory << "\n";
 			}
 			else
 			{
-				cout << "[PathManager] Directory Exists: " << Directory << endl;
+				cout << "[PathManager] Directory Exists: " << Directory << "\n";
 			}
 		}
 		catch (const filesystem::filesystem_error& e)
 		{
 			cout << "[PathManager] Failed To Create Directory " <<
-				Directory << ": " << e.what() << endl;
+				Directory << ": " << e.what() << "\n";
 			assert(!"Asset 경로 생성 에러 발생");
 		}
 	}

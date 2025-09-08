@@ -29,7 +29,7 @@ UPerformanceWindow::UPerformanceWindow()
  */
 void UPerformanceWindow::Initialize()
 {
-    cout << "[PerformanceWindow] Initialized" << endl;
+    cout << "[PerformanceWindow] Initialized" << "\n";
 
     // 히스토리 초기화
     for (int i = 0; i < 60; ++i)
