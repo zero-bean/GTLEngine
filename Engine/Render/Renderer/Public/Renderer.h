@@ -67,6 +67,7 @@ public:
 
 	void CreateConstantBuffer();
 	void ReleaseConstantBuffer();
+	void UpdateConstant(const UPrimitiveComponent* Primitive);
 	void UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
 	void UpdateConstant(const FViewProjConstants& InViewProjConstants) const;
 

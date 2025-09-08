@@ -6,9 +6,11 @@
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/Time/Public/TimeManager.h"
+
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
+#include "ObjectPicking.h"
 
 // TODO(KHJ): 제거 대상
 ///////////////////////////////////
@@ -147,6 +149,8 @@ void FClientApp::MainLoop()
 		// Game System Update
 		else
 		{
+			auto& LevelManager = ULevelManager::GetInstance();
+			PickActor(LevelManager.GetCurrentLevel());
 			UpdateSystem();
 		}
 	}
