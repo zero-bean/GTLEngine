@@ -58,6 +58,11 @@ FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix)
 	return Result;
 }
 
+void FMatrix::operator*=(const FMatrix& InOtherMatrix)
+{
+	*this =  (*this)*InOtherMatrix;
+}
+
 /**
 * @brief Position의 정보를 행렬로 변환하여 제공하는 함수
 */

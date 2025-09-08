@@ -44,11 +44,8 @@ AActor* PickActor(ULevel* Level, HWND WindowHandle)
 				UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(ActorComponent);
 				if (Primitive)
 				{
+					FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
 					FRay ModelRay = GetModelRay(WorldRay, Primitive); //Actor로부터 Primitive를 얻고 Ray를 모델 좌표계로 변환함
-					FMatrix ModelMat = FMatrix::GetModelMatrix(
-						Primitive->GetRelativeLocation(),
-						FVector::GetDegreeToRadian(Primitive->GetRelativeRotation()),
-						Primitive->GetRelativeScale3D());
 
 					if (IsRayPrimitiveCollided(ModelRay, Primitive, ModelMat, &PrimitiveDistance))
 					//Ray와 Primitive가 충돌했다면 거리 테스트 후 가까운 Actor Picking
@@ -102,9 +99,7 @@ FRay ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH,
 
 FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 {
-	FMatrix ModelInverse = FMatrix::GetModelMatrixInverse(Primitive->GetRelativeLocation(),
-	                                                      FVector::GetDegreeToRadian(Primitive->GetRelativeRotation()),
-	                                                      Primitive->GetRelativeScale3D());
+	FMatrix ModelInverse = Primitive->GetWorldTransformMatrixInverse();
 
 	FRay ModelRay;
 	ModelRay.Origin = Ray.Origin * ModelInverse;
