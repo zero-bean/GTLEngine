@@ -5,6 +5,7 @@
 #include "Render/UI/Window/Public/ControlPanelWindow.h"
 #include "Render/UI/Window/Public/InputStatusWindow.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
+#include "Render/UI/Window/Public/LevelManangerWindow.h"
 
 UPerformanceWindow* UUIWindowFactory::CreatePerformanceWindow(EUIDockDirection InDockDirection)
 {
@@ -27,6 +28,13 @@ UControlPanelWindow* UUIWindowFactory::CreateActorInspectorWindow(EUIDockDirecti
 	return Window;
 }
 
+ULevelManagerWindow* UUIWindowFactory::CreateLevelIOWindow(EUIDockDirection InDockDirection)
+{
+	auto* Window = new ULevelManagerWindow();
+	Window->GetMutableConfig().DockDirection = InDockDirection;
+	return Window;
+}
+
 void UUIWindowFactory::CreateDefaultUILayout()
 {
 	auto& UIManager = UUIManager::GetInstance();
@@ -35,6 +43,7 @@ void UUIWindowFactory::CreateDefaultUILayout()
 	UIManager.RegisterUIWindow(CreatePerformanceWindow(EUIDockDirection::Right));
 	UIManager.RegisterUIWindow(CreateInputStatusWindow(EUIDockDirection::Right));
 	UIManager.RegisterUIWindow(CreateActorInspectorWindow(EUIDockDirection::Left));
+	UIManager.RegisterUIWindow(CreateLevelIOWindow(EUIDockDirection::Center));
 
 	cout << "[UIWindowFactory] Default UI Layout Created" << "\n";
 }

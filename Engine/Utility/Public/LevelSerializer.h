@@ -1,7 +1,10 @@
 #pragma once
-#include "json.hpp"
 
-using json::JSON;
+namespace json {
+    class JSON;
+}
+
+using JSON = json::JSON;
 
 enum class EPrimitiveType : uint8_t;
 struct FLevelMetadata;

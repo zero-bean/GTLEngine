@@ -17,6 +17,9 @@ ULevel::ULevel()
 ULevel::ULevel(const FString& InName)
 	: UObject(InName)
 {
+	Gizmo = SpawnEditorActor<AGizmo>();
+	Axis = SpawnEditorActor<AAxis>();
+	Grid = SpawnEditorActor<AGrid>();
 }
 
 ULevel::~ULevel()

@@ -8,7 +8,7 @@
 #include "Level/Public/Level.h"
 
 /**
- * @brief 생성자
+ * @brief Control Panel 생성자
  */
 UControlPanelWindow::UControlPanelWindow()
 {

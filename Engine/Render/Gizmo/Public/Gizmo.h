@@ -9,7 +9,7 @@ class AGizmo : public AActor
 public:
 	AGizmo();
 	~AGizmo() override;
-	void SetTargetActor(AActor* actor);
+	void SetTargetActor(AActor* InActor);
 
 	void BeginPlay() override;
 	void Tick() override;
