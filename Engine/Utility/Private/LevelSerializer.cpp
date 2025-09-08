@@ -1,7 +1,10 @@
 #include "pch.h"
 #include "Utility/Public/LevelSerializer.h"
 
+#include "json.hpp"
 #include "Utility/Public/Metadata.h"
+
+using json::JSON;
 
 /**
  * @brief FVector를 JSON으로 변환
@@ -20,7 +23,7 @@ JSON FLevelSerializer::VectorToJson(const FVector& InVector)
  */
 FVector FLevelSerializer::JsonToVector(const JSON& InJsonData)
 {
-	if (InJsonData.JSONType() == JSON::Class::Array || InJsonData.size() != 3)
+	if (InJsonData.JSONType() != JSON::Class::Array || InJsonData.size() != 3)
 	{
 		return {0.0f, 0.0f, 0.0f};
 	}
@@ -42,7 +45,7 @@ FVector FLevelSerializer::JsonToVector(const JSON& InJsonData)
 /**
  * @brief EPrimitiveType을 문자열로 변환
  */
-string FLevelSerializer::PrimitiveTypeToWideString(EPrimitiveType InType)
+FString FLevelSerializer::PrimitiveTypeToWideString(EPrimitiveType InType)
 {
 	switch (InType)
 	{
@@ -60,7 +63,7 @@ string FLevelSerializer::PrimitiveTypeToWideString(EPrimitiveType InType)
 /**
  * @brief 문자열을 EPrimitiveType으로 변환
  */
-EPrimitiveType FLevelSerializer::StringToPrimitiveType(const string& InTypeString)
+EPrimitiveType FLevelSerializer::StringToPrimitiveType(const FString& InTypeString)
 {
 	if (InTypeString == "Sphere")
 	{
@@ -111,6 +114,11 @@ FPrimitiveMetadata FLevelSerializer::JsonToPrimitive(const JSON& InJsonData, uin
 			PrimitiveMeta.Rotation = JsonToVector(RotationJson);
 			PrimitiveMeta.Scale = JsonToVector(ScaleJson);
 			PrimitiveMeta.Type = StringToPrimitiveType(TypeJson.ToString());
+
+			cout << "[JsonToPrimitive] ID " << InID << ": Scale = ("
+				<< PrimitiveMeta.Scale.X << ", "
+				<< PrimitiveMeta.Scale.Y << ", "
+				<< PrimitiveMeta.Scale.Z << ")" << "\n";
 		}
 	}
 	catch (const exception&)
@@ -193,7 +201,7 @@ FLevelMetadata FLevelSerializer::JsonToLevel(JSON& InJsonData)
 /**
  * @brief 레벨 데이터를 파일에 저장
  */
-bool FLevelSerializer::SaveLevelToFile(const FLevelMetadata& InLevelData, const string& InFilePath)
+bool FLevelSerializer::SaveLevelToFile(const FLevelMetadata& InLevelData, const FString& InFilePath)
 {
 	try
 	{
@@ -219,7 +227,7 @@ bool FLevelSerializer::SaveLevelToFile(const FLevelMetadata& InLevelData, const 
 /**
  * @brief 파일에서 레벨 데이터 로드
  */
-bool FLevelSerializer::LoadLevelFromFile(FLevelMetadata& OutLevelData, const string& InFilePath)
+bool FLevelSerializer::LoadLevelFromFile(FLevelMetadata& OutLevelData, const FString& InFilePath)
 {
 	try
 	{
@@ -229,9 +237,18 @@ bool FLevelSerializer::LoadLevelFromFile(FLevelMetadata& OutLevelData, const str
 			return false;
 		}
 
-		string FileContent;
-		File >> FileContent;
+		// 파일 전체 내용을 한 번에 읽도록 처리
+		File.seekg(0, std::ios::end);
+		size_t FileSize = File.tellg();
+
+		File.seekg(0, std::ios::beg);
+
+		FString FileContent;
+		FileContent.resize(FileSize);
+		File.read(FileContent.data(), FileSize);
 		File.close();
+
+		cout << "[LevelSerializer] File Content Length: " << FileContent.length() << "\n";
 
 		JSON JsonData = JSON::Load(FileContent);
 		OutLevelData = JsonToLevel(JsonData);
@@ -247,7 +264,7 @@ bool FLevelSerializer::LoadLevelFromFile(FLevelMetadata& OutLevelData, const str
 /**
  * @brief JSON 문자열을 예쁘게 포맷팅
  */
-string FLevelSerializer::FormatJsonString(const JSON& JsonData, int Indent)
+FString FLevelSerializer::FormatJsonString(const JSON& JsonData, int Indent)
 {
 	return JsonData.dump(Indent);
 }
@@ -255,14 +272,14 @@ string FLevelSerializer::FormatJsonString(const JSON& JsonData, int Indent)
 /**
  * @brief 레벨 데이터 유효성 검사
  */
-bool FLevelSerializer::ValidateLevelData(const FLevelMetadata& InLevelData, string& OutErrorMessage)
+bool FLevelSerializer::ValidateLevelData(const FLevelMetadata& InLevelData, FString& OutErrorMessage)
 {
 	OutErrorMessage.clear();
 
 	// 버전 체크
 	if (InLevelData.Version == 0)
 	{
-		OutErrorMessage = "Invalid version: Version must be greater than 0";
+		OutErrorMessage = "Invalid Version: Version Must Be Greater Than 0";
 		return false;
 	}
 
@@ -275,23 +292,23 @@ bool FLevelSerializer::ValidateLevelData(const FLevelMetadata& InLevelData, stri
 		// ID 일관성 체크
 		if (Primitive.ID != ID)
 		{
-			OutErrorMessage = "ID mismatch: Primitive ID (" + to_string(Primitive.ID) +
-				") doesn't match map key (" + to_string(ID) + ")";
+			OutErrorMessage = "ID Mismatch: Primitive ID (" + to_string(Primitive.ID) +
+				") Doesn't Match Map Key (" + to_string(ID) + ")";
 			return false;
 		}
 
 		// 타입 체크
 		if (Primitive.Type == EPrimitiveType::None)
 		{
-			OutErrorMessage = "Invalid primitive type for ID " + to_string(ID);
+			OutErrorMessage = "Invalid Primitive Type For ID " + to_string(ID);
 			return false;
 		}
 
 		// 스케일 체크 (0이면 안됨)
 		if (Primitive.Scale.X == 0.0f || Primitive.Scale.Y == 0.0f || Primitive.Scale.Z == 0.0f)
 		{
-			OutErrorMessage = "Invalid scale for primitive ID " + to_string(ID) +
-				": Scale components must be non-zero";
+			OutErrorMessage = "Invalid Scale For Primitive ID " + to_string(ID) +
+				": Scale Components Must Be Non-Zero";
 			return false;
 		}
 	}
@@ -299,7 +316,7 @@ bool FLevelSerializer::ValidateLevelData(const FLevelMetadata& InLevelData, stri
 	// NextUUID가 사용된 ID보다 큰지 체크
 	if (!InLevelData.Primitives.empty() && InLevelData.NextUUID <= MaxUsedID)
 	{
-		OutErrorMessage = "Invalid NextUUID: Must be greater than the highest used ID (" +
+		OutErrorMessage = "Invalid NextUUID: Must Be Greater Than The Highest Used ID (" +
 			to_string(MaxUsedID) + ")";
 		return false;
 	}
@@ -308,10 +325,11 @@ bool FLevelSerializer::ValidateLevelData(const FLevelMetadata& InLevelData, stri
 }
 
 /**
- * @brief 두 레벨 데이터 병합 (중복 ID는 덮어씀)
+ * @brief 두 레벨 데이터 병합 (중복 ID는 덮어 씀)
+ * XXX(KHJ): 현재는 필요하지 않은 상황인데 필요한 경우가 존재할지 고민 후 제거해도 될 듯
  */
 FLevelMetadata FLevelSerializer::MergeLevelData(const FLevelMetadata& InBaseLevel,
-                                          const FLevelMetadata& InMergeLevel)
+                                                const FLevelMetadata& InMergeLevel)
 {
 	FLevelMetadata ResultLevel = InBaseLevel;
 
@@ -333,7 +351,8 @@ FLevelMetadata FLevelSerializer::MergeLevelData(const FLevelMetadata& InBaseLeve
 /**
  * @brief 특정 타입의 프리미티브들만 필터링
  */
-TArray<FPrimitiveMetadata> FLevelSerializer::FilterPrimitivesByType(const FLevelMetadata& InLevelData, EPrimitiveType InType)
+TArray<FPrimitiveMetadata> FLevelSerializer::FilterPrimitivesByType(const FLevelMetadata& InLevelData,
+                                                                    EPrimitiveType InType)
 {
 	TArray<FPrimitiveMetadata> FilteredPrimitives;
 
@@ -363,7 +382,7 @@ FLevelSerializer::FLevelStats FLevelSerializer::GenerateLevelStats(const FLevelM
 	Stats.TotalPrimitives = static_cast<uint32_t>(InLevelData.Primitives.size());
 
 	// 바운딩 박스 초기화
-	bool bFirstPrimitive = true;
+	// bool bFirstPrimitive = true;
 
 	for (const auto& [ID, Primitive] : InLevelData.Primitives)
 	{
@@ -435,11 +454,11 @@ void FLevelSerializer::PrintLevelInfo(const FLevelMetadata& InLevelData)
 }
 
 /**
- * @brief JSON 파싱 오류 처리
+ * @brief JSON 파싱 오류 처리 함수
  */
-bool FLevelSerializer::HandleJsonError(const exception& InException, const string& Context,
-                                 string& OutErrorMessage)
+bool FLevelSerializer::HandleJsonError(const exception& InException, const FString& InContext,
+                                       FString& OutErrorMessage)
 {
-	OutErrorMessage = Context + ": " + InException.what();
+	OutErrorMessage = InContext + ": " + InException.what();
 	return false;
 }

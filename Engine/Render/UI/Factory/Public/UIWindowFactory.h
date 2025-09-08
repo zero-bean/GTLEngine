@@ -3,6 +3,7 @@
 class UControlPanelWindow;
 class UInputStatusWindow;
 class UPerformanceWindow;
+class ULevelManagerWindow;
 
 /**
  * @brief UI 윈도우 도킹 방향
@@ -27,5 +28,6 @@ public:
 	static UPerformanceWindow* CreatePerformanceWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
 	static UInputStatusWindow* CreateInputStatusWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
 	static UControlPanelWindow* CreateActorInspectorWindow(EUIDockDirection InDockDirection = EUIDockDirection::Left);
+	static ULevelManagerWindow* CreateLevelIOWindow(EUIDockDirection InDockDirection = EUIDockDirection::Center);
 };
 

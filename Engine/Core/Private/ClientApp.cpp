@@ -48,9 +48,9 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 	}
 
 	// Create Console
-	// #ifdef _DEBUG
-	// 	Window->InitializeConsole();
-	// #endif
+	#ifdef _DEBUG
+		Window->InitializeConsole();
+	#endif
 
 	// Keyboard Accelerator Table Setting
 	// AcceleratorTable = LoadAccelerators(InInstanceHandle, MAKEINTRESOURCE(IDC_CLIENT));

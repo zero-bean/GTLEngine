@@ -9,17 +9,26 @@ class ULevelManager :
 DECLARE_SINGLETON(ULevelManager)
 
 public:
-	void Update();
-	void RegisterLevel(const wstring& InName, ULevel* InLevel);
-	void LoadLevel(const wstring& InName);
+	void Update() const;
+	void CreateDefaultLevel();
+	void RegisterLevel(const FString& InName, ULevel* InLevel);
+	void LoadLevel(const FString& InName);
 
 	// Getter
 	ULevel* GetCurrentLevel() const { return CurrentLevel; }
 
-	//test
-	void CreateDefaultLevel();
+	// Save & Load System
+	bool SaveCurrentLevel(const FString& InFilePath) const;
+	bool LoadLevel(const FString& InLevelName, const FString& InFilePath);
+	bool CreateNewLevel(const FString& InLevelName);
+	path GetLevelDirectory() const;
+	path GenerateLevelFilePath(const FString& InLevelName) const;
+
+	// Metadata Conversion Functions
+	struct FLevelMetadata ConvertLevelToMetadata(ULevel* InLevel) const;
+	bool LoadLevelFromMetadata(ULevel* InLevel, const struct FLevelMetadata& InMetadata) const;
 
 private:
 	ULevel* CurrentLevel;
-	TMap<wstring, ULevel*> Levels;
+	TMap<FString, ULevel*> Levels;
 };

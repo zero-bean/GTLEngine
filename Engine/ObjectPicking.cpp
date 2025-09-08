@@ -9,7 +9,8 @@
 
 FRay ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH,
                        const FViewProjConstants& ViewProjConstantsInverse);
-bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance);
+bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix,
+                            float* ShortestDistance);
 FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive);
 bool IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
                            const FMatrix& ModelMatrix, float* Distance);
@@ -26,15 +27,14 @@ AActor* PickActor(ULevel* Level, HWND WindowHandle)
 
 	RECT ClientRect;
 	GetClientRect(WindowHandle, &ClientRect);
-	int ViewportWidth = ClientRect.right - ClientRect.left; 
-	int ViewportHeight = ClientRect.bottom - ClientRect.top; 
+	int ViewportWidth = ClientRect.right - ClientRect.left;
+	int ViewportHeight = ClientRect.bottom - ClientRect.top;
 
-	
 	if (!ImGui::GetIO().WantCaptureMouse && Input.IsKeyPressed(EKeyInput::MouseLeft))
 	{
 		FVector MousePosition = Input.GetMousePosition();
 		FRay WorldRay = ConvertToWorldRay(static_cast<int>(MousePosition.X), static_cast<int>(MousePosition.Y),
-		                                  ViewportWidth,ViewportHeight ,
+		                                  ViewportWidth, ViewportHeight,
 		                                  MyCamera->GetFViewProjConstantsInverse());
 
 		for (AActor* Actor : Level->GetLevelActors())
@@ -109,7 +109,8 @@ FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 }
 
 //개별 primitive와 ray 충돌 검사
-bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance)
+bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix,
+                            float* ShortestDistance)
 {
 	//FRay ModelRay = GetModelRay(Ray, Primitive);
 
@@ -123,7 +124,8 @@ bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive
 		const FVector& Vertex2 = (*Vertices)[a + 1].Position;
 		const FVector& Vertex3 = (*Vertices)[a + 2].Position;
 
-		if (IsRayTriangleCollided(ModelRay, Vertex1, Vertex2, Vertex3, ModelMatrix, &Distance)) //Ray와 삼각형이 충돌하면 거리 비교 후 최단거리 갱신
+		if (IsRayTriangleCollided(ModelRay, Vertex1, Vertex2, Vertex3, ModelMatrix, &Distance))
+		//Ray와 삼각형이 충돌하면 거리 비교 후 최단거리 갱신
 		{
 			bIsHit = true;
 			if (Distance < *ShortestDistance)
