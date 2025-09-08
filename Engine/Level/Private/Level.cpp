@@ -14,7 +14,6 @@ ULevel::ULevel()
 ULevel::ULevel(const wstring& InName)
 	: Name(InName)
 {
-	ULevel::ULevel();
 }
 
 ULevel::~ULevel()
@@ -23,11 +22,15 @@ ULevel::~ULevel()
 	{
 		SafeDelete(Actor);
 	}
+
+	for (auto Actor : EditorActors)
+	{
+		SafeDelete(Actor);
+	}
 }
 
 void ULevel::Init()
 {
-
 }
 
 void ULevel::Update()
@@ -41,7 +44,7 @@ void ULevel::Update()
 	{
 		if (Actor)
 		{
-			Actor->Tick(UTimeManager::GetInstance().GetDeltaTime());
+			Actor->Tick();
 			AddLevelPrimitiveComponent(Actor);
 		}
 	}
@@ -49,7 +52,7 @@ void ULevel::Update()
 	{
 		if (Actor)
 		{
-			Actor->Tick(UTimeManager::GetInstance().GetDeltaTime());
+			Actor->Tick();
 			AddEditorPrimitiveComponent(Actor);
 		}
 	}
@@ -67,7 +70,7 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 {
 	if (!Actor) return;
 
-	for (auto& Component: Actor->GetOwnedComponents())
+	for (auto& Component : Actor->GetOwnedComponents())
 	{
 		if (Component->GetComponentType() >= EComponentType::Primitive)
 		{
@@ -84,7 +87,7 @@ void ULevel::AddEditorPrimitiveComponent(AActor* Actor)
 {
 	if (!Actor) return;
 
-	for (auto& Component: Actor->GetOwnedComponents())
+	for (auto& Component : Actor->GetOwnedComponents())
 	{
 		if (Component->GetComponentType() >= EComponentType::Primitive)
 		{

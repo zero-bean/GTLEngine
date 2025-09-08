@@ -29,10 +29,18 @@ void URenderer::Init(HWND InWindowHandle)
 
 void URenderer::Release()
 {
-	ReleaseVertexBuffer(this->vertexBufferSphere);
+	if (vertexBufferSphere)
+	{
+		ReleaseVertexBuffer(vertexBufferSphere);
+		vertexBufferSphere = nullptr;
+	}
+
 	ReleaseConstantBuffer();
 	ReleaseDefaultShader();
 	ReleaseResource();
+
+	SafeDelete(Pipeline);
+	SafeDelete(DeviceResources);
 }
 
 /**
@@ -82,13 +90,23 @@ void URenderer::ReleaseRasterizerState()
  */
 void URenderer::ReleaseResource()
 {
-	RasterizerState->Release();
+	if (RasterizerState)
+	{
+		RasterizerState->Release();
+		RasterizerState = nullptr;
+	}
+
+	if (DepthStencilState)
+	{
+		DepthStencilState->Release();
+		DepthStencilState = nullptr;
+	}
 
 	// 렌더 타겟을 초기화
-	GetDeviceContext()->OMSetRenderTargets(0, nullptr, nullptr);
-
-	delete Pipeline;
-	delete DeviceResources;
+	if (GetDeviceContext())
+	{
+		GetDeviceContext()->OMSetRenderTargets(0, nullptr, nullptr);
+	}
 }
 
 /**

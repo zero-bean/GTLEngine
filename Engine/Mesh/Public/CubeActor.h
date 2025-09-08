@@ -8,6 +8,7 @@ class ACubeActor : public AActor
 public:
 	ACubeActor();
 	UCubeComponent* GetCubeComponent();
+
 private:
 	UCubeComponent* CubeComponent = nullptr;
 };

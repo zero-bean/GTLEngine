@@ -40,30 +40,35 @@ void UDeviceResources::CreateDeviceAndSwapChain(HWND InWindowHandle)
 	D3D_FEATURE_LEVEL featurelevels[] = {D3D_FEATURE_LEVEL_11_0};
 
 	// 스왑 체인 설정 구조체 초기화
-	DXGI_SWAP_CHAIN_DESC swapchaindesc = {};
-	swapchaindesc.BufferDesc.Width = 0; // 창 크기에 맞게 자동으로 설정
-	swapchaindesc.BufferDesc.Height = 0; // 창 크기에 맞게 자동으로 설정
-	swapchaindesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // 색상 포맷
-	swapchaindesc.SampleDesc.Count = 1; // 멀티 샘플링 비활성화
-	swapchaindesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // 렌더 타겟으로 사용
-	swapchaindesc.BufferCount = 2; // 더블 버퍼링
-	swapchaindesc.OutputWindow = InWindowHandle; // 렌더링할 창 핸들
-	swapchaindesc.Windowed = TRUE; // 창 모드
-	swapchaindesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // 스왑 방식
+	DXGI_SWAP_CHAIN_DESC SwapChainDescription = {};
+	SwapChainDescription.BufferDesc.Width = 0; // 창 크기에 맞게 자동으로 설정
+	SwapChainDescription.BufferDesc.Height = 0; // 창 크기에 맞게 자동으로 설정
+	SwapChainDescription.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // 색상 포맷
+	SwapChainDescription.SampleDesc.Count = 1; // 멀티 샘플링 비활성화
+	SwapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // 렌더 타겟으로 사용
+	SwapChainDescription.BufferCount = 2; // 더블 버퍼링
+	SwapChainDescription.OutputWindow = InWindowHandle; // 렌더링할 창 핸들
+	SwapChainDescription.Windowed = TRUE; // 창 모드
+	SwapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // 스왑 방식
 
 	// Direct3D 장치와 스왑 체인을 생성
-	D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
-								  D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
-								  featurelevels, ARRAYSIZE(featurelevels), D3D11_SDK_VERSION,
-								  &swapchaindesc, &SwapChain, &Device, nullptr, &DeviceContext);
+	HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
+	                              D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
+	                              featurelevels, ARRAYSIZE(featurelevels), D3D11_SDK_VERSION,
+	                              &SwapChainDescription, &SwapChain, &Device, nullptr, &DeviceContext);
+
+	if (FAILED(hr))
+	{
+		assert(!"Failed To Create SwapChain");
+	}
 
 	// 생성된 스왑 체인의 정보 가져오기
-	SwapChain->GetDesc(&swapchaindesc);
+	SwapChain->GetDesc(&SwapChainDescription);
 
 	// Viewport Info 업데이트
 	ViewportInfo = {
-		0.0f, 0.0f, static_cast<float>(swapchaindesc.BufferDesc.Width),
-		static_cast<float>(swapchaindesc.BufferDesc.Height), 0.0f, 1.0f
+		0.0f, 0.0f, static_cast<float>(SwapChainDescription.BufferDesc.Width),
+		static_cast<float>(SwapChainDescription.BufferDesc.Height), 0.0f, 1.0f
 	};
 }
 
@@ -74,7 +79,8 @@ void UDeviceResources::ReleaseDeviceAndSwapChain()
 {
 	if (DeviceContext)
 	{
-		DeviceContext->Flush(); // 남아있는 GPU 명령 실행
+		// 남아있는 GPU 명령 실행
+		DeviceContext->Flush();
 	}
 
 	if (SwapChain)
@@ -146,15 +152,9 @@ void UDeviceResources::CreateDepthBuffer()
 	dsDesc.CPUAccessFlags = 0;
 	dsDesc.MiscFlags = 0;
 
-	HRESULT hr = Device->CreateTexture2D(&dsDesc, nullptr, &DepthBuffer);
-
-	hr = Device->CreateDepthStencilView(
-		DepthBuffer,
-		nullptr,
-		&DepthStencilView
-		);
+	Device->CreateTexture2D(&dsDesc, nullptr, &DepthBuffer);
+	Device->CreateDepthStencilView(DepthBuffer, nullptr, &DepthStencilView);
 }
-
 
 void UDeviceResources::ReleaseDepthBuffer()
 {

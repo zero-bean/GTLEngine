@@ -2,12 +2,15 @@
 #include "Mesh/Public/Actor.h"
 #include "Mesh/Public/SceneComponent.h"
 
+AActor::AActor() = default;
+
 AActor::~AActor()
 {
 	for (UActorComponent* Component : OwnedComponents)
 	{
-		delete Component;
+		SafeDelete(Component);
 	}
+
 	OwnedComponents.clear();
 }
 
@@ -24,27 +27,27 @@ AActor::~AActor()
 //	}
 //}
 
-void AActor::SetActorLocation(const FVector& Location)
+void AActor::SetActorLocation(const FVector& InLocation) const
 {
 	if (RootComponent)
 	{
-		RootComponent->SetRelativeLocation(Location);
+		RootComponent->SetRelativeLocation(InLocation);
 	}
 }
 
-void AActor::SetActorRotation(const FVector& Rotation)
+void AActor::SetActorRotation(const FVector& InRotation) const
 {
 	if (RootComponent)
 	{
-		RootComponent->SetRelativeRotation(Rotation);
+		RootComponent->SetRelativeRotation(InRotation);
 	}
 }
 
-void AActor::SetActorScale3D(const FVector& Scale)
+void AActor::SetActorScale3D(const FVector& InScale) const
 {
 	if (RootComponent)
 	{
-		RootComponent->SetRelativeScale3D(Scale);
+		RootComponent->SetRelativeScale3D(InScale);
 	}
 }
 
@@ -66,23 +69,21 @@ const FVector& AActor::GetActorScale3D() const
 	return RootComponent->GetRelativeScale3D();
 }
 
-void AActor::BeginPlay()
-{
-}
-
-void AActor::Tick(float DeltaTime)
+void AActor::Tick()
 {
 	for (auto& Component : OwnedComponents)
 	{
 		if (Component)
 		{
-			Component->TickComponent(DeltaTime);
+			Component->TickComponent();
 		}
 	}
+}
+
+void AActor::BeginPlay()
+{
 }
 
 void AActor::EndPlay()
 {
 }
-
-

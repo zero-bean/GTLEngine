@@ -4,7 +4,7 @@
 
 AAxis::AAxis()
 {
-	RootComponent = CreateDefaultSubobject<USceneComponent>("Root");
+	SetRootComponent(CreateDefaultSubobject<USceneComponent>("Root"));
 
 	LineX = CreateDefaultSubobject<UAxisLineComponent>("LineX");
 	LineX->SetRelativeScale3D({1.f, 1.f, 50000.f});
@@ -23,4 +23,9 @@ AAxis::AAxis()
 	LineZ->SetRelativeRotation({0.f, 0.f, 0.f});
 	LineZ->SetColor({0,0,1,1});
 	LineZ->SetTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+}
+
+AAxis::~AAxis()
+{
+	// Actor 소멸자에 의한 Component 삭제
 }

@@ -75,7 +75,8 @@ void UInputManager::InitializeKeyMapping()
 void UInputManager::Update()
 {
 	// 이전 프레임 상태를 현재 프레임 상태로 복사
-	PreviousKeyState = CurrentKeyState;
+	std::swap(PreviousKeyState, CurrentKeyState);
+	CurrentKeyState.clear();
 
 	// 윈도우가 포커스를 잃었을 때는 입력 처리를 중단
 	if (!bIsWindowFocused)

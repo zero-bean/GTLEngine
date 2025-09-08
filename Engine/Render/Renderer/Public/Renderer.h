@@ -90,12 +90,12 @@ private:
 
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};
 
-	ID3D11VertexShader* DefaultVertexShader;
-	ID3D11PixelShader* DefaultPixelShader;
-	ID3D11InputLayout* DefaultInputLayout;
-	unsigned int Stride;
+	ID3D11VertexShader* DefaultVertexShader = nullptr;
+	ID3D11PixelShader* DefaultPixelShader = nullptr;
+	ID3D11InputLayout* DefaultInputLayout = nullptr;
+	unsigned int Stride = 0;
 
-	ID3D11Buffer* vertexBufferSphere;
+	ID3D11Buffer* vertexBufferSphere = nullptr;
 
 	///////////////////////////////////////////
 	// 카메라 VP Matrix 값 전달 받는 용도

@@ -54,6 +54,8 @@ using std::ofstream;
 using std::ifstream;
 using std::setw;
 using std::sort;
+using std::shared_ptr;
+using std::unique_ptr;
 
 // File System
 namespace filesystem = std::filesystem;

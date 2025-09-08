@@ -22,8 +22,9 @@ public:
 
 private:
     int InitializeSystem() const;
-    void UpdateSystem() const;
+    static void UpdateSystem();
     void MainLoop();
+	static void ShutdownSystem();
 
     HACCEL AcceleratorTable;
     MSG MainMessage;

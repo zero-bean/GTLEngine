@@ -41,6 +41,7 @@ bool FAppWindow::Init(HINSTANCE InInstance, int InCmdShow)
 
 /**
  * @brief Initialize Console & Redirect IO
+ * 현재 ImGui로 기능을 넘기면서 사용은 하지 않으나 코드는 유지
  */
 void FAppWindow::InitializeConsole()
 {

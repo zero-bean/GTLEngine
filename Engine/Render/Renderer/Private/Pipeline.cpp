@@ -2,12 +2,14 @@
 #include "Render/Renderer/Public/Pipeline.h"
 
 /// @brief 그래픽 파이프라인을 관리하는 클래스
-UPipeline::UPipeline(ID3D11DeviceContext* DeviceContext) : DeviceContext(DeviceContext)
+UPipeline::UPipeline(ID3D11DeviceContext* InDeviceContext)
+	: DeviceContext(InDeviceContext)
 {
 }
 
 UPipeline::~UPipeline()
 {
+	// Device Context는 Device Resource에서 제거
 }
 
 
