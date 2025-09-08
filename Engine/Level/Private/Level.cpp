@@ -5,12 +5,15 @@
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/Gizmo/Public/Gizmo.h"
 #include "Render/AxisLine/Public/Axis.h"
+#include "Render/Grid/Public/Grid.h"
 #include "Render/UI/Window/Public/ActorInspectorWindow.h"
+//////////////////////////////
 
 ULevel::ULevel()
 {
 	Gizmo = SpawnEditorActor<AGizmo>();
 	Axis = SpawnEditorActor<AAxis>();
+	Grid = SpawnEditorActor<AGrid>();
 }
 
 ULevel::ULevel(const wstring& InName)
@@ -110,9 +113,9 @@ void ULevel::SetSelectedActor(AActor* InActor)
 	// Set Inspector Actor
 	if (SelectedActor)
 	{
-		UUIManager& UIManager = UUIManager::GetInstance();
+		UUIManager& UiManager = UUIManager::GetInstance();
 		UActorInspectorWindow* InspectorWindow =
-			reinterpret_cast<UActorInspectorWindow*>(UIManager.FindUIWindow("Actor Inspector"));
+			reinterpret_cast<UActorInspectorWindow*>(UiManager.FindUIWindow("Actor Inspector"));
 		InspectorWindow->SetSelectedActor(SelectedActor);
 	}
 }

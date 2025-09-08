@@ -34,7 +34,7 @@ public:
 	//void Render(const URenderer& Renderer) const override;
 
 	bool IsVisible() const { return bVisible; }
-	void SetVisibility(bool visibility) { bVisible = visibility; }
+	void SetVisibility(bool bVisibility) { bVisible = bVisibility; }
 
 	FVector4 GetColor() const { return Color; }
 	void SetColor(const FVector4& InColor) { Color = InColor; }
@@ -63,4 +63,10 @@ class USphereComponent : public UPrimitiveComponent
 {
 public:
 	USphereComponent();
+};
+
+class ULineComponent : public UPrimitiveComponent
+{
+public:
+	ULineComponent();
 };

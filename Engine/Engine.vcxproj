@@ -182,6 +182,7 @@
     <ClInclude Include="Core\Public\ClientApp.h" />
     <ClInclude Include="Render\Gizmo\Public\Gizmo.h" />
     <ClInclude Include="Render\Gizmo\Public\GizmoArrow.h" />
+    <ClInclude Include="Render\Grid\Public\Grid.h" />
     <ClInclude Include="Render\Renderer\Public\DeviceResources.h" />
     <ClInclude Include="Render\Renderer\Public\Pipeline.h" />
     <ClInclude Include="Render\Renderer\Public\Renderer.h" />
@@ -231,6 +232,7 @@
     <ClCompile Include="Render\AxisLine\Private\AxisLine.cpp" />
     <ClCompile Include="Render\Gizmo\Private\Gizmo.cpp" />
     <ClCompile Include="Render\Gizmo\Private\GizmoArrow.cpp" />
+    <ClCompile Include="Render\Grid\Private\Grid.cpp" />
     <ClCompile Include="Render\Renderer\Private\DeviceResources.cpp" />
     <ClCompile Include="Render\Renderer\Private\Pipeline.cpp" />
     <ClCompile Include="Render\Renderer\Private\Renderer.cpp" />

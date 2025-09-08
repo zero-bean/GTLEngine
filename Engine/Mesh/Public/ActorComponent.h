@@ -15,7 +15,7 @@ public:
 	virtual void TickComponent();
 	virtual void EndPlay();
 
-	EComponentType GetComponentType() { return ComponentType; }
+	EComponentType GetComponentType() const { return ComponentType; }
 protected:
 	EComponentType ComponentType;
 private:
