@@ -68,10 +68,12 @@ void AGizmo::Tick()
 
 	if (TargetActor)
 	{
+		SetActorLocation(TargetActor->GetActorLocation());
+
+		//Deprecated
 		GizmoArrowR->SetRelativeLocation(GetActorLocation());
 		GizmoArrowG->SetRelativeLocation(GetActorLocation());
 		GizmoArrowB->SetRelativeLocation(GetActorLocation());
-		TargetActor->SetActorLocation(GetActorLocation());
 	}
 	if (bIsWorld)
 	{

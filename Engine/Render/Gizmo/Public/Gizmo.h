@@ -14,6 +14,7 @@ public:
 	void BeginPlay() override;
 	void Tick() override;
 	void EndPlay() override;
+	AActor* GetTargetActor() { return TargetActor; }
 
 private:
 	AActor* TargetActor = nullptr;

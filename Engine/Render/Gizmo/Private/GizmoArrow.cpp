@@ -3,6 +3,7 @@
 
 #include "Manager/Input/Public/InputManager.h"
 #include "Mesh/Public/Actor.h"
+#include "Render/Gizmo/Public/Gizmo.h"
 
 UGizmoArrowComponent::UGizmoArrowComponent()
 {
@@ -22,7 +23,8 @@ void UGizmoArrowComponent::OnClicked()
 
 void UGizmoArrowComponent::MoveActor(const FVector& Location)
 {
-	GetOwner()->SetActorLocation(Location);
+	AGizmo* Gizmo = dynamic_cast<AGizmo*>(GetOwner());
+	Gizmo->GetTargetActor()->SetActorLocation(Location);
 }
 
 void UGizmoArrowComponent::OnReleased()
