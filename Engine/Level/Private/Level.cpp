@@ -111,8 +111,10 @@ void ULevel::SetSelectedActor(AActor* InActor)
 	Gizmo->SetTargetActor(SelectedActor);
 
 	// Set Inspector Actor
+
 	UUIManager& UIManager = UUIManager::GetInstance();
 	UActorInspectorWindow* InspectorWindow =
 		reinterpret_cast<UActorInspectorWindow*>(UIManager.FindUIWindow("Actor Inspector"));
-	InspectorWindow->SetSelectedActor(InActor);
+	InspectorWindow->SetSelectedActor(SelectedActor);
+
 }
