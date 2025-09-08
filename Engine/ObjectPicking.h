@@ -1,4 +1,4 @@
 class AActor;
 class ULevel;
 
-AActor* PickActor(ULevel* Level);
+AActor* PickActor(ULevel* Level, HWND WindowHandle);
