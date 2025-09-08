@@ -89,8 +89,8 @@ int FClientApp::InitializeSystem() const
 	MyCamera = new Camera();
 
 	// UIManager Initialize
-	auto& UIManager = UUIManager::GetInstance();
-	UIManager.Initialize(Window->GetWindowHandle());
+	auto& UiManager = UUIManager::GetInstance();
+	UiManager.Initialize(Window->GetWindowHandle());
 	UUIWindowFactory::CreateDefaultUILayout();
 
 	UResourceManager::GetInstance().Initialize();
@@ -111,14 +111,14 @@ void FClientApp::UpdateSystem()
 	auto& InputManager = UInputManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
 	auto& LevelManager = ULevelManager::GetInstance();
-	auto& UIManager = UUIManager::GetInstance();
+	auto& UiManager = UUIManager::GetInstance();
 
 	TimeManager.Update();
 	InputManager.Update();
 	LevelManager.Update();
 	MyCamera->Update();
 	MyCamera->UpdateMatrix();
-	UIManager.Update();
+	UiManager.Update();
 	Renderer.UpdateConstant(MyCamera->GetFViewProjConstants());
 	Renderer.Update();
 }

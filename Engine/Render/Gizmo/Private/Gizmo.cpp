@@ -28,9 +28,9 @@ AGizmo::~AGizmo()
 	// Actor 소멸자에 의한 Component 삭제
 }
 
-void AGizmo::SetTargetActor(AActor* actor)
+void AGizmo::SetTargetActor(AActor* InActor)
 {
-	TargetActor = actor;
+	TargetActor = InActor;
 
 	for (auto& Component : GetOwnedComponents())
 	{
