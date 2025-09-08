@@ -8,7 +8,7 @@ UUIWindow::UUIWindow(const FUIWindowConfig& InConfig)
 	  , CurrentState(InConfig.InitialState)
 {
 	// 고유한 윈도우 ID 생성
-	WindowID = "UIWindow_" + to_string(++IssuedWindowID);
+	WindowID = ++IssuedWindowID;
 
 	// 윈도우 플래그 업데이트
 	Config.UpdateWindowFlags();

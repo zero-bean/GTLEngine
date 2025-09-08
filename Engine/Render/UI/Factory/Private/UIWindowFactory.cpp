@@ -2,10 +2,18 @@
 #include "Render/UI/Factory/Public/UIWindowFactory.h"
 
 #include "Manager/UI/Public/UIManager.h"
+#include "Render/UI/Window/Public/ConsoleWindow.h"
 #include "Render/UI/Window/Public/ControlPanelWindow.h"
 #include "Render/UI/Window/Public/InputStatusWindow.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
 #include "Render/UI/Window/Public/LevelManangerWindow.h"
+
+UConsoleWindow* UUIWindowFactory::CreateConsoleWindow(EUIDockDirection InDockDirection)
+{
+	auto& Window = UConsoleWindow::GetInstance();
+	Window.GetMutableConfig().DockDirection = InDockDirection;
+	return &Window;
+}
 
 UPerformanceWindow* UUIWindowFactory::CreatePerformanceWindow(EUIDockDirection InDockDirection)
 {
@@ -40,6 +48,7 @@ void UUIWindowFactory::CreateDefaultUILayout()
 	auto& UIManager = UUIManager::GetInstance();
 
 	// 기본 레이아웃 생성
+	UIManager.RegisterUIWindow(CreateConsoleWindow(EUIDockDirection::Bottom));
 	UIManager.RegisterUIWindow(CreatePerformanceWindow(EUIDockDirection::Right));
 	UIManager.RegisterUIWindow(CreateInputStatusWindow(EUIDockDirection::Right));
 	UIManager.RegisterUIWindow(CreateActorInspectorWindow(EUIDockDirection::Left));

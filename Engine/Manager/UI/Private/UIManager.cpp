@@ -306,7 +306,7 @@ void UUIManager::PrintDebugInfo() const
 	cout << "Initialized: " << (bIsInitialized ? "Yes" : "No") << "\n";
 	cout << "Total Time: " << TotalTime << "s" << "\n";
 	cout << "Registered Windows: " << UIWindows.size() << "\n";
-	cout << "Focused Window: " << (FocusedWindow ? FocusedWindow->GetWindowID() : "None") << "\n";
+	cout << "Focused Window: " << (FocusedWindow ? to_string(FocusedWindow->GetWindowID()) : "None") << "\n";
 
 	cout << "\n--- Window List ---" << "\n";
 	for (size_t i = 0; i < UIWindows.size(); ++i)
