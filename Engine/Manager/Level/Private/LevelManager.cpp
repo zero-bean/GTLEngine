@@ -9,7 +9,13 @@ IMPLEMENT_SINGLETON(ULevelManager)
 
 ULevelManager::ULevelManager() = default;
 
-ULevelManager::~ULevelManager() = default;
+ULevelManager::~ULevelManager()
+{
+	for (auto& Pair : Levels)
+	{
+		delete Pair.second;
+	}
+}
 
 void ULevelManager::RegisterLevel(const wstring& InName, ULevel* InLevel)
 {

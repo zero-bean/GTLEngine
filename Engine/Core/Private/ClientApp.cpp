@@ -34,10 +34,10 @@ FClientApp::~FClientApp() = default;
 int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 {
 	// Memory Leak Detection & Report
-	// #ifdef _DEBUG
-	// 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	// 	_CrtSetBreakAlloc(0);
-	// #endif
+	#ifdef _DEBUG
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+		// _CrtSetBreakAlloc(0);
+	#endif
 
 	// Window Object Initialize
 	Window = new FAppWindow(this);
@@ -48,9 +48,9 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 	}
 
 	// Create Console
-#ifdef _DEBUG
-	Window->InitializeConsole();
-#endif
+	// #ifdef _DEBUG
+	// 	Window->InitializeConsole();
+	// #endif
 
 	// Keyboard Accelerator Table Setting
 	// AcceleratorTable = LoadAccelerators(InInstanceHandle, MAKEINTRESOURCE(IDC_CLIENT));
@@ -67,8 +67,8 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 	MainLoop();
 
 	// Termination Process
+	ShutdownSystem();
 	delete Window;
-	UResourceManager::GetInstance().Release();
 
 	return static_cast<int>(MainMessage.wParam);
 }
@@ -105,7 +105,7 @@ int FClientApp::InitializeSystem() const
 /**
  * @brief Update System While Game Processing
  */
-void FClientApp::UpdateSystem() const
+void FClientApp::UpdateSystem()
 {
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
@@ -161,4 +161,18 @@ void FClientApp::MainLoop()
 	delete MyCamera;
 	MyCamera = nullptr;
 	////////////////////////////////////////
+}
+
+/**
+ * @brief 시스템 종료 처리
+ * 모든 리소스를 안전하게 해제하고 매니저들을 정리합니다.
+ */
+void FClientApp::ShutdownSystem()
+{
+	URenderer::GetInstance().Release();
+	UUIManager::GetInstance().Shutdown();
+	UResourceManager::GetInstance().Release();
+
+	// 레벨 매니저 정리
+	// ULevelManager::GetInstance().Release();
 }

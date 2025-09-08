@@ -14,7 +14,7 @@ struct FPipelineInfo
 class UPipeline
 {
 public:
-	UPipeline(ID3D11DeviceContext* DeviceContext);
+	UPipeline(ID3D11DeviceContext* InDeviceContext);
 	~UPipeline();
 
 	void UpdatePipeline(FPipelineInfo Info);

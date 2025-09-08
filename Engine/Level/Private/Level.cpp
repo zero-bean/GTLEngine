@@ -14,7 +14,6 @@ ULevel::ULevel()
 ULevel::ULevel(const wstring& InName)
 	: Name(InName)
 {
-	ULevel::ULevel();
 }
 
 ULevel::~ULevel()
