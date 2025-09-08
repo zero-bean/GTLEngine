@@ -226,6 +226,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Core\Private\AppWindow.cpp" />
     <ClCompile Include="Core\Private\ClientApp.cpp" />
+    <ClCompile Include="Render\AxisLine\Private\Axis.cpp" />
+    <ClCompile Include="Render\AxisLine\Private\AxisLine.cpp" />
     <ClCompile Include="Render\Gizmo\Private\Gizmo.cpp" />
     <ClCompile Include="Render\Gizmo\Private\GizmoArrow.cpp" />
     <ClCompile Include="Render\Renderer\Private\DeviceResources.cpp" />
@@ -243,6 +245,8 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
+    <Content Include="Render\AxisLine\Public\Axis.h" />
+    <Content Include="Render\AxisLine\Public\AxisLine.h" />
     <Content Include="Shader\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

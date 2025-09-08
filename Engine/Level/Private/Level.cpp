@@ -3,11 +3,12 @@
 
 #include "Manager/Time/Public/TimeManager.h"
 #include "Render/Gizmo/Public/Gizmo.h"
+#include "Render/AxisLine/Public/Axis.h"
 
 ULevel::ULevel()
 {
 	Gizmo = SpawnEditorActor<AGizmo>();
-
+	Axis = SpawnEditorActor<AAxis>();
 }
 
 ULevel::ULevel(const wstring& InName)

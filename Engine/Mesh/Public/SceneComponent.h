@@ -28,6 +28,9 @@ public:
 
 	const TArray<FVertex>* GetVerticesData() const;
 	ID3D11Buffer* GetVertexBuffer() const;
+
+	void SetTopology(D3D11_PRIMITIVE_TOPOLOGY InTopology);
+	D3D11_PRIMITIVE_TOPOLOGY GetTopology() const;
 	//void Render(const URenderer& Renderer) const override;
 
 	bool IsVisible() const { return bVisible; }
@@ -40,6 +43,7 @@ protected:
 	const TArray<FVertex>* Vertices = nullptr;
 	ID3D11Buffer* Vertexbuffer = nullptr;
 	UINT NumVertices = 0;
+	D3D11_PRIMITIVE_TOPOLOGY Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	EPrimitiveType Type = EPrimitiveType::Cube;
 

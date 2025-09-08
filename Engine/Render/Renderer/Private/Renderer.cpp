@@ -156,7 +156,7 @@ void URenderer::Update()
 
 	RenderLevel();
 	RenderEditor();
-	RenderLines();
+	//RenderLines();
 
 	UUIManager::GetInstance().Render();
 
@@ -281,7 +281,9 @@ void URenderer::RenderEditor()
 			DepthStencilState,
 			DefaultPixelShader,
 			nullptr,
+			PrimitiveComponent->GetTopology()
 		};
+
 		Pipeline->UpdatePipeline(PipelineInfo);
 
 		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);

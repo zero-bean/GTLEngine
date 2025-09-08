@@ -51,6 +51,16 @@ ID3D11Buffer* UPrimitiveComponent::GetVertexBuffer() const
 	return Vertexbuffer;
 }
 
+void UPrimitiveComponent::SetTopology(D3D11_PRIMITIVE_TOPOLOGY InTopology)
+{
+	Topology = InTopology;
+}
+
+D3D11_PRIMITIVE_TOPOLOGY UPrimitiveComponent::GetTopology() const
+{
+	return Topology;
+}
+
 //void UPrimitiveComponent::Render(const URenderer& Renderer) const
 //{
 //	Renderer.RenderPrimitive(Vertexbuffer, NumVertices);
