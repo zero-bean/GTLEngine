@@ -16,7 +16,7 @@ public:
 	const FVector& GetRelativeRotation() const;
 	const FVector& GetRelativeScale3D() const;
 private:
-	FVector RelativeLocation = FVector{ 0,0,0.5f };
+	FVector RelativeLocation = FVector{ 0,0,0.f };
 	FVector RelativeRotation = FVector{ 0,0,0.f };
 	FVector RelativeScale3D = FVector{ 0.3f,0.3f,0.3f };
 };
@@ -28,18 +28,28 @@ public:
 
 	const TArray<FVertex>* GetVerticesData() const;
 	ID3D11Buffer* GetVertexBuffer() const;
+
+	void SetTopology(D3D11_PRIMITIVE_TOPOLOGY InTopology);
+	D3D11_PRIMITIVE_TOPOLOGY GetTopology() const;
 	//void Render(const URenderer& Renderer) const override;
 
 	bool IsVisible() const { return bVisible; }
 	void SetVisibility(bool visibility) { bVisible = visibility; }
 
+	FVector4 GetColor() const { return Color; }
+	void SetColor(const FVector4& InColor) { Color = InColor; }
+
 protected:
 	const TArray<FVertex>* Vertices = nullptr;
 	ID3D11Buffer* Vertexbuffer = nullptr;
 	UINT NumVertices = 0;
+	D3D11_PRIMITIVE_TOPOLOGY Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
 	EPrimitiveType Type = EPrimitiveType::Cube;
 
 	bool bVisible = true;
+
+	FVector4 Color = FVector4{ 0.f,0.f,0.f,0.f };
 };
 
 class UCubeComponent : public UPrimitiveComponent

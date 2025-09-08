@@ -5,8 +5,13 @@ cbuffer constants : register(b0)
 
 cbuffer PerFrame : register(b1)
 {
-    row_major float4x4 View;        // View Matrix Calculation of MVP Matrix
-    row_major float4x4 Projection;  // Projection Matrix Calculation of MVP Matrix
+	row_major float4x4 View;        // View Matrix Calculation of MVP Matrix
+	row_major float4x4 Projection;  // Projection Matrix Calculation of MVP Matrix
+};
+
+cbuffer PerFrame : register(b2)
+{
+	float4 totalColor;
 };
 
 struct VS_INPUT
@@ -25,8 +30,8 @@ PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
 	float4 tmp = input.position;
-    tmp = mul(tmp, world);     
-    tmp = mul(tmp, View);       
+    tmp = mul(tmp, world);
+    tmp = mul(tmp, View);
     tmp = mul(tmp, Projection);
 
 	output.position = tmp;
@@ -37,6 +42,7 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    // Output the color directly
-    return input.color;
+	float4 finalColor = lerp(input.color, totalColor, totalColor.a);
+
+	return finalColor;
 }

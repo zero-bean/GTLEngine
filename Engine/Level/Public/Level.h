@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Public/Object.h"
 
+class AAxis;
 class AGizmo;
 class AActor;
 class UPrimitiveComponent;
@@ -47,6 +48,7 @@ private:
 
 	AActor* SelectedActor = nullptr;
 	AGizmo* Gizmo = nullptr;
+	AAxis* Axis = nullptr;
 };
 
 template <typename T, typename ... Args>

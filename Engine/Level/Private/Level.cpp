@@ -3,11 +3,12 @@
 
 #include "Manager/Time/Public/TimeManager.h"
 #include "Render/Gizmo/Public/Gizmo.h"
+#include "Render/AxisLine/Public/Axis.h"
 
 ULevel::ULevel()
 {
 	Gizmo = SpawnEditorActor<AGizmo>();
-
+	Axis = SpawnEditorActor<AAxis>();
 }
 
 ULevel::ULevel(const wstring& InName)
@@ -33,6 +34,8 @@ void ULevel::Update()
 {
 	Gizmo->SetTargetActor(SelectedActor);
 	//여기서 해야할까요??
+	LevelPrimitiveComponents.clear();
+	EditorPrimitiveComponents.clear();
 
 	for (auto& Actor : LevelActors)
 	{

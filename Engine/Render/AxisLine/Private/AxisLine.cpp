@@ -1,10 +1,10 @@
 #include "pch.h"
-#include "Render/Gizmo/Public/GizmoArrow.h"
+#include "Render/AxisLine/Public/AxisLine.h"
 
-UGizmoArrowComponent::UGizmoArrowComponent()
+UAxisLineComponent::UAxisLineComponent()
 {
 	UResourceManager& ResourceManager = UResourceManager::GetInstance();
-	Type = EPrimitiveType::Gizmo;
+	Type = EPrimitiveType::Line;
 	Vertices = ResourceManager.GetVertexData(Type);
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
