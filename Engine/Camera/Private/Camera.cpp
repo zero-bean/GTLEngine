@@ -8,6 +8,18 @@ void Camera::Update()
 	const float DeltaTime = UTimeManager::GetInstance().GetDeltaTime();
 	const UInputManager& Input = UInputManager::GetInstance();
 
+
+	const float Roll = FVector::GetDegreeToRadian(Rotation.X);
+	const float Yaw = FVector::GetDegreeToRadian(Rotation.Y);
+	const float Pitch = FVector::GetDegreeToRadian(Rotation.Z);
+
+	Forward = {
+		std::cos(Roll) * std::sin(Yaw), // X
+		std::sin(Roll),                 // Y
+		std::cos(Roll) * std::cos(Yaw)  // Z
+	};
+	Forward.Normalize();
+
 	/**
 	 * @brief 마우스 우클릭을 하고 있는 동안 카메라 제어가 가능합니다.
 	 */
@@ -19,16 +31,7 @@ void Camera::Update()
 
 		FVector Move = { 0,0,0 };
 
-		const float Roll = FVector::GetDegreeToRadian(Rotation.X);
-		const float Yaw = FVector::GetDegreeToRadian(Rotation.Y);
-		const float Pitch = FVector::GetDegreeToRadian(Rotation.Z);
-
-		FVector Forward = {
-		std::cos(Roll) * std::sin(Yaw), // X
-		std::sin(Roll),                 // Y
-		std::cos(Roll) * std::cos(Yaw)  // Z
-		};
-		Forward.Normalize();
+		
 		FVector Up = { 0,1,0 };
 		FVector Right = Forward.Cross(Up);
 
@@ -63,12 +66,9 @@ void Camera::UpdateMatrix()
 	/**
 	 * @brief View 행렬 연산
 	 */
-	const float Roll = FVector::GetDegreeToRadian(-Rotation.X);
-	const float Yaw = FVector::GetDegreeToRadian(-Rotation.Y);
-	const float Pitch = FVector::GetDegreeToRadian(-Rotation.Z);
 
-	FMatrix T = FMatrix::TranslationMatrix(-Position);
-	FMatrix R = FMatrix::RotationMatrixReverse({ Roll, Yaw, Pitch });
+	FMatrix T = FMatrix::TranslationMatrixInverse(Position);
+	FMatrix R = FMatrix::RotationMatrixInverse(FVector::GetDegreeToRadian(Rotation));
 	ViewProjConstants.View = T * R;
 
 	/**
@@ -79,7 +79,7 @@ void Camera::UpdateMatrix()
 	const float RadianFovY = FVector::GetDegreeToRadian(FovY);
 	const float F = 1.0f / std::tanf(RadianFovY * 0.5f);
 
-	FMatrix P = FMatrix::Identity();
+	FMatrix P = FMatrix::Identity(); 
 	// | f/aspect   0        0         0 |
 	// |    0       f        0         0 |
 	// |    0       0   zf/(zf-zn)     1 |
@@ -92,4 +92,30 @@ void Camera::UpdateMatrix()
 	P.Data[3][3] = 0.0f;
 
 	ViewProjConstants.Projection = P;
+}
+
+const FViewProjConstants Camera::GetFViewProjConstantsInverse() const
+{
+	FViewProjConstants ViewProjConstantsInverse;
+	FMatrix R = FMatrix::RotationMatrix(FVector::GetDegreeToRadian(Rotation));
+	FMatrix T = FMatrix::TranslationMatrix(Position);
+	ViewProjConstantsInverse.View = R * T;
+
+	const float RadianFovY = FVector::GetDegreeToRadian(FovY);
+	const float F = 1.0f / std::tanf(RadianFovY * 0.5f);  
+
+	FMatrix P = FMatrix::Identity();
+	// | aspect/f   0        0         0 |
+	// |    0       1/f        0         0 |
+	// |    0       0         0     -(zf - zn) / (zn * zf) |
+	// |    0       0        1         zf / (zn*zf) |
+	P.Data[0][0] = Aspect / F;
+	P.Data[1][1] = 1/F;
+	P.Data[2][2] = 0;
+	P.Data[2][3] = -(FarZ - NearZ) / (NearZ * FarZ);
+	P.Data[3][2] = 1;
+	P.Data[3][3] = FarZ/(NearZ*FarZ);
+
+	ViewProjConstantsInverse.Projection = P;
+	return ViewProjConstantsInverse;
 }

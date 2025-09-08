@@ -129,10 +129,10 @@ FVector4 FVector4::operator+(const FVector4& OtherVector) const
 FVector4 FVector4::operator*(const FMatrix& Matrix) const
 {
 	FVector4 Result;
-	Result.X = X * Matrix.Data[0][0] + Y * Matrix.Data[0][1] + Z * Matrix.Data[0][2] + W * Matrix.Data[0][3];
-	Result.Y = X * Matrix.Data[1][0] + Y * Matrix.Data[1][1] + Z * Matrix.Data[1][2] + W * Matrix.Data[1][3];
-	Result.Z = X * Matrix.Data[2][0] + Y * Matrix.Data[2][1] + Z * Matrix.Data[2][2] + W * Matrix.Data[2][3];
-	Result.W = X * Matrix.Data[3][0] + Y * Matrix.Data[3][1] + Z * Matrix.Data[3][2] + W * Matrix.Data[3][3];
+	Result.X = X * Matrix.Data[0][0] + Y * Matrix.Data[1][0] + Z * Matrix.Data[2][0] + W * Matrix.Data[3][0];
+	Result.Y = X * Matrix.Data[0][1] + Y * Matrix.Data[1][1] + Z * Matrix.Data[2][1] + W * Matrix.Data[3][1];
+	Result.Z = X * Matrix.Data[0][2] + Y * Matrix.Data[1][2] + Z * Matrix.Data[2][2] + W * Matrix.Data[3][2];
+	Result.W = X * Matrix.Data[0][3] + Y * Matrix.Data[1][3] + Z * Matrix.Data[2][3] + W * Matrix.Data[3][3];
 
 	return Result;
 }

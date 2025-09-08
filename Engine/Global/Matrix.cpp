@@ -72,6 +72,17 @@ FMatrix FMatrix::TranslationMatrix(const FVector& InOtherVector)
 	return Result;
 }
 
+FMatrix FMatrix::TranslationMatrixInverse(const FVector& InOtherVector)
+{
+	FMatrix Result = FMatrix::Identity();
+	Result.Data[3][0] = -InOtherVector.X;
+	Result.Data[3][1] = -InOtherVector.Y;
+	Result.Data[3][2] = -InOtherVector.Z;
+	Result.Data[3][3] = 1;
+
+	return Result;
+}
+
 /**
 * @brief Scale의 정보를 행렬로 변환하여 제공하는 함수
 */
@@ -85,6 +96,16 @@ FMatrix FMatrix::ScaleMatrix(const FVector& InOtherVector)
 
 	return Result;
 }
+FMatrix FMatrix::ScaleMatrixInverse(const FVector& InOtherVector)
+{
+	FMatrix Result = FMatrix::Identity();
+	Result.Data[0][0] = 1/InOtherVector.X;
+	Result.Data[1][1] = 1/InOtherVector.Y;
+	Result.Data[2][2] = 1/InOtherVector.Z;
+	Result.Data[3][3] = 1;
+
+	return Result;
+}
 
 /**
 * @brief Rotation의 정보를 행렬로 변환하여 제공하는 함수
@@ -94,9 +115,9 @@ FMatrix FMatrix::RotationMatrix(const FVector& InOtherVector)
 	return RotationX(InOtherVector.X) * RotationY(InOtherVector.Y) * RotationZ(InOtherVector.Z);
 }
 
-FMatrix FMatrix::RotationMatrixReverse(const FVector& InOtherVector)
+FMatrix FMatrix::RotationMatrixInverse(const FVector& InOtherVector)
 {
-	return RotationZ(InOtherVector.Z) * RotationY(InOtherVector.Y) * RotationX(InOtherVector.X);
+	return RotationZ(-InOtherVector.Z) * RotationY(-InOtherVector.Y) * RotationX(-InOtherVector.X);
 }
 
 /**
@@ -158,6 +179,15 @@ FMatrix FMatrix::GetModelMatrix(const FVector& Location, const FVector& Rotation
 	FMatrix S = ScaleMatrix(Scale);
 
 	return FMatrix::Identity() * S * R * T;
+}
+
+FMatrix FMatrix::GetModelMatrixInverse(const FVector& Location, const FVector& Rotation, const FVector& Scale)
+{
+	FMatrix T = TranslationMatrixInverse(Location);
+	FMatrix R = RotationMatrixInverse(Rotation);
+	FMatrix S = ScaleMatrixInverse(Scale);
+
+	return FMatrix::Identity() * T * R * S;
 }
 
 
