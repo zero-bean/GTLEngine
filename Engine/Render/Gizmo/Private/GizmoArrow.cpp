@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Render/Gizmo/Public/GizmoArrow.h"
 
+#include "Manager/Input/Public/InputManager.h"
 #include "Mesh/Public/Actor.h"
 
 UGizmoArrowComponent::UGizmoArrowComponent()
@@ -15,16 +16,20 @@ UGizmoArrowComponent::UGizmoArrowComponent()
 void UGizmoArrowComponent::OnClicked()
 {
 	bIsClicked = true;
+	SetColor({1.f, 1.f, 0.f, 1.f});
+	DragStartLocation = GetOwner()->GetActorLocation();
 }
 
-void UGizmoArrowComponent::MoveActor(float Distance)
+void UGizmoArrowComponent::MoveActor(const FVector& Location)
 {
-	GetOwner()->SetActorLocation(GetOwner()->GetActorLocation() + Forward * Distance);
+	GetOwner()->SetActorLocation(Location);
 }
 
 void UGizmoArrowComponent::OnReleased()
 {
 	bIsClicked = false;
+	SetColor(DefaultColor);
+	DragStartLocation = FVector(0, 0, 0);
 }
 
 void UGizmoArrowComponent::TickComponent()
@@ -33,7 +38,12 @@ void UGizmoArrowComponent::TickComponent()
 
 	if (bIsClicked)
 	{
-		//distance 받기..
-		//MoveActor(distance);
+		if (UInputManager::GetInstance().IsKeyDown(EKeyInput::MouseLeft))
+		{
+			OnReleased();
+			return;
+		}
+
+		//DragStart
 	}
 }
