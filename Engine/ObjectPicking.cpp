@@ -42,7 +42,12 @@ AActor* PickActor(ULevel* Level, HWND WindowHandle)
 				UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(ActorComponent);
 				if (Primitive)
 				{
+					FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
 					FRay ModelRay = GetModelRay(WorldRay, Primitive); //Actor로부터 Primitive를 얻고 Ray를 모델 좌표계로 변환함
+<<<<<<< Updated upstream
+=======
+					
+>>>>>>> Stashed changes
 
 					if (IsRayPrimitiveCollided(ModelRay, Primitive, &PrimitiveDistance))
 					//Ray와 Primitive가 충돌했다면 거리 테스트 후 가까운 Actor Picking
