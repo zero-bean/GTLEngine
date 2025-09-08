@@ -7,10 +7,10 @@ class AActor;
 * @brief Actor 속성을 편집하는 UI 윈도우
  * ImGuiManager의 Actor 편집 기능을 분리한 클래스
  */
-class UActorInspectorWindow : public UUIWindow
+class UControlPanelWindow : public UUIWindow
 {
 public:
-	UActorInspectorWindow();
+	UControlPanelWindow();
 	void Initialize() override;
 	void Render() override;
 
@@ -27,7 +27,12 @@ private:
 
 	// UI 상태
 	bool bTransformChanged = false;
-	bool bShowAdvancedOptions = false;
+
+	// Actor Spawn Property
+	int SelectedPrimitiveType = 0; // 0: Cube, 1: Sphere, 2: Triangle
+	int NumberOfSpawn = 1;
+	float SpawnRangeMin = -5.0f;
+	float SpawnRangeMax = 5.0f;
 
 	// 편집 모드
 	enum class EEditMode
@@ -42,7 +47,14 @@ private:
 	void RenderTransformEditor();
 	void RenderComponentEditor();
 	void RenderPropertyEditor();
+	void RenderActorInspection();
 	void RenderModeSelector();
+
+	// Actor Spawn & Delete
+	void RenderActorSpawnSection();
+	void RenderActorDeleteSection();
+	void SpawnActors();
+	void DeleteSelectedActor();
 
 	void UpdateTransformFromActor();
 	void ApplyTransformToActor();

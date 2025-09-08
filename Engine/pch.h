@@ -45,7 +45,6 @@ using std::to_string;
 using std::function;
 using std::wstring;
 using std::cout;
-using std::endl;
 using std::min;
 using std::max;
 using std::exception;

@@ -30,7 +30,7 @@ UInputStatusWindow::UInputStatusWindow()
  */
 void UInputStatusWindow::Initialize()
 {
-	cout << "[InputStatusWindow] Initialized" << endl;
+	cout << "[InputStatusWindow] Initialized" << "\n";
 
 	RecentKeyPresses.clear();
 	KeyPressCount.clear();

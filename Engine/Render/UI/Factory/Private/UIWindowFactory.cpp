@@ -2,7 +2,7 @@
 #include "Render/UI/Factory/Public/UIWindowFactory.h"
 
 #include "Manager/UI/Public/UIManager.h"
-#include "Render/UI/Window/Public/ActorInspectorWindow.h"
+#include "Render/UI/Window/Public/ControlPanelWindow.h"
 #include "Render/UI/Window/Public/InputStatusWindow.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
 
@@ -20,9 +20,9 @@ UInputStatusWindow* UUIWindowFactory::CreateInputStatusWindow(EUIDockDirection I
 	return Window;
 }
 
-UActorInspectorWindow* UUIWindowFactory::CreateActorInspectorWindow(EUIDockDirection InDockDirection)
+UControlPanelWindow* UUIWindowFactory::CreateActorInspectorWindow(EUIDockDirection InDockDirection)
 {
-	auto* Window = new UActorInspectorWindow();
+	auto* Window = new UControlPanelWindow();
 	Window->GetMutableConfig().DockDirection = InDockDirection;
 	return Window;
 }
@@ -36,5 +36,5 @@ void UUIWindowFactory::CreateDefaultUILayout()
 	UIManager.RegisterUIWindow(CreateInputStatusWindow(EUIDockDirection::Right));
 	UIManager.RegisterUIWindow(CreateActorInspectorWindow(EUIDockDirection::Left));
 
-	cout << "[UIWindowFactory] Default UI layout created" << endl;
+	cout << "[UIWindowFactory] Default UI Layout Created" << "\n";
 }
