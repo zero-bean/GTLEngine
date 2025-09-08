@@ -4,5 +4,5 @@
 class UAxisLineComponent : public UPrimitiveComponent
 {
 public:
-	void LoadMeshResource(const EPrimitiveType& InType);
+	UAxisLineComponent();
 };

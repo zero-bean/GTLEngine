@@ -51,7 +51,6 @@ public:
 
 	void CreateDefaultShader();
 	void ReleaseDefaultShader();
-	void RenderLines() const;
 	void Update();
 	void RenderBegin();
 	void RenderLevel();

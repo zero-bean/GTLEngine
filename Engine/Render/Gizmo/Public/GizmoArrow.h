@@ -4,6 +4,6 @@
 class UGizmoArrowComponent : public UPrimitiveComponent
 {
 public:
-	void LoadMeshResource(const EPrimitiveType& InType);
+	UGizmoArrowComponent();
 };
 

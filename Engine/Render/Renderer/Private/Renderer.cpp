@@ -181,52 +181,6 @@ void URenderer::RenderBegin()
 }
 
 /**
- * @brief Axis Line 그리는 함수
- */
-void URenderer::RenderLines() const
-{
-	FPipelineInfo PipelineInfo = {
-		DefaultInputLayout,
-		DefaultVertexShader,
-		RasterizerState,
-		DepthStencilState,
-		DefaultPixelShader,
-		nullptr,
-		D3D11_PRIMITIVE_TOPOLOGY_LINELIST
-	};
-	Pipeline->UpdatePipeline(PipelineInfo);
-
-	UpdateConstant(
-		{0.f,0.f,0.f},
-		{0.f,0.f,0.f},
-		{10000.f,10000.f,10000.f});
-
-	UINT Offset = 0;
-	ID3D11Buffer* Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::LineR);
-	if (Buffer)
-	{
-		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
-		GetDeviceContext()->Draw(2, 0);
-	}
-
-	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::LineG);
-	if (Buffer)
-	{
-		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
-		GetDeviceContext()->Draw(2, 0);
-	}
-
-	Buffer = UResourceManager::GetInstance().GetVertexbuffer(EPrimitiveType::LineB);
-	if (Buffer)
-	{
-		GetDeviceContext()->IASetVertexBuffers(0, 1, &Buffer, &Stride, &Offset);
-		GetDeviceContext()->Draw(2, 0);
-	}
-
-	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-}
-
-/**
  * @brief Buffer에 데이터 입력 및 Draw
  */
 void URenderer::RenderLevel()
@@ -452,9 +406,8 @@ void URenderer::UpdateConstant(const FVector& InPosition, const FVector& InRotat
 			const float Yaw = FVector::GetDegreeToRadian(InRotation.Y);
 			const float Roll = FVector::GetDegreeToRadian(InRotation.Z);
 
-			FMatrix C = FMatrix::TranslationMatrix(FVector(0, 0, 0));
 			FMatrix S = FMatrix::ScaleMatrix(InScale);
-			FMatrix R = FMatrix::RotationMatrix({ Pitch, Yaw, Pitch });
+			FMatrix R = FMatrix::RotationMatrix({ Pitch, Yaw, Roll });
 			FMatrix T = FMatrix::TranslationMatrix(InPosition);
 			*constants = S * R * T;
 		}

@@ -17,13 +17,8 @@ void UResourceManager::Initialize()
 	VertexDatas.emplace(EPrimitiveType::Sphere, &VerticesSphere);
 	VertexDatas.emplace(EPrimitiveType::Triangle, &VerticesTriangle);
 
-	VertexDatas.emplace(EPrimitiveType::LineR, &VerticesLineRed);
-	VertexDatas.emplace(EPrimitiveType::LineG, &VerticesLineGreen);
-	VertexDatas.emplace(EPrimitiveType::LineB, &VerticesLineBlue);
-
-	VertexDatas.emplace(EPrimitiveType::GizmoR, &VerticesGizmoRed);
-	VertexDatas.emplace(EPrimitiveType::GizmoG, &VerticesGizmoGreen);
-	VertexDatas.emplace(EPrimitiveType::GizmoB, &VerticesGizmoBlue);
+	VertexDatas.emplace(EPrimitiveType::Line, &VerticesLine);
+	VertexDatas.emplace(EPrimitiveType::Gizmo, &VerticesGizmo);
 
 	//TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
 	Vertexbuffers.emplace(EPrimitiveType::Cube, Renderer.CreateVertexBuffer(
@@ -33,32 +28,17 @@ void UResourceManager::Initialize()
 	Vertexbuffers.emplace(EPrimitiveType::Triangle, Renderer.CreateVertexBuffer(
 		                      VerticesTriangle.data(), static_cast<int>(VerticesTriangle.size() * sizeof(FVertex))));
 
-	Vertexbuffers.emplace(EPrimitiveType::LineR, Renderer.CreateVertexBuffer(
-		                      VerticesLineRed.data(), static_cast<int>(VerticesLineRed.size() * sizeof(FVertex))));
-	Vertexbuffers.emplace(EPrimitiveType::LineG, Renderer.CreateVertexBuffer(
-		                      VerticesLineGreen.data(), static_cast<int>(VerticesLineGreen.size() * sizeof(FVertex))));
-	Vertexbuffers.emplace(EPrimitiveType::LineB, Renderer.CreateVertexBuffer(
-		                      VerticesLineBlue.data(), static_cast<int>(VerticesLineBlue.size() * sizeof(FVertex))));
-
-	Vertexbuffers.emplace(EPrimitiveType::GizmoR, Renderer.CreateVertexBuffer(
-		                      VerticesGizmoRed.data(), static_cast<int>(VerticesGizmoRed.size() * sizeof(FVertex))));
-	Vertexbuffers.emplace(EPrimitiveType::GizmoG, Renderer.CreateVertexBuffer(
-		                      VerticesGizmoGreen.data(),
-		                      static_cast<int>(VerticesGizmoGreen.size() * sizeof(FVertex))));
-	Vertexbuffers.emplace(EPrimitiveType::GizmoB, Renderer.CreateVertexBuffer(
-		                      VerticesGizmoBlue.data(), static_cast<int>(VerticesGizmoBlue.size() * sizeof(FVertex))));
+	Vertexbuffers.emplace(EPrimitiveType::Line, Renderer.CreateVertexBuffer(
+		                      VerticesLine.data(), static_cast<int>(VerticesLine.size() * sizeof(FVertex))));
+	Vertexbuffers.emplace(EPrimitiveType::Gizmo, Renderer.CreateVertexBuffer(
+		                      VerticesGizmo.data(), static_cast<int>(VerticesGizmo.size() * sizeof(FVertex))));
 
 	NumVertices.emplace(EPrimitiveType::Cube, static_cast<UINT>(VerticesCube.size()));
 	NumVertices.emplace(EPrimitiveType::Sphere, static_cast<UINT>(VerticesSphere.size()));
 	NumVertices.emplace(EPrimitiveType::Triangle, static_cast<UINT>(VerticesTriangle.size()));
 
-	NumVertices.emplace(EPrimitiveType::LineR, static_cast<UINT>(VerticesLineRed.size()));
-	NumVertices.emplace(EPrimitiveType::LineG, static_cast<UINT>(VerticesLineGreen.size()));
-	NumVertices.emplace(EPrimitiveType::LineB, static_cast<UINT>(VerticesLineBlue.size()));
-
-	NumVertices.emplace(EPrimitiveType::GizmoR, static_cast<UINT>(VerticesGizmoRed.size()));
-	NumVertices.emplace(EPrimitiveType::GizmoG, static_cast<UINT>(VerticesGizmoGreen.size()));
-	NumVertices.emplace(EPrimitiveType::GizmoB, static_cast<UINT>(VerticesGizmoBlue.size()));
+	NumVertices.emplace(EPrimitiveType::Line, static_cast<UINT>(VerticesLine.size()));
+	NumVertices.emplace(EPrimitiveType::Gizmo, static_cast<UINT>(VerticesGizmo.size()));
 }
 
 void UResourceManager::Release()

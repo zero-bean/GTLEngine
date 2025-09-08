@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "Render/AxisLine/Public/AxisLine.h"
 
-void UAxisLineComponent::LoadMeshResource(const EPrimitiveType& InType)
+UAxisLineComponent::UAxisLineComponent()
 {
 	UResourceManager& ResourceManager = UResourceManager::GetInstance();
-	Type = InType;
+	Type = EPrimitiveType::Line;
 	Vertices = ResourceManager.GetVertexData(Type);
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);

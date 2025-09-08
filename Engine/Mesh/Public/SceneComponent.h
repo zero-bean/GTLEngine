@@ -16,7 +16,7 @@ public:
 	const FVector& GetRelativeRotation() const;
 	const FVector& GetRelativeScale3D() const;
 private:
-	FVector RelativeLocation = FVector{ 0,0,0.5f };
+	FVector RelativeLocation = FVector{ 0,0,0.f };
 	FVector RelativeRotation = FVector{ 0,0,0.f };
 	FVector RelativeScale3D = FVector{ 0.3f,0.3f,0.3f };
 };
