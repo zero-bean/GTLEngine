@@ -34,7 +34,7 @@ public:
 	template<typename T, typename... Args>
 	T* SpawnEditorActor(Args&&... args);
 
-	void SetSelectedActor(AActor* InActor) { SelectedActor = InActor; }
+	void SetSelectedActor(AActor* InActor);
 	AActor* GetSelectedActor() const { return SelectedActor; }
 	AGizmo* GetGizmo() const { return Gizmo; };
 

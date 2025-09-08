@@ -4,6 +4,7 @@
 #include "Manager/Time/Public/TimeManager.h"
 #include "Render/Gizmo/Public/Gizmo.h"
 #include "Render/AxisLine/Public/Axis.h"
+#include "Render/Gizmo/Public/GizmoArrow.h"
 
 ULevel::ULevel()
 {
@@ -35,8 +36,6 @@ void ULevel::Init()
 
 void ULevel::Update()
 {
-	Gizmo->SetTargetActor(SelectedActor);
-	//여기서 해야할까요??
 	LevelPrimitiveComponents.clear();
 	EditorPrimitiveComponents.clear();
 
@@ -56,6 +55,9 @@ void ULevel::Update()
 			AddEditorPrimitiveComponent(Actor);
 		}
 	}
+
+	//TestCode
+	static_cast<UGizmoArrowComponent*>(Gizmo->GetOwnedComponents()[2])->MoveActor(0.00011f);
 }
 
 void ULevel::Render()
@@ -98,4 +100,10 @@ void ULevel::AddEditorPrimitiveComponent(AActor* Actor)
 			}
 		}
 	}
+}
+
+void ULevel::SetSelectedActor(AActor* InActor)
+{
+	SelectedActor = InActor;
+	Gizmo->SetTargetActor(SelectedActor);
 }

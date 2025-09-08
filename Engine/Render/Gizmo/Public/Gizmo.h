@@ -21,4 +21,6 @@ private:
 	UGizmoArrowComponent* GizmoArrowR = nullptr;
 	UGizmoArrowComponent* GizmoArrowG = nullptr;
 	UGizmoArrowComponent* GizmoArrowB = nullptr;
+
+	bool bIsWorld = true;
 };

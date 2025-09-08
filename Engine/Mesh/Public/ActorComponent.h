@@ -1,6 +1,8 @@
 #pragma once
 #include "Core/Public/Object.h"
 
+class AActor;
+
 class UActorComponent : public UObject
 {
 public:
@@ -16,7 +18,12 @@ public:
 	virtual void EndPlay();
 
 	EComponentType GetComponentType() { return ComponentType; }
+
+	void SetOwner(AActor* InOwner) { Owner = InOwner; }
+	AActor* GetOwner() const {return Owner;}
+
 protected:
 	EComponentType ComponentType;
 private:
+	AActor* Owner;
 };
