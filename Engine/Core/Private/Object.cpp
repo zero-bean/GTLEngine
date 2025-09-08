@@ -4,11 +4,17 @@
 static UINT NextID = 0;
 
 UObject::UObject()
+	: Name("")
+	  , Outer(nullptr)
 {
-    ++NextID;
-    ID = NextID;
+	++NextID;
+	ID = NextID;
 }
 
-UObject::~UObject()
+UObject::UObject(const FString& InString)
+	: Name(InString)
+	  , Outer(nullptr)
 {
+	++NextID;
+	ID = NextID;
 }

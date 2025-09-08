@@ -8,7 +8,6 @@
 #include "Render/Grid/Public/Grid.h"
 #include "Render/Gizmo/Public/GizmoArrow.h"
 #include "Render/UI/Window/Public/ActorInspectorWindow.h"
-//////////////////////////////
 
 ULevel::ULevel()
 {
@@ -17,8 +16,8 @@ ULevel::ULevel()
 	Grid = SpawnEditorActor<AGrid>();
 }
 
-ULevel::ULevel(const wstring& InName)
-	: Name(InName)
+ULevel::ULevel(const FString& InName)
+	: UObject(InName)
 {
 }
 
@@ -118,5 +117,4 @@ void ULevel::SetSelectedActor(AActor* InActor)
 	UActorInspectorWindow* InspectorWindow =
 		reinterpret_cast<UActorInspectorWindow*>(UIManager.FindUIWindow("Actor Inspector"));
 	InspectorWindow->SetSelectedActor(SelectedActor);
-
 }

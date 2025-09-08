@@ -12,7 +12,7 @@ class ULevel :
 {
 public:
 	ULevel();
-	ULevel(const wstring& InName);
+	ULevel(const FString& InName);
 	~ULevel() override;
 
 	virtual void Init();
@@ -20,7 +20,6 @@ public:
 	virtual void Render();
 	virtual void Cleanup();
 
-	const wstring& GetName() const { return Name; }
 	TArray<AActor*> GetLevelActors() const { return LevelActors; }
 	TArray<UPrimitiveComponent*> GetLevelPrimitiveComponents() const { return LevelPrimitiveComponents; }
 
@@ -37,10 +36,9 @@ public:
 
 	void SetSelectedActor(AActor* InActor);
 	AActor* GetSelectedActor() const { return SelectedActor; }
-	AGizmo* GetGizmo() const { return Gizmo; };
+	AGizmo* GetGizmo() const { return Gizmo; }
 
 private:
-	wstring Name;
 	TArray<AActor*> LevelActors;
 	TArray<UPrimitiveComponent*> LevelPrimitiveComponents;
 
