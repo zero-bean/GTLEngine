@@ -16,7 +16,10 @@ public:
 	void SetOuter(UObject* InObject) { Outer = InObject; }
 
 private:
-	UINT ID;
+	UINT UUID = -1;
+	UINT InternalIndex = -1;
 	FString Name;
 	UObject* Outer;
 };
+
+extern TArray<UObject*> GUObjectArray;

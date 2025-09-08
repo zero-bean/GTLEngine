@@ -151,6 +151,7 @@
     <ClInclude Include="Global\Function.h" />
     <ClInclude Include="Global\Macro.h" />
     <ClInclude Include="Global\Matrix.h" />
+    <ClInclude Include="Global\Memory.h" />
     <ClInclude Include="Global\Struct.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
@@ -198,6 +199,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Global\Matrix.cpp" />
+    <ClCompile Include="Global\Memory.cpp" />
     <ClCompile Include="Global\Vector.cpp" />
     <ClCompile Include="Camera\Private\Camera.cpp" />
     <ClCompile Include="Core\Private\Object.cpp" />
@@ -249,6 +251,7 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
+    <Content Include="Core\Public\EngineStatics.h" />
     <Content Include="Render\AxisLine\Public\Axis.h" />
     <Content Include="Render\AxisLine\Public\AxisLine.h" />
     <Content Include="Shader\**\*.*">
