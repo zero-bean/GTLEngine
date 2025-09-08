@@ -2,11 +2,15 @@
 #include "Mesh/Public/ActorComponent.h"
 #include "ResourceManager.h"
 
-
 class USceneComponent : public UActorComponent
 {
 public:
 	USceneComponent();
+
+	void SetParentAttachment(USceneComponent* SceneComponent);
+	void RemoveChild(USceneComponent* ChildDeleted);
+
+	void MarkAsDirty();
 
 	void SetRelativeLocation(const FVector& Location);
 	void SetRelativeRotation(const FVector& Rotation);
@@ -15,7 +19,18 @@ public:
 	const FVector& GetRelativeLocation() const;
 	const FVector& GetRelativeRotation() const;
 	const FVector& GetRelativeScale3D() const;
+
+	const FMatrix& GetWorldTransformMatrix() const;
+	const FMatrix& GetWorldTransformMatrixInverse() const;
+
 private:
+	mutable bool bIsTransformDirty = true; //transform 캐시를 위한 더티플래그
+	mutable bool bIsTransformDirtyInverse = true;
+	mutable FMatrix WorldTransformMatrix;
+	mutable FMatrix WorldTransformMatrixInverse;
+
+	USceneComponent* ParentAttachment = nullptr;
+	TArray<USceneComponent*> Children;
 	FVector RelativeLocation = FVector{ 0,0,0.f };
 	FVector RelativeRotation = FVector{ 0,0,0.f };
 	FVector RelativeScale3D = FVector{ 0.3f,0.3f,0.3f };

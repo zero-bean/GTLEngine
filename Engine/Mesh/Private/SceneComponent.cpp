@@ -8,6 +8,54 @@ USceneComponent::USceneComponent()
 	ComponentType = EComponentType::Scene;
 }
 
+void USceneComponent::SetParentAttachment(USceneComponent* NewParent)
+{
+	if (NewParent == this)
+	{
+		return;
+	}
+
+	if (NewParent == ParentAttachment)
+	{
+		return;
+	}
+
+	//부모의 조상중에 내 자식이 있으면 순환참조 -> 스택오버플로우 일어남.
+	for (USceneComponent* Ancester = NewParent; NewParent; Ancester = NewParent->ParentAttachment)
+	{
+		if (NewParent == this) //조상중에 내 자식이 있다면 조상중에 내가 있을 것임.
+			return;
+	}
+
+	//부모가 될 자격이 있음, 이제 부모를 바꿈.
+
+	if (ParentAttachment) //부모 있었으면 이제 그 부모의 자식이 아님
+	{
+		ParentAttachment->RemoveChild(this);
+	}
+
+	ParentAttachment = NewParent;
+
+	MarkAsDirty();
+
+}
+
+void USceneComponent::RemoveChild(USceneComponent* ChildDeleted)
+{
+	Children.erase(std::remove(Children.begin(), Children.end(), this), Children.end());
+}
+
+void USceneComponent::MarkAsDirty()
+{
+	bIsTransformDirty = true;
+	bIsTransformDirtyInverse = true;
+
+	for (USceneComponent* Child : Children)
+	{
+		Child->MarkAsDirty();
+	}
+}
+
 UPrimitiveComponent::UPrimitiveComponent()
 {
 	ComponentType = EComponentType::Primitive;
@@ -38,6 +86,43 @@ const FVector& USceneComponent::GetRelativeRotation() const
 const FVector& USceneComponent::GetRelativeScale3D() const
 {
 	return RelativeScale3D;
+}
+
+const FMatrix& USceneComponent::GetWorldTransformMatrix() const
+{
+	if (bIsTransformDirty)
+	{
+		WorldTransformMatrix = FMatrix::GetModelMatrix(RelativeLocation, FVector::GetDegreeToRadian(RelativeRotation), RelativeScale3D);
+
+		
+		for (USceneComponent* Ancester = ParentAttachment; Ancester && Ancester->ParentAttachment; Ancester = Ancester->ParentAttachment)
+		{
+			WorldTransformMatrix *= FMatrix::GetModelMatrix(Ancester->RelativeLocation, FVector::GetDegreeToRadian(Ancester->RelativeRotation), Ancester->RelativeScale3D);
+		}
+
+		bIsTransformDirty = false;
+	}
+
+	return WorldTransformMatrix;
+}
+
+const FMatrix& USceneComponent::GetWorldTransformMatrixInverse() const
+{
+	
+	if (bIsTransformDirtyInverse)
+	{
+		WorldTransformMatrixInverse = FMatrix::Identity();
+		for (USceneComponent* Ancester = ParentAttachment; Ancester && Ancester->ParentAttachment; Ancester = Ancester->ParentAttachment)
+		{
+			WorldTransformMatrixInverse = FMatrix::GetModelMatrixInverse(Ancester->RelativeLocation, FVector::GetDegreeToRadian(Ancester->RelativeRotation), Ancester->RelativeScale3D) * WorldTransformMatrixInverse;
+
+		}
+		WorldTransformMatrixInverse = WorldTransformMatrixInverse * FMatrix::GetModelMatrixInverse(RelativeLocation, FVector::GetDegreeToRadian(RelativeRotation), RelativeScale3D);
+
+		bIsTransformDirtyInverse = false;
+	}
+
+	return WorldTransformMatrixInverse;
 }
 
 const TArray<FVertex>* UPrimitiveComponent::GetVerticesData() const
