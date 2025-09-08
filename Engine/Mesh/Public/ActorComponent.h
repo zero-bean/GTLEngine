@@ -22,6 +22,7 @@ public:
 	void SetOwner(AActor* InOwner) { Owner = InOwner; }
 	AActor* GetOwner() const {return Owner;}
 
+	EComponentType GetComponentType() const { return ComponentType; }
 protected:
 	EComponentType ComponentType;
 private:
