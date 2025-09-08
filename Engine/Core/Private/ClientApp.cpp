@@ -150,7 +150,7 @@ void FClientApp::MainLoop()
 		else
 		{
 			auto& LevelManager = ULevelManager::GetInstance();
-			PickActor(LevelManager.GetCurrentLevel());
+			PickActor(LevelManager.GetCurrentLevel(), Window->GetWindowHandle());
 			UpdateSystem();
 		}
 	}
