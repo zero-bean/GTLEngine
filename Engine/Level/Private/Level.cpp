@@ -6,6 +6,7 @@
 #include "Render/Gizmo/Public/Gizmo.h"
 #include "Render/AxisLine/Public/Axis.h"
 #include "Render/Grid/Public/Grid.h"
+#include "Render/Gizmo/Public/GizmoArrow.h"
 #include "Render/UI/Window/Public/ActorInspectorWindow.h"
 //////////////////////////////
 
@@ -40,8 +41,6 @@ void ULevel::Init()
 
 void ULevel::Update()
 {
-	Gizmo->SetTargetActor(SelectedActor);
-	//여기서 해야할까요??
 	LevelPrimitiveComponents.clear();
 	EditorPrimitiveComponents.clear();
 
@@ -61,6 +60,9 @@ void ULevel::Update()
 			AddEditorPrimitiveComponent(Actor);
 		}
 	}
+
+	//TestCode
+	//static_cast<UGizmoArrowComponent*>(Gizmo->GetOwnedComponents()[2])->MoveActor(0.00011f);
 }
 
 void ULevel::Render()
@@ -109,10 +111,12 @@ void ULevel::SetSelectedActor(AActor* InActor)
 {
 	// Set Selected Actor
 	SelectedActor = InActor;
+	Gizmo->SetTargetActor(SelectedActor);
 
 	// Set Inspector Actor
 	UUIManager& UIManager = UUIManager::GetInstance();
 	UActorInspectorWindow* InspectorWindow =
 		reinterpret_cast<UActorInspectorWindow*>(UIManager.FindUIWindow("Actor Inspector"));
 	InspectorWindow->SetSelectedActor(SelectedActor);
+
 }

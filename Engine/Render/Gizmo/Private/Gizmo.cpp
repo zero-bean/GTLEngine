@@ -8,19 +8,24 @@ AGizmo::AGizmo()
 	SetRootComponent(CreateDefaultSubobject<USceneComponent>("Root"));
 
 	GizmoArrowR = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowRed");
+	GizmoArrowR->SetForward({ 1.f, 0.f, 0.f });
 	GizmoArrowR->SetColor({1.f, 0.f, 0.f, 1.f});
 	GizmoArrowR->SetRelativeRotation({0.f, 89.99f, 0.f});
 	GizmoArrowR->SetVisibility(false);
 
 	GizmoArrowG = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowGreen");
+	GizmoArrowG->SetForward({ 0.f, 1.f, 0.f });
 	GizmoArrowG->SetColor({0.f, 1.f, 0.f, 1.f});
 	GizmoArrowG->SetRelativeRotation({-89.99f, 0.f, 0.f});
 	GizmoArrowG->SetVisibility(false);
 
 	GizmoArrowB = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowBlue");
+	GizmoArrowB->SetForward({ 0.f, 0.f, 1.f });
 	GizmoArrowB->SetColor({0.f, 0.f, 1.f, 1.f});
 	GizmoArrowB->SetRelativeRotation({0.f, 0.f, 0.f});
 	GizmoArrowB->SetVisibility(false);
+
+	SetActorRotation({0.f,0.f,0.f});
 }
 
 AGizmo::~AGizmo()
@@ -28,10 +33,13 @@ AGizmo::~AGizmo()
 	// Actor 소멸자에 의한 Component 삭제
 }
 
-void AGizmo::SetTargetActor(AActor* InActor)
+void AGizmo::SetTargetActor(AActor* actor)
 {
-	TargetActor = InActor;
-
+	TargetActor = actor;
+	if (TargetActor)
+	{
+		SetActorLocation(TargetActor->GetActorLocation());
+	}
 	for (auto& Component : GetOwnedComponents())
 	{
 		if (Component->GetComponentType() >= EComponentType::Primitive)
@@ -61,11 +69,21 @@ void AGizmo::Tick()
 	if (TargetActor)
 	{
 		SetActorLocation(TargetActor->GetActorLocation());
+
+		//Deprecated
 		GizmoArrowR->SetRelativeLocation(GetActorLocation());
 		GizmoArrowG->SetRelativeLocation(GetActorLocation());
 		GizmoArrowB->SetRelativeLocation(GetActorLocation());
 	}
-	SetActorRotation({0, 0, 0});
+	if (bIsWorld)
+	{
+		SetActorRotation({0, 0, 0});
+	}
+	else
+	{
+		//... 로컬 기준 기즈모 정렬
+
+	}
 }
 
 void AGizmo::EndPlay()

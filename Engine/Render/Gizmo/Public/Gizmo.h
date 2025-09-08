@@ -14,6 +14,7 @@ public:
 	void BeginPlay() override;
 	void Tick() override;
 	void EndPlay() override;
+	AActor* GetTargetActor() { return TargetActor; }
 
 private:
 	AActor* TargetActor = nullptr;
@@ -21,4 +22,6 @@ private:
 	UGizmoArrowComponent* GizmoArrowR = nullptr;
 	UGizmoArrowComponent* GizmoArrowG = nullptr;
 	UGizmoArrowComponent* GizmoArrowB = nullptr;
+
+	bool bIsWorld = true;
 };
