@@ -203,10 +203,10 @@ void URenderer::Update()
 {
 	RenderBegin();
 
-	RenderLines();
 	RenderLevel();
+	RenderEditor();
 	UImGuiManager::GetInstance().Render(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
-	//RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
+	RenderLines();
 
 	RenderEnd();
 }
@@ -324,10 +324,10 @@ void URenderer::RenderLevel()
 	if (!ULevelManager::GetInstance().GetCurrentLevel())
 		return;
 
-	for (auto& PrimitiveComponent : ULevelManager::GetInstance().GetCurrentLevel()->GetPrimitiveComponent())
+	for (auto& PrimitiveComponent : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelPrimitiveComponents())
 	{
 		if (!PrimitiveComponent) continue;
-		
+
 		FPipelineInfo PipelineInfo = {
 			DefaultInputLayout,
 			DefaultVertexShader,
@@ -351,7 +351,32 @@ void URenderer::RenderLevel()
 
 void URenderer::RenderEditor()
 {
-	//TODO
+	if (!ULevelManager::GetInstance().GetCurrentLevel())
+		return;
+
+	for (auto& PrimitiveComponent : ULevelManager::GetInstance().GetCurrentLevel()->GetEditorPrimitiveComponents())
+	{
+		if (!PrimitiveComponent) continue;
+
+		FPipelineInfo PipelineInfo = {
+			DefaultInputLayout,
+			DefaultVertexShader,
+			RasterizerState,
+			DepthStencilState,
+			DefaultPixelShader,
+			nullptr,
+		};
+		Pipeline->UpdatePipeline(PipelineInfo);
+
+		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
+		UpdateConstant(
+			PrimitiveComponent->GetRelativeLocation(),
+			PrimitiveComponent->GetRelativeRotation(),
+			PrimitiveComponent->GetRelativeScale3D() );
+
+		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
+		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
+	}
 }
 
 /**

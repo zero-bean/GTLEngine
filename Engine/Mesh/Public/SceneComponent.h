@@ -6,6 +6,8 @@
 class USceneComponent : public UActorComponent
 {
 public:
+	USceneComponent();
+
 	void SetRelativeLocation(const FVector& Location);
 	void SetRelativeRotation(const FVector& Rotation);
 	void SetRelativeScale3D(const FVector& Scale);
@@ -22,15 +24,22 @@ private:
 class UPrimitiveComponent : public USceneComponent
 {
 public:
+	UPrimitiveComponent();
+
 	const TArray<FVertex>* GetVerticesData() const;
 	ID3D11Buffer* GetVertexBuffer() const;
 	//void Render(const URenderer& Renderer) const override;
+
+	bool IsVisible() const { return bVisible; }
+	void SetVisibility(bool visibility) { bVisible = visibility; }
 
 protected:
 	const TArray<FVertex>* Vertices = nullptr;
 	ID3D11Buffer* Vertexbuffer = nullptr;
 	UINT NumVertices = 0;
 	EPrimitiveType Type = EPrimitiveType::Cube;
+
+	bool bVisible = true;
 };
 
 class UCubeComponent : public UPrimitiveComponent

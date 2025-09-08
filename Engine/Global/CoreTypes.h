@@ -29,6 +29,25 @@ struct FRay
 };
 
 /**
+ * @brief Component Type Enum
+ */
+enum class EComponentType : uint8_t
+{
+	None = 0,
+
+	Actor,
+		//ActorComponent Dervied Type
+
+	Scene,
+		//SceneComponent Dervied Type
+
+	Primitive,
+		//PrimitiveComponent Derived Type
+
+	End = 0xFF
+};
+
+/**
  * @brief UObject Primitive Type Enum
  */
 enum class EPrimitiveType : uint8_t
