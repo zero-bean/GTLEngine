@@ -21,10 +21,13 @@ public:
 	const FVector& GetRelativeScale3D() const;
 
 	const FMatrix& GetWorldTransformMatrix() const;
+	const FMatrix& GetWorldTransformMatrixInverse() const;
 
 private:
 	mutable bool bIsTransformDirty = true; //transform 캐시를 위한 더티플래그
+	mutable bool bIsTransformDirtyInverse = true;
 	mutable FMatrix WorldTransformMatrix;
+	mutable FMatrix WorldTransformMatrixInverse;
 
 	USceneComponent* ParentAttachment = nullptr;
 	TArray<USceneComponent*> Children;
@@ -46,7 +49,7 @@ public:
 	//void Render(const URenderer& Renderer) const override;
 
 	bool IsVisible() const { return bVisible; }
-	void SetVisibility(bool visibility) { bVisible = visibility; }
+	void SetVisibility(bool bVisibility) { bVisible = bVisibility; }
 
 	FVector4 GetColor() const { return Color; }
 	void SetColor(const FVector4& InColor) { Color = InColor; }
@@ -75,4 +78,10 @@ class USphereComponent : public UPrimitiveComponent
 {
 public:
 	USphereComponent();
+};
+
+class ULineComponent : public UPrimitiveComponent
+{
+public:
+	ULineComponent();
 };

@@ -48,6 +48,7 @@ void USceneComponent::RemoveChild(USceneComponent* ChildDeleted)
 void USceneComponent::MarkAsDirty()
 {
 	bIsTransformDirty = true;
+	bIsTransformDirtyInverse = true;
 
 	for (USceneComponent* Child : Children)
 	{
@@ -105,6 +106,25 @@ const FMatrix& USceneComponent::GetWorldTransformMatrix() const
 	return WorldTransformMatrix;
 }
 
+const FMatrix& USceneComponent::GetWorldTransformMatrixInverse() const
+{
+	
+	if (bIsTransformDirtyInverse)
+	{
+		WorldTransformMatrixInverse = FMatrix::Identity();
+		for (USceneComponent* Ancester = ParentAttachment; Ancester && Ancester->ParentAttachment; Ancester = Ancester->ParentAttachment)
+		{
+			WorldTransformMatrixInverse = FMatrix::GetModelMatrixInverse(Ancester->RelativeLocation, FVector::GetDegreeToRadian(Ancester->RelativeRotation), Ancester->RelativeScale3D) * WorldTransformMatrixInverse;
+
+		}
+		WorldTransformMatrixInverse = WorldTransformMatrixInverse * FMatrix::GetModelMatrixInverse(RelativeLocation, FVector::GetDegreeToRadian(RelativeRotation), RelativeScale3D);
+
+		bIsTransformDirtyInverse = false;
+	}
+
+	return WorldTransformMatrixInverse;
+}
+
 const TArray<FVertex>* UPrimitiveComponent::GetVerticesData() const
 {
     UResourceManager& ResourceManager = UResourceManager::GetInstance();
@@ -154,4 +174,14 @@ UCubeComponent::UCubeComponent()
 	Vertices = ResourceManager.GetVertexData(Type);
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
+}
+
+ULineComponent::ULineComponent()
+{
+	UResourceManager& ResourceManager = UResourceManager::GetInstance();
+	Type = EPrimitiveType::Line;                 
+	Vertices = ResourceManager.GetVertexData(Type);  
+	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
+	NumVertices = ResourceManager.GetNumVertices(Type);
+	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 }

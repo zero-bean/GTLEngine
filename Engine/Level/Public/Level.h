@@ -3,6 +3,7 @@
 
 class AAxis;
 class AGizmo;
+class AGrid;
 class AActor;
 class UPrimitiveComponent;
 
@@ -49,12 +50,13 @@ private:
 	AActor* SelectedActor = nullptr;
 	AGizmo* Gizmo = nullptr;
 	AAxis* Axis = nullptr;
+	AGrid* Grid = nullptr;
 };
 
 template <typename T, typename ... Args>
-T* ULevel::SpawnActor(Args&&... args)
+T* ULevel::SpawnActor(Args&&... InArgs)
 {
-	T* NewActor = new T(std::forward<Args>(args)...);
+	T* NewActor = new T(std::forward<Args>(InArgs)...);
 
 	LevelActors.push_back(NewActor);
 	NewActor->BeginPlay();
@@ -63,9 +65,9 @@ T* ULevel::SpawnActor(Args&&... args)
 }
 
 template <typename T, typename ... Args>
-T* ULevel::SpawnEditorActor(Args&&... args)
+T* ULevel::SpawnEditorActor(Args&&... InArgs)
 {
-	T* NewActor = new T(std::forward<Args>(args)...);
+	T* NewActor = new T(std::forward<Args>(InArgs)...);
 
 	EditorActors.push_back(NewActor);
 	NewActor->BeginPlay();
