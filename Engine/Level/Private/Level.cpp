@@ -2,9 +2,11 @@
 #include "Level/Public/Level.h"
 
 #include "Manager/Time/Public/TimeManager.h"
+#include "Manager/UI/Public/UIManager.h"
 #include "Render/Gizmo/Public/Gizmo.h"
 #include "Render/AxisLine/Public/Axis.h"
 #include "Render/Gizmo/Public/GizmoArrow.h"
+#include "Render/UI/Window/Public/ActorInspectorWindow.h"
 
 ULevel::ULevel()
 {
@@ -104,6 +106,13 @@ void ULevel::AddEditorPrimitiveComponent(AActor* Actor)
 
 void ULevel::SetSelectedActor(AActor* InActor)
 {
+	// Set Selected Actor
 	SelectedActor = InActor;
 	Gizmo->SetTargetActor(SelectedActor);
+
+	// Set Inspector Actor
+	UUIManager& UIManager = UUIManager::GetInstance();
+	UActorInspectorWindow* InspectorWindow =
+		reinterpret_cast<UActorInspectorWindow*>(UIManager.FindUIWindow("Actor Inspector"));
+	InspectorWindow->SetSelectedActor(InActor);
 }
