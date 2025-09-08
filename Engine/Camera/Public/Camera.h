@@ -6,7 +6,7 @@ public:
 	Camera() :
 		ViewProjConstants(FViewProjConstants()),
 		Position(FVector(0, 0, -4.5f)), Rotation(FVector(0, 0, 0)),
-		FovY(60.f), Aspect(float(Render::INIT_SCREEN_HEIGHT) / Render::INIT_SCREEN_WIDTH),
+		FovY(60.f), Aspect(float(Render::INIT_SCREEN_WIDTH) / Render::INIT_SCREEN_HEIGHT),
 		NearZ(0.1f), FarZ(100.f)
 	{
 	}
@@ -23,8 +23,10 @@ public:
 	void SetFarZ(const float InOtherFarZ) { FarZ = InOtherFarZ; }
 
 	const FViewProjConstants& GetFViewProjConstants() const { return ViewProjConstants; }
+	const FViewProjConstants GetFViewProjConstantsInverse() const;
 	FVector& GetLocation() { return Position; }
 	FVector& GetRotation() { return Rotation; }
+	const FVector& GetForward() { return Forward; }
 	const float GetFovY() const { return FovY; }
 	const float GetAspect() const { return Aspect; }
 	const float GetNearZ() const { return NearZ; }
@@ -34,6 +36,7 @@ private:
 	FViewProjConstants ViewProjConstants = {};
 	FVector Position = {};
 	FVector Rotation = {};
+	FVector Forward = {};
 	float FovY = {};
 	float Aspect = {};
 	float NearZ = {};
