@@ -1,20 +1,21 @@
 #include "pch.h"
 #include "Core/Public/ClientApp.h"
 
+#include "Camera/Public/Camera.h"
 #include "Core/Public/AppWindow.h"
-#include "Manager/ImGui/Public/ImGuiManager.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/Time/Public/TimeManager.h"
-#include "Manager/ImGui/Public/ImGuiManager.h"
-#include "Render/Public/Renderer.h"
-#include "Mesh/Public/CubeActor.h"
-#include "Camera/Public/Camera.h"
+#include "Manager/UI/Public/UIManager.h"
+#include "Render/Renderer/Public/Renderer.h"
+#include "Render/UI/Window/Public/PerformanceWindow.h"
 
+// TODO(KHJ): 제거 대상
 ///////////////////////////////////
 // 테스트용 카메라 전역 변수로 선언
 Camera* MyCamera;
 ///////////////////////////////////
+
 FClientApp::FClientApp() = default;
 
 FClientApp::~FClientApp() = default;
@@ -82,15 +83,18 @@ int FClientApp::InitializeSystem() const
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
 
-	////////////////////////////////////////
 	// TEST CODE - 거슬리면 나중에 리팩터링
 	MyCamera = new Camera();
-	UImGuiManager::GetInstance().SetCamera(MyCamera);
-	////////////////////////////////////////
-	// 
-	//renderer Init 후에 실행해야함.
+
+	// UIManager Initialize
+	auto& UIManager = UUIManager::GetInstance();
+	UIManager.Initialize(Window->GetWindowHandle());
+	UUIWindowFactory::CreateDefaultUILayout();
+
 	UResourceManager::GetInstance().Initialize();
 
+	// Create Default Level
+	// TODO(KHJ): 나중에 Init에서 처리하도록 하는 게 맞을 듯
 	ULevelManager::GetInstance().CreateDefaultLevel();
 
 	return S_OK;
@@ -99,18 +103,20 @@ int FClientApp::InitializeSystem() const
 /**
  * @brief Update System While Game Processing
  */
-void FClientApp::UpdateSystem(ACubeActor& Cube)
+void FClientApp::UpdateSystem() const
 {
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
 	auto& LevelManager = ULevelManager::GetInstance();
+	auto& UIManager = UUIManager::GetInstance();
 
 	TimeManager.Update();
 	InputManager.Update();
 	LevelManager.Update();
 	MyCamera->Update();
 	MyCamera->UpdateMatrix();
+	UIManager.Update();
 	Renderer.UpdateConstant(MyCamera->GetFViewProjConstants());
 	Renderer.Update();
 }
@@ -121,8 +127,6 @@ void FClientApp::UpdateSystem(ACubeActor& Cube)
  */
 void FClientApp::MainLoop()
 {
-	//테스트용
-	ACubeActor Cube;
 	while (true)
 	{
 		// Async Message Process
@@ -143,10 +147,11 @@ void FClientApp::MainLoop()
 		// Game System Update
 		else
 		{
-			UpdateSystem(Cube);
+			UpdateSystem();
 		}
 	}
 
+	// TODO(KHJ): 제거 대상
 	////////////////////////////////////////
 	// TEST CODE - 거슬리면 나중에 리팩터링
 	delete MyCamera;

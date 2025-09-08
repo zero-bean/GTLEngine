@@ -1,13 +1,13 @@
 #include "pch.h"
-#include "Render/Public/Renderer.h"
+#include "Render/Renderer/Public/Renderer.h"
 
 #include "Level/Public/Level.h"
-#include "Render/Public/Pipeline.h"
-#include "Manager/ImGui/Public/ImGuiManager.h"
+
 #include "Manager/Level/Public/LevelManager.h"
-#include "Render/Public/DeviceResources.h"
+#include "Manager/UI/Public/UIManager.h"
 #include "Mesh/Public/Actor.h"
 #include "Render/Gizmo/Public/Gizmo.h"
+#include "Render/Renderer/Public/Pipeline.h"
 
 IMPLEMENT_SINGLETON(URenderer)
 
@@ -25,14 +25,10 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateDepthStencilState();
 	CreateDefaultShader();
 	CreateConstantBuffer();
-
-	UImGuiManager::GetInstance().Init(InWindowHandle);
 }
 
 void URenderer::Release()
 {
-	UImGuiManager::GetInstance().Release();
-
 	ReleaseVertexBuffer(this->vertexBufferSphere);
 	ReleaseConstantBuffer();
 	ReleaseDefaultShader();
@@ -205,8 +201,9 @@ void URenderer::Update()
 
 	RenderLevel();
 	RenderEditor();
-	UImGuiManager::GetInstance().Render(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
 	RenderLines();
+
+	UUIManager::GetInstance().Render();
 
 	RenderEnd();
 }
@@ -354,7 +351,7 @@ void URenderer::RenderEditor()
 	if (!ULevelManager::GetInstance().GetCurrentLevel())
 		return;
 
-	for (auto& PrimitiveComponent : ULevelManager::GetInstance().GetCurrentLevel()->GetEditorPrimitiveComponents())
+	for (auto& PrimitiveComponent : PrimitiveComponents)
 	{
 		if (!PrimitiveComponent) continue;
 

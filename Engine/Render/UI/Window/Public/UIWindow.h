@@ -1,0 +1,143 @@
+#pragma once
+#include "Core/Public/Object.h"
+#include "ImGui/imgui.h"
+#include "Render/UI/Factory/Public/UIWindowFactory.h"
+
+/**
+ * @brief UI 윈도우 표시 상태 열거형
+ */
+enum class EUIWindowState : uint8_t
+{
+	Hidden, // 숨김
+	Visible, // 보임
+	Minimized, // 최소화
+	Maximized // 최대화
+};
+
+
+/**
+ * @brief UI 윈도우 설정 구조체
+ */
+struct FUIWindowConfig
+{
+	FString WindowTitle = "Untitled Window"; // 윈도우 제목
+	ImVec2 DefaultSize = ImVec2(300, 400); // 기본 크기
+	ImVec2 DefaultPosition = ImVec2(100, 100); // 기본 위치
+	ImVec2 MinSize = ImVec2(200, 150); // 최소 크기
+	ImVec2 MaxSize = ImVec2(1920, 1080); // 최대 크기
+
+	ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_None; // ImGui 윈도우 플래그
+	EUIWindowState InitialState = EUIWindowState::Visible; // 초기 상태
+	EUIDockDirection DockDirection = EUIDockDirection::None; // 도킹 방향
+
+	bool bResizable = true; // 크기 조절 가능 여부
+	bool bMovable = true; // 이동 가능 여부
+	bool bCollapsible = true; // 접기 가능 여부
+	bool bAutoFocus = false; // 자동 포커스 여부
+	bool bBringToFrontOnFocus = true; // 포커스시 앞으로 가져오기
+
+	int Priority = 0; // 렌더링 우선순위 (낮을수록 먼저 렌더링)
+
+	/**
+	 * @brief 기본 생성자
+	 */
+	FUIWindowConfig() = default;
+
+	/**
+	 * @brief 윈도우 플래그 자동 설정
+	 */
+	void UpdateWindowFlags()
+	{
+		WindowFlags = ImGuiWindowFlags_None;
+
+		if (!bResizable) WindowFlags |= ImGuiWindowFlags_NoResize;
+		if (!bMovable) WindowFlags |= ImGuiWindowFlags_NoMove;
+		if (!bCollapsible) WindowFlags |= ImGuiWindowFlags_NoCollapse;
+		if (bAutoFocus) WindowFlags |= ImGuiWindowFlags_NoFocusOnAppearing;
+		if (!bBringToFrontOnFocus) WindowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+	}
+};
+
+/**
+ * @brief 추상 UI 윈도우 기본 클래스
+ *
+ * @param Config 윈도우 설정
+ * @param CurrentState 현재 윈도우 상태
+ * @param WindowID 고유 윈도우 ID
+ * @param bIsFocused 현재 포커스 상태
+ * @param LastFocusTime 마지막 포커스 시간
+ * @param bIsWindowOpen ImGui 윈도우 열림 상태
+ * @param LastWindowSize 마지막 윈도우 크기
+ * @param LastWindowPos 마지막 윈도우 위치
+ */
+class UUIWindow :
+	public UObject
+{
+	friend class UUIManager;
+
+public:
+	UUIWindow(const FUIWindowConfig& InConfig = FUIWindowConfig());
+	virtual ~UUIWindow() = default;
+
+	virtual void Initialize() = 0;
+	virtual void Render() = 0;
+
+	virtual void Update()
+	{
+	}
+
+	virtual void Cleanup()
+	{
+	}
+
+	virtual void OnFocusGained()
+	{
+	}
+
+	virtual void OnFocusLost()
+	{
+	}
+
+	virtual bool OnWindowClose() { return true; }
+
+	// Getter & Setter
+	const FUIWindowConfig& GetConfig() const { return Config; }
+	FUIWindowConfig& GetMutableConfig() { return Config; }
+	EUIWindowState GetWindowState() const { return CurrentState; }
+	const FString& GetWindowID() const { return WindowID; }
+	const FString& GetWindowTitle() const { return Config.WindowTitle; }
+	int GetPriority() const { return Config.Priority; }
+	float GetLastFocusTime() const { return LastFocusTime; }
+	bool IsFocused() const { return bIsFocused; }
+
+	bool IsVisible() const
+	{
+		return CurrentState == EUIWindowState::Visible || CurrentState == EUIWindowState::Maximized;
+	}
+
+	void SetWindowState(EUIWindowState NewState) { CurrentState = NewState; }
+	void SetWindowTitle(const FString& NewTitle) { Config.WindowTitle = NewTitle; }
+	void SetPriority(int NewPriority) { Config.Priority = NewPriority; }
+	void SetConfig(const FUIWindowConfig& InConfig) { Config = InConfig; }
+	void ToggleVisibility() { SetWindowState(IsVisible() ? EUIWindowState::Hidden : EUIWindowState::Visible); }
+
+protected:
+	void RenderInternal();
+	void ApplyDockingSettings() const;
+	void UpdateWindowInfo();
+
+private:
+	static int IssuedWindowID;
+
+	FUIWindowConfig Config;
+	EUIWindowState CurrentState;
+	FString WindowID;
+
+	bool bIsFocused = false;
+	float LastFocusTime = 0.0f;
+
+	// ImGui 내부 상태
+	bool bIsWindowOpen = true;
+	ImVec2 LastWindowSize;
+	ImVec2 LastWindowPosition;
+};
