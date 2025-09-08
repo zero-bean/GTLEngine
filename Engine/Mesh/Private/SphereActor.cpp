@@ -4,7 +4,7 @@
 ASphereActor::ASphereActor()
 {
 	SphereComponent = GetSphereComponent();
-	RootComponent = SphereComponent;
+	SetRootComponent(SphereComponent);
 }
 
 USphereComponent* ASphereActor::GetSphereComponent()

@@ -7,6 +7,7 @@ class AAxis : public AActor
 {
 public:
 	AAxis();
+	~AAxis() override;
 
 private:
 	UAxisLineComponent* LineX = nullptr;

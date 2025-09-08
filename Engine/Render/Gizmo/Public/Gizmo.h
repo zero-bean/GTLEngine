@@ -8,11 +8,13 @@ class AGizmo : public AActor
 {
 public:
 	AGizmo();
+	~AGizmo() override;
 	void SetTargetActor(AActor* actor);
 
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
-	virtual void EndPlay() override;
+	void BeginPlay() override;
+	void Tick() override;
+	void EndPlay() override;
+
 private:
 	AActor* TargetActor = nullptr;
 

@@ -32,7 +32,7 @@ AActor* PickActor(ULevel* Level)
 
 		for (AActor* Actor : Level->GetLevelActors())
 		{
-			for (auto& ActorComponent : Actor->OwnedComponents)
+			for (auto& ActorComponent : Actor->GetOwnedComponents())
 			{
 				UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(ActorComponent);
 				if (Primitive)

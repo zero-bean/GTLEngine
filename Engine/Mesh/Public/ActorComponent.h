@@ -12,7 +12,7 @@ public:
 	}*/
 
 	virtual void BeginPlay();
-	virtual void TickComponent(float DeltaTime);
+	virtual void TickComponent();
 	virtual void EndPlay();
 
 	EComponentType GetComponentType() { return ComponentType; }

@@ -36,7 +36,7 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 	// Memory Leak Detection & Report
 	#ifdef _DEBUG
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-		// _CrtSetBreakAlloc(0);
+		_CrtSetBreakAlloc(0);
 	#endif
 
 	// Window Object Initialize

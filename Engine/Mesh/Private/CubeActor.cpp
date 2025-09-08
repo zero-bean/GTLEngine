@@ -4,7 +4,7 @@
 ACubeActor::ACubeActor()
 {
 	CubeComponent = GetCubeComponent();
-	RootComponent = CubeComponent;
+	SetRootComponent(CubeComponent);
 }
 
 UCubeComponent* ACubeActor::GetCubeComponent()
