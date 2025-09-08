@@ -11,5 +11,8 @@ public:
     virtual ~UObject();
 
 private:
-	UINT ID;
+	UINT UUID = -1;
+	UINT InternalIndex = -1;
 };
+
+extern TArray<UObject*> GUObjectArray;

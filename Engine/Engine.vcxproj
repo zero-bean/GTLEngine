@@ -249,6 +249,7 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
+    <Content Include="Core\Public\EngineStatics.h" />
     <Content Include="Render\AxisLine\Public\Axis.h" />
     <Content Include="Render\AxisLine\Public\AxisLine.h" />
     <Content Include="Shader\**\*.*">
