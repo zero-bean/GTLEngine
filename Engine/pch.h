@@ -31,6 +31,7 @@
 #include "Global/CoreTypes.h"
 #include "Global/Macro.h"
 #include "Global/Function.h"
+#include "Global/Memory.h"
 
 template <typename T>
 using TArray = std::vector<T>;
