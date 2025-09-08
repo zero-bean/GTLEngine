@@ -166,35 +166,53 @@ void UControlPanelWindow::RenderTransformEditor()
 	ImGui::SetNextItemWidth(70);
 	RotChanged |= ImGui::DragFloat("Z##Rot", &EditRotation.Z, 0.1f);
 
-	// Scale
-	ImGui::Text("Scale   ");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	bool ScaleChanged = ImGui::DragFloat("X##Scale", &EditScale.X, 0.01f, 0.01f, 10.0f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ScaleChanged |= ImGui::DragFloat("Y##Scale", &EditScale.Y, 0.01f, 0.01f, 10.0f);
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(70);
-	ScaleChanged |= ImGui::DragFloat("Z##Scale", &EditScale.Z, 0.01f, 0.01f, 10.0f);
-
-	// 변경사항 적용
-	if (LocChanged || RotChanged || ScaleChanged)
-	{
-		bTransformChanged = true;
-		ApplyTransformToActor();
-	}
-
 	// Uniform Scale 옵션
 	static bool bUniformScale = false;
 	if (ImGui::Checkbox("Uniform Scale", &bUniformScale))
 	{
 		if (bUniformScale)
 		{
+			// Uniform Scale을 체크할 때 기존 스케일의 평균값으로 설정
 			float AvgScale = (EditScale.X + EditScale.Y + EditScale.Z) / 3.0f;
 			EditScale = FVector(AvgScale, AvgScale, AvgScale);
 			ApplyTransformToActor();
 		}
+	}
+
+	// Scale
+	ImGui::Text("Scale   ");
+	ImGui::SameLine();
+
+	bool ScaleChanged = false;
+	if (bUniformScale)
+	{
+		// Uniform Scale 모드에서는 하나의 값으로 모든 축 제어
+		ImGui::SetNextItemWidth(210);
+		float UniformScale = EditScale.X;
+		if (ImGui::DragFloat("Uniform##Scale", &UniformScale, 0.01f, 0.01f, 10.0f))
+		{
+			EditScale = FVector(UniformScale, UniformScale, UniformScale);
+			ScaleChanged = true;
+		}
+	}
+	else
+	{
+		// 개별 Scale 모드에서는 각 축을 개별 제어
+		ImGui::SetNextItemWidth(70);
+		ScaleChanged = ImGui::DragFloat("X##Scale", &EditScale.X, 0.01f, 0.01f, 10.0f);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ScaleChanged |= ImGui::DragFloat("Y##Scale", &EditScale.Y, 0.01f, 0.01f, 10.0f);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ScaleChanged |= ImGui::DragFloat("Z##Scale", &EditScale.Z, 0.01f, 0.01f, 10.0f);
+	}
+
+	// 변경사항 적용
+	if (LocChanged || RotChanged || ScaleChanged)
+	{
+		bTransformChanged = true;
+		ApplyTransformToActor();
 	}
 }
 
