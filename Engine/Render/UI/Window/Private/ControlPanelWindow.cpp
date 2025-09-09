@@ -63,7 +63,17 @@ void UControlPanelWindow::Render()
 				UpdateTransformFromActor();
 			}
 		}
+
+		LevelObjectCount = CurrentLevel->GetAllocatedCount();
+		LevelObjectMemory = CurrentLevel->GetAllocatedBytes();
 	}
+
+
+
+	ImGui::Separator();
+
+	//Memory Indicator
+	RenderLevelMemorySection();
 
 	// Spawn Indicator
 	RenderActorSpawnSection();
@@ -115,12 +125,20 @@ void UControlPanelWindow::Render()
 void UControlPanelWindow::RenderModeSelector()
 {
 	const char* ModeNames[] = {"Transform", "Components", "Properties"};
-	int CurrentMode = static_cast<int>(CurrentEditMode);
+	int32 CurrentMode = static_cast<int32>(CurrentEditMode);
 
 	if (ImGui::Combo("Edit Mode", &CurrentMode, ModeNames, 3))
 	{
 		CurrentEditMode = static_cast<EEditMode>(CurrentMode);
 	}
+}
+
+void UControlPanelWindow::RenderLevelMemorySection()
+{
+	ImGui::Text("Level Object Memory");
+
+	ImGui::LabelText("Count", "%d", LevelObjectCount);
+	ImGui::LabelText("Byte", "%d", LevelObjectMemory);
 }
 
 void UControlPanelWindow::RenderActorInspection()
@@ -338,7 +356,7 @@ void UControlPanelWindow::SpawnActors() const
 	       (SelectedPrimitiveType == 0 ? "Cube" : "Sphere"));
 
 	// 지정된 개수만큼 액터 생성
-	for (int i = 0; i < NumberOfSpawn; i++)
+	for (int32 i = 0; i < NumberOfSpawn; i++)
 	{
 		AActor* NewActor = nullptr;
 

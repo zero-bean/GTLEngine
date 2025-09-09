@@ -15,7 +15,7 @@ AActor::~AActor()
 	{
 		SafeDelete(Component);
 	}
-
+	SetOuter(nullptr);
 	OwnedComponents.clear();
 }
 
