@@ -218,7 +218,7 @@ void UConsoleWindow::ProcessCommand(const char* InCommand)
 		return;
 
 	// 명령어를 로그에 표시
-	AddLog("# %s", InCommand);
+	// AddLog("# %s", InCommand);
 
 	// 명령 히스토리에 추가
 	CommandHistory.push_back(FString(InCommand));
@@ -271,12 +271,12 @@ void UConsoleWindow::ProcessCommand(const char* InCommand)
 									char Buffer[512];
 									(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(), Value);
 									// Prevent Recursive
-									LogItems.push_back("[UE_LOG] " + FString(Buffer));
+									LogItems.push_back(u8"[UE_LOG] " + FString(Buffer));
 									bIsScrollToBottom = true;
 								}
 								catch (...)
 								{
-									LogItems.push_back("[UE_LOG] Failed to parse integer: " + RemainingArguments);
+									LogItems.push_back(u8"[UE_LOG] Failed To Parse Integer: " + RemainingArguments);
 									bIsScrollToBottom = true;
 								}
 							}
@@ -285,37 +285,37 @@ void UConsoleWindow::ProcessCommand(const char* InCommand)
 								char Buffer[512];
 								(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(),
 								               RemainingArguments.c_str());
-								LogItems.push_back("[UE_LOG] " + FString(Buffer));
+								LogItems.push_back(u8"[UE_LOG] " + FString(Buffer));
 								bIsScrollToBottom = true;
 							}
 							else
 							{
-								LogItems.push_back("[UE_LOG] " + FormatString + " " + RemainingArguments);
+								LogItems.push_back(u8"[UE_LOG] " + FormatString + " " + RemainingArguments);
 								bIsScrollToBottom = true;
 							}
 						}
 						else
 						{
 							// 인수 없는 경우
-							LogItems.push_back("[UE_LOG] " + FormatString);
+							LogItems.push_back(u8"[UE_LOG] " + FormatString);
 							bIsScrollToBottom = true;
 						}
 					}
 					else
 					{
-						LogItems.emplace_back("[Error] Invalid UE_LOG Format - Missing Closing Quote");
+						LogItems.emplace_back(u8"[Error] Invalid UE_LOG Format - Missing Closing Quote");
 						bIsScrollToBottom = true;
 					}
 				}
 				else
 				{
-					LogItems.emplace_back("[Error] Invalid UE_LOG Format - First Argument Must Be A String");
+					LogItems.emplace_back(u8"[Error] Invalid UE_LOG Format - First Argument Must Be A String");
 					bIsScrollToBottom = true;
 				}
 			}
 			else
 			{
-				LogItems.emplace_back("[Error] Invalid UE_LOG Format - Missing Closing Parenthesis");
+				LogItems.emplace_back(u8"[Error] Invalid UE_LOG Format - Missing Closing Parenthesis");
 				bIsScrollToBottom = true;
 			}
 		}
@@ -507,7 +507,9 @@ void UConsoleWindow::ExecuteTerminalCommand(const char* InCommand)
 		// Print Result
 		if (bHasOutput)
 		{
-			std::istringstream Stream(Output);
+			FString Utf8Output = ConvertCP949ToUTF8(Output.c_str());
+
+			std::istringstream Stream(Utf8Output);
 			FString Line;
 			while (std::getline(Stream, Line))
 			{
