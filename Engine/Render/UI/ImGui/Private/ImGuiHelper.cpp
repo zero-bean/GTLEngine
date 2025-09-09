@@ -14,6 +14,7 @@
 
 // 테스트용 Camera
 #include "Editor/Public/Camera.h"
+#include "Manager/Path/Public/PathManager.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, uint32 msg, WPARAM wParam, LPARAM lParam);
 
@@ -36,7 +37,8 @@ void UImGuiHelper::Initialize(HWND InWindowHandle)
 	ImGui_ImplWin32_Init(InWindowHandle);
 
 	ImGuiIO& IO = ImGui::GetIO();
-	IO.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\malgun.ttf)", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+	path FontFilePath = UPathManager::GetInstance().GetFontPath() / "Pretendard-Regular.otf";
+	IO.Fonts->AddFontFromFileTTF(FontFilePath.string().c_str(), 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
 
 	auto& Renderer = URenderer::GetInstance();
 	ImGui_ImplDX11_Init(Renderer.GetDevice(), Renderer.GetDeviceContext());

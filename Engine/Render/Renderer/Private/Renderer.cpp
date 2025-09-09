@@ -117,13 +117,13 @@ void URenderer::CreateDefaultShader()
 	ID3DBlob* VertexShaderCSO;
 	ID3DBlob* PixelShaderCSO;
 
-	D3DCompileFromFile(L"Shader/SampleShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+	D3DCompileFromFile(L"Asset/Shader/SampleShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
 	                   &VertexShaderCSO, nullptr);
 
 	GetDevice()->CreateVertexShader(VertexShaderCSO->GetBufferPointer(),
 	                           VertexShaderCSO->GetBufferSize(), nullptr, &DefaultVertexShader);
 
-	D3DCompileFromFile(L"Shader/SampleShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+	D3DCompileFromFile(L"Asset/Shader/SampleShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
 	                   &PixelShaderCSO, nullptr);
 
 	GetDevice()->CreatePixelShader(PixelShaderCSO->GetBufferPointer(),
