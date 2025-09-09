@@ -4,6 +4,8 @@
 #include "Mesh/Public/Actor.h"
 #include "Mesh/Public/CubeActor.h"
 #include "Mesh/Public/SphereActor.h"
+#include "Mesh/Public/TriangleActor.h"
+#include "Mesh/Public/SquareActor.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Level/Public/Level.h"
 
@@ -266,11 +268,11 @@ void UControlPanelWindow::RenderActorSpawnSection()
 	ImGui::Text("Actor Spawning");
 
 	// Primitive 타입 선택 드롭다운
-	const char* PrimitiveTypes[] = {"Cube", "Sphere"}; // Triangle 제외
+	const char* PrimitiveTypes[] = {"Cube", "Sphere", "Triangle", "Square"}; // Triangle 제외
 	ImGui::Text("Primitive Type:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120);
-	ImGui::Combo("##PrimitiveType", &SelectedPrimitiveType, PrimitiveTypes, 2);
+	ImGui::Combo("##PrimitiveType", &SelectedPrimitiveType, PrimitiveTypes, 4);
 
 	// Spawn 버튼과 개수 입력
 	ImGui::Text("Number of Spawn:");
@@ -321,7 +323,7 @@ void UControlPanelWindow::RenderActorDeleteSection()
  * @brief Actor 생성 함수
  * 난수를 활용한 범위, 사이즈를 통한 생성 처리
  */
-void UControlPanelWindow::SpawnActors()
+void UControlPanelWindow::SpawnActors() const
 {
 	ULevelManager& LevelManager = ULevelManager::GetInstance();
 	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
@@ -348,6 +350,14 @@ void UControlPanelWindow::SpawnActors()
 		else if (SelectedPrimitiveType == 1) // Sphere
 		{
 			NewActor = CurrentLevel->SpawnActor<ASphereActor>();
+		}
+		else if (SelectedPrimitiveType == 2)
+		{
+			NewActor = CurrentLevel->SpawnActor<ATriangleActor>();
+		}
+		else if (SelectedPrimitiveType == 3)
+		{
+			NewActor = CurrentLevel->SpawnActor<ASquareActor>();
 		}
 
 		if (NewActor)
