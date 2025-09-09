@@ -12,14 +12,11 @@
 // Standard Library
 #include <cmath>
 #include <cassert>
-#include <map>
-#include <vector>
 #include <string>
 #include <chrono>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-#include <unordered_map>
 #include <functional>
 #include <filesystem>
 #include <iterator>
@@ -34,11 +31,29 @@
 #include "Global/Function.h"
 #include "Global/Memory.h"
 
-template <typename T>
-using TArray = std::vector<T>;
-
-template <typename K, typename V>
-using TMap = std::map<K, V>;
+//STL Redefine
+#include <vector>
+#include <unordered_set>
+#include <unordered_map>
+#include <list>
+#include <queue>
+#include <stack>
+template<typename T, typename Alloc = std::allocator<T>>
+using TArray = std::vector<T, Alloc>;
+template<typename T, typename Alloc = std::allocator<T>>
+using TLinkedList = std::list<T, Alloc>;
+template<typename T, typename Alloc = std::allocator<T>>
+using TDoubleLinkedList = std::list<T, Alloc>;
+template<typename T, typename Hash = std::hash<T>, typename Eq = std::equal_to<T>, typename Alloc = std::allocator<T>>
+using TSet = std::unordered_set<T, Hash, Eq, Alloc>;
+template<typename KeyType, typename ValueType, typename Hash = std::hash<KeyType>, typename Eq = std::equal_to<KeyType>, typename Alloc = std::allocator<std::pair<const KeyType, ValueType>>>
+using TMap = std::unordered_map<KeyType, ValueType, Hash, Eq, Alloc>;
+template<typename T1, typename T2>
+using TPair = std::pair<T1, T2>;
+template<typename T, size_t N>
+using TStaticArray = std::array<T, N>;
+template<typename T, typename Container = std::deque<T>>
+using TQueue = std::queue<T, Container>;
 
 using FString = std::string;
 using std::clamp;
