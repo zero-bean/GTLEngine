@@ -35,6 +35,9 @@ void UImGuiHelper::Initialize(HWND InWindowHandle)
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init(InWindowHandle);
 
+	ImGuiIO& IO = ImGui::GetIO();
+	IO.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\malgun.ttf)", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+
 	auto& Renderer = URenderer::GetInstance();
 	ImGui_ImplDX11_Init(Renderer.GetDevice(), Renderer.GetDeviceContext());
 
