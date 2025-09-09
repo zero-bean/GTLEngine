@@ -25,8 +25,8 @@ return Instance; \
 // UE_LOG Macro
 #define UE_LOG(fmt, ...) \
     do { \
-        printf("[UE_LOG] " fmt "\n", ##__VA_ARGS__); \
+        printf(fmt "\n", ##__VA_ARGS__); \
         try { \
-            UConsoleWindow::GetInstance().AddLog("[UE_LOG] " fmt, ##__VA_ARGS__); \
+            UConsoleWindow::GetInstance().AddLog("" fmt, ##__VA_ARGS__); \
         } catch(...) {} \
     } while(0)
