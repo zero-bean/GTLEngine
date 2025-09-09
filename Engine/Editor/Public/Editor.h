@@ -13,8 +13,7 @@ public:
 	UEditor();
 	~UEditor();
 
-
-	void Update(HWND WindowHandle);
+	void Update();
 	void RenderEditor();
 
 private:

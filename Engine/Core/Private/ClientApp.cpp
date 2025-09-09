@@ -118,15 +118,12 @@ void FClientApp::UpdateSystem()
 	auto& LevelManager = ULevelManager::GetInstance();
 	auto& UiManager = UUIManager::GetInstance();
 
-	Editor->Update(Window->GetWindowHandle());
+	Editor->Update();
 	TimeManager.Update();
-	InputManager.Update();
+	InputManager.Update(Window);
 	LevelManager.Update();
-	
 	UiManager.Update();
-	
 	Renderer.Update(Editor);
-
 }
 
 /**
@@ -155,7 +152,6 @@ void FClientApp::MainLoop()
 		// Game System Update
 		else
 		{
-			
 			UpdateSystem();
 		}
 	}

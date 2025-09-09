@@ -17,7 +17,7 @@ public:
 		NearZ(0.1f), FarZ(100.f), CameraType(ECameraType::ECT_Perspective)
 	{
 	}
-	~UCamera() {};
+	~UCamera() override {}
 
 	void Update();
 	void UpdateMatrixByPers();
