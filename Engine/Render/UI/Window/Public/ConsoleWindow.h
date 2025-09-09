@@ -46,6 +46,7 @@ public:
 	void ClearLog();
 
 	void ProcessCommand(const char* InCommand);
+	void ExecuteTerminalCommand(const char* InCommand);
 
 	void InitializeSystemRedirect();
 	void CleanupSystemRedirect();

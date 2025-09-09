@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Core/Public/ClientApp.h"
 
-#include "Camera/Public/Camera.h"
+#include "Editor/Public/Editor.h"
 #include "Core/Public/AppWindow.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Level/Public/LevelManager.h"
@@ -10,14 +10,9 @@
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
-#include "Render/UI/Window/Public/ConsoleWindow.h"
-#include "ObjectPicking.h"
 
-// TODO(KHJ): 제거 대상
-///////////////////////////////////
-// 테스트용 카메라 전역 변수로 선언
-Camera* MyCamera;
-///////////////////////////////////
+#include "Render/UI/Window/Public/ConsoleWindow.h"
+
 
 FClientApp::FClientApp() = default;
 
@@ -63,13 +58,14 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 		assert(!"Initialize Failed");
 		return 0;
 	}
-
+	Editor = new UEditor();
 	// Execute Main Loop
 	MainLoop();
 
 	// Termination Process
 	ShutdownSystem();
 	delete Window;
+	delete Editor;
 
 	return static_cast<int>(MainMessage.wParam);
 }
@@ -85,9 +81,6 @@ int FClientApp::InitializeSystem() const
 
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
-
-	// TEST CODE - 거슬리면 나중에 리팩터링
-	MyCamera = new Camera();
 
 	// UIManager Initialize
 	auto& UiManager = UUIManager::GetInstance();
@@ -125,14 +118,15 @@ void FClientApp::UpdateSystem()
 	auto& LevelManager = ULevelManager::GetInstance();
 	auto& UiManager = UUIManager::GetInstance();
 
+	Editor->Update(Window->GetWindowHandle());
 	TimeManager.Update();
 	InputManager.Update();
 	LevelManager.Update();
-	MyCamera->Update();
-	MyCamera->UpdateMatrix();
+	
 	UiManager.Update();
-	Renderer.UpdateConstant(MyCamera->GetFViewProjConstants());
-	Renderer.Update();
+	
+	Renderer.Update(Editor);
+
 }
 
 /**
@@ -161,18 +155,10 @@ void FClientApp::MainLoop()
 		// Game System Update
 		else
 		{
-			auto& LevelManager = ULevelManager::GetInstance();
-			PickActor(LevelManager.GetCurrentLevel(), Window->GetWindowHandle());
+			
 			UpdateSystem();
 		}
 	}
-
-	// TODO(KHJ): 제거 대상
-	////////////////////////////////////////
-	// TEST CODE - 거슬리면 나중에 리팩터링
-	delete MyCamera;
-	MyCamera = nullptr;
-	////////////////////////////////////////
 }
 
 /**

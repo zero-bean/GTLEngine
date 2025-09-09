@@ -2,13 +2,14 @@
 #include "DeviceResources.h"
 #include "Core/Public/Object.h"
 #include "Mesh/Public/SceneComponent.h"
+#include "Editor/Public/EditorPrimitive.h"
 
 class UPipeline;
 class UDeviceResources;
 class UPrimitiveComponent;
-class Camera;
 class AActor;
 class AGizmo;
+class UEditor;
 /**
  * @brief Rendering Pipeline 전반을 처리하는 클래스
  *
@@ -51,11 +52,14 @@ public:
 
 	void CreateDefaultShader();
 	void ReleaseDefaultShader();
-	void Update();
+	void Update(UEditor* Editor);
+	//void Update();
 	void RenderBegin();
 	void RenderLevel();
-	void RenderEditor();
+	//Deprecated: EditorPrimitive는 에디터에서 처리
+	//void RenderEditor();
 	void RenderEnd();
+	void RenderPrimitive(FEditorPrimitive& Primitive);
 
 	//Testing Func
 	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, uint32 InByteWidth) const;

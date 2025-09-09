@@ -144,8 +144,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Camera\Public\Camera.h" />
     <ClInclude Include="Core\Public\Object.h" />
+    <ClInclude Include="Editor\Public\Axis.h" />
+    <ClInclude Include="Editor\Public\Camera.h" />
+    <ClInclude Include="Editor\Public\Editor.h" />
+    <ClInclude Include="Editor\Public\EditorPrimitive.h" />
+    <ClInclude Include="Editor\Public\Gizmo.h" />
+    <ClInclude Include="Editor\Public\Grid.h" />
+    <ClInclude Include="Editor\Public\ObjectPicker.h" />
     <ClInclude Include="Global\Constant.h" />
     <ClInclude Include="Global\Enum.h" />
     <ClInclude Include="Global\Function.h" />
@@ -179,18 +185,15 @@
     <ClInclude Include="Mesh\Sample\Rectangle.h" />
     <ClInclude Include="Mesh\Sample\Sphere.h" />
     <ClInclude Include="Mesh\Sample\Triangle.h" />
-    <ClInclude Include="ObjectPicking.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Core\Public\AppWindow.h" />
     <ClInclude Include="Core\Public\ClientApp.h" />
-    <ClInclude Include="Render\Gizmo\Public\Gizmo.h" />
-    <ClInclude Include="Render\Gizmo\Public\GizmoArrow.h" />
-    <ClInclude Include="Render\Grid\Public\Grid.h" />
     <ClInclude Include="Render\Renderer\Public\DeviceResources.h" />
     <ClInclude Include="Render\Renderer\Public\Pipeline.h" />
     <ClInclude Include="Render\Renderer\Public\Renderer.h" />
     <ClInclude Include="Render\UI\Factory\Public\UIWindowFactory.h" />
     <ClInclude Include="Render\UI\ImGui\Public\ImGuiHelper.h" />
+    <ClInclude Include="Render\UI\Window\Public\CameraPanelWindow.h" />
     <ClInclude Include="Render\UI\Window\Public\ConsoleWindow.h" />
     <ClInclude Include="Render\UI\Window\Public\ControlPanelWindow.h" />
     <ClInclude Include="Render\UI\Window\Public\InputStatusWindow.h" />
@@ -201,10 +204,15 @@
     <ClInclude Include="Utility\Public\Metadata.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Editor\Private\Axis.cpp" />
+    <ClCompile Include="Editor\Private\Camera.cpp" />
+    <ClCompile Include="Editor\Private\Editor.cpp" />
+    <ClCompile Include="Editor\Private\Gizmo.cpp" />
+    <ClCompile Include="Editor\Private\Grid.cpp" />
+    <ClCompile Include="Editor\Private\ObjectPicker.cpp" />
     <ClCompile Include="Global\Matrix.cpp" />
     <ClCompile Include="Global\Memory.cpp" />
     <ClCompile Include="Global\Vector.cpp" />
-    <ClCompile Include="Camera\Private\Camera.cpp" />
     <ClCompile Include="Core\Private\Object.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
     <ClCompile Include="ImGui\imgui_demo.cpp" />
@@ -227,23 +235,18 @@
     <ClCompile Include="Mesh\Private\SphereActor.cpp" />
     <ClCompile Include="Mesh\Private\TriangleActor.cpp" />
     <ClCompile Include="Mesh\Private\VertexDatas.cpp" />
-    <ClCompile Include="ObjectPicking.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Core\Private\AppWindow.cpp" />
     <ClCompile Include="Core\Private\ClientApp.cpp" />
-    <ClCompile Include="Render\AxisLine\Private\Axis.cpp" />
-    <ClCompile Include="Render\AxisLine\Private\AxisLine.cpp" />
-    <ClCompile Include="Render\Gizmo\Private\Gizmo.cpp" />
-    <ClCompile Include="Render\Gizmo\Private\GizmoArrow.cpp" />
-    <ClCompile Include="Render\Grid\Private\Grid.cpp" />
     <ClCompile Include="Render\Renderer\Private\DeviceResources.cpp" />
     <ClCompile Include="Render\Renderer\Private\Pipeline.cpp" />
     <ClCompile Include="Render\Renderer\Private\Renderer.cpp" />
     <ClCompile Include="Render\UI\Factory\Private\UIWindowFactory.cpp" />
     <ClCompile Include="Render\UI\ImGui\Private\ImGuiHelper.cpp" />
+    <ClCompile Include="Render\UI\Window\Private\CameraPanelWindow.cpp" />
     <ClCompile Include="Render\UI\Window\Private\ConsoleWindow.cpp" />
     <ClCompile Include="Render\UI\Window\Private\ControlPanelWindow.cpp" />
     <ClCompile Include="Render\UI\Window\Private\InputStatusWindow.cpp" />

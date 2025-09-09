@@ -6,8 +6,8 @@
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Mesh/Public/Actor.h"
-#include "Render/Gizmo/Public/Gizmo.h"
 #include "Render/Renderer/Public/Pipeline.h"
+#include "Editor/Public/Editor.h"
 
 IMPLEMENT_SINGLETON(URenderer)
 
@@ -168,12 +168,13 @@ void URenderer::ReleaseDefaultShader()
 	}
 }
 
-void URenderer::Update()
+void URenderer::Update(UEditor* Editor)
 {
 	RenderBegin();
 
+	Editor->RenderEditor();
 	RenderLevel();
-	RenderEditor();
+
 	//RenderLines();
 
 	UUIManager::GetInstance().Render();
@@ -237,38 +238,40 @@ void URenderer::RenderLevel()
 	}
 }
 
-void URenderer::RenderEditor()
-{
-	if (!ULevelManager::GetInstance().GetCurrentLevel())
-		return;
 
-	for (auto& PrimitiveComponent :  ULevelManager::GetInstance().GetCurrentLevel()->GetEditorPrimitiveComponents())
-	{
-		if (!PrimitiveComponent) continue;
-
-		FPipelineInfo PipelineInfo = {
-			DefaultInputLayout,
-			DefaultVertexShader,
-			RasterizerState,
-			DepthStencilState,
-			DefaultPixelShader,
-			nullptr,
-			PrimitiveComponent->GetTopology()
-		};
-
-		Pipeline->UpdatePipeline(PipelineInfo);
-
-		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
-		UpdateConstant(
-			PrimitiveComponent);
-
-		Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
-		UpdateConstant(PrimitiveComponent->GetColor());
-
-		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
-		Pipeline->Draw(static_cast<uint32>(PrimitiveComponent->GetVerticesData()->size()), 0);
-	}
-}
+//Deprecated : EditorPrimitive는 에디터에서 처리
+//void URenderer::RenderEditor()
+//{
+//	if (!ULevelManager::GetInstance().GetCurrentLevel())
+//		return;
+//
+//	for (auto& PrimitiveComponent :  ULevelManager::GetInstance().GetCurrentLevel()->GetEditorPrimitiveComponents())
+//	{
+//		if (!PrimitiveComponent) continue;
+//
+//		FPipelineInfo PipelineInfo = {
+//			DefaultInputLayout,
+//			DefaultVertexShader,
+//			RasterizerState,
+//			DepthStencilState,
+//			DefaultPixelShader,
+//			nullptr,
+//			PrimitiveComponent->GetTopology()
+//		};
+//
+//		Pipeline->UpdatePipeline(PipelineInfo);
+//
+//		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
+//		UpdateConstant(
+//			PrimitiveComponent);
+//
+//		Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
+//		UpdateConstant(PrimitiveComponent->GetColor());
+//
+//		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
+//		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
+//	}
+//}
 
 /**
  * @brief 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
@@ -276,6 +279,30 @@ void URenderer::RenderEditor()
 void URenderer::RenderEnd()
 {
 	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
+}
+
+void URenderer::RenderPrimitive(FEditorPrimitive& Primitive)
+{
+	FPipelineInfo PipelineInfo = {
+			DefaultInputLayout,
+			DefaultVertexShader,
+			RasterizerState,
+			DepthStencilState,
+			DefaultPixelShader,
+			nullptr,
+			Primitive.Topology
+	};
+
+	Pipeline->UpdatePipeline(PipelineInfo);
+
+	Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
+	UpdateConstant(Primitive.Location, Primitive.Rotation, Primitive.Scale);
+
+	Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
+	UpdateConstant(Primitive.Color);
+
+	Pipeline->SetVertexBuffer(Primitive.Vertexbuffer, Stride);
+	Pipeline->Draw(Primitive.NumVertices, 0);
 }
 
 /**

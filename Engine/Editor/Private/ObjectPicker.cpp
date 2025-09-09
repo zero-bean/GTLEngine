@@ -1,23 +1,13 @@
 #include "pch.h"
-#include "ObjectPicking.h"
+#include "Editor/Public/ObjectPicker.h"
 #include "Mesh/Public/SceneComponent.h"
 #include "Manager/Input/Public/InputManager.h"
-#include "Camera/Public/Camera.h"
+#include "Editor/Public/Camera.h"
 #include "ImGui/imgui.h"
 #include "Mesh/Public/Actor.h"
 #include "Level/Public/Level.h"
 
-FRay ConvertToWorldRay(int32 PixelX, int32 PixelY, int32 ViewportW, int32 ViewportH,
-                       const FViewProjConstants& ViewProjConstantsInverse);
-bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix,
-                            float* ShortestDistance);
-FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive);
-bool IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
-                           const FMatrix& ModelMatrix, float* Distance);
-
-extern Camera* MyCamera;
-
-AActor* PickActor(ULevel* Level, HWND WindowHandle)
+AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle, const UCamera& Camera)
 {
 	//Level로부터 Actor순회하면서 picked objects중에서 가장 가까운 object return
 	AActor* ShortestActor = nullptr;
@@ -30,12 +20,13 @@ AActor* PickActor(ULevel* Level, HWND WindowHandle)
 	int32 ViewportWidth = ClientRect.right - ClientRect.left;
 	int32 ViewportHeight = ClientRect.bottom - ClientRect.top;
 
+
 	if (!ImGui::GetIO().WantCaptureMouse && Input.IsKeyPressed(EKeyInput::MouseLeft))
 	{
 		FVector MousePosition = Input.GetMousePosition();
 		FRay WorldRay = ConvertToWorldRay(static_cast<int32>(MousePosition.X), static_cast<int32>(MousePosition.Y),
-		                                  ViewportWidth, ViewportHeight,
-		                                  MyCamera->GetFViewProjConstantsInverse());
+		                                  ViewportWidth,ViewportHeight ,
+		                                  Camera.GetFViewProjConstantsInverse());
 
 		for (AActor* Actor : Level->GetLevelActors())
 		{
@@ -47,7 +38,7 @@ AActor* PickActor(ULevel* Level, HWND WindowHandle)
 					FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
 					FRay ModelRay = GetModelRay(WorldRay, Primitive); //Actor로부터 Primitive를 얻고 Ray를 모델 좌표계로 변환함
 
-					if (IsRayPrimitiveCollided(ModelRay, Primitive, ModelMat, &PrimitiveDistance))
+					if (IsRayPrimitiveCollided(ModelRay, Primitive, ModelMat, &PrimitiveDistance, Camera))
 					//Ray와 Primitive가 충돌했다면 거리 테스트 후 가까운 Actor Picking
 					{
 						if (PrimitiveDistance < ShortestDistance)
@@ -68,7 +59,7 @@ AActor* PickActor(ULevel* Level, HWND WindowHandle)
 }
 
 
-FRay ConvertToWorldRay(int32 PixelX, int32 PixelY, int32 ViewportW, int32 ViewportH,
+FRay UObjectPicker::ConvertToWorldRay(int32 PixelX, int32 PixelY, int32 ViewportW, int32 ViewportH,
                        const FViewProjConstants& ViewProjConstantsInverse)
 {
 	//Screen to NDC
@@ -97,7 +88,7 @@ FRay ConvertToWorldRay(int32 PixelX, int32 PixelY, int32 ViewportW, int32 Viewpo
 }
 
 
-FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
+FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 {
 	FMatrix ModelInverse = Primitive->GetWorldTransformMatrixInverse();
 
@@ -109,8 +100,7 @@ FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 }
 
 //개별 primitive와 ray 충돌 검사
-bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix,
-                            float* ShortestDistance)
+bool UObjectPicker::IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance, const UCamera& Camera)
 {
 	//FRay ModelRay = GetModelRay(Ray, Primitive);
 
@@ -124,8 +114,7 @@ bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive
 		const FVector& Vertex2 = (*Vertices)[a + 1].Position;
 		const FVector& Vertex3 = (*Vertices)[a + 2].Position;
 
-		if (IsRayTriangleCollided(ModelRay, Vertex1, Vertex2, Vertex3, ModelMatrix, &Distance))
-		//Ray와 삼각형이 충돌하면 거리 비교 후 최단거리 갱신
+		if (IsRayTriangleCollided(ModelRay, Vertex1, Vertex2, Vertex3, ModelMatrix, Camera, &Distance)) //Ray와 삼각형이 충돌하면 거리 비교 후 최단거리 갱신
 		{
 			bIsHit = true;
 			if (Distance < *ShortestDistance)
@@ -138,12 +127,12 @@ bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive
 	return bIsHit;
 }
 
-bool IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
-                           const FMatrix& ModelMatrix, float* Distance)
+bool UObjectPicker::IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
+                           const FMatrix& ModelMatrix, const UCamera& Camera, float* Distance)
 {
-	FVector CameraForward = MyCamera->GetForward(); //카메라 정보 필요
-	float NearZ = MyCamera->GetNearZ();
-	float FarZ = MyCamera->GetFarZ();
+	FVector CameraForward = Camera.GetForward(); //카메라 정보 필요
+	float NearZ = Camera.GetNearZ();
+	float FarZ = Camera.GetFarZ();
 	FMatrix ModelTransform; //Primitive로부터 얻어내야함.(카메라가 처리하는게 나을듯)
 
 

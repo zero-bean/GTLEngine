@@ -13,9 +13,9 @@
 #include "Render/Renderer/Public/Renderer.h"
 
 // 테스트용 Camera
-#include "Camera/Public/Camera.h"
+#include "Editor/Public/Camera.h"
 
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, uint32 msg, WPARAM wParam, LPARAM lParam);
 
 UImGuiHelper::UImGuiHelper() = default;
 
@@ -34,6 +34,9 @@ void UImGuiHelper::Initialize(HWND InWindowHandle)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init(InWindowHandle);
+
+	ImGuiIO& IO = ImGui::GetIO();
+	IO.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\malgun.ttf)", 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
 
 	auto& Renderer = URenderer::GetInstance();
 	ImGui_ImplDX11_Init(Renderer.GetDevice(), Renderer.GetDeviceContext());
@@ -93,7 +96,7 @@ void UImGuiHelper::EndFrame() const
  * @brief WndProc Handler 래핑 함수
  * @return ImGui 자체 함수 반환
  */
-LRESULT UImGuiHelper::WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT UImGuiHelper::WndProcHandler(HWND hWnd, uint32 msg, WPARAM wParam, LPARAM lParam)
 {
 	return ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
 }
