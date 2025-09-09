@@ -57,19 +57,32 @@ void URenderer::CreateRasterizerState()
 
 void URenderer::CreateDepthStencilState()
 {
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+	D3D11_DEPTH_STENCIL_DESC descDefault = {};
 
-	depthStencilDesc.DepthEnable = TRUE;
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	descDefault.DepthEnable = TRUE;
+	descDefault.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	descDefault.DepthFunc = D3D11_COMPARISON_LESS;
 
-	depthStencilDesc.StencilEnable = FALSE;
-	depthStencilDesc.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
-	depthStencilDesc.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+	descDefault.StencilEnable = FALSE;
+	descDefault.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	descDefault.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
 
 	HRESULT hr = DeviceResources->GetDevice()->CreateDepthStencilState(
-		&depthStencilDesc,
-		&DepthStencilState
+		&descDefault,
+		&DefaultDepthStencilState
+	);
+
+	D3D11_DEPTH_STENCIL_DESC descDisabled = {};
+
+	descDisabled.DepthEnable = FALSE;
+
+	descDefault.StencilEnable = FALSE;
+	descDefault.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	descDefault.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+
+	hr = DeviceResources->GetDevice()->CreateDepthStencilState(
+		&descDisabled,
+		&DisabledDepthStencilState
 	);
 }
 
@@ -96,10 +109,16 @@ void URenderer::ReleaseResource()
 		RasterizerState = nullptr;
 	}
 
-	if (DepthStencilState)
+	if (DefaultDepthStencilState)
 	{
-		DepthStencilState->Release();
-		DepthStencilState = nullptr;
+		DefaultDepthStencilState->Release();
+		DefaultDepthStencilState = nullptr;
+	}
+
+	if (DisabledDepthStencilState)
+	{
+		DisabledDepthStencilState->Release();
+		DisabledDepthStencilState = nullptr;
 	}
 
 	// 렌더 타겟을 초기화
@@ -172,8 +191,8 @@ void URenderer::Update(UEditor* Editor)
 {
 	RenderBegin();
 
-	Editor->RenderEditor();
 	RenderLevel();
+	Editor->RenderEditor();
 
 	//RenderLines();
 
@@ -218,7 +237,7 @@ void URenderer::RenderLevel()
 			DefaultInputLayout,
 			DefaultVertexShader,
 			RasterizerState,
-			DepthStencilState,
+			DefaultDepthStencilState,
 			DefaultPixelShader,
 			nullptr,
 		};
@@ -283,6 +302,9 @@ void URenderer::RenderEnd()
 
 void URenderer::RenderPrimitive(FEditorPrimitive& Primitive)
 {
+	ID3D11DepthStencilState* DepthStencilState =
+		Primitive.bShouldAlwaysVisible ? DisabledDepthStencilState : DefaultDepthStencilState;
+
 	FPipelineInfo PipelineInfo = {
 			DefaultInputLayout,
 			DefaultVertexShader,

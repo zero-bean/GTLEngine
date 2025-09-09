@@ -7,12 +7,13 @@ UGizmo::UGizmo()
 {
 
 	UResourceManager& ResourceManager = UResourceManager::GetInstance();
-	
+
 	VerticesGizmo = ResourceManager.GetVertexData(EPrimitiveType::Gizmo);
 	Primitive.Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Gizmo);
 	Primitive.NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Gizmo);
 	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	Primitive.Scale = FVector(Scale, Scale, Scale);
+	Primitive.bShouldAlwaysVisible = true;
 	/*SetRootComponent(CreateDefaultSubobject<USceneComponent>("Root"));
 
 	GizmoArrowR = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowRed");
