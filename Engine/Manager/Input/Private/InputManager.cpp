@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Manager/Input/Public/InputManager.h"
+#include "Core/Public/AppWindow.h"
 
 IMPLEMENT_SINGLETON(UInputManager)
 
@@ -48,8 +49,6 @@ void UInputManager::InitializeKeyMapping()
 	VirtualKeyMap['8'] = EKeyInput::Num8;
 	VirtualKeyMap['9'] = EKeyInput::Num9;
 
-
-
 	// 마우스 버튼 (특별 처리 필요)
 	VirtualKeyMap[VK_LBUTTON] = EKeyInput::MouseLeft;
 	VirtualKeyMap[VK_RBUTTON] = EKeyInput::MouseRight;
@@ -72,7 +71,7 @@ void UInputManager::InitializeKeyMapping()
 	}
 }
 
-void UInputManager::Update()
+void UInputManager::Update(FAppWindow* InWindow)
 {
 	// 이전 프레임 상태를 현재 프레임 상태로 복사
 	PreviousKeyState = CurrentKeyState;
@@ -89,7 +88,7 @@ void UInputManager::Update()
 	}
 
 	// 마우스 위치 업데이트
-	UpdateMousePosition();
+	UpdateMousePosition(InWindow);
 
 	// GetAsyncKeyState를 사용하여 현재 키 상태를 업데이트
 	for (auto& Pair : VirtualKeyMap)
@@ -111,9 +110,13 @@ void UInputManager::Update()
 	}
 }
 
-void UInputManager::UpdateMousePosition()
+void UInputManager::UpdateMousePosition(const FAppWindow* InWindow)
 {
 	PreviousMousePosition = CurrentMousePosition;
+
+	int32 ViewportWidth;
+	int32 ViewportHeight;
+	InWindow->GetClientSize(ViewportWidth, ViewportHeight);
 
 	POINT MousePoint;
 	if (GetCursorPos(&MousePoint))
@@ -122,6 +125,9 @@ void UInputManager::UpdateMousePosition()
 		CurrentMousePosition.X = static_cast<float>(MousePoint.x);
 		CurrentMousePosition.Y = static_cast<float>(MousePoint.y);
 	}
+
+	NDCMousePosition.X = (CurrentMousePosition.X / static_cast<float>(ViewportWidth)) * 2.0f - 1.0f;
+	NDCMousePosition.Y = 1.0f - (CurrentMousePosition.Y / static_cast<float>(ViewportHeight)) * 2.0f;
 
 	MouseDelta = CurrentMousePosition - PreviousMousePosition;
 }
