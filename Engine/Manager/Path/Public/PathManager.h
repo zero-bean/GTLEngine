@@ -20,6 +20,7 @@ public:
 	const path& GetAudioPath() const { return AudioPath; }
 	const path& GetWorldPath() const { return WorldPath; }
 	const path& GetConfigPath() const { return ConfigPath; }
+	const path& GetFontPath() const { return FontPath; }
 
 private:
 	path RootPath;
@@ -30,6 +31,7 @@ private:
 	path AudioPath;
 	path WorldPath;
 	path ConfigPath;
+	path FontPath;
 
 	void InitializeRootPath();
 	void GetEssentialPath();

@@ -16,15 +16,15 @@ UConsoleWindow::UConsoleWindow(const FUIWindowConfig& InConfig)
 	: UUIWindow(InConfig)
 {
 	// 콘솔 윈도우 기본 설정
-	FUIWindowConfig config = InConfig;
-	config.WindowTitle = "Game Console";
-	config.DefaultSize = ImVec2(520, 600);
-	config.DefaultPosition = ImVec2(100, 100);
-	config.MinSize = ImVec2(400, 300);
-	config.bResizable = true;
-	config.bMovable = true;
-	config.bCollapsible = true;
-	SetConfig(config);
+	FUIWindowConfig Config = InConfig;
+	Config.WindowTitle = "Game Console";
+	Config.DefaultSize = ImVec2(520, 600);
+	Config.DefaultPosition = ImVec2(100, 100);
+	Config.MinSize = ImVec2(400, 300);
+	Config.bResizable = true;
+	Config.bMovable = true;
+	Config.bCollapsible = true;
+	SetConfig(Config);
 
 	// 초기화
 	ClearLog();
@@ -38,6 +38,8 @@ UConsoleWindow::UConsoleWindow(const FUIWindowConfig& InConfig)
 	ConsoleErrorBuffer = nullptr;
 	OriginalConsoleOutput = nullptr;
 	OriginalConsoleError = nullptr;
+
+	SetName(Config.WindowTitle);
 }
 
 // ConsoleStreamBuffer implementation
