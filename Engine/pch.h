@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <functional>
 #include <filesystem>
+#include <iterator>
 
 // Global Included
 #include "Global/Constant.h"
@@ -46,6 +47,7 @@ using std::to_string;
 using std::function;
 using std::wstring;
 using std::cout;
+using std::cerr;
 using std::min;
 using std::max;
 using std::exception;
@@ -56,6 +58,7 @@ using std::setw;
 using std::sort;
 using std::shared_ptr;
 using std::unique_ptr;
+using std::streamsize;
 
 // File System
 namespace filesystem = std::filesystem;
@@ -67,3 +70,6 @@ using filesystem::create_directories;
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
+
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "Render/UI/Window/Public/ConsoleWindow.h"

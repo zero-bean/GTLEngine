@@ -9,11 +9,11 @@ UGrid::UGrid()
 	URenderer& Renderer = URenderer::GetInstance();
 	SetLineVertices();
 	
-	Primitive.NumVertices = static_cast<int>(LineVertices.size()) * sizeof(FVertex);
+	Primitive.NumVertices = static_cast<UINT>(LineVertices.size());
 	Primitive.Color = FVector4(1, 1, 1, 1);
 	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 	Primitive.Vertexbuffer = Renderer.CreateVertexBuffer(
-		LineVertices.data(), Primitive.NumVertices);
+		LineVertices.data(), Primitive.NumVertices * sizeof(FVertex));
 	Primitive.Location = FVector(0, 0, 0);
 	Primitive.Rotation = FVector(0, 0, 0);
 	Primitive.Scale = FVector(1, 1, 1);

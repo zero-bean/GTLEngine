@@ -238,38 +238,40 @@ void URenderer::RenderLevel()
 	}
 }
 
-void URenderer::RenderEditor()
-{
-	if (!ULevelManager::GetInstance().GetCurrentLevel())
-		return;
 
-	for (auto& PrimitiveComponent :  ULevelManager::GetInstance().GetCurrentLevel()->GetEditorPrimitiveComponents())
-	{
-		if (!PrimitiveComponent) continue;
-
-		FPipelineInfo PipelineInfo = {
-			DefaultInputLayout,
-			DefaultVertexShader,
-			RasterizerState,
-			DepthStencilState,
-			DefaultPixelShader,
-			nullptr,
-			PrimitiveComponent->GetTopology()
-		};
-
-		Pipeline->UpdatePipeline(PipelineInfo);
-
-		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
-		UpdateConstant(
-			PrimitiveComponent);
-
-		Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
-		UpdateConstant(PrimitiveComponent->GetColor());
-
-		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
-		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
-	}
-}
+//Deprecated : EditorPrimitive는 에디터에서 처리
+//void URenderer::RenderEditor()
+//{
+//	if (!ULevelManager::GetInstance().GetCurrentLevel())
+//		return;
+//
+//	for (auto& PrimitiveComponent :  ULevelManager::GetInstance().GetCurrentLevel()->GetEditorPrimitiveComponents())
+//	{
+//		if (!PrimitiveComponent) continue;
+//
+//		FPipelineInfo PipelineInfo = {
+//			DefaultInputLayout,
+//			DefaultVertexShader,
+//			RasterizerState,
+//			DepthStencilState,
+//			DefaultPixelShader,
+//			nullptr,
+//			PrimitiveComponent->GetTopology()
+//		};
+//
+//		Pipeline->UpdatePipeline(PipelineInfo);
+//
+//		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
+//		UpdateConstant(
+//			PrimitiveComponent);
+//
+//		Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
+//		UpdateConstant(PrimitiveComponent->GetColor());
+//
+//		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
+//		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
+//	}
+//}
 
 /**
  * @brief 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력

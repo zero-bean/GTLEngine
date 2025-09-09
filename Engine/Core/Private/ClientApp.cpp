@@ -11,11 +11,8 @@
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
 
+#include "Render/UI/Window/Public/ConsoleWindow.h"
 
-// TODO(KHJ): 제거 대상
-///////////////////////////////////
-// 테스트용 카메라 전역 변수로 선언
-///////////////////////////////////
 
 FClientApp::FClientApp() = default;
 
@@ -35,7 +32,7 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 	// Memory Leak Detection & Report
 	#ifdef _DEBUG
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-		_CrtSetBreakAlloc(564);
+		_CrtSetBreakAlloc(0);
 	#endif
 
 	// Window Object Initialize
@@ -85,14 +82,23 @@ int FClientApp::InitializeSystem() const
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
 
-	// TEST CODE - 거슬리면 나중에 리팩터링
-
 	// UIManager Initialize
 	auto& UiManager = UUIManager::GetInstance();
 	UiManager.Initialize(Window->GetWindowHandle());
 	UUIWindowFactory::CreateDefaultUILayout();
 
 	UResourceManager::GetInstance().Initialize();
+
+	// UE_LOG 테스트
+	// UE_LOG("=== Engine Initialization Started ===");
+	// UE_LOG("Window Handle: %p", Window->GetWindowHandle());
+	// UE_LOG("Renderer initialized successfully");
+
+	// Console Window 테스트
+	// cout << "[System] This is cout output test\n";
+	// cerr << "[System] This is cerr output test\n";
+
+	// UE_LOG("=== Engine Initialization Completed ===");
 
 	// Create Default Level
 	// TODO(KHJ): 나중에 Init에서 처리하도록 하는 게 맞을 듯
@@ -113,15 +119,14 @@ void FClientApp::UpdateSystem()
 	auto& UiManager = UUIManager::GetInstance();
 
 	Editor->Update(Window->GetWindowHandle());
-	Editor->RenderEditor();
 	TimeManager.Update();
 	InputManager.Update();
 	LevelManager.Update();
-
 	
 	UiManager.Update();
 	
 	Renderer.Update(Editor);
+
 }
 
 /**
@@ -154,11 +159,6 @@ void FClientApp::MainLoop()
 			UpdateSystem();
 		}
 	}
-
-	// TODO(KHJ): 제거 대상
-	////////////////////////////////////////
-	// TEST CODE - 거슬리면 나중에 리팩터링
-	////////////////////////////////////////
 }
 
 /**

@@ -4,6 +4,7 @@
 class AAxis;
 class AGizmo;
 class AGrid;
+class Camera;
 class AActor;
 class UPrimitiveComponent;
 
@@ -23,11 +24,12 @@ public:
 	TArray<AActor*> GetLevelActors() const { return LevelActors; }
 	TArray<UPrimitiveComponent*> GetLevelPrimitiveComponents() const { return LevelPrimitiveComponents; }
 
-	TArray<AActor*> GetEditorActors() const { return EditorActors; }
-	TArray<UPrimitiveComponent*> GetEditorPrimitiveComponents() const { return EditorPrimitiveComponents; }
+	//Deprecated : EditorPrimitive는 에디터에서 처리
+	//TArray<AActor*> GetEditorActors() const { return EditorActors; }
+	//TArray<UPrimitiveComponent*> GetEditorPrimitiveComponents() const { return EditorPrimitiveComponents; }
 
 	void AddLevelPrimitiveComponent(AActor* Actor);
-	void AddEditorPrimitiveComponent(AActor* Actor);
+	//void AddEditorPrimitiveComponent(AActor* Actor);
 
 	template<typename T, typename... Args>
 	T* SpawnActor(Args&&... args);
@@ -42,12 +44,16 @@ public:
 	AActor* GetSelectedActor() const { return SelectedActor; }
 	AGizmo* GetGizmo() const { return Gizmo; }
 
+	void SetCamera(Camera* InCamera) { CameraPtr = InCamera; }
+	Camera* GetCamera() const { return CameraPtr; }
+
 private:
 	TArray<AActor*> LevelActors;
 	TArray<UPrimitiveComponent*> LevelPrimitiveComponents;
 
-	TArray<AActor*> EditorActors;
-	TArray<UPrimitiveComponent*> EditorPrimitiveComponents;
+	//Deprecated : EditorPrimitive는 에디터에서 처리
+	//TArray<AActor*> EditorActors;
+	//TArray<UPrimitiveComponent*> EditorPrimitiveComponents;
 
 	// 지연 삭제를 위한 리스트
 	TArray<AActor*> ActorsToDelete;
@@ -56,6 +62,10 @@ private:
 	AGizmo* Gizmo = nullptr;
 	AAxis* Axis = nullptr;
 	AGrid* Grid = nullptr;
+	//////////////////////////////////////////////////////////////////////////
+	// TODO(PYB): Editor 제작되면 해당 클래스에 존재하는 카메라 관련 코드 제거	
+	//////////////////////////////////////////////////////////////////////////
+	Camera* CameraPtr = nullptr;
 
 	// 지연 삭제 처리 함수
 	void ProcessPendingDeletions();
@@ -72,13 +82,14 @@ T* ULevel::SpawnActor(Args&&... InArgs)
 	return NewActor;
 }
 
-template <typename T, typename ... Args>
-T* ULevel::SpawnEditorActor(Args&&... InArgs)
-{
-	T* NewActor = new T(std::forward<Args>(InArgs)...);
-
-	EditorActors.push_back(NewActor);
-	NewActor->BeginPlay();
-
-	return NewActor;
-}
+//Deprecated : EditorPrimitive는 에디터에서 처리
+//template <typename T, typename ... Args>
+//T* ULevel::SpawnEditorActor(Args&&... InArgs)
+//{
+//	T* NewActor = new T(std::forward<Args>(InArgs)...);
+//
+//	EditorActors.push_back(NewActor);
+//	NewActor->BeginPlay();
+//
+//	return NewActor;
+//}

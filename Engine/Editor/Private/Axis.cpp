@@ -14,8 +14,8 @@ UAxis::UAxis()
 	AxisVertices.push_back({ { 50000.0f,0.0f,0.0f }, { 0,0,1,1 } });
 	AxisVertices.push_back({ { 0.0f,0.0f,0.0f }, { 0,0,1,1 } });
 
-	Primitive.NumVertices = static_cast<int>(AxisVertices.size()) * sizeof(FVertex);
-	Primitive.Vertexbuffer = Renderer.CreateVertexBuffer(AxisVertices.data(), Primitive.NumVertices);
+	Primitive.NumVertices = static_cast<int>(AxisVertices.size());
+	Primitive.Vertexbuffer = Renderer.CreateVertexBuffer(AxisVertices.data(), Primitive.NumVertices * sizeof(FVertex));
 	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 	Primitive.Color = FVector4(1, 1, 1, 0);
 	Primitive.Location = FVector(0, 0, 0);

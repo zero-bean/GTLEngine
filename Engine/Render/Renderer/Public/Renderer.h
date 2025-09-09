@@ -7,7 +7,6 @@
 class UPipeline;
 class UDeviceResources;
 class UPrimitiveComponent;
-class Camera;
 class AActor;
 class AGizmo;
 class UEditor;
@@ -57,7 +56,8 @@ public:
 	//void Update();
 	void RenderBegin();
 	void RenderLevel();
-	void RenderEditor();
+	//Deprecated: EditorPrimitive는 에디터에서 처리
+	//void RenderEditor();
 	void RenderEnd();
 	void RenderPrimitive(FEditorPrimitive& Primitive);
 

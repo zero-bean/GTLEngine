@@ -1,8 +1,11 @@
 #pragma once
 
+class UConsoleWindow;
 class UControlPanelWindow;
 class UInputStatusWindow;
 class UPerformanceWindow;
+class ULevelManagerWindow;
+class UCameraPanelWindow;
 
 /**
  * @brief UI 윈도우 도킹 방향
@@ -24,8 +27,11 @@ class UUIWindowFactory
 {
 public:
 	static void CreateDefaultUILayout();
+	static UConsoleWindow* CreateConsoleWindow(EUIDockDirection InDockDirection = EUIDockDirection::Bottom);
 	static UPerformanceWindow* CreatePerformanceWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
 	static UInputStatusWindow* CreateInputStatusWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
 	static UControlPanelWindow* CreateActorInspectorWindow(EUIDockDirection InDockDirection = EUIDockDirection::Left);
+	static ULevelManagerWindow* CreateLevelIOWindow(EUIDockDirection InDockDirection = EUIDockDirection::Center);
+	static UCameraPanelWindow* CreateCameraPanelWindow(EUIDockDirection InDockDirection = EUIDockDirection::Left);
 };
 
