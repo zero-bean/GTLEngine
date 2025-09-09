@@ -40,6 +40,9 @@ public:
 	const FViewProjConstants& GetFViewProjConstants() const { return ViewProjConstants; }
 	const FViewProjConstants GetFViewProjConstantsInverse() const;
 
+	FRay ConvertToWorldRay(float NdcX, float NdcY) const;
+
+	FVector CalculatePlaneNormal(const FVector4& Axis);
 	FVector& GetLocation() { return RelativeLocation; }
 	FVector& GetRotation() { return RelativeRotation; }
 	const FVector& GetForward() const { return Forward; }
@@ -54,7 +57,7 @@ public:
 	/* *
 	 * @brief 행렬 형태로 저장된 좌표와 변환 행렬과의 연산한 결과를 반환합니다.
 	 */
-	inline FVector4 MultiplyPointWithMatrix(const FVector4& Point, const FMatrix& Matrix)
+	inline FVector4 MultiplyPointWithMatrix(const FVector4& Point, const FMatrix& Matrix) const
 	{
 		FVector4 Result = Point * Matrix;
 		/* *
