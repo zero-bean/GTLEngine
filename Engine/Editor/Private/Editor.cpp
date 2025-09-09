@@ -28,7 +28,6 @@ void UEditor::Update(HWND WindowHandle)
 {
 	auto& Renderer = URenderer::GetInstance(); 
 	Camera.Update();
-	Camera.UpdateMatrixByPers();
 	ObjectPicker.PickActor(ULevelManager::GetInstance().GetCurrentLevel(), WindowHandle, Camera);
 	
 	Renderer.UpdateConstant(Camera.GetFViewProjConstants());

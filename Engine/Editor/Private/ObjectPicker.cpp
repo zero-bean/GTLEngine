@@ -7,7 +7,7 @@
 #include "Mesh/Public/Actor.h"
 #include "Level/Public/Level.h"
 
-AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle, const UCamera& Camera)
+AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle, UCamera& Camera)
 {
 	//Level로부터 Actor순회하면서 picked objects중에서 가장 가까운 object return
 	AActor* ShortestActor = nullptr;
@@ -24,9 +24,9 @@ AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle, const UCamera
 	if (!ImGui::GetIO().WantCaptureMouse && Input.IsKeyPressed(EKeyInput::MouseLeft))
 	{
 		FVector MousePosition = Input.GetMousePosition();
-		FRay WorldRay = ConvertToWorldRay(static_cast<int32>(MousePosition.X), static_cast<int32>(MousePosition.Y),
-		                                  ViewportWidth,ViewportHeight ,
-		                                  Camera.GetFViewProjConstantsInverse());
+
+		FRay WorldRay = ConvertToWorldRay(Camera, static_cast<int>(MousePosition.X), static_cast<int>(MousePosition.Y),
+		                                  ViewportWidth,ViewportHeight);
 
 		for (AActor* Actor : Level->GetLevelActors())
 		{
@@ -58,31 +58,68 @@ AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle, const UCamera
 	return ShortestActor;
 }
 
-
-FRay UObjectPicker::ConvertToWorldRay(int32 PixelX, int32 PixelY, int32 ViewportW, int32 ViewportH,
-                       const FViewProjConstants& ViewProjConstantsInverse)
+FRay UObjectPicker::ConvertToWorldRay(UCamera& Camera, int PixelX, int PixelY, int ViewportW, int ViewportH)
 {
-	//Screen to NDC
-	float NDCX = (PixelX / (float)ViewportW) * 2 - 1;
-	float NDCY = 1 - (PixelY / (float)ViewportH) * 2; //window는 좌측 위가 0,0이지만 NDC는 좌측 아래가 0,0(y축의 부호가 반대)
+	/* *
+	 * @brief 반환할 타입의 객체 선언 
+	 */
+	FRay Ray = {};
 
-	//NDC에서의 RAY
-	FVector4 NDCFarPointRay{NDCX, NDCY, 1.0f, 1.0f}; //far plane과 만나는 점
+	const FViewProjConstants& ViewProjMatrix = Camera.GetFViewProjConstants();
 
+	/* *
+	 * @brief 마우스 클릭한 Screen 좌표를 NDC 좌표로 변환합니다.
+	 * NDC: (-1, -1, 0) ~ (1, 1, 1), Window: (0, 0) ~ (Width, Height)
+	 */
+	const float NdcX = (PixelX / (float)ViewportW) * 2.0f - 1.0f;
+	const float NdcY = 1.0f - (PixelY / (float)ViewportH) * 2.0f; // 윈도우 좌표계 Y 반전
 
-	FVector4 ViewFarPointRay = NDCFarPointRay * ViewProjConstantsInverse.Projection;
-	// viewing frustum의 far plane과 Ray가 만나는 점
+	/* *
+	 * @brief NDC 좌표 정보를 행렬로 변환합니다.
+	 */
+	const FVector4 NdcNear(NdcX, NdcY, 0.0f, 1.0f);
+	const FVector4 NdcFar(NdcX, NdcY, 1.0f, 1.0f);
 
+	/* *
+	 * @brief Projection 행렬을 View 행렬로 역투영합니다.
+	 * Model -> View -> Projection -> NDC
+	 */
+	const FVector4 ViewNear = Camera.MultiplyPointWithMatrix(NdcNear, ViewProjMatrix.Projection);
+	const FVector4 ViewFar = Camera.MultiplyPointWithMatrix(NdcFar, ViewProjMatrix.Projection);
 
-	ViewFarPointRay *= 1 / ViewFarPointRay.W;
+	/* *
+	 * @brief View 행렬을 World 행렬로 역투영합니다.
+	 * Model -> View -> Projection -> NDC
+	 */
+	const FVector4 WorldNear = Camera.MultiplyPointWithMatrix(ViewNear, ViewProjMatrix.View);
+	const FVector4 WorldFar = Camera.MultiplyPointWithMatrix(ViewFar, ViewProjMatrix.View);
 
-	FVector4 CameraPosition{
-		ViewProjConstantsInverse.View.Data[3][0], ViewProjConstantsInverse.View.Data[3][1],
-		ViewProjConstantsInverse.View.Data[3][2], ViewProjConstantsInverse.View.Data[3][3]
-	};
-	FVector4 Direction = (ViewFarPointRay * ViewProjConstantsInverse.View - CameraPosition);
-	Direction.Normalize();
-	FRay Ray{CameraPosition, Direction};
+	/* *
+	 * @brief 카메라의 월드 좌표를 추출합니다.
+	 * Row-major 기준, 마지막 행 벡터는 위치 정보를 가지고 있음
+	 */
+	const FVector4 CameraPosition(
+		ViewProjMatrix.View.Data[3][0],
+		ViewProjMatrix.View.Data[3][1],
+		ViewProjMatrix.View.Data[3][2],
+		ViewProjMatrix.View.Data[3][3]);
+
+	if (Camera.GetCameraType() == ECameraType::ECT_Perspective)
+	{
+		FVector4 DirectionVector = WorldFar - CameraPosition;
+		DirectionVector.Normalize();
+
+		Ray.Origin = CameraPosition;
+		Ray.Direction = DirectionVector;
+	}
+	else if (Camera.GetCameraType() == ECameraType::ECT_Orthographic)
+	{
+		FVector4 DirectionVector = WorldFar - WorldNear;
+		DirectionVector.Normalize();
+
+		Ray.Origin = WorldNear;
+		Ray.Direction = DirectionVector;
+	}
 
 	return Ray;
 }

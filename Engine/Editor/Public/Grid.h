@@ -17,7 +17,7 @@ public:
 
 private:
 	float CellSize = 1.0f;
-	int NumLines = 50;
+	int NumLines = 250;
 	FEditorPrimitive Primitive;
 	TArray<FVertex> LineVertices;
 };
