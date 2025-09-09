@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Public/Object.h"
 
 enum class ECameraType
 {
@@ -6,17 +7,17 @@ enum class ECameraType
 	ECT_Perspective
 };
 
-class Camera
+class UCamera : public UObject
 {
 public:
-	Camera() :
+	UCamera() :
 		ViewProjConstants(FViewProjConstants()),
 		RelativeLocation(FVector(0, 1.f, -5.f)), RelativeRotation(FVector(0, 0, 0)),
 		FovY(80.f), Aspect(float(Render::INIT_SCREEN_WIDTH) / Render::INIT_SCREEN_HEIGHT),
 		NearZ(0.1f), FarZ(10.f), OrthoWidth(10), CameraType(ECameraType::ECT_Orthographic)
 	{
 	}
-	~Camera() {};
+	~UCamera() {};
 
 	void Update();
 	void UpdateMatrixByPers();
@@ -38,6 +39,7 @@ public:
 	 */
 	const FViewProjConstants& GetFViewProjConstants() const { return ViewProjConstants; }
 	const FViewProjConstants GetFViewProjConstantsInverse() const;
+
 	FVector& GetLocation() { return RelativeLocation; }
 	FVector& GetRotation() { return RelativeRotation; }
 	const FVector& GetForward() const { return Forward; }

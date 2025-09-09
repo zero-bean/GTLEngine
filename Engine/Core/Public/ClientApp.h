@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mesh/Public/CubeActor.h"
+class UEditor;
 class FAppWindow;
 
 /**
@@ -22,11 +23,12 @@ public:
 
 private:
     int InitializeSystem() const;
-    static void UpdateSystem();
+    void UpdateSystem();
     void MainLoop();
 	static void ShutdownSystem();
 
     HACCEL AcceleratorTable;
     MSG MainMessage;
     FAppWindow* Window;
+	UEditor* Editor = nullptr;
 };

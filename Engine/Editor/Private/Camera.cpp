@@ -1,10 +1,10 @@
 #include "pch.h"
-#include "Camera/Public/Camera.h"
+#include "Editor/Public/Camera.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Time/Public/TimeManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 
-void Camera::Update()
+void UCamera::Update()
 {
 	const UInputManager& Input = UInputManager::GetInstance();
 
@@ -62,7 +62,8 @@ void Camera::Update()
 	URenderer::GetInstance().UpdateConstant(ViewProjConstants);
 }
 
-void Camera::UpdateMatrixByPers()
+void UCamera::UpdateMatrixByPers()
+
 {
 	/**
 	 * @brief View 행렬 연산
@@ -94,7 +95,7 @@ void Camera::UpdateMatrixByPers()
 	ViewProjConstants.Projection = P;
 }
 
-void Camera::UpdateMatrixByOrth()
+void UCamera::UpdateMatrixByOrth()
 {
 	/**
 	 * @brief View 행렬 연산
@@ -124,7 +125,7 @@ void Camera::UpdateMatrixByOrth()
 	ViewProjConstants.Projection = P;
 }
 
-const FViewProjConstants Camera::GetFViewProjConstantsInverse() const
+const FViewProjConstants UCamera::GetFViewProjConstantsInverse() const
 {
 	/*
 	* @brief View^(-1) = R * T

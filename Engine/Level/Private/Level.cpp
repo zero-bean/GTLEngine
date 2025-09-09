@@ -2,27 +2,18 @@
 #include "Level/Public/Level.h"
 
 #include "Manager/UI/Public/UIManager.h"
-#include "Render/Gizmo/Public/Gizmo.h"
-#include "Render/AxisLine/Public/Axis.h"
-#include "Render/Grid/Public/Grid.h"
-#include "Render/Gizmo/Public/GizmoArrow.h"
-#include "Camera/Public/Camera.h"
+#include "Mesh/Public/Actor.h"
+
 #include "Render/UI/Window/Public/CameraPanelWindow.h"
+
 ULevel::ULevel()
 {
-	Gizmo = SpawnEditorActor<AGizmo>();
-	Axis = SpawnEditorActor<AAxis>();
-	Grid = SpawnEditorActor<AGrid>();
-	CameraPtr = new Camera();
+
 }
 
 ULevel::ULevel(const FString& InName)
 	: UObject(InName)
 {
-	Gizmo = SpawnEditorActor<AGizmo>();
-	Axis = SpawnEditorActor<AAxis>();
-	Grid = SpawnEditorActor<AGrid>();
-	CameraPtr = new Camera();
 }
 
 ULevel::~ULevel()
@@ -32,10 +23,11 @@ ULevel::~ULevel()
 		SafeDelete(Actor);
 	}
 
-	for (auto Actor : EditorActors)
+	//Deprecated : EditorPrimitive는 에디터에서 처리
+	/*for (auto Actor : EditorActors)
 	{
 		SafeDelete(Actor);
-	}
+	}*/
 
 	SafeDelete(CameraPtr);
 }
@@ -43,11 +35,6 @@ ULevel::~ULevel()
 void ULevel::Init()
 {
 	// TEST CODE
-	if (UCameraPanelWindow* Window =
-		dynamic_cast<UCameraPanelWindow*>(UUIManager::GetInstance().FindUIWindow("Camera Control")))
-	{
-		Window->SetCamera(CameraPtr);
-	}
 }
 
 void ULevel::Update()
@@ -56,7 +43,8 @@ void ULevel::Update()
 	ProcessPendingDeletions();
 
 	LevelPrimitiveComponents.clear();
-	EditorPrimitiveComponents.clear();
+	//Deprecated : EditorPrimitive는 에디터에서 처리
+	//EditorPrimitiveComponents.clear();
 
 	for (auto& Actor : LevelActors)
 	{
@@ -66,19 +54,17 @@ void ULevel::Update()
 			AddLevelPrimitiveComponent(Actor);
 		}
 	}
-	for (auto& Actor : EditorActors)
+
+	//Deprecated : EditorPrimitive는 에디터에서 처리
+	/*for (auto& Actor : EditorActors)
 	{
 		if (Actor)
 		{
 			Actor->Tick();
 			AddEditorPrimitiveComponent(Actor);
 		}
-	}
+	}*/
 
-	if (CameraPtr)
-	{
-		CameraPtr->Update();
-	}
 }
 
 void ULevel::Render()
@@ -105,29 +91,29 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 		}
 	}
 }
-
-void ULevel::AddEditorPrimitiveComponent(AActor* Actor)
-{
-	if (!Actor) return;
-
-	for (auto& Component : Actor->GetOwnedComponents())
-	{
-		if (Component->GetComponentType() >= EComponentType::Primitive)
-		{
-			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-			if (PrimitiveComponent->IsVisible())
-			{
-				EditorPrimitiveComponents.push_back(PrimitiveComponent);
-			}
-		}
-	}
-}
+//Deprecated : EditorPrimitive는 에디터에서 처리
+//void ULevel::AddEditorPrimitiveComponent(AActor* Actor)
+//{
+//	if (!Actor) return;
+//
+//	for (auto& Component : Actor->GetOwnedComponents())
+//	{
+//		if (Component->GetComponentType() >= EComponentType::Primitive)
+//		{
+//			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+//			if (PrimitiveComponent->IsVisible())
+//			{
+//				EditorPrimitiveComponents.push_back(PrimitiveComponent);
+//			}
+//		}
+//	}
+//}
 
 void ULevel::SetSelectedActor(AActor* InActor)
 {
 	// Set Selected Actor
 	SelectedActor = InActor;
-	Gizmo->SetTargetActor(SelectedActor);
+	//Gizmo->SetTargetActor(SelectedActor);
 }
 
 /**
@@ -150,26 +136,28 @@ bool ULevel::DestroyActor(AActor* InActor)
 		}
 	}
 
+	//Deprecated : EditorPrimitive는 에디터에서 처리
 	// 필요하다면 EditorActors 리스트에서도 제거
-	for (auto Iterator = EditorActors.begin(); Iterator != EditorActors.end(); ++Iterator)
+	/*for (auto Iterator = EditorActors.begin(); Iterator != EditorActors.end(); ++Iterator)
 	{
 		if (*Iterator == InActor)
 		{
 			EditorActors.erase(Iterator);
 			break;
 		}
-	}
+	}*/
 
 	// Remove Actor Selection
 	if (SelectedActor == InActor)
 	{
 		SelectedActor = nullptr;
 
+		//Deprecated : Gizmo는 에디터에서 처리
 		// Gizmo Target Release
-		if (Gizmo)
+		/*if (Gizmo)
 		{
 			Gizmo->SetTargetActor(nullptr);
-		}
+		}*/
 	}
 
 	// Remove
@@ -209,11 +197,12 @@ void ULevel::MarkActorForDeletion(AActor* InActor)
 	{
 		SelectedActor = nullptr;
 
+		//Deprecated : Gizmo는 에디터에서 처리
 		// Gizmo Target도 즉시 해제
-		if (Gizmo)
+		/*if (Gizmo)
 		{
 			Gizmo->SetTargetActor(nullptr);
-		}
+		}*/
 	}
 }
 
@@ -240,10 +229,10 @@ void ULevel::ProcessPendingDeletions()
 		if (SelectedActor == ActorToDelete)
 		{
 			SelectedActor = nullptr;
-			if (Gizmo)
+			/*if (Gizmo)
 			{
 				Gizmo->SetTargetActor(nullptr);
-			}
+			}*/
 		}
 
 		// LevelActors 리스트에서 제거
@@ -256,15 +245,16 @@ void ULevel::ProcessPendingDeletions()
 			}
 		}
 
+		//Deprecated : EditorActor는 에디터에서 처리
 		// EditorActors 리스트에서도 제거
-		for (auto Iterator = EditorActors.begin(); Iterator != EditorActors.end(); ++Iterator)
+		/*for (auto Iterator = EditorActors.begin(); Iterator != EditorActors.end(); ++Iterator)
 		{
 			if (*Iterator == ActorToDelete)
 			{
 				EditorActors.erase(Iterator);
 				break;
 			}
-		}
+		}*/
 
 		// Release Memory
 		delete ActorToDelete;

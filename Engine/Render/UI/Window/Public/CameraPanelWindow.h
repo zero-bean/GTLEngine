@@ -1,7 +1,7 @@
 #pragma once
 #include "Render/UI/Window/Public/UIWindow.h"
 
-class Camera;
+class UCamera;
 
 class UCameraPanelWindow : public UUIWindow
 {
@@ -17,7 +17,7 @@ public:
 	/*
 	 * @brief Setter 
 	 */
-	void SetCamera(Camera* InCamera) { CameraPtr = InCamera; }
+	void SetCamera(UCamera* InCamera) { CameraPtr = InCamera; }
 
 private:
 	void SyncFromCamera();
@@ -27,7 +27,7 @@ private:
 	 * @brief 멤버 변수 설명
 	 * @var CameraModeIndex: 0: Perspective, 1: Orthographic
 	 */
-	Camera* CameraPtr = nullptr;
+	UCamera* CameraPtr = nullptr;
 	float UiFovY = 80.f;
 	float UiNearZ = 0.1f;
 	float UiFarZ = 1000.f;

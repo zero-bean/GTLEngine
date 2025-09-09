@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Core/Public/ClientApp.h"
 
-#include "Camera/Public/Camera.h"
+#include "Editor/Public/Editor.h"
 #include "Core/Public/AppWindow.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Level/Public/LevelManager.h"
@@ -10,8 +10,9 @@
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
+
 #include "Render/UI/Window/Public/ConsoleWindow.h"
-#include "ObjectPicking.h"
+
 
 FClientApp::FClientApp() = default;
 
@@ -57,13 +58,14 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 		assert(!"Initialize Failed");
 		return 0;
 	}
-
+	Editor = new UEditor();
 	// Execute Main Loop
 	MainLoop();
 
 	// Termination Process
 	ShutdownSystem();
 	delete Window;
+	delete Editor;
 
 	return static_cast<int>(MainMessage.wParam);
 }
@@ -116,11 +118,15 @@ void FClientApp::UpdateSystem()
 	auto& LevelManager = ULevelManager::GetInstance();
 	auto& UiManager = UUIManager::GetInstance();
 
+	Editor->Update(Window->GetWindowHandle());
 	TimeManager.Update();
 	InputManager.Update();
 	LevelManager.Update();
+	
 	UiManager.Update();
-	Renderer.Update();
+	
+	Renderer.Update(Editor);
+
 }
 
 /**
@@ -149,8 +155,7 @@ void FClientApp::MainLoop()
 		// Game System Update
 		else
 		{
-			auto& LevelManager = ULevelManager::GetInstance();
-			PickActor(LevelManager.GetCurrentLevel(), Window->GetWindowHandle());
+			
 			UpdateSystem();
 		}
 	}

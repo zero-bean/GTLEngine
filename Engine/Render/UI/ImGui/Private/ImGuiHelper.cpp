@@ -13,7 +13,7 @@
 #include "Render/Renderer/Public/Renderer.h"
 
 // 테스트용 Camera
-#include "Camera/Public/Camera.h"
+#include "Editor/Public/Camera.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

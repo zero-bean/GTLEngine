@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Render/UI/Window/Public/CameraPanelWindow.h"
-#include "Camera/Public/Camera.h"
+#include "Editor/Public/Camera.h"
 #include "Manager/Input/Public/InputManager.h"
 
 UCameraPanelWindow::UCameraPanelWindow()
