@@ -42,6 +42,9 @@ void ULevel::Update()
 	// Process Delayed Task
 	ProcessPendingDeletions();
 
+	uint64 AllocatedByte = GetAllocatedBytes();
+	uint32 AllocatedCount = GetAllocatedCount();
+
 	LevelPrimitiveComponents.clear();
 	//Deprecated : EditorPrimitive는 에디터에서 처리
 	//EditorPrimitiveComponents.clear();

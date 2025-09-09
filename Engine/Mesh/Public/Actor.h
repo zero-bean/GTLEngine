@@ -10,6 +10,7 @@ class AActor : public UObject
 {
 public:
 	AActor();
+	AActor(UObject* InOuter);
 	virtual ~AActor() override;
 
 	void SetActorLocation(const FVector& InLocation) const;
@@ -42,8 +43,9 @@ template <typename T>
 T* AActor::CreateDefaultSubobject(const FString& InName)
 {
 	T* NewComponent = new T();
-
+	NewComponent->AddMemoryUsage(sizeof(T));
 	NewComponent->SetOuter(this);
+
 	NewComponent->SetOwner(this);
 	NewComponent->SetName(InName);
 	OwnedComponents.push_back(NewComponent);

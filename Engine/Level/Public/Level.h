@@ -63,7 +63,7 @@ private:
 	AAxis* Axis = nullptr;
 	AGrid* Grid = nullptr;
 	//////////////////////////////////////////////////////////////////////////
-	// TODO(PYB): Editor 제작되면 해당 클래스에 존재하는 카메라 관련 코드 제거	
+	// TODO(PYB): Editor 제작되면 해당 클래스에 존재하는 카메라 관련 코드 제거
 	//////////////////////////////////////////////////////////////////////////
 	Camera* CameraPtr = nullptr;
 
@@ -75,8 +75,10 @@ template <typename T, typename ... Args>
 T* ULevel::SpawnActor(Args&&... InArgs)
 {
 	T* NewActor = new T(std::forward<Args>(InArgs)...);
+	NewActor->AddMemoryUsage(sizeof(T));
 
 	LevelActors.push_back(NewActor);
+	NewActor->SetOuter(this);
 	NewActor->BeginPlay();
 
 	return NewActor;

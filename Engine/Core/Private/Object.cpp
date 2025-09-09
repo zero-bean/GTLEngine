@@ -19,5 +19,41 @@ UObject::UObject(const FString& InString)
 	: Name(InString)
 	  , Outer(nullptr)
 {
-	UObject();
+	UUID = UEngineStatics::GenUUID();
+
+	GUObjectArray.push_back(this);
+	InternalIndex = static_cast<uint32>(GUObjectArray.size()) - 1;
+}
+
+void UObject::SetOuter(UObject* InObject)
+{
+	if (Outer)
+	{
+		Outer->RemoveMemoryUsage(AllocatedBytes);
+	}
+	Outer = InObject;
+	if (Outer)
+	{
+		Outer->AddMemoryUsage(AllocatedBytes);
+	}
+}
+
+void UObject::AddMemoryUsage(uint64 Bytes, uint32 Count)
+{
+	AllocatedBytes += Bytes;
+	AllocatedCounts += Count;
+	if (Outer)
+	{
+		Outer->AddMemoryUsage(Bytes);
+	}
+}
+
+void UObject::RemoveMemoryUsage(uint64 Bytes, uint32 Count)
+{
+	if (AllocatedBytes >= Bytes) AllocatedBytes -= Bytes;
+	if (AllocatedCounts >= Count) AllocatedCounts -= Count;
+	if (Outer)
+	{
+		Outer->RemoveMemoryUsage(Bytes);
+	}
 }
