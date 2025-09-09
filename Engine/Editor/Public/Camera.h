@@ -12,9 +12,9 @@ class UCamera : public UObject
 public:
 	UCamera() :
 		ViewProjConstants(FViewProjConstants()),
-		RelativeLocation(FVector(0, 1.f, -5.f)), RelativeRotation(FVector(0, 0, 0)),
-		FovY(80.f), Aspect(float(Render::INIT_SCREEN_WIDTH) / Render::INIT_SCREEN_HEIGHT),
-		NearZ(0.1f), FarZ(10.f), OrthoWidth(10), CameraType(ECameraType::ECT_Orthographic)
+		RelativeLocation(FVector(-5.f, 10.f, -5.f)), RelativeRotation(FVector(45, 45, 0)),
+		FovY(90.f), Aspect(float(Render::INIT_SCREEN_WIDTH) / Render::INIT_SCREEN_HEIGHT),
+		NearZ(0.1f), FarZ(100.f), CameraType(ECameraType::ECT_Perspective)
 	{
 	}
 	~UCamera() {};
@@ -50,6 +50,20 @@ public:
 	const float GetNearZ() const { return NearZ; }
 	const float GetFarZ() const { return FarZ; }
 	const ECameraType GetCameraType() const { return CameraType; }
+
+	/* *
+	 * @brief 행렬 형태로 저장된 좌표와 변환 행렬과의 연산한 결과를 반환합니다.
+	 */
+	inline FVector4 MultiplyPointWithMatrix(const FVector4& Point, const FMatrix& Matrix)
+	{
+		FVector4 Result = Point * Matrix;
+		/* *
+		 * @brief 좌표가 왜곡된 공간에 남는 것을 방지합니다.
+		 */
+		if (Result.W != 0.f) { Result *= (1.f / Result.W); }
+
+		return Result;
+	}
 
 private:
 	FViewProjConstants ViewProjConstants = {};
