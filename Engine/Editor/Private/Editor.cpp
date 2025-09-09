@@ -16,13 +16,15 @@
 
 
 UEditor::UEditor()
+	:Camera(),
+	ObjectPicker(Camera)
 {
 	if (UCameraPanelWindow* Window =
 		dynamic_cast<UCameraPanelWindow*>(UUIManager::GetInstance().FindUIWindow("Camera Control")))
 	{
 		Window->SetCamera(&Camera);
 	}
-	ObjectPicker.SetCamera(&Camera);
+	ObjectPicker.SetCamera(Camera);
 };
 
 UEditor::~UEditor() = default;

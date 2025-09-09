@@ -22,6 +22,8 @@ public:
 	FVector MoveGizmo(UObjectPicker& ObjectPicker);
 
 	void SetGizmoDirection(EGizmoDirection Direction);
+	void EndDrag();
+	bool IsDragging();
 
 	const EGizmoDirection GetGizmoDirection();
 	const FVector& GetGizmoLocation();
@@ -29,7 +31,7 @@ public:
 	float GetGizmoHeight();
 
 	void OnMouseHovering();
-	void OnMouseDrag(float Distance);
+	void OnMouseClick(FVector4& CollisionPoint);
 	void OnMouseRelease(EGizmoDirection DirectionReleased);
 
 
@@ -40,6 +42,8 @@ private:
 	FVector4 ForwardColor{ 0,0,1,1 };
 	FVector4 RightColor{ 1,0,0,1 };
 	FVector4 UpColor{ 0,1,0,1 };
+	FVector DragStartActorLocation;
+	FVector4 DragStartMouseLocation;
 
 	float Radius = 0.04f;
 	float Height = 0.9f;
