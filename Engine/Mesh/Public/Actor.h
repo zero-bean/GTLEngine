@@ -10,7 +10,7 @@ class AActor : public UObject
 {
 public:
 	AActor();
-	~AActor() override;
+	virtual ~AActor() override;
 
 	void SetActorLocation(const FVector& InLocation) const;
 	void SetActorRotation(const FVector& InRotation) const;

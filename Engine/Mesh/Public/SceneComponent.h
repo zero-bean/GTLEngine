@@ -67,11 +67,22 @@ protected:
 	FVector4 Color = FVector4{ 0.f,0.f,0.f,0.f };
 };
 
+class UTriangleComponent : public UPrimitiveComponent
+{
+public:
+	UTriangleComponent();
+};
+
+class USquareComponent : public UPrimitiveComponent
+{
+public:
+	USquareComponent();
+};
+
 class UCubeComponent : public UPrimitiveComponent
 {
 public:
 	UCubeComponent();
-
 };
 
 class USphereComponent : public UPrimitiveComponent

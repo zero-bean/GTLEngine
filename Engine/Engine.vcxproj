@@ -180,6 +180,7 @@
     <ClInclude Include="Mesh\Public\ResourceManager.h" />
     <ClInclude Include="Mesh\Public\SceneComponent.h" />
     <ClInclude Include="Mesh\Public\SphereActor.h" />
+    <ClInclude Include="Mesh\Public\SquareActor.h" />
     <ClInclude Include="Mesh\Public\TriangleActor.h" />
     <ClInclude Include="Mesh\Public\VertexDatas.h" />
     <ClInclude Include="Mesh\Sample\Rectangle.h" />
@@ -233,6 +234,7 @@
     <ClCompile Include="Mesh\Private\ResourceManager.cpp" />
     <ClCompile Include="Mesh\Private\SceneComponent.cpp" />
     <ClCompile Include="Mesh\Private\SphereActor.cpp" />
+    <ClCompile Include="Mesh\Private\SquareActor.cpp" />
     <ClCompile Include="Mesh\Private\TriangleActor.cpp" />
     <ClCompile Include="Mesh\Private\VertexDatas.cpp" />
     <ClCompile Include="pch.cpp">

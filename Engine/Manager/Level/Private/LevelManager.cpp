@@ -5,6 +5,7 @@
 #include "Mesh/Public/CubeActor.h"
 #include "Mesh/Public/SphereActor.h"
 #include "Mesh/Public/TriangleActor.h"
+#include "Mesh/Public/SquareActor.h"
 #include "Manager/Path/Public/PathManager.h"
 #include "Utility/Public/LevelSerializer.h"
 #include "Utility/Public/Metadata.h"
@@ -348,6 +349,12 @@ bool ULevelManager::LoadLevelFromMetadata(ULevel* InLevel, const FLevelMetadata&
 			break;
 		case EPrimitiveType::Sphere:
 			NewActor = InLevel->SpawnActor<ASphereActor>();
+			break;
+		case EPrimitiveType::Triangle:
+			NewActor = InLevel->SpawnActor<ATriangleActor>();
+			break;
+		case EPrimitiveType::Square:
+			NewActor = InLevel->SpawnActor<ASquareActor>();
 			break;
 		// TODO(KHJ): TriangleActor 지원 예정
 		// case EPrimitiveType::Triangle:

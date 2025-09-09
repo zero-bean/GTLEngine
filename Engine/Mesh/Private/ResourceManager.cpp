@@ -16,26 +16,30 @@ void UResourceManager::Initialize()
 	VertexDatas.emplace(EPrimitiveType::Cube, &VerticesCube);
 	VertexDatas.emplace(EPrimitiveType::Sphere, &VerticesSphere);
 	VertexDatas.emplace(EPrimitiveType::Triangle, &VerticesTriangle);
+	VertexDatas.emplace(EPrimitiveType::Square, &VerticesSquare);
 
 	VertexDatas.emplace(EPrimitiveType::Line, &VerticesLine);
 	VertexDatas.emplace(EPrimitiveType::Gizmo, &VerticesGizmo);
 
 	//TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
 	Vertexbuffers.emplace(EPrimitiveType::Cube, Renderer.CreateVertexBuffer(
-		                      VerticesCube.data(), static_cast<int>(VerticesCube.size()) * sizeof(FVertex)));
+		VerticesCube.data(), static_cast<int>(VerticesCube.size()) * sizeof(FVertex)));
 	Vertexbuffers.emplace(EPrimitiveType::Sphere, Renderer.CreateVertexBuffer(
-		                      VerticesSphere.data(), static_cast<int>(VerticesSphere.size() * sizeof(FVertex))));
+		VerticesSphere.data(), static_cast<int>(VerticesSphere.size() * sizeof(FVertex))));
 	Vertexbuffers.emplace(EPrimitiveType::Triangle, Renderer.CreateVertexBuffer(
-		                      VerticesTriangle.data(), static_cast<int>(VerticesTriangle.size() * sizeof(FVertex))));
+		VerticesTriangle.data(), static_cast<int>(VerticesTriangle.size() * sizeof(FVertex))));
+	Vertexbuffers.emplace(EPrimitiveType::Square, Renderer.CreateVertexBuffer(
+		VerticesSquare.data(), static_cast<int>(VerticesSquare.size() * sizeof(FVertex))));
 
 	Vertexbuffers.emplace(EPrimitiveType::Line, Renderer.CreateVertexBuffer(
-		                      VerticesLine.data(), static_cast<int>(VerticesLine.size() * sizeof(FVertex))));
+		VerticesLine.data(), static_cast<int>(VerticesLine.size() * sizeof(FVertex))));
 	Vertexbuffers.emplace(EPrimitiveType::Gizmo, Renderer.CreateVertexBuffer(
-		                      VerticesGizmo.data(), static_cast<int>(VerticesGizmo.size() * sizeof(FVertex))));
+		VerticesGizmo.data(), static_cast<int>(VerticesGizmo.size() * sizeof(FVertex))));
 
 	NumVertices.emplace(EPrimitiveType::Cube, static_cast<uint32>(VerticesCube.size()));
 	NumVertices.emplace(EPrimitiveType::Sphere, static_cast<uint32>(VerticesSphere.size()));
 	NumVertices.emplace(EPrimitiveType::Triangle, static_cast<uint32>(VerticesTriangle.size()));
+	NumVertices.emplace(EPrimitiveType::Square, static_cast<uint32>(VerticesSquare.size()));
 
 	NumVertices.emplace(EPrimitiveType::Line, static_cast<uint32>(VerticesLine.size()));
 	NumVertices.emplace(EPrimitiveType::Gizmo, static_cast<uint32>(VerticesGizmo.size()));
