@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Render/UI/Window/Public/ConsoleWindow.h"
+#include <sstream>
+#include <iostream>
+#include <cstdio>
 
 IMPLEMENT_SINGLETON(UConsoleWindow)
 
@@ -109,6 +112,16 @@ void UConsoleWindow::Render()
 			else if (Log.find("[UE_LOG]") != FString::npos)
 			{
 				Color = ImVec4(0.4f, 1.0f, 0.4f, 1.0f); // Green
+				HasColor = true;
+			}
+			else if (Log.find("[Terminal]") != FString::npos)
+			{
+				Color = ImVec4(0.6f, 0.8f, 1.0f, 1.0f); // Light Blue
+				HasColor = true;
+			}
+			else if (Log.find("[Terminal Error]") != FString::npos)
+			{
+				Color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f); // Red
 				HasColor = true;
 			}
 			else if (Log.find("# ") == 0)
@@ -324,7 +337,14 @@ void UConsoleWindow::ProcessCommand(const char* InCommand)
 		AddLog("  UE_LOG(\"String With Format\", Args...) - Log With Printf Formatting");
 		AddLog("    Example: UE_LOG(\"Hello World %%d\", 2025)");
 		AddLog("    Example: UE_LOG(\"User: %%s\", \"John\")");
-		AddLog("  Any Other Command Will Be Sent To Terminal");
+		AddLog("");
+		AddLog("Terminal Commands:");
+		AddLog("  dir, ls - List directory contents");
+		AddLog("  cd [path] - Change directory");
+		AddLog("  echo [text] - Display text");
+		AddLog("  type [file] - Display file contents");
+		AddLog("  ping [host] - Network ping");
+		AddLog("  Any Windows command will be executed directly");
 	}
 	else if (strncmp(InCommand, "ue_log", 6) == 0)
 	{
@@ -390,15 +410,139 @@ void UConsoleWindow::ProcessCommand(const char* InCommand)
 	}
 	else
 	{
-		// 나머지 알 수 없는 명령어를 SampleTerminal로 전달
-		// TODO(KHJ): 실제 나머지 터미널 명령어를 여기로 전달할 수 있으면 좋긴 할 듯
-		AddLog("[SampleTerminal] Command: %s", InCommand);
+		// 실제 터미널 명령어 실행
+		ExecuteTerminalCommand(InCommand);
 	}
 
 	// 스크롤 하단으로 이동
 	bIsScrollToBottom = true;
 }
 
+/**
+ * @brief 실제 터미널 명령어를 실행하고 결과를 콘솔에 표시하는 함수
+ * @param InCommand 실행할 터미널 명령어
+ */
+void UConsoleWindow::ExecuteTerminalCommand(const char* InCommand)
+{
+	if (!InCommand || strlen(InCommand) == 0)
+	{
+		return;
+	}
+
+	AddLog("[Terminal] > %s", InCommand);
+
+	try
+	{
+		FString FullCommand = "powershell /c " + FString(InCommand);
+
+		// Prepare Pipe for Create Process
+		HANDLE PipeReadHandle, PipeWriteHandle;
+
+		SECURITY_ATTRIBUTES SecurityAttribute = {};
+		SecurityAttribute.nLength = sizeof(SECURITY_ATTRIBUTES);
+		SecurityAttribute.bInheritHandle = TRUE;
+		SecurityAttribute.lpSecurityDescriptor = nullptr;
+
+		if (!CreatePipe(&PipeReadHandle, &PipeWriteHandle, &SecurityAttribute, 0))
+		{
+			AddLog("[Terminal Error] Failed To Create Pipe For Command Execution.");
+			return;
+		}
+
+		// Set STARTUPINFO
+		STARTUPINFOA StartUpInfo = {};
+		StartUpInfo.cb = sizeof(STARTUPINFOA);
+		StartUpInfo.dwFlags |= STARTF_USESTDHANDLES;
+		StartUpInfo.hStdInput = nullptr;
+
+		// stderr & stdout을 동일 파이프에서 처리
+		StartUpInfo.hStdError = PipeWriteHandle;
+		StartUpInfo.hStdOutput = PipeWriteHandle;
+
+		PROCESS_INFORMATION ProcessInformation = {};
+
+		// lpCommandLine Param Setting
+		TArray<char> CommandLine(FullCommand.begin(), FullCommand.end());
+		CommandLine.push_back('\0');
+
+		// Create Process
+		if (!CreateProcessA(nullptr, CommandLine.data(), nullptr,
+		                    nullptr, TRUE, CREATE_NO_WINDOW,
+		                    nullptr, nullptr, &StartUpInfo, &ProcessInformation))
+		{
+			AddLog("[Terminal Error] Failed To Execute Command: %s", InCommand);
+			CloseHandle(PipeReadHandle);
+			CloseHandle(PipeWriteHandle);
+			return;
+		}
+
+		// 부모 프로세스에서는 쓰기 핸들이 불필요하므로 바로 닫도록 처리
+		CloseHandle(PipeWriteHandle);
+
+		// Read Execution Process
+		char Buffer[256];
+		DWORD ReadDoubleWord;
+		FString Output;
+		bool bHasOutput = false;
+
+		while (ReadFile(PipeReadHandle, Buffer, sizeof(Buffer) - 1, &ReadDoubleWord, nullptr) && ReadDoubleWord != 0)
+		{
+			Buffer[ReadDoubleWord] = '\0'; // Null 문자로 String 끝 세팅
+			Output += Buffer;
+			bHasOutput = true;
+		}
+
+		// Process 종료 대기
+		WaitForSingleObject(ProcessInformation.hProcess, INFINITE);
+
+		// 종료 코드 확인
+		DWORD ExitCode;
+		GetExitCodeProcess(ProcessInformation.hProcess, &ExitCode);
+
+		// Release Handle
+		CloseHandle(PipeReadHandle);
+		CloseHandle(ProcessInformation.hProcess);
+		CloseHandle(ProcessInformation.hThread);
+
+		// Print Result
+		if (bHasOutput)
+		{
+			std::istringstream Stream(Output);
+			FString Line;
+			while (std::getline(Stream, Line))
+			{
+				// istringstream이 \r을 남길 수 있으므로 제거
+				if (!Line.empty() && Line.back() == '\r')
+				{
+					Line.pop_back();
+				}
+				if (!Line.empty())
+				{
+					AddLog("%s", Line.c_str());
+				}
+			}
+		}
+		else if (ExitCode == 0)
+		{
+			// 출력은 없지만 성공적으로 실행된 경우
+			AddLog("[Terminal] Command executed successfully (no output)");
+		}
+
+		// 에러 코드가 있는 경우 표시
+		if (ExitCode != 0)
+		{
+			AddLog("[Terminal Error] Command failed with exit code: %d", ExitCode);
+		}
+	}
+	catch (const exception& Exception)
+	{
+		AddLog("[Terminal Error] Exception occurred: %s", Exception.what());
+	}
+	catch (...)
+	{
+		AddLog("[Terminal Error] Unknown Error Occurred While Executing Command");
+	}
+}
 
 // System output redirection implementation
 void UConsoleWindow::InitializeSystemRedirect()
