@@ -161,7 +161,7 @@ EGizmoDirection UObjectPicker::PickGizmo(UCamera& Camera, const FRay& WorldRay, 
 FRay UObjectPicker::ConvertToWorldRay(UCamera& Camera, int PixelX, int PixelY, int ViewportW, int ViewportH)
 {
 	/* *
-	 * @brief 반환할 타입의 객체 선언 
+	 * @brief 반환할 타입의 객체 선언
 	 */
 	FRay Ray = {};
 

@@ -26,8 +26,9 @@ UEditor::~UEditor() = default;
 
 void UEditor::Update(HWND WindowHandle)
 {
-	auto& Renderer = URenderer::GetInstance(); 
+	auto& Renderer = URenderer::GetInstance();
 	Camera.Update();
+
 	ObjectPicker.RayCast(ULevelManager::GetInstance().GetCurrentLevel(), WindowHandle, Camera, Gizmo);
 	
 	Renderer.UpdateConstant(Camera.GetFViewProjConstants());
@@ -35,7 +36,7 @@ void UEditor::Update(HWND WindowHandle)
 void UEditor::RenderEditor()
 {
 	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
-	Axis.Render();
 	Grid.RenderGrid();
+	Axis.Render();
 }
 

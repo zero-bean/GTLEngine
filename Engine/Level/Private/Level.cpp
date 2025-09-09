@@ -112,7 +112,36 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 void ULevel::SetSelectedActor(AActor* InActor)
 {
 	// Set Selected Actor
+	if (SelectedActor)
+	{
+		for (auto& Component : SelectedActor->GetOwnedComponents())
+		{
+			if (Component->GetComponentType() >= EComponentType::Primitive)
+			{
+				UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+				if (PrimitiveComponent->IsVisible())
+				{
+					PrimitiveComponent->SetColor({0.f, 0.f, 0.f, 0.f});
+				}
+			}
+		}
+	}
+
 	SelectedActor = InActor;
+	if (SelectedActor)
+	{
+		for (auto& Component : SelectedActor->GetOwnedComponents())
+		{
+			if (Component->GetComponentType() >= EComponentType::Primitive)
+			{
+				UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+				if (PrimitiveComponent->IsVisible())
+				{
+					PrimitiveComponent->SetColor({1.f, 0.8f, 0.2f, 0.4f});
+				}
+			}
+		}
+	}
 	//Gizmo->SetTargetActor(SelectedActor);
 }
 
@@ -163,7 +192,7 @@ bool ULevel::DestroyActor(AActor* InActor)
 	// Remove
 	delete InActor;
 
-	cout << "[Level] Actor Destroyed Successfully" << "\n";
+	UE_LOG("[Level] Actor Destroyed Successfully");
 	return true;
 }
 
@@ -174,7 +203,7 @@ void ULevel::MarkActorForDeletion(AActor* InActor)
 {
 	if (!InActor)
 	{
-		cout << "[Level] MarkActorForDeletion: InActor Is Null" << "\n";
+		UE_LOG("[Level] MarkActorForDeletion: InActor Is Null");
 		return;
 	}
 
@@ -183,14 +212,14 @@ void ULevel::MarkActorForDeletion(AActor* InActor)
 	{
 		if (PendingActor == InActor)
 		{
-			cout << "[Level] Actor Already Marked For Deletion" << "\n";
+			UE_LOG("[Level] Actor Already Marked For Deletion");
 			return;
 		}
 	}
 
 	// 삭제 대기 리스트에 추가
 	ActorsToDelete.push_back(InActor);
-	cout << "[Level] Actor Marked For Deletion In Next Tick: " << InActor << "\n";
+	UE_LOG("[Level] Actor Marked For Deletion In Next Tick: %p", InActor);
 
 	// 선택 해제는 바로 처리
 	if (SelectedActor == InActor)
@@ -217,7 +246,7 @@ void ULevel::ProcessPendingDeletions()
 		return;
 	}
 
-	cout << "[Level] Processing " << ActorsToDelete.size() << " Pending Deletions" << "\n";
+	UE_LOG("[Level] Processing %zu Pending Deletions", ActorsToDelete.size());
 
 	// 대기 중인 액터들을 삭제
 	for (AActor* ActorToDelete : ActorsToDelete)
@@ -258,10 +287,10 @@ void ULevel::ProcessPendingDeletions()
 
 		// Release Memory
 		delete ActorToDelete;
-		cout << "[Level] Actor Deleted: " << ActorToDelete << "\n";
+		UE_LOG("[Level] Actor Deleted: %p", ActorToDelete);
 	}
 
 	// Clear TArray
 	ActorsToDelete.clear();
-	cout << "[Level] All Pending Deletions Processed" << "\n";
+	UE_LOG("[Level] All Pending Deletions Processed");
 }

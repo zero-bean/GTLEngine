@@ -56,6 +56,7 @@ enum class EPrimitiveType : uint8_t
 	Sphere,
 	Cube,
 	Triangle,
+	Square,
 
 	Line,
 

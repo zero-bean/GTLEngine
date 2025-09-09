@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Mesh/Public/CubeActor.h"
 class UEditor;
 class FAppWindow;
 

@@ -4,6 +4,8 @@
 #include "Mesh/Public/Actor.h"
 #include "Mesh/Public/CubeActor.h"
 #include "Mesh/Public/SphereActor.h"
+#include "Mesh/Public/TriangleActor.h"
+#include "Mesh/Public/SquareActor.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Level/Public/Level.h"
 
@@ -32,7 +34,7 @@ UControlPanelWindow::UControlPanelWindow()
  */
 void UControlPanelWindow::Initialize()
 {
-	cout << "[ControlPanelWindow] Initialized" << "\n";
+	UE_LOG("[ControlPanelWindow] Initialized");
 
 	SelectedActor = nullptr;
 	EditLocation = FVector(0, 0, 0);
@@ -266,11 +268,11 @@ void UControlPanelWindow::RenderActorSpawnSection()
 	ImGui::Text("Actor Spawning");
 
 	// Primitive 타입 선택 드롭다운
-	const char* PrimitiveTypes[] = {"Cube", "Sphere"}; // Triangle 제외
+	const char* PrimitiveTypes[] = {"Cube", "Sphere", "Triangle", "Square"}; // Triangle 제외
 	ImGui::Text("Primitive Type:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120);
-	ImGui::Combo("##PrimitiveType", &SelectedPrimitiveType, PrimitiveTypes, 2);
+	ImGui::Combo("##PrimitiveType", &SelectedPrimitiveType, PrimitiveTypes, 4);
 
 	// Spawn 버튼과 개수 입력
 	ImGui::Text("Number of Spawn:");
@@ -321,19 +323,19 @@ void UControlPanelWindow::RenderActorDeleteSection()
  * @brief Actor 생성 함수
  * 난수를 활용한 범위, 사이즈를 통한 생성 처리
  */
-void UControlPanelWindow::SpawnActors()
+void UControlPanelWindow::SpawnActors() const
 {
 	ULevelManager& LevelManager = ULevelManager::GetInstance();
 	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
 
 	if (!CurrentLevel)
 	{
-		cout << "[ControlPanel] No Current Level To Spawn Actors" << "\n";
+		UE_LOG("[ControlPanel] No Current Level To Spawn Actors");
 		return;
 	}
 
-	cout << "[ControlPanel] Spawning " << NumberOfSpawn << " Actors Of Type "
-		<< (SelectedPrimitiveType == 0 ? "Cube" : "Sphere") << "\n";
+	UE_LOG("[ControlPanel] Spawning %d Actors Of Type %s", NumberOfSpawn,
+	       (SelectedPrimitiveType == 0 ? "Cube" : "Sphere"));
 
 	// 지정된 개수만큼 액터 생성
 	for (int i = 0; i < NumberOfSpawn; i++)
@@ -349,6 +351,14 @@ void UControlPanelWindow::SpawnActors()
 		{
 			NewActor = CurrentLevel->SpawnActor<ASphereActor>();
 		}
+		else if (SelectedPrimitiveType == 2)
+		{
+			NewActor = CurrentLevel->SpawnActor<ATriangleActor>();
+		}
+		else if (SelectedPrimitiveType == 3)
+		{
+			NewActor = CurrentLevel->SpawnActor<ASquareActor>();
+		}
 
 		if (NewActor)
 		{
@@ -363,11 +373,11 @@ void UControlPanelWindow::SpawnActors()
 			float RandomScale = 0.5f + (static_cast<float>(rand()) / RAND_MAX) * 1.5f;
 			NewActor->SetActorScale3D(FVector(RandomScale, RandomScale, RandomScale));
 
-			cout << "[ControlPanel] Spawned Actor At (" << RandomX << ", " << RandomY << ", " << RandomZ << ")" << "\n";
+			UE_LOG("[ControlPanel] Spawned Actor At (%.2f, %.2f, %.2f)", RandomX, RandomY, RandomZ);
 		}
 		else
 		{
-			cout << "[ControlPanel] Failed To Spawn Actor " << i << "\n";
+			UE_LOG("[ControlPanel] Failed To Spawn Actor %d", i);
 		}
 	}
 }
@@ -379,7 +389,7 @@ void UControlPanelWindow::DeleteSelectedActor()
 {
 	if (!HasValidActor())
 	{
-		cout << "[ControlPanel] No Actor Selected For Deletion" << "\n";
+		UE_LOG("[ControlPanel] No Actor Selected For Deletion");
 		return;
 	}
 
@@ -388,16 +398,16 @@ void UControlPanelWindow::DeleteSelectedActor()
 
 	if (!CurrentLevel)
 	{
-		cout << "[ControlPanel] No Current Level To Delete Actor From" << "\n";
+		UE_LOG("[ControlPanel] No Current Level To Delete Actor From");
 		return;
 	}
 
-	cout << "[ControlPanel] Marking Selected Actor For Deletion: " << SelectedActor << "\n";
+	UE_LOG("[ControlPanel] Marking Selected Actor For Deletion: %p", SelectedActor);
 
 	// 지연 삭제를 사용하여 안전하게 다음 틱에서 삭제
 	CurrentLevel->MarkActorForDeletion(SelectedActor);
 
 	// MarkActorForDeletion에서 선택 해제도 처리하므로 여기에서는 단순히 nullptr로 설정
 	SelectedActor = nullptr;
-	cout << "[ControlPanel] Actor Marked For Deletion In Next Tick" << "\n";
+	UE_LOG("[ControlPanel] Actor Marked For Deletion In Next Tick");
 }

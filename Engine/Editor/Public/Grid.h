@@ -11,7 +11,7 @@ public:
 	UGrid();
 	~UGrid() override;
 	void SetLineVertices();
-	void SetGridProperty(float CellSize, int NumLines);
+	void SetGridProperty(float InCellSize, int InNumLines);
 
 	void RenderGrid();
 

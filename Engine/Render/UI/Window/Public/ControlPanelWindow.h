@@ -53,7 +53,7 @@ private:
 	// Actor Spawn & Delete
 	void RenderActorSpawnSection();
 	void RenderActorDeleteSection();
-	void SpawnActors();
+	void SpawnActors() const;
 	void DeleteSelectedActor();
 
 	void UpdateTransformFromActor();
