@@ -17,7 +17,7 @@ public:
 		NearZ(0.1f), FarZ(100.f), CameraType(ECameraType::ECT_Perspective)
 	{
 	}
-	~UCamera() {};
+	~UCamera() override {}
 
 	void Update();
 	void UpdateMatrixByPers();
@@ -40,7 +40,7 @@ public:
 	const FViewProjConstants& GetFViewProjConstants() const { return ViewProjConstants; }
 	const FViewProjConstants GetFViewProjConstantsInverse() const;
 
-	FRay ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH) const;
+	FRay ConvertToWorldRay(float NdcX, float NdcY) const;
 
 	FVector& GetLocation() { return RelativeLocation; }
 	FVector& GetRotation() { return RelativeRotation; }

@@ -1,15 +1,10 @@
 #include "pch.h"
 #include "Level/Public/Level.h"
 
-#include "Manager/UI/Public/UIManager.h"
+#include "Editor/Public/Camera.h"
 #include "Mesh/Public/Actor.h"
 
-#include "Render/UI/Window/Public/CameraPanelWindow.h"
-
-ULevel::ULevel()
-{
-
-}
+ULevel::ULevel() = default;
 
 ULevel::ULevel(const FString& InName)
 	: UObject(InName)
@@ -23,11 +18,11 @@ ULevel::~ULevel()
 		SafeDelete(Actor);
 	}
 
-	//Deprecated : EditorPrimitive는 에디터에서 처리
-	/*for (auto Actor : EditorActors)
-	{
-		SafeDelete(Actor);
-	}*/
+	// Deprecated : EditorPrimitive는 에디터에서 처리
+	// for (auto Actor : EditorActors)
+	// {
+	// 	SafeDelete(Actor);
+	// }
 
 	SafeDelete(CameraPtr);
 }

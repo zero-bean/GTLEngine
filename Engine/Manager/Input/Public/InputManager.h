@@ -1,14 +1,16 @@
 #pragma once
 #include "Core/Public/Object.h"
 
+class FAppWindow;
+
 class UInputManager :
 	public UObject
 {
-DECLARE_SINGLETON(UInputManager)
+	DECLARE_SINGLETON(UInputManager)
 
 public:
-	void Update();
-	void UpdateMousePosition();
+	void Update(FAppWindow* InWindow);
+	void UpdateMousePosition(const FAppWindow* InWindow);
 	void ProcessKeyMessage(uint32 InMessage, WPARAM WParam, LPARAM LParam);
 
 	bool IsKeyDown(EKeyInput InKey) const;
@@ -31,6 +33,7 @@ public:
 	static const wchar_t* KeyInputToString(EKeyInput InKey);
 
 	// Getter
+	const FVector& GetMouseNDCPosition() const { return NDCMousePosition; }
 	const FVector& GetMousePosition() const { return CurrentMousePosition; }
 	const FVector& GetMouseDelta() const { return MouseDelta; }
 
@@ -44,6 +47,9 @@ private:
 	FVector CurrentMousePosition;
 	FVector PreviousMousePosition;
 	FVector MouseDelta;
+
+	// NDC Mouse Position
+	FVector NDCMousePosition;
 
 	// Window Focus
 	bool bIsWindowFocused;

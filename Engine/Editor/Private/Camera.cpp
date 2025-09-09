@@ -177,7 +177,7 @@ const FViewProjConstants UCamera::GetFViewProjConstantsInverse() const
 }
 
 
-FRay UCamera::ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH) const
+FRay UCamera::ConvertToWorldRay(float NdcX, float NdcY) const
 {
 	/* *
 	 * @brief 반환할 타입의 객체 선언
@@ -186,12 +186,6 @@ FRay UCamera::ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int Viewp
 
 	const FViewProjConstants& ViewProjMatrix = GetFViewProjConstantsInverse();
 
-	/* *
-	 * @brief 마우스 클릭한 Screen 좌표를 NDC 좌표로 변환합니다.
-	 * NDC: (-1, -1, 0) ~ (1, 1, 1), Window: (0, 0) ~ (Width, Height)
-	 */
-	const float NdcX = (PixelX / (float)ViewportW) * 2.0f - 1.0f;
-	const float NdcY = 1.0f - (PixelY / (float)ViewportH) * 2.0f; // 윈도우 좌표계 Y 반전
 
 	/* *
 	 * @brief NDC 좌표 정보를 행렬로 변환합니다.

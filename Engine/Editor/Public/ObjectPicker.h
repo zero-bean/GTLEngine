@@ -11,19 +11,17 @@ class UObjectPicker : public UObject
 {
 public:
 	void SetCamera(UCamera* Camera);
-	void RayCast(ULevel* Level, HWND WindowHandle, UGizmo& Gizmo);
+	void RayCast(ULevel* InLevel, UGizmo& InGizmo);
 	AActor* PickActor(ULevel* Level, const FRay& WorldRay, float* ShortedDistance);
 	EGizmoDirection PickGizmo(const FRay& WorldRay, UGizmo& Gizmo, float* GizmoDistance);
 	bool IsCollideWithPlane(FVector4 PlanePoint, FVector4 PerpenVectorToPlane, FVector4 PointOnPlane);
 
 private:
-	
-	FRay ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH);
 	bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance);
 	FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive);
 	bool IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
 		const FMatrix& ModelMatrix, float* Distance);
 
 
-	UCamera* Camera;
+	UCamera* Camera = nullptr;
 };
