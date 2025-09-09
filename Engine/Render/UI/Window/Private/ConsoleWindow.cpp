@@ -319,19 +319,15 @@ void UConsoleWindow::ProcessCommand(const char* InCommand)
 		CommandLower == "help")
 	{
 		AddLog("Available Commands:");
-		AddLog("  CLEAR - Clear the console");
-		AddLog("  HELP - Show this help");
-		AddLog("  UE_LOG(\"format\", args...) - Log with printf formatting");
-		AddLog("    Example: UE_LOG(\"Hello World %d\", 2025)");
-		AddLog("    Example: UE_LOG(\"User: %s\", \"John\")");
-		AddLog("  Any other command will be sent to SampleTerminal");
+		AddLog("  CLEAR - Clear The Console");
+		AddLog("  HELP - Show This Help");
+		AddLog("  UE_LOG(\"String With Format\", Args...) - Log With Printf Formatting");
+		AddLog("    Example: UE_LOG(\"Hello World %%d\", 2025)");
+		AddLog("    Example: UE_LOG(\"User: %%s\", \"John\")");
+		AddLog("  Any Other Command Will Be Sent To Terminal");
 	}
 	else if (strncmp(InCommand, "ue_log", 6) == 0)
 	{
-		// UE_LOG 명령어 처리
-		// 예: ue_log "Hello, %d" 2025
-		// 또는: ue_log category level "message format" args...
-
 		FString Input = InCommand;
 		size_t UELogPosition = Input.find("ue_log");
 		if (UELogPosition != FString::npos)
