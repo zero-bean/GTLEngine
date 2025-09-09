@@ -11,6 +11,9 @@ public:
 	bool Init(HINSTANCE InInstance, int InCmdShow);
 	static void InitializeConsole();
 
+	// Viewport Information
+	void GetClientSize(int32& OutWidth, int32& OutHeight) const;
+
 	// Getter & Setter
 	HWND GetWindowHandle() const { return MainWindowHandle; }
 	HINSTANCE GetInstanceHandle() const { return InstanceHandle; }

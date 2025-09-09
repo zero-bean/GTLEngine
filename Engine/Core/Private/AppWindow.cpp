@@ -133,3 +133,11 @@ void FAppWindow::SetNewTitle(const wstring& InNewTitle) const
 {
 	SetWindowTextW(MainWindowHandle, InNewTitle.c_str());
 }
+
+void FAppWindow::GetClientSize(int32& OutWidth, int32& OutHeight) const
+{
+	RECT ClientRectangle;
+	GetClientRect(MainWindowHandle, &ClientRectangle);
+	OutWidth = ClientRectangle.right - ClientRectangle.left;
+	OutHeight = ClientRectangle.bottom - ClientRectangle.top;
+}
