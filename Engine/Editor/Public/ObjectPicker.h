@@ -1,5 +1,6 @@
 #pragma once
 #include "Editor/Public/Camera.h"
+#include "Editor/Public/Gizmo.h"
 #include "Global/Matrix.h"
 #include "Global/Vector.h"
 #include "Global/CoreTypes.h"
@@ -13,8 +14,9 @@ class ULevel;
 class UObjectPicker : public UObject
 {
 public:
-	AActor* PickActor(ULevel* Level, HWND WindowHandle, UCamera& Camera);
-
+	void RayCast(ULevel* Level, HWND WindowHandle, UCamera& Camera, UGizmo& Gizmo);
+	AActor* PickActor(ULevel* Level, UCamera& Camera, const FRay& WorldRay, float* ShortedDistance);
+	EGizmoDirection PickGizmo(UCamera& Camera, const FRay& WorldRay, UGizmo& Gizmo, float* GizmoDistance);
 
 private:
 	FRay ConvertToWorldRay(UCamera& Camera, int PixelX, int PixelY, int ViewportW, int ViewportH);

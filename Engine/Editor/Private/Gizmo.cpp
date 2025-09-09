@@ -12,6 +12,7 @@ UGizmo::UGizmo()
 	Primitive.Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Gizmo);
 	Primitive.NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Gizmo);
 	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	Primitive.Scale = FVector(Scale, Scale, Scale);
 	/*SetRootComponent(CreateDefaultSubobject<USceneComponent>("Root"));
 
 	GizmoArrowR = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowRed");
@@ -41,23 +42,77 @@ void UGizmo::RenderGizmo(AActor* Actor)
 {
 	TargetActor = Actor;
 	URenderer& Renderer = URenderer::GetInstance();
-	bIsVisible = true;
 	if (TargetActor)
 	{
 		Primitive.Location = TargetActor->GetActorLocation();
 		Primitive.Rotation = { 0,89.99f,0 };
-		Primitive.Scale = TargetActor->GetActorScale3D()*2;
-		Primitive.Color = FVector4(1, 0, 0, 1);
+		Primitive.Color = RightColor;
 		Renderer.RenderPrimitive(Primitive);
 
 		Primitive.Rotation = { -89.99f, 0, 0 };
-		Primitive.Color = FVector4(0, 1, 0, 1);
+		Primitive.Color = UpColor;
 		Renderer.RenderPrimitive(Primitive);
 
 		Primitive.Rotation = { 0, 0, 0 };
-		Primitive.Color = FVector4(0, 0, 1, 1);
+		Primitive.Color = ForwardColor;
 		Renderer.RenderPrimitive(Primitive);
 	}
+}
+
+void UGizmo::SetGizmoDirection(EGizmoDirection Direction)
+{
+	GizmoDirection = Direction;
+}
+
+const EGizmoDirection UGizmo::GetGizmoDirection()
+{
+	return GizmoDirection;
+}
+
+const FVector& UGizmo::GetGizmoLocation()
+{
+	return Primitive.Location;
+}
+
+float UGizmo::GetGizmoRadius()
+{
+	return Radius*Scale;
+}
+
+float UGizmo::GetGizmoHeight()
+{
+	return Height*Scale;
+}
+
+void UGizmo::OnMouseRelease(EGizmoDirection DirectionReleased)
+{
+	switch (DirectionReleased)
+	{
+	case EGizmoDirection::Forward:
+		ForwardColor.Z = 1.0f; break;
+	case EGizmoDirection::Right:
+		RightColor.X = 1.0f; break;
+	case EGizmoDirection::Up:
+		UpColor.Y = 1.0f;
+	}
+}
+
+
+void UGizmo::OnMouseHovering()
+{
+	switch (GizmoDirection)
+	{
+	case EGizmoDirection::Forward:
+		ForwardColor.Z = HoveringFactor; break;
+	case EGizmoDirection::Right:
+		RightColor.X = HoveringFactor; break;
+	case EGizmoDirection::Up:
+		UpColor.Y = HoveringFactor;
+	}
+}
+
+void UGizmo::OnMouseDrag(float Distance)
+{
 }
 
 //void AGizmo::SetTargetActor(AActor* actor)
