@@ -269,7 +269,7 @@ void URenderer::RenderLevel()
 //		UpdateConstant(PrimitiveComponent->GetColor());
 //
 //		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
-//		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
+//		Pipeline->Draw(static_cast<uint32>(PrimitiveComponent->GetVerticesData()->size()), 0);
 //	}
 //}
 

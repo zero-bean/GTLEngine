@@ -26,8 +26,8 @@ private:
     HWND MainWindowHandle;
 
     // Windows Callback Function
-    static LRESULT CALLBACK WndProc(HWND InWindowHandle, UINT InMessage, WPARAM InWParam, LPARAM InLParam);
+    static LRESULT CALLBACK WndProc(HWND InWindowHandle, uint32 InMessage, WPARAM InWParam, LPARAM InLParam);
 
     // Message Handle Function
-    static FAppWindow* GetWindowInstance(HWND InWindowHandle, UINT InMessage, LPARAM InLParam);
+    static FAppWindow* GetWindowInstance(HWND InWindowHandle, uint32 InMessage, LPARAM InLParam);
 };

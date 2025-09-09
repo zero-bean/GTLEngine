@@ -1,9 +1,7 @@
 #pragma once
 #include "Core/Public/Object.h"
 #include "Global/CoreTypes.h"
-#include "Render/Renderer/Public/Renderer.h"
 #include "Editor/Public/EditorPrimitive.h"
-#include <vector>
 
 class UGrid : public UObject
 {
@@ -21,5 +19,3 @@ private:
 	FEditorPrimitive Primitive;
 	TArray<FVertex> LineVertices;
 };
-
-//cell 1 halfline 25

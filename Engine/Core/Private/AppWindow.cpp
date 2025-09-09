@@ -67,7 +67,7 @@ void FAppWindow::InitializeConsole()
 	}
 }
 
-FAppWindow* FAppWindow::GetWindowInstance(HWND InWindowHandle, UINT InMessage, LPARAM InLParam)
+FAppWindow* FAppWindow::GetWindowInstance(HWND InWindowHandle, uint32 InMessage, LPARAM InLParam)
 {
 	if (InMessage == WM_NCCREATE)
 	{
@@ -81,7 +81,7 @@ FAppWindow* FAppWindow::GetWindowInstance(HWND InWindowHandle, UINT InMessage, L
 	return reinterpret_cast<FAppWindow*>(GetWindowLongPtr(InWindowHandle, GWLP_USERDATA));
 }
 
-LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, UINT InMessage, WPARAM InWParam,
+LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPARAM InWParam,
                                      LPARAM InLParam)
 {
 	if (UUIManager::WndProcHandler(InWindowHandle, InMessage, InWParam, InLParam))
