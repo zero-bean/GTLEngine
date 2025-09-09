@@ -27,14 +27,16 @@ UObject::UObject(const FString& InString)
 
 void UObject::SetOuter(UObject* InObject)
 {
+	if (Outer == InObject) return;
+
 	if (Outer)
 	{
-		Outer->RemoveMemoryUsage(AllocatedBytes);
+		Outer->RemoveMemoryUsage(AllocatedBytes, AllocatedCounts);
 	}
 	Outer = InObject;
 	if (Outer)
 	{
-		Outer->AddMemoryUsage(AllocatedBytes);
+		Outer->AddMemoryUsage(AllocatedBytes, AllocatedCounts);
 	}
 }
 

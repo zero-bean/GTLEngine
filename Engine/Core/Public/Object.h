@@ -27,8 +27,8 @@ private:
 	FString Name;
 	UObject* Outer;
 
-	uint32 AllocatedCounts = 0;
 	uint64 AllocatedBytes = 0;
+	uint32 AllocatedCounts = 0;
 };
 
 extern TArray<UObject*> GUObjectArray;

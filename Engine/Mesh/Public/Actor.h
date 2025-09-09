@@ -43,10 +43,17 @@ template <typename T>
 T* AActor::CreateDefaultSubobject(const FString& InName)
 {
 	T* NewComponent = new T();
-	NewComponent->AddMemoryUsage(sizeof(T));
-	NewComponent->SetOuter(this);
 
+	///////////////////////////////////////////
+	NewComponent->AddMemoryUsage(sizeof(T));
+	///생성자에서 자신의 메모리 설정하게 수정 필요///
+	NewComponent->SetOuter(this);
+	//Outer 설정 시 Outer의 메모리 카운트에 자신의 메모리 합산 작업 수행
+
+	////////////////////////////////////
 	NewComponent->SetOwner(this);
+	///RTTI로 Owner와 Outer 동일화 필////
+
 	NewComponent->SetName(InName);
 	OwnedComponents.push_back(NewComponent);
 
