@@ -24,14 +24,9 @@ AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle, UCamera& Came
 	if (!ImGui::GetIO().WantCaptureMouse && Input.IsKeyPressed(EKeyInput::MouseLeft))
 	{
 		FVector MousePosition = Input.GetMousePosition();
-<<<<<<< Updated upstream
-		FRay WorldRay = ConvertToWorldRay(static_cast<int32>(MousePosition.X), static_cast<int32>(MousePosition.Y),
-		                                  ViewportWidth,ViewportHeight ,
-		                                  Camera.GetFViewProjConstantsInverse());
-=======
+
 		FRay WorldRay = ConvertToWorldRay(Camera, static_cast<int>(MousePosition.X), static_cast<int>(MousePosition.Y),
 		                                  ViewportWidth,ViewportHeight);
->>>>>>> Stashed changes
 
 		for (AActor* Actor : Level->GetLevelActors())
 		{
@@ -63,13 +58,7 @@ AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle, UCamera& Came
 	return ShortestActor;
 }
 
-
-<<<<<<< Updated upstream
-FRay UObjectPicker::ConvertToWorldRay(int32 PixelX, int32 PixelY, int32 ViewportW, int32 ViewportH,
-                       const FViewProjConstants& ViewProjConstantsInverse)
-=======
 FRay UObjectPicker::ConvertToWorldRay(UCamera& Camera, int PixelX, int PixelY, int ViewportW, int ViewportH)
->>>>>>> Stashed changes
 {
 	/* *
 	 * @brief 반환할 타입의 객체 선언 
