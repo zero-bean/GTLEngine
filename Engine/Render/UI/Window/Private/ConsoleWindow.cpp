@@ -498,9 +498,9 @@ void UConsoleWindow::ExecuteTerminalCommand(const char* InCommand)
 			DWORD ProcessExitCode;
 			if (GetExitCodeProcess(ProcessInformation.hProcess, &ProcessExitCode) && ProcessExitCode != STILL_ACTIVE)
 			{
-				// 프로세스가 종료되었으면 남은 데이터만 읽고 종료
+				// 프로세스가 종료되었으면 남은 모든 데이터를 읽고 종료
 				DWORD AvailableBytes = 0;
-				if (PeekNamedPipe(PipeReadHandle, nullptr, 0, nullptr, &AvailableBytes, nullptr) && AvailableBytes > 0)
+				while (PeekNamedPipe(PipeReadHandle, nullptr, 0, nullptr, &AvailableBytes, nullptr) && AvailableBytes > 0)
 				{
 					if (ReadFile(PipeReadHandle, Buffer, sizeof(Buffer) - 1,
 					             &ReadDoubleWord, nullptr) && ReadDoubleWord > 0)
@@ -508,6 +508,10 @@ void UConsoleWindow::ExecuteTerminalCommand(const char* InCommand)
 						Buffer[ReadDoubleWord] = '\0';
 						Output += Buffer;
 						bHasOutput = true;
+					}
+					else
+					{
+						break; // ReadFile 실패 시 종료
 					}
 				}
 				break;
