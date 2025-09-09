@@ -2,7 +2,7 @@
 #include "Core/Public/Object.h"
 #include "Core/Public/EngineStatics.h"
 
-UINT UEngineStatics::NextUUID = 0;
+uint32 UEngineStatics::NextUUID = 0;
 TArray<UObject*> GUObjectArray;
 
 UObject::UObject()
@@ -12,7 +12,7 @@ UObject::UObject()
 	UUID = UEngineStatics::GenUUID();
 
 	GUObjectArray.push_back(this);
-	InternalIndex = static_cast<UINT>(GUObjectArray.size()) - 1;
+	InternalIndex = static_cast<uint32>(GUObjectArray.size()) - 1;
 }
 
 UObject::UObject(const FString& InString)

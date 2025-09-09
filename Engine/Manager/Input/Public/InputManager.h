@@ -9,7 +9,7 @@ DECLARE_SINGLETON(UInputManager)
 public:
 	void Update();
 	void UpdateMousePosition();
-	void ProcessKeyMessage(UINT InMessage, WPARAM WParam, LPARAM LParam);
+	void ProcessKeyMessage(uint32 InMessage, WPARAM WParam, LPARAM LParam);
 
 	bool IsKeyDown(EKeyInput InKey) const;
 	bool IsKeyPressed(EKeyInput InKey) const;
@@ -38,7 +38,7 @@ private:
 	// Key Status
 	TMap<EKeyInput, bool> CurrentKeyState;
 	TMap<EKeyInput, bool> PreviousKeyState;
-	TMap<int, EKeyInput> VirtualKeyMap;
+	TMap<int32, EKeyInput> VirtualKeyMap;
 
 	// Mouse Position
 	FVector CurrentMousePosition;

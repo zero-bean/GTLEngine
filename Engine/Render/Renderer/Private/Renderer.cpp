@@ -233,7 +233,7 @@ void URenderer::RenderLevel()
 		UpdateConstant(PrimitiveComponent->GetColor());
 
 		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
-		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
+		Pipeline->Draw(static_cast<uint32>(PrimitiveComponent->GetVerticesData()->size()), 0);
 	}
 }
 
@@ -266,7 +266,7 @@ void URenderer::RenderEditor()
 		UpdateConstant(PrimitiveComponent->GetColor());
 
 		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
-		Pipeline->Draw(static_cast<UINT>(PrimitiveComponent->GetVerticesData()->size()), 0);
+		Pipeline->Draw(static_cast<uint32>(PrimitiveComponent->GetVerticesData()->size()), 0);
 	}
 }
 
@@ -284,7 +284,7 @@ void URenderer::RenderEnd()
  * @param InByteWidth
  * @return
  */
-ID3D11Buffer* URenderer::CreateVertexBuffer(FVertex* InVertices, UINT InByteWidth) const
+ID3D11Buffer* URenderer::CreateVertexBuffer(FVertex* InVertices, uint32 InByteWidth) const
 {
 	// 2. Create a vertex buffer
 	D3D11_BUFFER_DESC VertexBufferDesc = {};
@@ -307,7 +307,7 @@ ID3D11Buffer* URenderer::CreateVertexBuffer(FVertex* InVertices, UINT InByteWidt
  * @param InByteWidth
  * @return
  */
-ID3D11Buffer* URenderer::CreateIndexBuffer(const void* InIndices, UINT InByteWidth) const
+ID3D11Buffer* URenderer::CreateIndexBuffer(const void* InIndices, uint32 InByteWidth) const
 {
 	D3D11_BUFFER_DESC desc = {};
 	desc.ByteWidth = InByteWidth;

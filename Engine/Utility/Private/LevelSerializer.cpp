@@ -97,7 +97,7 @@ JSON FLevelSerializer::PrimitiveMetadataToJson(const FPrimitiveMetadata& InPrimi
 /**
  * @brief JSON을 FPrimitiveData로 변환
  */
-FPrimitiveMetadata FLevelSerializer::JsonToPrimitive(const JSON& InJsonData, uint32_t InID)
+FPrimitiveMetadata FLevelSerializer::JsonToPrimitive(const JSON& InJsonData, uint32 InID)
 {
 	FPrimitiveMetadata PrimitiveMeta;
 	PrimitiveMeta.ID = InID;
@@ -178,7 +178,7 @@ FLevelMetadata FLevelSerializer::JsonToLevel(JSON& InJsonData)
 			{
 				try
 				{
-					uint32_t ID = stoul(InPair.first);
+					uint32 ID = stoul(InPair.first);
 					FPrimitiveMetadata Primitive = JsonToPrimitive(InPair.second, ID);
 					LevelData.Primitives[ID] = Primitive;
 				}
@@ -284,7 +284,7 @@ bool FLevelSerializer::ValidateLevelData(const FLevelMetadata& InLevelData, FStr
 	}
 
 	// NextUUID 체크
-	uint32_t MaxUsedID = 0;
+	uint32 MaxUsedID = 0;
 	for (const auto& [ID, Primitive] : InLevelData.Primitives)
 	{
 		MaxUsedID = max(MaxUsedID, ID);
@@ -379,7 +379,7 @@ FLevelSerializer::FLevelStats FLevelSerializer::GenerateLevelStats(const FLevelM
 		return Stats;
 	}
 
-	Stats.TotalPrimitives = static_cast<uint32_t>(InLevelData.Primitives.size());
+	Stats.TotalPrimitives = static_cast<uint32>(InLevelData.Primitives.size());
 
 	// 바운딩 박스 초기화
 	// bool bFirstPrimitive = true;

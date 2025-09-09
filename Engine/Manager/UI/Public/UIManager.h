@@ -38,7 +38,7 @@ public:
 	void SetFocusedWindow(UUIWindow* InWindow);
 
 	// ImGui 관련 메서드
-	static LRESULT WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	static LRESULT WndProcHandler(HWND hwnd, uint32 msg, WPARAM wParam, LPARAM lParam);
 
 private:
 	TArray<UUIWindow*> UIWindows;

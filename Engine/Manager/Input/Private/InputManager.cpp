@@ -64,7 +64,7 @@ void UInputManager::InitializeKeyMapping()
 	VirtualKeyMap[VK_DELETE] = EKeyInput::Delete;
 
 	// 모든 키 상태를 false로 초기화
-	for (int i = 0; i < static_cast<int>(EKeyInput::End); ++i)
+	for (int32 i = 0; i < static_cast<int32>(EKeyInput::End); ++i)
 	{
 		EKeyInput Key = static_cast<EKeyInput>(i);
 		CurrentKeyState[Key] = false;
@@ -94,7 +94,7 @@ void UInputManager::Update()
 	// GetAsyncKeyState를 사용하여 현재 키 상태를 업데이트
 	for (auto& Pair : VirtualKeyMap)
 	{
-		int VirtualKey = Pair.first;
+		int32 VirtualKey = Pair.first;
 		EKeyInput KeyInput = Pair.second;
 
 		// 마우스 버튼은 GetAsyncKeyState가 잘 작동하지 않을 수 있으므로 메시지 기반으로 처리
@@ -163,14 +163,14 @@ bool UInputManager::IsKeyReleased(EKeyInput InKey) const
 	return false;
 }
 
-void UInputManager::ProcessKeyMessage(UINT InMessage, WPARAM WParam, LPARAM LParam)
+void UInputManager::ProcessKeyMessage(uint32 InMessage, WPARAM WParam, LPARAM LParam)
 {
 	switch (InMessage)
 	{
 	//case WM_KEYDOWN:
 	//case WM_SYSKEYDOWN:
 	//	{
-	//		auto it = VirtualKeyMap.find(static_cast<int>(WParam));
+	//		auto it = VirtualKeyMap.find(static_cast<int32>(WParam));
 	//		if (it != VirtualKeyMap.end())
 	//		{
 	//			CurrentKeyState[it->second] = true;
@@ -181,7 +181,7 @@ void UInputManager::ProcessKeyMessage(UINT InMessage, WPARAM WParam, LPARAM LPar
 	//case WM_KEYUP:
 	//case WM_SYSKEYUP:
 	//	{
-	//		auto it = VirtualKeyMap.find(static_cast<int>(WParam));
+	//		auto it = VirtualKeyMap.find(static_cast<int32>(WParam));
 	//		if (it != VirtualKeyMap.end())
 	//		{
 	//			CurrentKeyState[it->second] = false;
@@ -222,7 +222,7 @@ TArray<EKeyInput> UInputManager::GetKeysByStatus(EKeyStatus InStatus) const
 {
 	TArray<EKeyInput> Keys;
 
-	for (int i = 0; i < static_cast<int>(EKeyInput::End); ++i)
+	for (int32 i = 0; i < static_cast<int32>(EKeyInput::End); ++i)
 	{
 		EKeyInput Key = static_cast<EKeyInput>(i);
 		if (GetKeyStatus(Key) == InStatus)

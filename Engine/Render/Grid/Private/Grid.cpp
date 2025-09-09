@@ -29,7 +29,7 @@ void AGrid::Tick()
 	Super::Tick();
 }
 
-void AGrid::SetGridProperty(const float InCell, const float InRelativeLocationY, const int InHalfLines)
+void AGrid::SetGridProperty(const float InCell, const float InRelativeLocationY, const int32 InHalfLines)
 {
 	Cell = InCell;
 	RelativeLocationY = InRelativeLocationY;

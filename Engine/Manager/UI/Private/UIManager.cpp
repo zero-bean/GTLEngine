@@ -365,7 +365,7 @@ void UUIManager::UpdateFocusState()
 /**
  * @brief 윈도우 프로시저 핸들러
  */
-LRESULT UUIManager::WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT UUIManager::WndProcHandler(HWND hwnd, uint32 msg, WPARAM wParam, LPARAM lParam)
 {
 	return UImGuiHelper::WndProcHandler(hwnd, msg, wParam, lParam);
 }

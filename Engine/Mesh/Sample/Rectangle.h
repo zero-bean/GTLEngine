@@ -9,7 +9,7 @@ static FVertexSimple rectangle_vertices[] =
 };
 
 // 인덱스 순서를 시계방향(CW)으로 배치
-static UINT rectangle_indices[] =
+static uint32 rectangle_indices[] =
 {
 	0, 2, 1,
 	0, 3, 2

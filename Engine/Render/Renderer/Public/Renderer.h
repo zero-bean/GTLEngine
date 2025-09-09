@@ -58,8 +58,8 @@ public:
 	void RenderEnd();
 
 	//Testing Func
-	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, UINT InByteWidth) const;
-	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, UINT InByteWidth) const;
+	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, uint32 InByteWidth) const;
+	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, uint32 InByteWidth) const;
 	static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
 
 	void CreateConstantBuffer();
@@ -93,7 +93,7 @@ private:
 	ID3D11VertexShader* DefaultVertexShader = nullptr;
 	ID3D11PixelShader* DefaultPixelShader = nullptr;
 	ID3D11InputLayout* DefaultInputLayout = nullptr;
-	unsigned int Stride = 0;
+	uint32 Stride = 0;
 
 	ID3D11Buffer* vertexBufferSphere = nullptr;
 

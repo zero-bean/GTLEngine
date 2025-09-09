@@ -57,7 +57,7 @@ public:
 protected:
 	const TArray<FVertex>* Vertices = nullptr;
 	ID3D11Buffer* Vertexbuffer = nullptr;
-	UINT NumVertices = 0;
+	uint32 NumVertices = 0;
 	D3D11_PRIMITIVE_TOPOLOGY Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	EPrimitiveType Type = EPrimitiveType::Cube;

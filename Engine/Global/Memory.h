@@ -1,7 +1,7 @@
-#pragma once=
+#pragma once
 
-extern UINT TotalAllocationBytes;
-extern UINT TotalAllocationCount;
+extern uint32 TotalAllocationBytes;
+extern uint32 TotalAllocationCount;
 
 struct AllocHeader
 {

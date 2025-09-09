@@ -19,15 +19,15 @@ public:
 
 	void UpdatePipeline(FPipelineInfo Info);
 
-	void SetVertexBuffer(ID3D11Buffer* VertexBuffer, UINT Stride);
+	void SetVertexBuffer(ID3D11Buffer* VertexBuffer, uint32 Stride);
 
-	void SetConstantBuffer(UINT Slot, bool bIsVS, ID3D11Buffer* ConstantBuffer);
+	void SetConstantBuffer(uint32 Slot, bool bIsVS, ID3D11Buffer* ConstantBuffer);
 
-	void SetTexture(UINT Slot, bool bIsVS, ID3D11ShaderResourceView* Srv);
+	void SetTexture(uint32 Slot, bool bIsVS, ID3D11ShaderResourceView* Srv);
 
-	void SetSamplerState(UINT Slot, bool bIsVS, ID3D11SamplerState* SamplerState);
+	void SetSamplerState(uint32 Slot, bool bIsVS, ID3D11SamplerState* SamplerState);
 
-	void Draw(UINT VertexCount, UINT StartLocation);
+	void Draw(uint32 VertexCount, uint32 StartLocation);
 
 private:
 	ID3D11DeviceContext* DeviceContext;

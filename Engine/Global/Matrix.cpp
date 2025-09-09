@@ -44,11 +44,11 @@ FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix)
 {
 	FMatrix Result;
 
-	for (int i = 0; i < 4; ++i)
+	for (int32 i = 0; i < 4; ++i)
 	{
-		for (int j = 0; j < 4; ++j)
+		for (int32 j = 0; j < 4; ++j)
 		{
-			for (int k = 0; k < 4; ++k)
+			for (int32 k = 0; k < 4; ++k)
 			{
 				Result.Data[i][j] += Data[i][k] * InOtherMatrix.Data[k][j];
 			}

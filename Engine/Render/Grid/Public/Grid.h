@@ -14,7 +14,7 @@ public:
 	virtual void EndPlay() override;
 	virtual void Tick() override;
 
-	void SetGridProperty(const float InCell, const float InRelativeLocationY, const int InHalfLines);
+	void SetGridProperty(const float InCell, const float InRelativeLocationY, const int32 InHalfLines);
 
 private:
 	void Build();
@@ -28,6 +28,6 @@ private:
 	USceneComponent* Component = nullptr;
 	float Cell = {};
 	float RelativeLocationY = {};
-	int HalfLines = {};
+	int32 HalfLines = {};
 };
 
