@@ -28,9 +28,13 @@ private:
 	// UI 상태
 	bool bTransformChanged = false;
 
+	//Level Memory Property
+	int32 LevelObjectCount = 0;
+	int32 LevelObjectMemory = 0;
+
 	// Actor Spawn Property
-	int SelectedPrimitiveType = 0; // 0: Cube, 1: Sphere, 2: Triangle
-	int NumberOfSpawn = 1;
+	int32 SelectedPrimitiveType = 0; // 0: Cube, 1: Sphere, 2: Triangle
+	int32 NumberOfSpawn = 1;
 	float SpawnRangeMin = -5.0f;
 	float SpawnRangeMax = 5.0f;
 
@@ -51,6 +55,7 @@ private:
 	void RenderModeSelector();
 
 	// Actor Spawn & Delete
+	void RenderLevelMemorySection();
 	void RenderActorSpawnSection();
 	void RenderActorDeleteSection();
 	void SpawnActors() const;

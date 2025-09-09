@@ -8,7 +8,7 @@ UActorComponent::UActorComponent()
 
 UActorComponent::~UActorComponent()
 {
-
+	SetOuter(nullptr);
 }
 
 void UActorComponent::BeginPlay()
