@@ -316,23 +316,23 @@ void UConsoleWindow::ProcessCommand(const char* InCommand)
 								bIsScrollToBottom = true;
 							}
 						}
-					else if (FormatString.find("%s") != FString::npos)
-					{
-						// Remove quotes from string argument
-						FString StringArg = RemainingArguments;
-						if (StringArg.length() >= 2 && StringArg.front() == '"' && StringArg.back() == '"')
+						else if (FormatString.find("%s") != FString::npos)
 						{
-							StringArg = StringArg.substr(1, StringArg.length() - 2);
+							// Remove quotes from string argument
+							FString StringArg = RemainingArguments;
+							if (StringArg.length() >= 2 && StringArg.front() == '"' && StringArg.back() == '"')
+							{
+								StringArg = StringArg.substr(1, StringArg.length() - 2);
+							}
+							char Buffer[512];
+							(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(),
+							               StringArg.c_str());
+							FLogEntry UELogEntry;
+							UELogEntry.Type = ELogType::UELog;
+							UELogEntry.Message = FString(Buffer);
+							LogItems.push_back(UELogEntry);
+							bIsScrollToBottom = true;
 						}
-						char Buffer[512];
-						(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(),
-						               StringArg.c_str());
-						FLogEntry UELogEntry;
-						UELogEntry.Type = ELogType::UELog;
-						UELogEntry.Message = FString(Buffer);
-						LogItems.push_back(UELogEntry);
-						bIsScrollToBottom = true;
-					}
 						else
 						{
 							FLogEntry UELogEntry;
@@ -461,7 +461,7 @@ void UConsoleWindow::ExecuteTerminalCommand(const char* InCommand)
 		                    nullptr, TRUE, CREATE_NO_WINDOW,
 		                    nullptr, nullptr, &StartUpInfo, &ProcessInformation))
 		{
-			AddLog("[Terminal Error] Failed To Execute Command: %s", InCommand);
+			AddLog("ConsoleWindow: Error: Failed To Execute Command: %s", InCommand);
 			CloseHandle(PipeReadHandle);
 			CloseHandle(PipeWriteHandle);
 			return;
@@ -470,25 +470,89 @@ void UConsoleWindow::ExecuteTerminalCommand(const char* InCommand)
 		// 부모 프로세스에서는 쓰기 핸들이 불필요하므로 바로 닫도록 처리
 		CloseHandle(PipeWriteHandle);
 
-		// Read Execution Process
+		// Read Execution Process With Timeout
 		char Buffer[256];
 		DWORD ReadDoubleWord;
 		FString Output;
 		bool bHasOutput = false;
 
-		while (ReadFile(PipeReadHandle, Buffer, sizeof(Buffer) - 1, &ReadDoubleWord, nullptr) && ReadDoubleWord != 0)
+		DWORD StartTime = GetTickCount();
+		const DWORD TimeoutMsec = 2000;
+		while (true)
 		{
-			Buffer[ReadDoubleWord] = '\0'; // Null 문자로 String 끝 세팅
-			Output += Buffer;
-			bHasOutput = true;
+			// 타임아웃 체크
+			if (GetTickCount() - StartTime > TimeoutMsec)
+			{
+				// 프로세스가 아직 실행 중이면 강제 종료
+				DWORD ProcessExitCode;
+				if (GetExitCodeProcess(ProcessInformation.hProcess, &ProcessExitCode) && ProcessExitCode ==
+					STILL_ACTIVE)
+				{
+					TerminateProcess(ProcessInformation.hProcess, 1);
+				}
+				AddLog("ConsoleWindow: Error: Reading Timeout");
+				break;
+			}
+
+			// 프로세스가 아직 실행 중인지 확인
+			DWORD ProcessExitCode;
+			if (GetExitCodeProcess(ProcessInformation.hProcess, &ProcessExitCode) && ProcessExitCode != STILL_ACTIVE)
+			{
+				// 프로세스가 종료되었으면 남은 데이터만 읽고 종료
+				DWORD AvailableBytes = 0;
+				if (PeekNamedPipe(PipeReadHandle, nullptr, 0, nullptr, &AvailableBytes, nullptr) && AvailableBytes > 0)
+				{
+					if (ReadFile(PipeReadHandle, Buffer, sizeof(Buffer) - 1,
+					             &ReadDoubleWord, nullptr) && ReadDoubleWord > 0)
+					{
+						Buffer[ReadDoubleWord] = '\0';
+						Output += Buffer;
+						bHasOutput = true;
+					}
+				}
+				break;
+			}
+
+			// 파이프에 데이터가 있는지 확인
+			DWORD AvailableBytes = 0;
+			if (!PeekNamedPipe(PipeReadHandle, nullptr, 0, nullptr, &AvailableBytes, nullptr) || AvailableBytes == 0)
+			{
+				// 데이터가 없으면 잠시 대기
+				Sleep(100);
+				continue;
+			}
+
+			// 데이터 읽기
+			if (ReadFile(PipeReadHandle, Buffer, sizeof(Buffer) - 1, &ReadDoubleWord, nullptr) && ReadDoubleWord > 0)
+			{
+				Buffer[ReadDoubleWord] = '\0'; // Null 문자로 String 끝 세팅
+				Output += Buffer;
+				bHasOutput = true;
+				StartTime = GetTickCount();
+			}
+			else
+			{
+				// ReadFile 실패시 종료
+				break;
+			}
 		}
 
 		// Process 종료 대기
-		WaitForSingleObject(ProcessInformation.hProcess, INFINITE);
+		DWORD WaitResult = WaitForSingleObject(ProcessInformation.hProcess, 2000);
 
 		// 종료 코드 확인
-		DWORD ExitCode;
-		GetExitCodeProcess(ProcessInformation.hProcess, &ExitCode);
+		DWORD ExitCode = 0;
+		if (WaitResult == WAIT_TIMEOUT)
+		{
+			// 타임아웃 발생 시 프로세스 강제 종료
+			TerminateProcess(ProcessInformation.hProcess, 1);
+			AddLog("ConsoleWindow: Error: Command Timeout & Terminated");
+			ExitCode = 1;
+		}
+		else
+		{
+			GetExitCodeProcess(ProcessInformation.hProcess, &ExitCode);
+		}
 
 		// Release Handle
 		CloseHandle(PipeReadHandle);
