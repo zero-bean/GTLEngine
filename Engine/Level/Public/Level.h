@@ -32,9 +32,9 @@ public:
 	//void AddEditorPrimitiveComponent(AActor* Actor);
 
 	template<typename T, typename... Args>
-	T* SpawnActor(Args&&... args);
-	template<typename T, typename... Args>
-	T* SpawnEditorActor(Args&&... args);
+	T* SpawnActor(const FString& InName = "");
+	// template<typename T, typename... Args>
+	// T* SpawnEditorActor(Args&&... args);
 
 	// Actor 삭제
 	bool DestroyActor(AActor* InActor);
@@ -63,7 +63,7 @@ private:
 	AAxis* Axis = nullptr;
 	AGrid* Grid = nullptr;
 	//////////////////////////////////////////////////////////////////////////
-	// TODO(PYB): Editor 제작되면 해당 클래스에 존재하는 카메라 관련 코드 제거	
+	// TODO(PYB): Editor 제작되면 해당 클래스에 존재하는 카메라 관련 코드 제거
 	//////////////////////////////////////////////////////////////////////////
 	Camera* CameraPtr = nullptr;
 
@@ -72,11 +72,18 @@ private:
 };
 
 template <typename T, typename ... Args>
-T* ULevel::SpawnActor(Args&&... InArgs)
+T* ULevel::SpawnActor(const FString& InName)
 {
-	T* NewActor = new T(std::forward<Args>(InArgs)...);
+	T* NewActor = new T();
+
+	///////////////////////////////////////////
+	NewActor->AddMemoryUsage(sizeof(T));
+	///생성자에서 자신의 메모리 설정하게 수정 필요///
+	NewActor->SetOuter(this);
+	//Outer 설정 시 Outer의 메모리 카운트에 자신의 메모리 합산 작업 수행
 
 	LevelActors.push_back(NewActor);
+	NewActor->SetName(InName);
 	NewActor->BeginPlay();
 
 	return NewActor;
