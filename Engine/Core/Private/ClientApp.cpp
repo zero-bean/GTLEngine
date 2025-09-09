@@ -169,6 +169,7 @@ void FClientApp::ShutdownSystem()
 {
 	URenderer::GetInstance().Release();
 	UUIManager::GetInstance().Shutdown();
+	ULevelManager::GetInstance().Shutdown();
 	UResourceManager::GetInstance().Release();
 
 	// 레벨 매니저 정리

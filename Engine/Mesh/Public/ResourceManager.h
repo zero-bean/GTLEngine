@@ -11,11 +11,11 @@ public:
 
 	TArray<FVertex>* GetVertexData(EPrimitiveType Type);
 	ID3D11Buffer* GetVertexbuffer(EPrimitiveType Type);
-	UINT GetNumVertices(EPrimitiveType Type);
+	uint32 GetNumVertices(EPrimitiveType Type);
 
 private:
 
 	TMap<EPrimitiveType, ID3D11Buffer*> Vertexbuffers;
-	TMap<EPrimitiveType, UINT> NumVertices;
+	TMap<EPrimitiveType, uint32> NumVertices;
 	TMap<EPrimitiveType, TArray<FVertex>*> VertexDatas;
 };

@@ -32,14 +32,14 @@ void UPipeline::UpdatePipeline(FPipelineInfo Info)
 }
 
 /// @brief 정점 버퍼를 바인딩
-void UPipeline::SetVertexBuffer(ID3D11Buffer* VertexBuffer, UINT Stride)
+void UPipeline::SetVertexBuffer(ID3D11Buffer* VertexBuffer, uint32 Stride)
 {
-	UINT Offset = 0;
+	uint32 Offset = 0;
 	DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 }
 
 /// @brief 상수 버퍼를 설정
-void UPipeline::SetConstantBuffer(UINT Slot, bool bIsVS, ID3D11Buffer* ConstantBuffer)
+void UPipeline::SetConstantBuffer(uint32 Slot, bool bIsVS, ID3D11Buffer* ConstantBuffer)
 {
 	if (ConstantBuffer)
 	{
@@ -51,7 +51,7 @@ void UPipeline::SetConstantBuffer(UINT Slot, bool bIsVS, ID3D11Buffer* ConstantB
 }
 
 /// @brief 텍스처를 설정
-void UPipeline::SetTexture(UINT Slot, bool bIsVS, ID3D11ShaderResourceView* Srv)
+void UPipeline::SetTexture(uint32 Slot, bool bIsVS, ID3D11ShaderResourceView* Srv)
 {
 	if (Srv)
 	{
@@ -63,7 +63,7 @@ void UPipeline::SetTexture(UINT Slot, bool bIsVS, ID3D11ShaderResourceView* Srv)
 }
 
 /// @brief 샘플러 상태를 설정
-void UPipeline::SetSamplerState(UINT Slot, bool bIsVS, ID3D11SamplerState* SamplerState)
+void UPipeline::SetSamplerState(uint32 Slot, bool bIsVS, ID3D11SamplerState* SamplerState)
 {
 	if (SamplerState)
 	{
@@ -75,7 +75,7 @@ void UPipeline::SetSamplerState(UINT Slot, bool bIsVS, ID3D11SamplerState* Sampl
 }
 
 /// @brief 정점 개수를 기반으로 드로우 호출
-void UPipeline::Draw(UINT VertexCount, UINT StartLocation)
+void UPipeline::Draw(uint32 VertexCount, uint32 StartLocation)
 {
 	DeviceContext->Draw(VertexCount, StartLocation);
 }

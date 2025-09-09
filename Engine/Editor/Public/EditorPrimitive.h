@@ -5,7 +5,7 @@
 struct FEditorPrimitive
 {
 	ID3D11Buffer* Vertexbuffer;
-	UINT NumVertices;
+	uint32 NumVertices;
 	D3D11_PRIMITIVE_TOPOLOGY Topology;
 	FVector4 Color;
 	FVector Location;

@@ -33,12 +33,12 @@ void UResourceManager::Initialize()
 	Vertexbuffers.emplace(EPrimitiveType::Gizmo, Renderer.CreateVertexBuffer(
 		                      VerticesGizmo.data(), static_cast<int>(VerticesGizmo.size() * sizeof(FVertex))));
 
-	NumVertices.emplace(EPrimitiveType::Cube, static_cast<UINT>(VerticesCube.size()));
-	NumVertices.emplace(EPrimitiveType::Sphere, static_cast<UINT>(VerticesSphere.size()));
-	NumVertices.emplace(EPrimitiveType::Triangle, static_cast<UINT>(VerticesTriangle.size()));
+	NumVertices.emplace(EPrimitiveType::Cube, static_cast<uint32>(VerticesCube.size()));
+	NumVertices.emplace(EPrimitiveType::Sphere, static_cast<uint32>(VerticesSphere.size()));
+	NumVertices.emplace(EPrimitiveType::Triangle, static_cast<uint32>(VerticesTriangle.size()));
 
-	NumVertices.emplace(EPrimitiveType::Line, static_cast<UINT>(VerticesLine.size()));
-	NumVertices.emplace(EPrimitiveType::Gizmo, static_cast<UINT>(VerticesGizmo.size()));
+	NumVertices.emplace(EPrimitiveType::Line, static_cast<uint32>(VerticesLine.size()));
+	NumVertices.emplace(EPrimitiveType::Gizmo, static_cast<uint32>(VerticesGizmo.size()));
 }
 
 void UResourceManager::Release()
@@ -63,7 +63,7 @@ ID3D11Buffer* UResourceManager::GetVertexbuffer(EPrimitiveType Type)
 	return Vertexbuffers[Type];
 }
 
-UINT UResourceManager::GetNumVertices(EPrimitiveType Type)
+uint32 UResourceManager::GetNumVertices(EPrimitiveType Type)
 {
 	return NumVertices[Type];
 }

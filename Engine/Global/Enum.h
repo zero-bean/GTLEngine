@@ -1,6 +1,6 @@
 #pragma once
 
-enum class EKeyInput : UINT8
+enum class EKeyInput : uint8
 {
 	// 이동 키
 	W,
@@ -53,7 +53,7 @@ enum class EKeyInput : UINT8
 	End
 };
 
-enum class EKeyStatus : UINT8
+enum class EKeyStatus : uint8
 {
 	Up,        // 눌려있지 않은 상태 (현재 false)
 	Pressed,   // 이번 프레임에 눌림 (이전 false, 현재 true)

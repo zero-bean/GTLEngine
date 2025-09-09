@@ -18,7 +18,7 @@ public:
 	void BeginFrame() const;
 	void EndFrame() const;
 
-	static LRESULT WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	static LRESULT WndProcHandler(HWND hwnd, uint32 msg, WPARAM wParam, LPARAM lParam);
 
 private:
 	bool bIsInitialized = false;

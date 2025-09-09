@@ -77,7 +77,7 @@ void UUIManager::Shutdown()
 	// 모든 UI 윈도우 정리
 	for (auto* Window : UIWindows)
 	{
-		if (Window)
+		if (Window && !Window->IsSingleton())
 		{
 			Window->Cleanup();
 			delete Window;
@@ -114,6 +114,7 @@ void UUIManager::Update()
 
 	// 포커스 상태 업데이트
 	UpdateFocusState();
+
 }
 
 /**
@@ -364,7 +365,7 @@ void UUIManager::UpdateFocusState()
 /**
  * @brief 윈도우 프로시저 핸들러
  */
-LRESULT UUIManager::WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT UUIManager::WndProcHandler(HWND hwnd, uint32 msg, WPARAM wParam, LPARAM lParam)
 {
 	return UImGuiHelper::WndProcHandler(hwnd, msg, wParam, lParam);
 }

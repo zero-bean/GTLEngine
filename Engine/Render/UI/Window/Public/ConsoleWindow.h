@@ -60,6 +60,7 @@ public:
 	UConsoleWindow(UConsoleWindow&&) = delete;
 	UConsoleWindow& operator=(UConsoleWindow&&) = delete;
 
+	bool IsSingleton() override { return true; }
 private:
 	// Command Input
 	char InputBuf[256];

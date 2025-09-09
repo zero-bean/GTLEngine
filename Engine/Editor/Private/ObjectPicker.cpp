@@ -17,14 +17,14 @@ AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle, const UCamera
 
 	RECT ClientRect;
 	GetClientRect(WindowHandle, &ClientRect);
-	int ViewportWidth = ClientRect.right - ClientRect.left; 
-	int ViewportHeight = ClientRect.bottom - ClientRect.top; 
+	int32 ViewportWidth = ClientRect.right - ClientRect.left;
+	int32 ViewportHeight = ClientRect.bottom - ClientRect.top;
 
-	
+
 	if (!ImGui::GetIO().WantCaptureMouse && Input.IsKeyPressed(EKeyInput::MouseLeft))
 	{
 		FVector MousePosition = Input.GetMousePosition();
-		FRay WorldRay = ConvertToWorldRay(static_cast<int>(MousePosition.X), static_cast<int>(MousePosition.Y),
+		FRay WorldRay = ConvertToWorldRay(static_cast<int32>(MousePosition.X), static_cast<int32>(MousePosition.Y),
 		                                  ViewportWidth,ViewportHeight ,
 		                                  Camera.GetFViewProjConstantsInverse());
 
@@ -59,7 +59,7 @@ AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle, const UCamera
 }
 
 
-FRay UObjectPicker::ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH,
+FRay UObjectPicker::ConvertToWorldRay(int32 PixelX, int32 PixelY, int32 ViewportW, int32 ViewportH,
                        const FViewProjConstants& ViewProjConstantsInverse)
 {
 	//Screen to NDC
@@ -108,7 +108,7 @@ bool UObjectPicker::IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveCompo
 
 	float Distance = D3D11_FLOAT32_MAX; //Distance 초기화
 	bool bIsHit = false;
-	for (int a = 0; a < Vertices->size(); a = a + 3) //삼각형 단위로 Vertex 위치정보 읽음
+	for (int32 a = 0; a < Vertices->size(); a = a + 3) //삼각형 단위로 Vertex 위치정보 읽음
 	{
 		const FVector& Vertex1 = (*Vertices)[a].Position;
 		const FVector& Vertex2 = (*Vertices)[a + 1].Position;

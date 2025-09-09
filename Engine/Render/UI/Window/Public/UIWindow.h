@@ -98,12 +98,13 @@ public:
 	}
 
 	virtual bool OnWindowClose() { return true; }
+	virtual bool IsSingleton() {return false;}
 
 	// Getter & Setter
 	const FUIWindowConfig& GetConfig() const { return Config; }
 	FUIWindowConfig& GetMutableConfig() { return Config; }
 	EUIWindowState GetWindowState() const { return CurrentState; }
-	const UINT& GetWindowID() const { return WindowID; }
+	const uint32& GetWindowID() const { return WindowID; }
 	const FString& GetWindowTitle() const { return Config.WindowTitle; }
 	int GetPriority() const { return Config.Priority; }
 	float GetLastFocusTime() const { return LastFocusTime; }
@@ -130,7 +131,7 @@ private:
 
 	FUIWindowConfig Config;
 	EUIWindowState CurrentState;
-	UINT WindowID;
+	uint32 WindowID;
 
 	bool bIsFocused = false;
 	float LastFocusTime = 0.0f;

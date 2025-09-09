@@ -3,10 +3,10 @@
 class UEngineStatics
 {
 public:
-	static UINT GenUUID()
+	static uint32 GenUUID()
 	{
 		return NextUUID++;
 	}
 private:
-	static UINT NextUUID;
+	static uint32 NextUUID;
 };

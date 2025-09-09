@@ -36,6 +36,6 @@ private:
 
 	D3D11_VIEWPORT ViewportInfo = {};
 
-	UINT Width = 0;
-	UINT Height = 0;
+	uint32 Width = 0;
+	uint32 Height = 0;
 };

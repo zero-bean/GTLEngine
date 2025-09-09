@@ -5,8 +5,6 @@
 #include "Editor/Public/EditorPrimitive.h"
 #include <vector>
 
-template<typename T>
-using TArray = std::vector<T>;
 class UGrid : public UObject
 {
 public:
@@ -14,7 +12,7 @@ public:
 	~UGrid() override;
 	void SetLineVertices();
 	void SetGridProperty(float CellSize, int NumLines);
-	
+
 	void RenderGrid();
 
 private:

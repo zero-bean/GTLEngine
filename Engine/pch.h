@@ -12,19 +12,18 @@
 // Standard Library
 #include <cmath>
 #include <cassert>
-#include <map>
-#include <vector>
 #include <string>
 #include <chrono>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-#include <unordered_map>
 #include <functional>
 #include <filesystem>
 #include <iterator>
 
 // Global Included
+#include "Global/Types.h"
+#include "Global/Memory.h"
 #include "Global/Constant.h"
 #include "Global/Enum.h"
 #include "Global/Matrix.h"
@@ -32,15 +31,7 @@
 #include "Global/CoreTypes.h"
 #include "Global/Macro.h"
 #include "Global/Function.h"
-#include "Global/Memory.h"
 
-template <typename T>
-using TArray = std::vector<T>;
-
-template <typename K, typename V>
-using TMap = std::map<K, V>;
-
-using FString = std::string;
 using std::clamp;
 using std::unordered_map;
 using std::to_string;

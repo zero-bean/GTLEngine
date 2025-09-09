@@ -10,7 +10,7 @@
  */
 struct FPrimitiveMetadata
 {
-	uint32_t ID;
+	uint32 ID;
 	FVector Location;
 	FVector Rotation;
 	FVector Scale;
@@ -31,7 +31,7 @@ struct FPrimitiveMetadata
 	/**
 	 * @brief Parameter Constructor
 	 */
-	FPrimitiveMetadata(uint32_t InID, const FVector& InLocation, const FVector& InRotation,
+	FPrimitiveMetadata(uint32 InID, const FVector& InLocation, const FVector& InRotation,
 	                   const FVector& InScale, EPrimitiveType InType)
 		: ID(InID)
 		  , Location(InLocation)
@@ -58,9 +58,9 @@ struct FPrimitiveMetadata
  */
 struct FLevelMetadata
 {
-	uint32_t Version;
-	uint32_t NextUUID;
-	TMap<uint32_t, FPrimitiveMetadata> Primitives;
+	uint32 Version;
+	uint32 NextUUID;
+	TMap<uint32, FPrimitiveMetadata> Primitives;
 
 	/**
 	 * @brief 기본 생성자
@@ -74,9 +74,9 @@ struct FLevelMetadata
 	/**
 	 * @brief Level Meta에 Primitive를 추가하는 함수
 	 */
-	uint32_t AddPrimitive(const FPrimitiveMetadata& InPrimitiveData)
+	uint32 AddPrimitive(const FPrimitiveMetadata& InPrimitiveData)
 	{
-		uint32_t NewID = NextUUID++;
+		uint32 NewID = NextUUID++;
 		FPrimitiveMetadata NewPrimitive = InPrimitiveData;
 		NewPrimitive.ID = NewID;
 		Primitives[NewID] = NewPrimitive;
@@ -86,7 +86,7 @@ struct FLevelMetadata
 	/**
 	 * @brief Level Meta에서 특정 ID를 가진 Primitive를 제거하는 함수
 	 */
-	bool RemovePrimitive(uint32_t InID)
+	bool RemovePrimitive(uint32 InID)
 	{
 		return Primitives.erase(InID) > 0;
 	}
@@ -94,7 +94,7 @@ struct FLevelMetadata
 	/**
 	 * @brief Level Meta에서 특정 ID를 가진 Primitive를 검색하는 함수
 	 */
-	FPrimitiveMetadata* FindPrimitive(uint32_t InID)
+	FPrimitiveMetadata* FindPrimitive(uint32 InID)
 	{
 		auto Iter = Primitives.find(InID);
 

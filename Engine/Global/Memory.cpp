@@ -1,7 +1,8 @@
 #include "pch.h"
+#include "Global/Memory.h"
 
-UINT TotalAllocationBytes = 0;
-UINT TotalAllocationCount = 0;
+uint32 TotalAllocationBytes = 0;
+uint32 TotalAllocationCount = 0;
 
 void* operator new(size_t size)
 {

@@ -41,6 +41,14 @@ void ULevelManager::LoadLevel(const FString& InName)
 	CurrentLevel->Init();
 }
 
+void ULevelManager::Shutdown()
+{
+	for (auto& Level : Levels)
+	{
+		SafeDelete(Level.second);
+	}
+}
+
 /**
  * @brief 기본 레벨을 생성하는 함수
  * XXX(KHJ): 이걸 지워야 할지, 아니면 Main Init에서만 배제할지 고민
@@ -272,7 +280,7 @@ FLevelMetadata ULevelManager::ConvertLevelToMetadata(ULevel* InLevel) const
 	}
 
 	// 레벨의 액터들을 순회하며 메타데이터로 변환
-	uint32_t CurrentID = 1;
+	uint32 CurrentID = 1;
 	for (AActor* Actor : InLevel->GetLevelActors())
 	{
 		if (!Actor)
@@ -346,7 +354,7 @@ bool ULevelManager::LoadLevelFromMetadata(ULevel* InLevel, const FLevelMetadata&
 		// 	NewActor = InLevel->SpawnActor<ATriangleActor>();
 		// 	break;
 		default:
-			cout << "[LevelManager] Unknown Primitive Type: " << static_cast<int>(PrimitiveMeta.Type) << "\n";
+			cout << "[LevelManager] Unknown Primitive Type: " << static_cast<int32>(PrimitiveMeta.Type) << "\n";
 			assert(!"고려하지 않은 Actor 타입");
 			continue;
 		}

@@ -16,8 +16,8 @@ public:
 	void SetOuter(UObject* InObject) { Outer = InObject; }
 
 private:
-	UINT UUID = -1;
-	UINT InternalIndex = -1;
+	uint32 UUID = -1;
+	uint32 InternalIndex = -1;
 	FString Name;
 	UObject* Outer;
 };

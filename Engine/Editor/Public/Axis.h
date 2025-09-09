@@ -4,8 +4,6 @@
 #include "Global/CoreTypes.h"
 #include <vector>
 
-template<typename T>
-using TArray = std::vector<T>;
 class UAxis : public UObject
 {
 public:

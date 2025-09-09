@@ -7,15 +7,13 @@
 
 class AActor;
 
-template<typename T>
-using TArray = std::vector<T>;
 class UGizmo : public UObject
 {
 public:
 	UGizmo();
 	~UGizmo() override;
 	void RenderGizmo(AActor* Actor);
-	
+
 
 private:
 	FEditorPrimitive Primitive;

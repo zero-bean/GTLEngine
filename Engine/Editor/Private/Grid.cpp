@@ -8,8 +8,8 @@ UGrid::UGrid()
 {
 	URenderer& Renderer = URenderer::GetInstance();
 	SetLineVertices();
-	
-	Primitive.NumVertices = static_cast<UINT>(LineVertices.size());
+
+	Primitive.NumVertices = static_cast<uint32>(LineVertices.size());
 	Primitive.Color = FVector4(1, 1, 1, 1);
 	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 	Primitive.Vertexbuffer = Renderer.CreateVertexBuffer(
