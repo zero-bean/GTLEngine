@@ -29,9 +29,7 @@ UPerformanceWindow::UPerformanceWindow()
  */
 void UPerformanceWindow::Initialize()
 {
-	UE_LOG("PerformanceWindow Initialized");
-
-    // 히스토리 초기화
+	// 히스토리 초기화
     for (int i = 0; i < 60; ++i)
     {
         FrameTimeHistory[i] = 0.0f;
@@ -43,6 +41,8 @@ void UPerformanceWindow::Initialize()
     MinFPS = 999.0f;
     MaxFPS = 0.0f;
     TotalGameTime = 0.0f;
+
+	UE_LOG("PerformanceWindow: Successfully Initialized");
 }
 
 /**

@@ -16,9 +16,9 @@ void UPathManager::Init()
 	GetEssentialPath();
 	ValidateAndCreateDirectories();
 
-	UE_LOG("[PathManager] Initialized Successfully");
-	UE_LOG("[PathManager] Solution Path: %s", RootPath.string().c_str());
-	UE_LOG("[PathManager] Asset Path: %s", AssetPath.string().c_str());
+	UE_LOG("PathManager: Initialized Successfully");
+	UE_LOG("PathManager: Solution Path: %s", RootPath.string().c_str());
+	UE_LOG("PathManager: Asset Path: %s", AssetPath.string().c_str());
 }
 
 /**
@@ -74,16 +74,16 @@ void UPathManager::ValidateAndCreateDirectories() const
 			if (!exists(Directory))
 			{
 				create_directories(Directory);
-				UE_LOG("[PathManager] Created Directory: %s", Directory.string().c_str());
+				UE_LOG("PathManager: Created Directory: %s", Directory.string().c_str());
 			}
 			else
 			{
-				UE_LOG("[PathManager] Directory Exists: %s", Directory.string().c_str());
+				UE_LOG("PathManager: Directory Exists: %s", Directory.string().c_str());
 			}
 		}
 		catch (const filesystem::filesystem_error& e)
 		{
-			UE_LOG("[PathManager] Failed To Create Directory %s: %s", Directory.string().c_str(), e.what());
+			UE_LOG("PathManager:  Failed To Create Directory %s: %s", Directory.string().c_str(), e.what());
 			assert(!"Asset 경로 생성 에러 발생");
 		}
 	}

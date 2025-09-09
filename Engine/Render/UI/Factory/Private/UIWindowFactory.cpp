@@ -62,5 +62,5 @@ void UUIWindowFactory::CreateDefaultUILayout()
 	UIManager.RegisterUIWindow(CreateActorInspectorWindow(EUIDockDirection::Left));
 	UIManager.RegisterUIWindow(CreateLevelIOWindow(EUIDockDirection::Center));
 	UIManager.RegisterUIWindow(CreateCameraPanelWindow(EUIDockDirection::Left));
-	UE_LOG("[UIWindowFactory] Default UI Layout Created Successfully");
+	UE_LOG("UIWindowFactory: Default UI Layout Created Successfully");
 }

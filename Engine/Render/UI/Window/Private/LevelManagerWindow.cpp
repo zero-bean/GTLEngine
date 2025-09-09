@@ -29,7 +29,7 @@ ULevelManagerWindow::ULevelManagerWindow()
 void ULevelManagerWindow::Initialize()
 {
 	// 초기화 로직이 필요하면 여기에 추가
-	UE_LOG("[LevelManagerWindow] Initialized");
+	UE_LOG("LevelManagerWindow: Successfully Initialized");
 }
 
 void ULevelManagerWindow::Render()
