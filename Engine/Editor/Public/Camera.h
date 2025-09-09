@@ -27,7 +27,7 @@ public:
 	const FViewProjConstants GetFViewProjConstantsInverse() const;
 	FVector& GetLocation() { return Position; }
 	FVector& GetRotation() { return Rotation; }
-	const FVector& GetForward() { return Forward; }
+	const FVector& GetForward() const { return Forward; }
 	const float GetFovY() const { return FovY; }
 	const float GetAspect() const { return Aspect; }
 	const float GetNearZ() const { return NearZ; }

@@ -11,6 +11,7 @@ UGizmo::UGizmo()
 	VerticesGizmo = ResourceManager.GetVertexData(EPrimitiveType::Gizmo);
 	Primitive.Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Gizmo);
 	Primitive.NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Gizmo);
+	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	/*SetRootComponent(CreateDefaultSubobject<USceneComponent>("Root"));
 
 	GizmoArrowR = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowRed");
@@ -43,15 +44,19 @@ void UGizmo::RenderGizmo(AActor* Actor)
 	bIsVisible = true;
 	if (TargetActor)
 	{
-		Renderer.UpdateConstant(Actor->GetActorLocation(), FVector::GetDegreeToRadian({ 0,89.99f,0 }), Actor->GetActorScale3D());
+		Primitive.Location = TargetActor->GetActorLocation();
+		Primitive.Rotation = { 0,89.99f,0 };
+		Primitive.Scale = TargetActor->GetActorScale3D()*2;
 		Primitive.Color = FVector4(1, 0, 0, 1);
-		//Renderer.RenderPrimitive(Primitive);
-		Renderer.UpdateConstant(Actor->GetActorLocation(), FVector::GetDegreeToRadian({ -89.99f, 0, 0 }), Actor->GetActorScale3D());
+		Renderer.RenderPrimitive(Primitive);
+
+		Primitive.Rotation = { -89.99f, 0, 0 };
 		Primitive.Color = FVector4(0, 1, 0, 1);
-		//Renderer.RenderPrimitive(Primitive);
-		Renderer.UpdateConstant(Actor->GetActorLocation(), FVector::GetDegreeToRadian({ 0, 0, 0 }), Actor->GetActorScale3D());
+		Renderer.RenderPrimitive(Primitive);
+
+		Primitive.Rotation = { 0, 0, 0 };
 		Primitive.Color = FVector4(0, 0, 1, 1);
-		//Renderer.RenderPrimitive(Primitive);
+		Renderer.RenderPrimitive(Primitive);
 	}
 }
 

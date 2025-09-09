@@ -15,20 +15,21 @@
 UEditor::UEditor() = default;
 UEditor::~UEditor() = default;
 
-void UEditor::Update()
+void UEditor::Update(HWND WindowHandle)
 {
-	auto& Renderer = URenderer::GetInstance();
+	auto& Renderer = URenderer::GetInstance(); 
 	Camera.Update();
 	Camera.UpdateMatrix();
+	ObjectPicker.PickActor(ULevelManager::GetInstance().GetCurrentLevel(), WindowHandle, Camera);
 	
-	
+	Renderer.UpdateConstant(Camera.GetFViewProjConstants());
 }
-//void UEditor::RenderEditor()
-//{
-//	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
-//	Axis.Render();
-//	Grid.RenderGrid();
-//}
+void UEditor::RenderEditor()
+{
+	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
+	Axis.Render();
+	Grid.RenderGrid();
+}
 
 //void UEditor::RenderEditor()
 //{

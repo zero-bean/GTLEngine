@@ -14,7 +14,9 @@ UGrid::UGrid()
 	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 	Primitive.Vertexbuffer = Renderer.CreateVertexBuffer(
 		LineVertices.data(), Primitive.NumVertices);
-
+	Primitive.Location = FVector(0, 0, 0);
+	Primitive.Rotation = FVector(0, 0, 0);
+	Primitive.Scale = FVector(1, 1, 1);
 }
 UGrid::~UGrid()
 {
@@ -25,7 +27,7 @@ void UGrid::RenderGrid()
 {
 	URenderer& Renderer = URenderer::GetInstance();
 
-	//Renderer.RenderPrimitive(Primitive);
+	Renderer.RenderPrimitive(Primitive);
 
 }
 void UGrid::SetGridProperty(float CellSize, int NumLines)
@@ -36,7 +38,7 @@ void UGrid::SetGridProperty(float CellSize, int NumLines)
 
 void UGrid::SetLineVertices()
 {
-	float LineLength = CellSize * NumLines;
+	float LineLength = CellSize * NumLines/2;
 
 	for (int LineCount = -NumLines/2; LineCount < NumLines/2; LineCount++) // z축 라인
 	{

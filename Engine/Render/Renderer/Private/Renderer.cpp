@@ -7,6 +7,7 @@
 #include "Manager/UI/Public/UIManager.h"
 #include "Mesh/Public/Actor.h"
 #include "Render/Renderer/Public/Pipeline.h"
+#include "Editor/Public/Editor.h"
 
 IMPLEMENT_SINGLETON(URenderer)
 
@@ -167,12 +168,13 @@ void URenderer::ReleaseDefaultShader()
 	}
 }
 
-void URenderer::Update()
+void URenderer::Update(UEditor* Editor)
 {
 	RenderBegin();
 
+	Editor->RenderEditor();
 	RenderLevel();
-	RenderEditor();
+	
 	//RenderLines();
 
 	UUIManager::GetInstance().Render();
@@ -275,6 +277,30 @@ void URenderer::RenderEditor()
 void URenderer::RenderEnd()
 {
 	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
+}
+
+void URenderer::RenderPrimitive(FEditorPrimitive& Primitive)
+{
+	FPipelineInfo PipelineInfo = {
+			DefaultInputLayout,
+			DefaultVertexShader,
+			RasterizerState,
+			DepthStencilState,
+			DefaultPixelShader,
+			nullptr,
+			Primitive.Topology
+	};
+
+	Pipeline->UpdatePipeline(PipelineInfo);
+
+	Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
+	UpdateConstant(Primitive.Location, Primitive.Rotation, Primitive.Scale);
+
+	Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
+	UpdateConstant(Primitive.Color);
+
+	Pipeline->SetVertexBuffer(Primitive.Vertexbuffer, Stride);
+	Pipeline->Draw(Primitive.NumVertices, 0);
 }
 
 /**

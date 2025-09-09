@@ -8,4 +8,7 @@ struct FEditorPrimitive
 	UINT NumVertices;
 	D3D11_PRIMITIVE_TOPOLOGY Topology;
 	FVector4 Color;
+	FVector Location;
+	FVector Rotation;
+	FVector Scale;
 };
