@@ -6,7 +6,6 @@
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Mesh/Public/Actor.h"
-#include "Render/Gizmo/Public/Gizmo.h"
 #include "Render/Renderer/Public/Pipeline.h"
 
 IMPLEMENT_SINGLETON(URenderer)

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Core/Public/ClientApp.h"
 
-#include "Camera/Public/Camera.h"
+#include "Editor/Public/Camera.h"
 #include "Core/Public/AppWindow.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Level/Public/LevelManager.h"
@@ -10,12 +10,11 @@
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
-#include "ObjectPicking.h"
 
 // TODO(KHJ): 제거 대상
 ///////////////////////////////////
 // 테스트용 카메라 전역 변수로 선언
-Camera* MyCamera;
+UCamera* MyCamera;
 ///////////////////////////////////
 
 FClientApp::FClientApp() = default;
@@ -86,7 +85,7 @@ int FClientApp::InitializeSystem() const
 	Renderer.Init(Window->GetWindowHandle());
 
 	// TEST CODE - 거슬리면 나중에 리팩터링
-	MyCamera = new Camera();
+	MyCamera = new UCamera();
 
 	// UIManager Initialize
 	auto& UiManager = UUIManager::GetInstance();
@@ -150,7 +149,7 @@ void FClientApp::MainLoop()
 		else
 		{
 			auto& LevelManager = ULevelManager::GetInstance();
-			PickActor(LevelManager.GetCurrentLevel(), Window->GetWindowHandle());
+			//PickActor(LevelManager.GetCurrentLevel(), Window->GetWindowHandle());
 			UpdateSystem();
 		}
 	}

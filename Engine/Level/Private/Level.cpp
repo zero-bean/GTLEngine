@@ -2,16 +2,13 @@
 #include "Level/Public/Level.h"
 
 #include "Manager/UI/Public/UIManager.h"
-#include "Render/Gizmo/Public/Gizmo.h"
-#include "Render/AxisLine/Public/Axis.h"
-#include "Render/Grid/Public/Grid.h"
-#include "Render/Gizmo/Public/GizmoArrow.h"
+#include "Mesh/Public/Actor.h"
 
 ULevel::ULevel()
 {
-	Gizmo = SpawnEditorActor<AGizmo>();
+	/*Gizmo = SpawnEditorActor<AGizmo>();
 	Axis = SpawnEditorActor<AAxis>();
-	Grid = SpawnEditorActor<AGrid>();
+	Grid = SpawnEditorActor<AGrid>();*/
 }
 
 ULevel::ULevel(const FString& InName)
@@ -108,7 +105,7 @@ void ULevel::SetSelectedActor(AActor* InActor)
 {
 	// Set Selected Actor
 	SelectedActor = InActor;
-	Gizmo->SetTargetActor(SelectedActor);
+	//Gizmo->SetTargetActor(SelectedActor);
 }
 
 /**
@@ -147,10 +144,10 @@ bool ULevel::DestroyActor(AActor* InActor)
 		SelectedActor = nullptr;
 
 		// Gizmo Target Release
-		if (Gizmo)
+		/*if (Gizmo)
 		{
 			Gizmo->SetTargetActor(nullptr);
-		}
+		}*/
 	}
 
 	// Remove
@@ -191,10 +188,10 @@ void ULevel::MarkActorForDeletion(AActor* InActor)
 		SelectedActor = nullptr;
 
 		// Gizmo Target도 즉시 해제
-		if (Gizmo)
+		/*if (Gizmo)
 		{
 			Gizmo->SetTargetActor(nullptr);
-		}
+		}*/
 	}
 }
 
@@ -221,10 +218,10 @@ void ULevel::ProcessPendingDeletions()
 		if (SelectedActor == ActorToDelete)
 		{
 			SelectedActor = nullptr;
-			if (Gizmo)
+			/*if (Gizmo)
 			{
 				Gizmo->SetTargetActor(nullptr);
-			}
+			}*/
 		}
 
 		// LevelActors 리스트에서 제거

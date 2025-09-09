@@ -1,16 +1,17 @@
 #pragma once
+#include "Core/Public/Object.h"
 
-class Camera
+class UCamera : public UObject
 {
 public:
-	Camera() :
+	UCamera() :
 		ViewProjConstants(FViewProjConstants()),
 		Position(FVector(0, 0, -4.5f)), Rotation(FVector(0, 0, 0)),
 		FovY(60.f), Aspect(float(Render::INIT_SCREEN_WIDTH) / Render::INIT_SCREEN_HEIGHT),
 		NearZ(0.1f), FarZ(100.f)
 	{
 	}
-	~Camera() {};
+	~UCamera() {};
 
 	void Update();
 	void UpdateMatrix();

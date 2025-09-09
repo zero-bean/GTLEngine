@@ -1,9 +1,9 @@
 #include "pch.h"
-#include "Camera/Public/Camera.h"
+#include "Editor/Public/Camera.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Time/Public/TimeManager.h"  
 
-void Camera::Update()
+void UCamera::Update()
 {
 	const UInputManager& Input = UInputManager::GetInstance();
 
@@ -48,7 +48,7 @@ void Camera::Update()
 	}
 }
 
-void Camera::UpdateMatrix()
+void UCamera::UpdateMatrix()
 {
 	/**
 	 * @brief View 행렬 연산
@@ -81,7 +81,7 @@ void Camera::UpdateMatrix()
 	ViewProjConstants.Projection = P;
 }
 
-const FViewProjConstants Camera::GetFViewProjConstantsInverse() const
+const FViewProjConstants UCamera::GetFViewProjConstantsInverse() const
 {
 	FViewProjConstants ViewProjConstantsInverse;
 	FMatrix R = FMatrix::RotationMatrix(FVector::GetDegreeToRadian(Rotation));

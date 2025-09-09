@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "ObjectPicking.h"
+#include "ObjectPicker.h"
 #include "Mesh/Public/SceneComponent.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Camera/Public/Camera.h"
@@ -7,16 +7,7 @@
 #include "Mesh/Public/Actor.h"
 #include "Level/Public/Level.h"
 
-FRay ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH,
-                       const FViewProjConstants& ViewProjConstantsInverse);
-bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance);
-FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive);
-bool IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
-                           const FMatrix& ModelMatrix, float* Distance);
-
-extern Camera* MyCamera;
-
-AActor* PickActor(ULevel* Level, HWND WindowHandle)
+AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle)
 {
 	//Level로부터 Actor순회하면서 picked objects중에서 가장 가까운 object return
 	AActor* ShortestActor = nullptr;
@@ -68,7 +59,7 @@ AActor* PickActor(ULevel* Level, HWND WindowHandle)
 }
 
 
-FRay ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH,
+FRay UObjectPicker::ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH,
                        const FViewProjConstants& ViewProjConstantsInverse)
 {
 	//Screen to NDC
@@ -97,7 +88,7 @@ FRay ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH,
 }
 
 
-FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
+FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 {
 	FMatrix ModelInverse = Primitive->GetWorldTransformMatrixInverse();
 
@@ -109,7 +100,7 @@ FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 }
 
 //개별 primitive와 ray 충돌 검사
-bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance)
+bool UObjectPicker::IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance)
 {
 	//FRay ModelRay = GetModelRay(Ray, Primitive);
 
@@ -136,7 +127,7 @@ bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive
 	return bIsHit;
 }
 
-bool IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
+bool UObjectPicker::IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
                            const FMatrix& ModelMatrix, float* Distance)
 {
 	FVector CameraForward = MyCamera->GetForward(); //카메라 정보 필요
