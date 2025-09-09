@@ -28,7 +28,7 @@ void UEditor::Update(HWND WindowHandle)
 {
 	auto& Renderer = URenderer::GetInstance(); 
 	Camera.Update();
-	ObjectPicker.PickActor(ULevelManager::GetInstance().GetCurrentLevel(), WindowHandle, Camera);
+	ObjectPicker.RayCast(ULevelManager::GetInstance().GetCurrentLevel(), WindowHandle, Camera, Gizmo);
 	
 	Renderer.UpdateConstant(Camera.GetFViewProjConstants());
 }
