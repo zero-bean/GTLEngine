@@ -41,6 +41,14 @@ void ULevelManager::LoadLevel(const FString& InName)
 	CurrentLevel->Init();
 }
 
+void ULevelManager::Shutdown()
+{
+	for (auto& Level : Levels)
+	{
+		SafeDelete(Level.second);
+	}
+}
+
 /**
  * @brief 기본 레벨을 생성하는 함수
  * XXX(KHJ): 이걸 지워야 할지, 아니면 Main Init에서만 배제할지 고민

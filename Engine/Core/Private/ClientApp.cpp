@@ -37,7 +37,7 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 	// Memory Leak Detection & Report
 	#ifdef _DEBUG
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-		_CrtSetBreakAlloc(1476);
+		_CrtSetBreakAlloc(757);
 	#endif
 
 	// Window Object Initialize
@@ -183,6 +183,7 @@ void FClientApp::ShutdownSystem()
 {
 	URenderer::GetInstance().Release();
 	UUIManager::GetInstance().Shutdown();
+	ULevelManager::GetInstance().Shutdown();
 	UResourceManager::GetInstance().Release();
 
 	// 레벨 매니저 정리

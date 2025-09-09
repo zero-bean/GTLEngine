@@ -13,6 +13,7 @@ public:
 	void CreateDefaultLevel();
 	void RegisterLevel(const FString& InName, ULevel* InLevel);
 	void LoadLevel(const FString& InName);
+	void Shutdown();
 
 	// Getter
 	ULevel* GetCurrentLevel() const { return CurrentLevel; }
