@@ -188,3 +188,21 @@ ULineComponent::ULineComponent()
 	NumVertices = ResourceManager.GetNumVertices(Type);
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 }
+
+UTriangleComponent::UTriangleComponent()
+{
+	UResourceManager& ResourceManager = UResourceManager::GetInstance();
+	Type = EPrimitiveType::Triangle;
+	Vertices = ResourceManager.GetVertexData(Type);
+	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
+	NumVertices = ResourceManager.GetNumVertices(Type);
+}
+
+USquareComponent::USquareComponent()
+{
+	UResourceManager& ResourceManager = UResourceManager::GetInstance();
+	Type = EPrimitiveType::Square;
+	Vertices = ResourceManager.GetVertexData(Type);
+	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
+	NumVertices = ResourceManager.GetNumVertices(Type);
+}
