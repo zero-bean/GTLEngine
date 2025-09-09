@@ -16,13 +16,16 @@
 
 
 UEditor::UEditor()
+	:Camera(),
+	ObjectPicker(Camera)
 {
 	if (UCameraPanelWindow* Window =
 		dynamic_cast<UCameraPanelWindow*>(UUIManager::GetInstance().FindUIWindow("Camera Control")))
 	{
 		Window->SetCamera(&Camera);
 	}
-}
+	ObjectPicker.SetCamera(Camera);
+};
 
 UEditor::~UEditor() = default;
 
@@ -31,12 +34,13 @@ void UEditor::Update()
 	auto& Renderer = URenderer::GetInstance();
 	Camera.Update();
 
-	ObjectPicker.RayCast(ULevelManager::GetInstance().GetCurrentLevel(), Camera, Gizmo);
+
+	ObjectPicker.RayCast(ULevelManager::GetInstance().GetCurrentLevel(), Gizmo);
 	Renderer.UpdateConstant(Camera.GetFViewProjConstants());
 }
 void UEditor::RenderEditor()
 {
-	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
+	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor(), ObjectPicker);
 	Grid.RenderGrid();
 	Axis.Render();
 }

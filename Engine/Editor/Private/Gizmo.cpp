@@ -1,18 +1,21 @@
 #include "pch.h"
 #include "Editor/Public/Gizmo.h"
+#include "Editor/Public/ObjectPicker.h"
 #include "Render/Renderer/Public/Renderer.h"
+#include "Manager/Input/Public/InputManager.h"
 #include "Mesh/Public/Actor.h"
 
 UGizmo::UGizmo()
 {
 
 	UResourceManager& ResourceManager = UResourceManager::GetInstance();
-	
+
 	VerticesGizmo = ResourceManager.GetVertexData(EPrimitiveType::Gizmo);
 	Primitive.Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Gizmo);
 	Primitive.NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Gizmo);
 	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	Primitive.Scale = FVector(Scale, Scale, Scale);
+	Primitive.bShouldAlwaysVisible = true;
 	/*SetRootComponent(CreateDefaultSubobject<USceneComponent>("Root"));
 
 	GizmoArrowR = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowRed");
@@ -38,12 +41,19 @@ UGizmo::UGizmo()
 
 UGizmo::~UGizmo() = default;
 
-void UGizmo::RenderGizmo(AActor* Actor)
+void UGizmo::RenderGizmo(AActor* Actor, UObjectPicker& ObjectPicker)
 {
+
 	TargetActor = Actor;
 	URenderer& Renderer = URenderer::GetInstance();
 	if (TargetActor)
 	{
+		FVector DistanceVector{ 0,0,0 };
+		if (bIsDragging)
+		{
+			DistanceVector = MoveGizmo(ObjectPicker); 
+			TargetActor->SetActorLocation(DistanceVector);
+		}
 		Primitive.Location = TargetActor->GetActorLocation();
 		Primitive.Rotation = { 0,89.99f,0 };
 		Primitive.Color = RightColor;
@@ -59,9 +69,59 @@ void UGizmo::RenderGizmo(AActor* Actor)
 	}
 }
 
+FVector UGizmo::MoveGizmo(UObjectPicker& ObjectPicker)
+{
+	
+	FVector4 PointOnPlane;
+	FVector4 PlaneOrigin{ Primitive.Location.X,Primitive.Location.Y ,Primitive.Location.Z,1.0f };
+	switch (GizmoDirection)
+	{
+	case EGizmoDirection::Right:
+	{
+		if (ObjectPicker.IsCollideWithPlane(PlaneOrigin, FVector4{ 1,0,0,0 }, PointOnPlane))
+		{
+			FVector4 MouseDistance = PointOnPlane - DragStartMouseLocation;
+			return DragStartActorLocation + FVector(1, 0, 0) * MouseDistance.Dot3(FVector(1, 0, 0));
+		}
+		else
+			return Primitive.Location;
+	}
+	case EGizmoDirection::Forward:
+	{
+		if (ObjectPicker.IsCollideWithPlane(PlaneOrigin, FVector4{ 0,0,1,0 }, PointOnPlane))
+		{
+			FVector4 MouseDistance = PointOnPlane - DragStartMouseLocation;	//현재 오브젝트 위치부터 충돌점까지 거리벡터
+			return DragStartActorLocation + FVector(0, 0, 1) * MouseDistance.Dot3(FVector(0, 0, 1));
+		}
+		else
+			return Primitive.Location;
+
+	}
+	case EGizmoDirection::Up:
+		if (ObjectPicker.IsCollideWithPlane(PlaneOrigin, FVector4{ 0,1,0,0 }, PointOnPlane))
+		{
+			FVector4 MouseDistance = PointOnPlane - DragStartMouseLocation;	//현재 오브젝트 위치부터 충돌점까지 거리벡터
+			return DragStartActorLocation + FVector(0, 1, 0) * MouseDistance.Dot3(FVector(0, 1, 0));
+		}
+		else
+			return Primitive.Location;
+	}
+
+	return Primitive.Location;
+}
 void UGizmo::SetGizmoDirection(EGizmoDirection Direction)
 {
 	GizmoDirection = Direction;
+}
+
+void UGizmo::EndDrag()
+{
+	bIsDragging = false;
+}
+
+bool UGizmo::IsDragging()
+{
+	return bIsDragging;
 }
 
 const EGizmoDirection UGizmo::GetGizmoDirection()
@@ -111,8 +171,11 @@ void UGizmo::OnMouseHovering()
 	}
 }
 
-void UGizmo::OnMouseDrag(float Distance)
+void UGizmo::OnMouseClick(FVector4& CollisionPoint)
 {
+	bIsDragging = true;
+	DragStartMouseLocation = CollisionPoint;
+	DragStartActorLocation = Primitive.Location;
 }
 
 //void AGizmo::SetTargetActor(AActor* actor)
