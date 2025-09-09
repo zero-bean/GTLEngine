@@ -189,6 +189,7 @@
     <ClInclude Include="Mesh\Sample\Sphere.h"/>
     <ClInclude Include="Mesh\Sample\Triangle.h"/>
     <ClInclude Include="pch.h"/>
+    <ClInclude Include="resource.h"/>
     <ClInclude Include="Core\Public\AppWindow.h"/>
     <ClInclude Include="Core\Public\ClientApp.h"/>
     <ClInclude Include="Render\Renderer\Public\DeviceResources.h"/>
@@ -274,5 +275,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Engine.rc"/>
   </ItemGroup>
 </Project>

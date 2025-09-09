@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Core/Public/AppWindow.h"
+#include "resource.h"
 
 #include "ImGui/imgui.h"
 #include "Manager/UI/Public/UIManager.h"
@@ -18,7 +19,22 @@ bool FAppWindow::Init(HINSTANCE InInstance, int InCmdShow)
 
 	WCHAR WindowClass[] = L"UnlearnEngineWindowClass";
 
-	WNDCLASSW wndclass = {0, WndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass};
+	// 아이콘 로드
+	HICON hIcon = LoadIconW(InInstance, MAKEINTRESOURCEW(IDI_ICON1));
+	HICON hIconSm = LoadIconW(InInstance, MAKEINTRESOURCEW(IDI_ICON1));
+
+	WNDCLASSW wndclass = {};
+	wndclass.style = 0;
+	wndclass.lpfnWndProc = WndProc;
+	wndclass.cbClsExtra = 0;
+	wndclass.cbWndExtra = 0;
+	wndclass.hInstance = InInstance;
+	wndclass.hIcon = hIcon; // 큰 아이콘 (타이틀바용)
+	wndclass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+	wndclass.hbrBackground = nullptr;
+	wndclass.lpszMenuName = nullptr;
+	wndclass.lpszClassName = WindowClass;
+
 	RegisterClassW(&wndclass);
 
 	MainWindowHandle = CreateWindowExW(0, WindowClass, L"",
@@ -32,9 +48,15 @@ bool FAppWindow::Init(HINSTANCE InInstance, int InCmdShow)
 		return false;
 	}
 
+	if (hIcon)
+	{
+		SendMessageW(MainWindowHandle, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(hIconSm));
+		SendMessageW(MainWindowHandle, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
+	}
+
 	ShowWindow(MainWindowHandle, InCmdShow);
 	UpdateWindow(MainWindowHandle);
-	SetTitle(L"Unlearn Engine Project");
+	SetNewTitle(L"Project GTL");
 
 	return true;
 }
@@ -107,7 +129,7 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 	return 0;
 }
 
-void FAppWindow::SetTitle(const wstring& InNewTitle) const
+void FAppWindow::SetNewTitle(const wstring& InNewTitle) const
 {
 	SetWindowTextW(MainWindowHandle, InNewTitle.c_str());
 }

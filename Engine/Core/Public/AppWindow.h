@@ -14,7 +14,7 @@ public:
 	// Getter & Setter
 	HWND GetWindowHandle() const { return MainWindowHandle; }
 	HINSTANCE GetInstanceHandle() const { return InstanceHandle; }
-	void SetTitle(const wstring& InNewTitle) const;
+	void SetNewTitle(const wstring& InNewTitle) const;
 
 	// Special Member Function
 	FAppWindow(FClientApp* InOwner);
