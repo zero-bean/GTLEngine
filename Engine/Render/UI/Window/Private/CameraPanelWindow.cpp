@@ -23,7 +23,7 @@ UCameraPanelWindow::UCameraPanelWindow()
 void UCameraPanelWindow::Initialize()
 {
 	// 필요 시 초기화 로그
-	cout << "[UMousePanelWindow] Initialized\n";
+	UE_LOG("[CameraPanelWindow] Initialized");
 }
 
 void UCameraPanelWindow::SyncFromCamera()

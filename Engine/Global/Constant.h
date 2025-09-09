@@ -3,8 +3,8 @@
 namespace Render
 {
 	// Screen Size
-	constexpr int32 INIT_SCREEN_WIDTH = 1440;
-	constexpr int32 INIT_SCREEN_HEIGHT = 900;
+	constexpr int32 INIT_SCREEN_WIDTH = 1920;
+	constexpr int32 INIT_SCREEN_HEIGHT = 1200;
 }
 
 namespace Time

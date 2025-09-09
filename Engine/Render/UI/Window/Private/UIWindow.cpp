@@ -17,7 +17,14 @@ UUIWindow::UUIWindow(const FUIWindowConfig& InConfig)
 	LastWindowSize = Config.DefaultSize;
 	LastWindowPosition = Config.DefaultPosition;
 
-	cout << "[UIWindow] Created: " << WindowID << " (" << Config.WindowTitle << ")" << "\n";
+	if (IssuedWindowID == 1)
+	{
+		cout << "[UIWindow] Created: " << WindowID << " (" << Config.WindowTitle << ")" << "\n";
+	}
+	else
+	{
+		UE_LOG("[UIWindow] Created: %d (%s)", WindowID, Config.WindowTitle.c_str());
+	}
 }
 
 /**
