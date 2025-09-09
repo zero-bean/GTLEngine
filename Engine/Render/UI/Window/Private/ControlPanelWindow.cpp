@@ -34,7 +34,7 @@ UControlPanelWindow::UControlPanelWindow()
  */
 void UControlPanelWindow::Initialize()
 {
-	cout << "[ControlPanelWindow] Initialized" << "\n";
+	UE_LOG("[ControlPanelWindow] Initialized");
 
 	SelectedActor = nullptr;
 	EditLocation = FVector(0, 0, 0);
@@ -330,12 +330,12 @@ void UControlPanelWindow::SpawnActors() const
 
 	if (!CurrentLevel)
 	{
-		cout << "[ControlPanel] No Current Level To Spawn Actors" << "\n";
+		UE_LOG("[ControlPanel] No Current Level To Spawn Actors");
 		return;
 	}
 
-	cout << "[ControlPanel] Spawning " << NumberOfSpawn << " Actors Of Type "
-		<< (SelectedPrimitiveType == 0 ? "Cube" : "Sphere") << "\n";
+	UE_LOG("[ControlPanel] Spawning %d Actors Of Type %s", NumberOfSpawn,
+	       (SelectedPrimitiveType == 0 ? "Cube" : "Sphere"));
 
 	// 지정된 개수만큼 액터 생성
 	for (int i = 0; i < NumberOfSpawn; i++)
@@ -373,11 +373,11 @@ void UControlPanelWindow::SpawnActors() const
 			float RandomScale = 0.5f + (static_cast<float>(rand()) / RAND_MAX) * 1.5f;
 			NewActor->SetActorScale3D(FVector(RandomScale, RandomScale, RandomScale));
 
-			cout << "[ControlPanel] Spawned Actor At (" << RandomX << ", " << RandomY << ", " << RandomZ << ")" << "\n";
+			UE_LOG("[ControlPanel] Spawned Actor At (%.2f, %.2f, %.2f)", RandomX, RandomY, RandomZ);
 		}
 		else
 		{
-			cout << "[ControlPanel] Failed To Spawn Actor " << i << "\n";
+			UE_LOG("[ControlPanel] Failed To Spawn Actor %d", i);
 		}
 	}
 }
@@ -389,7 +389,7 @@ void UControlPanelWindow::DeleteSelectedActor()
 {
 	if (!HasValidActor())
 	{
-		cout << "[ControlPanel] No Actor Selected For Deletion" << "\n";
+		UE_LOG("[ControlPanel] No Actor Selected For Deletion");
 		return;
 	}
 
@@ -398,16 +398,16 @@ void UControlPanelWindow::DeleteSelectedActor()
 
 	if (!CurrentLevel)
 	{
-		cout << "[ControlPanel] No Current Level To Delete Actor From" << "\n";
+		UE_LOG("[ControlPanel] No Current Level To Delete Actor From");
 		return;
 	}
 
-	cout << "[ControlPanel] Marking Selected Actor For Deletion: " << SelectedActor << "\n";
+	UE_LOG("[ControlPanel] Marking Selected Actor For Deletion: %p", SelectedActor);
 
 	// 지연 삭제를 사용하여 안전하게 다음 틱에서 삭제
 	CurrentLevel->MarkActorForDeletion(SelectedActor);
 
 	// MarkActorForDeletion에서 선택 해제도 처리하므로 여기에서는 단순히 nullptr로 설정
 	SelectedActor = nullptr;
-	cout << "[ControlPanel] Actor Marked For Deletion In Next Tick" << "\n";
+	UE_LOG("[ControlPanel] Actor Marked For Deletion In Next Tick");
 }

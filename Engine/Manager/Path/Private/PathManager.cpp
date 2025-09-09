@@ -16,9 +16,9 @@ void UPathManager::Init()
 	GetEssentialPath();
 	ValidateAndCreateDirectories();
 
-	cout << "[PathManager] Initialized Successfully" << "\n";
-	cout << "[PathManager] Solution Path: " << RootPath << "\n";
-	cout << "[PathManager] Asset Path: " << AssetPath << "\n";
+	UE_LOG("[PathManager] Initialized Successfully");
+	UE_LOG("[PathManager] Solution Path: %s", RootPath.string().c_str());
+	UE_LOG("[PathManager] Asset Path: %s", AssetPath.string().c_str());
 }
 
 /**
@@ -48,6 +48,7 @@ void UPathManager::GetEssentialPath()
 	AudioPath = AssetPath / "Audio";
 	WorldPath = AssetPath / "World";
 	ConfigPath = AssetPath / "Config";
+	FontPath = AssetPath / "Font";
 }
 
 /**
@@ -62,7 +63,8 @@ void UPathManager::ValidateAndCreateDirectories() const
 		ModelPath,
 		AudioPath,
 		WorldPath,
-		ConfigPath
+		ConfigPath,
+		FontPath
 	};
 
 	for (const auto& Directory : DirectoriesToCreate)
@@ -72,17 +74,16 @@ void UPathManager::ValidateAndCreateDirectories() const
 			if (!exists(Directory))
 			{
 				create_directories(Directory);
-				cout << "[PathManager] Created Directory: " << Directory << "\n";
+				UE_LOG("[PathManager] Created Directory: %s", Directory.string().c_str());
 			}
 			else
 			{
-				cout << "[PathManager] Directory Exists: " << Directory << "\n";
+				UE_LOG("[PathManager] Directory Exists: %s", Directory.string().c_str());
 			}
 		}
 		catch (const filesystem::filesystem_error& e)
 		{
-			cout << "[PathManager] Failed To Create Directory " <<
-				Directory << ": " << e.what() << "\n";
+			UE_LOG("[PathManager] Failed To Create Directory %s: %s", Directory.string().c_str(), e.what());
 			assert(!"Asset 경로 생성 에러 발생");
 		}
 	}

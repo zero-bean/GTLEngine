@@ -25,7 +25,7 @@
     <RootNamespace>UnlearnEngine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -52,24 +52,24 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros"/>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)Build\$(Configuration)\Intermediate\</IntDir>
@@ -123,6 +123,9 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -240,36 +243,36 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Core\Private\AppWindow.cpp" />
-    <ClCompile Include="Core\Private\ClientApp.cpp" />
-    <ClCompile Include="Render\Renderer\Private\DeviceResources.cpp" />
-    <ClCompile Include="Render\Renderer\Private\Pipeline.cpp" />
-    <ClCompile Include="Render\Renderer\Private\Renderer.cpp" />
-    <ClCompile Include="Render\UI\Factory\Private\UIWindowFactory.cpp" />
-    <ClCompile Include="Render\UI\ImGui\Private\ImGuiHelper.cpp" />
-    <ClCompile Include="Render\UI\Window\Private\CameraPanelWindow.cpp" />
-    <ClCompile Include="Render\UI\Window\Private\ConsoleWindow.cpp" />
-    <ClCompile Include="Render\UI\Window\Private\ControlPanelWindow.cpp" />
-    <ClCompile Include="Render\UI\Window\Private\InputStatusWindow.cpp" />
-    <ClCompile Include="Render\UI\Window\Private\LevelManagerWindow.cpp" />
-    <ClCompile Include="Render\UI\Window\Private\PerformanceWindow.cpp" />
-    <ClCompile Include="Render\UI\Window\Private\UIWindow.cpp" />
-    <ClCompile Include="Utility\Private\LevelSerializer.cpp" />
+    <ClCompile Include="main.cpp"/>
+    <ClCompile Include="Core\Private\AppWindow.cpp"/>
+    <ClCompile Include="Core\Private\ClientApp.cpp"/>
+    <ClCompile Include="Render\Renderer\Private\DeviceResources.cpp"/>
+    <ClCompile Include="Render\Renderer\Private\Pipeline.cpp"/>
+    <ClCompile Include="Render\Renderer\Private\Renderer.cpp"/>
+    <ClCompile Include="Render\UI\Factory\Private\UIWindowFactory.cpp"/>
+    <ClCompile Include="Render\UI\ImGui\Private\ImGuiHelper.cpp"/>
+    <ClCompile Include="Render\UI\Window\Private\CameraPanelWindow.cpp"/>
+    <ClCompile Include="Render\UI\Window\Private\ConsoleWindow.cpp"/>
+    <ClCompile Include="Render\UI\Window\Private\ControlPanelWindow.cpp"/>
+    <ClCompile Include="Render\UI\Window\Private\InputStatusWindow.cpp"/>
+    <ClCompile Include="Render\UI\Window\Private\LevelManagerWindow.cpp"/>
+    <ClCompile Include="Render\UI\Window\Private\PerformanceWindow.cpp"/>
+    <ClCompile Include="Render\UI\Window\Private\UIWindow.cpp"/>
+    <ClCompile Include="Utility\Private\LevelSerializer.cpp"/>
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
-    <Content Include="Core\Public\EngineStatics.h" />
-    <Content Include="Render\AxisLine\Public\Axis.h" />
-    <Content Include="Render\AxisLine\Public\AxisLine.h" />
-    <Content Include="Shader\**\*.*">
+    <Content Include="Core\Public\EngineStatics.h"/>
+    <Content Include="Render\AxisLine\Public\Axis.h"/>
+    <Content Include="Render\AxisLine\Public\AxisLine.h"/>
+    <Content Include="Asset\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shader\SampleShader.hlsl">
+    <FxCompile Include="Asset\Shader\SampleShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>

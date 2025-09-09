@@ -75,7 +75,7 @@ bool ULevelManager::SaveCurrentLevel(const FString& InFilePath) const
 {
 	if (!CurrentLevel)
 	{
-		cout << "[LevelManager] No Current Level To Save" << "\n";
+		UE_LOG("[LevelManager] No Current Level To Save");
 		return false;
 	}
 
@@ -87,7 +87,7 @@ bool ULevelManager::SaveCurrentLevel(const FString& InFilePath) const
 		FilePath = GenerateLevelFilePath(CurrentLevel->GetName().empty() ? "Untitled" : CurrentLevel->GetName());
 	}
 
-	cout << "[LevelManager] Saving Current Level To: " << FilePath.string() << "\n";
+	UE_LOG("[LevelManager] Saving Current Level To: %s", FilePath.string().c_str());
 
 	// LevelSerializer를 사용하여 저장
 	try
@@ -99,18 +99,18 @@ bool ULevelManager::SaveCurrentLevel(const FString& InFilePath) const
 
 		if (bSuccess)
 		{
-			cout << "[LevelManager] Level Saved Successfully" << "\n";
+			UE_LOG("[LevelManager] Level Saved Successfully");
 		}
 		else
 		{
-			cout << "[LevelManager] Failed To Save Level" << "\n";
+			UE_LOG("[LevelManager] Failed To Save Level");
 		}
 
 		return bSuccess;
 	}
 	catch (const exception& Exception)
 	{
-		cout << "[LevelManager] Exception During Save: " << Exception.what() << "\n";
+		UE_LOG("[LevelManager] Exception During Save: %s", Exception.what());
 		return false;
 	}
 }
@@ -120,7 +120,7 @@ bool ULevelManager::SaveCurrentLevel(const FString& InFilePath) const
  */
 bool ULevelManager::LoadLevel(const FString& InLevelName, const FString& InFilePath)
 {
-	cout << "[LevelManager] Loading Level '" << InLevelName << "' From: " << InFilePath << "\n";
+	UE_LOG("[LevelManager] Loading Level '%s' From: %s", InLevelName.c_str(), InFilePath.c_str());
 
 	// Make New Level
 	ULevel* NewLevel = new ULevel(InLevelName);
@@ -133,7 +133,7 @@ bool ULevelManager::LoadLevel(const FString& InLevelName, const FString& InFileP
 		bool bLoadSuccess = FLevelSerializer::LoadLevelFromFile(Metadata, InFilePath);
 		if (!bLoadSuccess)
 		{
-			cout << "[LevelManager] Failed To Load Level From: " << InFilePath << "\n";
+			UE_LOG("[LevelManager] Failed To Load Level From: %s", InFilePath.c_str());
 			delete NewLevel;
 			return false;
 		}
@@ -142,7 +142,7 @@ bool ULevelManager::LoadLevel(const FString& InLevelName, const FString& InFileP
 		FString ErrorMessage;
 		if (!FLevelSerializer::ValidateLevelData(Metadata, ErrorMessage))
 		{
-			cout << "[LevelManager] Level Validation Failed: " << ErrorMessage << "\n";
+			UE_LOG("[LevelManager] Level Validation Failed: %s", ErrorMessage.c_str());
 			delete NewLevel;
 			return false;
 		}
@@ -152,14 +152,14 @@ bool ULevelManager::LoadLevel(const FString& InLevelName, const FString& InFileP
 
 		if (!bSuccess)
 		{
-			cout << "[LevelManager] Failed To Create Level From Metadata" << "\n";
+			UE_LOG("[LevelManager] Failed To Create Level From Metadata");
 			delete NewLevel;
 			return false;
 		}
 	}
 	catch (const exception& InException)
 	{
-		cout << "[LevelManager] Exception During Load: " << InException.what() << "\n";
+		UE_LOG("[LevelManager] Exception During Load: %s", InException.what());
 		delete NewLevel;
 		return false;
 	}
@@ -199,13 +199,13 @@ bool ULevelManager::LoadLevel(const FString& InLevelName, const FString& InFileP
 		CurrentLevel = NewLevel;
 		CurrentLevel->Init();
 
-		cout << "[LevelManager] Successfully Loaded And Switched To Level '" << InLevelName << "'";
+		UE_LOG("[LevelManager] Successfully Loaded And Switched To Level '%s'", InLevelName.c_str());
 	}
 	else
 	{
 		// 로드 실패 시 정리
 		delete NewLevel;
-		cout << "[LevelManager] Failed To Load Level From File" << "\n";
+		UE_LOG("[LevelManager] Failed To Load Level From File");
 	}
 
 	return bSuccess;
@@ -216,12 +216,12 @@ bool ULevelManager::LoadLevel(const FString& InLevelName, const FString& InFileP
  */
 bool ULevelManager::CreateNewLevel(const FString& InLevelName)
 {
-	cout << "[LevelManager] Creating New Level: " + InLevelName << "\n";
+	UE_LOG("[LevelManager] Creating New Level: %s", InLevelName.c_str());
 
 	// 이미 존재하는 레벨 이름인지 확인
 	if (Levels.find(InLevelName) != Levels.end())
 	{
-		cout << "[LevelManager] Level '" << InLevelName << "' Already Exists" << "\n";
+		UE_LOG("[LevelManager] Level '%s' Already Exists", InLevelName.c_str());
 		return false;
 	}
 
@@ -240,7 +240,7 @@ bool ULevelManager::CreateNewLevel(const FString& InLevelName)
 	CurrentLevel = NewLevel;
 	CurrentLevel->Init();
 
-	cout << "[LevelManager] Successfully created and switched to new level '" << InLevelName << "'";
+	UE_LOG("[LevelManager] Successfully created and switched to new level '%s'", InLevelName.c_str());
 
 	return true;
 }
@@ -276,7 +276,7 @@ FLevelMetadata ULevelManager::ConvertLevelToMetadata(ULevel* InLevel) const
 
 	if (!InLevel)
 	{
-		cout << "[LevelManager] ConvertLevelToMetadata: Level Is Null" << "\n";
+		UE_LOG("[LevelManager] ConvertLevelToMetadata: Level Is Null");
 		return Metadata;
 	}
 
@@ -309,7 +309,7 @@ FLevelMetadata ULevelManager::ConvertLevelToMetadata(ULevel* InLevel) const
 		// }
 		else
 		{
-			cout << "[LevelManager] Unknown Actor Type, Skipping..." << "\n";
+			UE_LOG("[LevelManager] Unknown Actor Type, Skipping...");
 			assert(!"고려하지 않은 Actor 타입");
 			continue;
 		}
@@ -319,7 +319,7 @@ FLevelMetadata ULevelManager::ConvertLevelToMetadata(ULevel* InLevel) const
 
 	Metadata.NextUUID = CurrentID;
 
-	cout << "[LevelManager] Converted " << Metadata.Primitives.size() << " Actors To Metadata" << "\n";
+	UE_LOG("[LevelManager] Converted %zu Actors To Metadata", Metadata.Primitives.size());
 	return Metadata;
 }
 
@@ -330,11 +330,11 @@ bool ULevelManager::LoadLevelFromMetadata(ULevel* InLevel, const FLevelMetadata&
 {
 	if (!InLevel)
 	{
-		cout << "[LevelManager] LoadLevelFromMetadata: InLevel Is Null" << "\n";
+		UE_LOG("[LevelManager] LoadLevelFromMetadata: InLevel Is Null");
 		return false;
 	}
 
-	cout << "[LevelManager] Loading " << InMetadata.Primitives.size() << " Primitives From Metadata" << "\n";
+	UE_LOG("[LevelManager] Loading %zu Primitives From Metadata", InMetadata.Primitives.size());
 
 	// Metadata의 각 Primitive를 Actor로 생성
 	for (const auto& [ID, PrimitiveMeta] : InMetadata.Primitives)
@@ -361,7 +361,7 @@ bool ULevelManager::LoadLevelFromMetadata(ULevel* InLevel, const FLevelMetadata&
 		// 	NewActor = InLevel->SpawnActor<ATriangleActor>();
 		// 	break;
 		default:
-			cout << "[LevelManager] Unknown Primitive Type: " << static_cast<int32>(PrimitiveMeta.Type) << "\n";
+			UE_LOG("[LevelManager] Unknown Primitive Type: %d", static_cast<int32>(PrimitiveMeta.Type));
 			assert(!"고려하지 않은 Actor 타입");
 			continue;
 		}
@@ -373,19 +373,17 @@ bool ULevelManager::LoadLevelFromMetadata(ULevel* InLevel, const FLevelMetadata&
 			NewActor->SetActorRotation(PrimitiveMeta.Rotation);
 			NewActor->SetActorScale3D(PrimitiveMeta.Scale);
 
-			cout << "[LevelManager] Created "
-				<< FLevelSerializer::PrimitiveTypeToWideString(PrimitiveMeta.Type)
-				<< " at (" << PrimitiveMeta.Location.X << ", "
-				<< PrimitiveMeta.Location.Y << ", "
-				<< PrimitiveMeta.Location.Z << ")" << "\n";
+			UE_LOG("[LevelManager] Created %s at (%.2f, %.2f, %.2f)", 
+				FLevelSerializer::PrimitiveTypeToWideString(PrimitiveMeta.Type).c_str(),
+				PrimitiveMeta.Location.X, PrimitiveMeta.Location.Y, PrimitiveMeta.Location.Z);
 		}
 		else
 		{
-			cout << "[LevelManager] Failed To Create Actor For Primitive ID: " << ID << "\n";
+			UE_LOG("[LevelManager] Failed To Create Actor For Primitive ID: %d", ID);
 		}
 	}
 
 	UE_LOG("[LevelManager] Level Loaded From Metadata Successfully");
-	cout << "[LevelManager] Level Loaded From Metadata Successfully" << "\n";
+	// UE_LOG로 이미 처리됨
 	return true;
 }
