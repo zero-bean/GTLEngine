@@ -112,7 +112,36 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 void ULevel::SetSelectedActor(AActor* InActor)
 {
 	// Set Selected Actor
+	if (SelectedActor)
+	{
+		for (auto& Component : SelectedActor->GetOwnedComponents())
+		{
+			if (Component->GetComponentType() >= EComponentType::Primitive)
+			{
+				UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+				if (PrimitiveComponent->IsVisible())
+				{
+					PrimitiveComponent->SetColor({0.f, 0.f, 0.f, 0.f});
+				}
+			}
+		}
+	}
+
 	SelectedActor = InActor;
+	if (SelectedActor)
+	{
+		for (auto& Component : SelectedActor->GetOwnedComponents())
+		{
+			if (Component->GetComponentType() >= EComponentType::Primitive)
+			{
+				UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
+				if (PrimitiveComponent->IsVisible())
+				{
+					PrimitiveComponent->SetColor({1.f, 0.8f, 0.2f, 0.4f});
+				}
+			}
+		}
+	}
 	//Gizmo->SetTargetActor(SelectedActor);
 }
 
