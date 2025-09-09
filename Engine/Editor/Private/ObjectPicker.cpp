@@ -61,11 +61,11 @@ AActor* UObjectPicker::PickActor(ULevel* Level, HWND WindowHandle, UCamera& Came
 FRay UObjectPicker::ConvertToWorldRay(UCamera& Camera, int PixelX, int PixelY, int ViewportW, int ViewportH)
 {
 	/* *
-	 * @brief 반환할 타입의 객체 선언 
+	 * @brief 반환할 타입의 객체 선언
 	 */
 	FRay Ray = {};
 
-	const FViewProjConstants& ViewProjMatrix = Camera.GetFViewProjConstants();
+	const FViewProjConstants& ViewProjMatrix = Camera.GetFViewProjConstantsInverse();
 
 	/* *
 	 * @brief 마우스 클릭한 Screen 좌표를 NDC 좌표로 변환합니다.
