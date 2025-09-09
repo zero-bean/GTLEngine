@@ -14,14 +14,19 @@ class ULevel;
 class UObjectPicker : public UObject
 {
 public:
-	void RayCast(ULevel* Level, HWND WindowHandle, UCamera& Camera, UGizmo& Gizmo);
-	AActor* PickActor(ULevel* Level, UCamera& Camera, const FRay& WorldRay, float* ShortedDistance);
-	EGizmoDirection PickGizmo(UCamera& Camera, const FRay& WorldRay, UGizmo& Gizmo, float* GizmoDistance);
+	void SetCamera(UCamera* Camera);
+	void RayCast(ULevel* Level, HWND WindowHandle, UGizmo& Gizmo);
+	AActor* PickActor(ULevel* Level, const FRay& WorldRay, float* ShortedDistance);
+	EGizmoDirection PickGizmo(const FRay& WorldRay, UGizmo& Gizmo, float* GizmoDistance);
 
 private:
-	FRay ConvertToWorldRay(UCamera& Camera, int PixelX, int PixelY, int ViewportW, int ViewportH);
-	bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance, const UCamera& Camera);
+	
+	FRay ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH);
+	bool IsRayPrimitiveCollided(const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance);
 	FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive);
 	bool IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
-		const FMatrix& ModelMatrix, const UCamera& Camera, float* Distance);
+		const FMatrix& ModelMatrix, float* Distance);
+
+
+	UCamera* Camera;
 };

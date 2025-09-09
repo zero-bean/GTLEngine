@@ -21,6 +21,7 @@ UEditor::UEditor()
 	{
 		Window->SetCamera(&Camera);
 	}
+	ObjectPicker.SetCamera(&Camera);
 };
 UEditor::~UEditor() = default;
 
@@ -29,7 +30,7 @@ void UEditor::Update(HWND WindowHandle)
 	auto& Renderer = URenderer::GetInstance();
 	Camera.Update();
 
-	ObjectPicker.RayCast(ULevelManager::GetInstance().GetCurrentLevel(), WindowHandle, Camera, Gizmo);
+	ObjectPicker.RayCast(ULevelManager::GetInstance().GetCurrentLevel(), WindowHandle, Gizmo);
 	
 	Renderer.UpdateConstant(Camera.GetFViewProjConstants());
 }

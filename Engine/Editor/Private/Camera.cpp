@@ -175,3 +175,70 @@ const FViewProjConstants UCamera::GetFViewProjConstantsInverse() const
 
 	return Result;
 }
+
+
+FRay UCamera::ConvertToWorldRay(int PixelX, int PixelY, int ViewportW, int ViewportH) const
+{
+	/* *
+	 * @brief 반환할 타입의 객체 선언
+	 */
+	FRay Ray = {};
+
+	const FViewProjConstants& ViewProjMatrix = GetFViewProjConstantsInverse();
+
+	/* *
+	 * @brief 마우스 클릭한 Screen 좌표를 NDC 좌표로 변환합니다.
+	 * NDC: (-1, -1, 0) ~ (1, 1, 1), Window: (0, 0) ~ (Width, Height)
+	 */
+	const float NdcX = (PixelX / (float)ViewportW) * 2.0f - 1.0f;
+	const float NdcY = 1.0f - (PixelY / (float)ViewportH) * 2.0f; // 윈도우 좌표계 Y 반전
+
+	/* *
+	 * @brief NDC 좌표 정보를 행렬로 변환합니다.
+	 */
+	const FVector4 NdcNear(NdcX, NdcY, 0.0f, 1.0f);
+	const FVector4 NdcFar(NdcX, NdcY, 1.0f, 1.0f);
+
+	/* *
+	 * @brief Projection 행렬을 View 행렬로 역투영합니다.
+	 * Model -> View -> Projection -> NDC
+	 */
+	const FVector4 ViewNear = MultiplyPointWithMatrix(NdcNear, ViewProjMatrix.Projection);
+	const FVector4 ViewFar = MultiplyPointWithMatrix(NdcFar, ViewProjMatrix.Projection);
+
+	/* *
+	 * @brief View 행렬을 World 행렬로 역투영합니다.
+	 * Model -> View -> Projection -> NDC
+	 */
+	const FVector4 WorldNear = MultiplyPointWithMatrix(ViewNear, ViewProjMatrix.View);
+	const FVector4 WorldFar = MultiplyPointWithMatrix(ViewFar, ViewProjMatrix.View);
+
+	/* *
+	 * @brief 카메라의 월드 좌표를 추출합니다.
+	 * Row-major 기준, 마지막 행 벡터는 위치 정보를 가지고 있음
+	 */
+	const FVector4 CameraPosition(
+		ViewProjMatrix.View.Data[3][0],
+		ViewProjMatrix.View.Data[3][1],
+		ViewProjMatrix.View.Data[3][2],
+		ViewProjMatrix.View.Data[3][3]);
+
+	if (CameraType == ECameraType::ECT_Perspective)
+	{
+		FVector4 DirectionVector = WorldFar - CameraPosition;
+		DirectionVector.Normalize();
+
+		Ray.Origin = CameraPosition;
+		Ray.Direction = DirectionVector;
+	}
+	else if (CameraType == ECameraType::ECT_Orthographic)
+	{
+		FVector4 DirectionVector = WorldFar - WorldNear;
+		DirectionVector.Normalize();
+
+		Ray.Origin = WorldNear;
+		Ray.Direction = DirectionVector;
+	}
+
+	return Ray;
+}
