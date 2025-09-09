@@ -6,12 +6,14 @@
 #include "Render/AxisLine/Public/Axis.h"
 #include "Render/Grid/Public/Grid.h"
 #include "Render/Gizmo/Public/GizmoArrow.h"
-
+#include "Camera/Public/Camera.h"
+#include "Render/UI/Window/Public/CameraPanelWindow.h"
 ULevel::ULevel()
 {
 	Gizmo = SpawnEditorActor<AGizmo>();
 	Axis = SpawnEditorActor<AAxis>();
 	Grid = SpawnEditorActor<AGrid>();
+	CameraPtr = new Camera();
 }
 
 ULevel::ULevel(const FString& InName)
@@ -20,6 +22,7 @@ ULevel::ULevel(const FString& InName)
 	Gizmo = SpawnEditorActor<AGizmo>();
 	Axis = SpawnEditorActor<AAxis>();
 	Grid = SpawnEditorActor<AGrid>();
+	CameraPtr = new Camera();
 }
 
 ULevel::~ULevel()
@@ -33,10 +36,18 @@ ULevel::~ULevel()
 	{
 		SafeDelete(Actor);
 	}
+
+	SafeDelete(CameraPtr);
 }
 
 void ULevel::Init()
 {
+	// TEST CODE
+	if (UCameraPanelWindow* Window =
+		dynamic_cast<UCameraPanelWindow*>(UUIManager::GetInstance().FindUIWindow("Camera Control")))
+	{
+		Window->SetCamera(CameraPtr);
+	}
 }
 
 void ULevel::Update()
@@ -62,6 +73,11 @@ void ULevel::Update()
 			Actor->Tick();
 			AddEditorPrimitiveComponent(Actor);
 		}
+	}
+
+	if (CameraPtr)
+	{
+		CameraPtr->Update();
 	}
 }
 
@@ -125,21 +141,21 @@ bool ULevel::DestroyActor(AActor* InActor)
 	}
 
 	// LevelActors 리스트에서 제거
-	for (auto it = LevelActors.begin(); it != LevelActors.end(); ++it)
+	for (auto Iterator = LevelActors.begin(); Iterator != LevelActors.end(); ++Iterator)
 	{
-		if (*it == InActor)
+		if (*Iterator == InActor)
 		{
-			LevelActors.erase(it);
+			LevelActors.erase(Iterator);
 			break;
 		}
 	}
 
 	// 필요하다면 EditorActors 리스트에서도 제거
-	for (auto it = EditorActors.begin(); it != EditorActors.end(); ++it)
+	for (auto Iterator = EditorActors.begin(); Iterator != EditorActors.end(); ++Iterator)
 	{
-		if (*it == InActor)
+		if (*Iterator == InActor)
 		{
-			EditorActors.erase(it);
+			EditorActors.erase(Iterator);
 			break;
 		}
 	}
@@ -231,21 +247,21 @@ void ULevel::ProcessPendingDeletions()
 		}
 
 		// LevelActors 리스트에서 제거
-		for (auto it = LevelActors.begin(); it != LevelActors.end(); ++it)
+		for (auto Iterator = LevelActors.begin(); Iterator != LevelActors.end(); ++Iterator)
 		{
-			if (*it == ActorToDelete)
+			if (*Iterator == ActorToDelete)
 			{
-				LevelActors.erase(it);
+				LevelActors.erase(Iterator);
 				break;
 			}
 		}
 
 		// EditorActors 리스트에서도 제거
-		for (auto it = EditorActors.begin(); it != EditorActors.end(); ++it)
+		for (auto Iterator = EditorActors.begin(); Iterator != EditorActors.end(); ++Iterator)
 		{
-			if (*it == ActorToDelete)
+			if (*Iterator == ActorToDelete)
 			{
-				EditorActors.erase(it);
+				EditorActors.erase(Iterator);
 				break;
 			}
 		}

@@ -4,6 +4,7 @@
 class AAxis;
 class AGizmo;
 class AGrid;
+class Camera;
 class AActor;
 class UPrimitiveComponent;
 
@@ -42,6 +43,9 @@ public:
 	AActor* GetSelectedActor() const { return SelectedActor; }
 	AGizmo* GetGizmo() const { return Gizmo; }
 
+	void SetCamera(Camera* InCamera) { CameraPtr = InCamera; }
+	Camera* GetCamera() const { return CameraPtr; }
+
 private:
 	TArray<AActor*> LevelActors;
 	TArray<UPrimitiveComponent*> LevelPrimitiveComponents;
@@ -56,6 +60,10 @@ private:
 	AGizmo* Gizmo = nullptr;
 	AAxis* Axis = nullptr;
 	AGrid* Grid = nullptr;
+	//////////////////////////////////////////////////////////////////////////
+	// TODO(PYB): Editor 제작되면 해당 클래스에 존재하는 카메라 관련 코드 제거	
+	//////////////////////////////////////////////////////////////////////////
+	Camera* CameraPtr = nullptr;
 
 	// 지연 삭제 처리 함수
 	void ProcessPendingDeletions();

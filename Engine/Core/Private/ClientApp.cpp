@@ -13,12 +13,6 @@
 #include "Render/UI/Window/Public/ConsoleWindow.h"
 #include "ObjectPicking.h"
 
-// TODO(KHJ): 제거 대상
-///////////////////////////////////
-// 테스트용 카메라 전역 변수로 선언
-Camera* MyCamera;
-///////////////////////////////////
-
 FClientApp::FClientApp() = default;
 
 FClientApp::~FClientApp() = default;
@@ -86,9 +80,6 @@ int FClientApp::InitializeSystem() const
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
 
-	// TEST CODE - 거슬리면 나중에 리팩터링
-	MyCamera = new Camera();
-
 	// UIManager Initialize
 	auto& UiManager = UUIManager::GetInstance();
 	UiManager.Initialize(Window->GetWindowHandle());
@@ -128,10 +119,7 @@ void FClientApp::UpdateSystem()
 	TimeManager.Update();
 	InputManager.Update();
 	LevelManager.Update();
-	MyCamera->Update();
-	MyCamera->UpdateMatrix();
 	UiManager.Update();
-	Renderer.UpdateConstant(MyCamera->GetFViewProjConstants());
 	Renderer.Update();
 }
 
@@ -166,13 +154,6 @@ void FClientApp::MainLoop()
 			UpdateSystem();
 		}
 	}
-
-	// TODO(KHJ): 제거 대상
-	////////////////////////////////////////
-	// TEST CODE - 거슬리면 나중에 리팩터링
-	delete MyCamera;
-	MyCamera = nullptr;
-	////////////////////////////////////////
 }
 
 /**

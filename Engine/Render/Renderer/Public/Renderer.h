@@ -6,7 +6,6 @@
 class UPipeline;
 class UDeviceResources;
 class UPrimitiveComponent;
-class Camera;
 class AActor;
 class AGizmo;
 /**
