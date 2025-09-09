@@ -332,3 +332,17 @@ bool UObjectPicker::IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex
 	}
 	return false;
 }
+
+
+bool UObjectPicker::IsCollideWithPlane(FVector4 PlanePoint, FVector4 PerpenVectorToPlane, FVector4 PointOnPlane)
+{
+	const UInputManager& Input = UInputManager::GetInstance();
+
+	FVector MousePosition = Input.GetMousePosition();
+
+	//FRay WorldRay = Camera->ConvertToWorldRay(MousePosition.X, MousePosition.Y);
+
+
+
+	return false;
+}

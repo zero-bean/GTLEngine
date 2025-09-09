@@ -1,15 +1,11 @@
 #pragma once
-#include "Editor/Public/Camera.h"
 #include "Editor/Public/Gizmo.h"
-#include "Global/Matrix.h"
-#include "Global/Vector.h"
-#include "Global/CoreTypes.h"
-#include <Windows.h>
 
 class UPrimitiveComponent;
 class AActor;
 class ULevel;
-
+class UCamera;
+class UGizmo;
 
 class UObjectPicker : public UObject
 {
@@ -18,6 +14,7 @@ public:
 	void RayCast(ULevel* Level, HWND WindowHandle, UGizmo& Gizmo);
 	AActor* PickActor(ULevel* Level, const FRay& WorldRay, float* ShortedDistance);
 	EGizmoDirection PickGizmo(const FRay& WorldRay, UGizmo& Gizmo, float* GizmoDistance);
+	bool IsCollideWithPlane(FVector4 PlanePoint, FVector4 PerpenVectorToPlane, FVector4 PointOnPlane);
 
 private:
 	

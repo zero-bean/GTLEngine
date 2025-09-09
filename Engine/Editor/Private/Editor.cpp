@@ -36,7 +36,7 @@ void UEditor::Update(HWND WindowHandle)
 }
 void UEditor::RenderEditor()
 {
-	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
+	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor(), ObjectPicker);
 	Grid.RenderGrid();
 	Axis.Render();
 }

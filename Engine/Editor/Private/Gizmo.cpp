@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Editor/Public/Gizmo.h"
+#include "Editor/Public/ObjectPicker.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Mesh/Public/Actor.h"
 
@@ -38,12 +39,19 @@ UGizmo::UGizmo()
 
 UGizmo::~UGizmo() = default;
 
-void UGizmo::RenderGizmo(AActor* Actor)
+void UGizmo::RenderGizmo(AActor* Actor, UObjectPicker& ObjectPicker)
 {
+
 	TargetActor = Actor;
 	URenderer& Renderer = URenderer::GetInstance();
 	if (TargetActor)
 	{
+		FVector DistanceVector{ 0,0,0 };
+		if (bIsDragging)
+		{
+			DistanceVector = MoveGizmo(ObjectPicker); //Actor가 이동해야할 거리 벡터 반환
+			TargetActor->SetActorLocation(Primitive.Location + DistanceVector);
+		}
 		Primitive.Location = TargetActor->GetActorLocation();
 		Primitive.Rotation = { 0,89.99f,0 };
 		Primitive.Color = RightColor;
@@ -59,6 +67,42 @@ void UGizmo::RenderGizmo(AActor* Actor)
 	}
 }
 
+FVector UGizmo::MoveGizmo(UObjectPicker& ObjectPicker)
+{
+	FVector4 PointOnPlane;
+	switch (GizmoDirection)
+	{
+	case EGizmoDirection::Right:
+	{
+		if (ObjectPicker.IsCollideWithPlane(FVector4{ 1,0,0,0 }, FVector4{ 0,1,0,0 }, PointOnPlane))
+		{
+			FVector4 VectorToProj = PointOnPlane - FVector4(Primitive.Location.X, Primitive.Location.Y, Primitive.Location.Z, 1.0f);	//현재 오브젝트 위치부터 충돌점까지 거리벡터
+			return FVector(1, 0, 0) * VectorToProj.Dot3(FVector(1, 0, 0));
+		}
+		else
+			return FVector(0, 0, 0);
+	}
+	case EGizmoDirection::Forward:
+	{
+		if (ObjectPicker.IsCollideWithPlane(FVector4{ 0,0,1,0 }, FVector4{ 0,1,0,0 }, PointOnPlane))
+		{
+			FVector4 VectorToProj = PointOnPlane - FVector4(Primitive.Location.X, Primitive.Location.Y, Primitive.Location.Z, 1.0f);	//현재 오브젝트 위치부터 충돌점까지 거리벡터
+			return FVector(0, 0, 1) * VectorToProj.Dot3(FVector(0, 0, 1));
+		}
+		else
+			return FVector(0, 0, 0);
+
+	}
+	case EGizmoDirection::Up:
+		if (ObjectPicker.IsCollideWithPlane(FVector4{ 1,0,0,0 }, FVector4{ 0,1,0,0 }, PointOnPlane))
+		{
+			FVector4 VectorToProj = PointOnPlane - FVector4(Primitive.Location.X, Primitive.Location.Y, Primitive.Location.Z, 1.0f);	//현재 오브젝트 위치부터 충돌점까지 거리벡터
+			return FVector(0, 1, 0) * VectorToProj.Dot3(FVector(0, 1, 0));
+		}
+		else
+			return FVector(0, 0, 0);
+	}
+}
 void UGizmo::SetGizmoDirection(EGizmoDirection Direction)
 {
 	GizmoDirection = Direction;
