@@ -98,6 +98,7 @@ public:
 	}
 
 	virtual bool OnWindowClose() { return true; }
+	virtual bool IsSingleton() {return false;}
 
 	// Getter & Setter
 	const FUIWindowConfig& GetConfig() const { return Config; }

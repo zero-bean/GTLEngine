@@ -77,7 +77,7 @@ void UUIManager::Shutdown()
 	// 모든 UI 윈도우 정리
 	for (auto* Window : UIWindows)
 	{
-		if (Window)
+		if (Window && !Window->IsSingleton())
 		{
 			Window->Cleanup();
 			delete Window;
