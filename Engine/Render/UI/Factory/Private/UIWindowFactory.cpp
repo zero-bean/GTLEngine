@@ -7,6 +7,7 @@
 #include "Render/UI/Window/Public/InputStatusWindow.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
 #include "Render/UI/Window/Public/LevelManangerWindow.h"
+#include "Render/UI/Window/Public/CameraPanelWindow.h"
 
 UConsoleWindow* UUIWindowFactory::CreateConsoleWindow(EUIDockDirection InDockDirection)
 {
@@ -43,6 +44,13 @@ ULevelManagerWindow* UUIWindowFactory::CreateLevelIOWindow(EUIDockDirection InDo
 	return Window;
 }
 
+UCameraPanelWindow* UUIWindowFactory::CreateCameraPanelWindow(EUIDockDirection InDockDirection)
+{
+	auto* Window = new UCameraPanelWindow();
+	Window->GetMutableConfig().DockDirection = InDockDirection;
+	return Window;
+}
+
 void UUIWindowFactory::CreateDefaultUILayout()
 {
 	auto& UIManager = UUIManager::GetInstance();
@@ -53,6 +61,6 @@ void UUIWindowFactory::CreateDefaultUILayout()
 	UIManager.RegisterUIWindow(CreateInputStatusWindow(EUIDockDirection::Right));
 	UIManager.RegisterUIWindow(CreateActorInspectorWindow(EUIDockDirection::Left));
 	UIManager.RegisterUIWindow(CreateLevelIOWindow(EUIDockDirection::Center));
-
+	UIManager.RegisterUIWindow(CreateCameraPanelWindow(EUIDockDirection::Left));
 	cout << "[UIWindowFactory] Default UI Layout Created" << "\n";
 }
