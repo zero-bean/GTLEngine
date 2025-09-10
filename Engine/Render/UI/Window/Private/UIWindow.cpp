@@ -47,15 +47,11 @@ void UUIWindow::OnMainWindowResized()
 	if (!ImGui::GetCurrentContext() || !IsVisible())
 		return;
 
-	const ImVec2 referenceSize(1920.0f, 1200.0f);
 	const ImGuiViewport* viewport = ImGui::GetMainViewport();
 	const ImVec2 currentViewportSize = viewport->WorkSize;
 
  	const ImVec2 anchor = PositionRatio;
 	const ImVec2 pivot = { 0.f, 0.f };
-
-	float scaleX = currentViewportSize.x / referenceSize.x;
-	float scaleY = currentViewportSize.y / referenceSize.y;
 
 	ImVec2 responsiveSize(
 		currentViewportSize.x * SizeRatio.x,

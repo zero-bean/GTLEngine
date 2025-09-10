@@ -132,6 +132,7 @@ private:
 	TMap<FRasterKey, ID3D11RasterizerState*, FRasterKeyHasher> RasterCache;
 
 	ID3D11RasterizerState* GetRasterizerState(const FRenderState& InRenderState);
+
 	bool bIsResizing = false;
 
 	///////////////////////////////////////////
