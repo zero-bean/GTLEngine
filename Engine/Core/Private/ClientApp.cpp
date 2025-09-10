@@ -58,14 +58,12 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 		assert(!"Initialize Failed");
 		return 0;
 	}
-	Editor = new UEditor();
+
 	// Execute Main Loop
 	MainLoop();
 
 	// Termination Process
 	ShutdownSystem();
-	delete Window;
-	delete Editor;
 
 	return static_cast<int>(MainMessage.wParam);
 }
@@ -73,7 +71,7 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 /**
  * @brief Initialize System For Game Execution
  */
-int FClientApp::InitializeSystem() const
+int FClientApp::InitializeSystem()
 {
 	// Initialize By Get Instance
 	UTimeManager::GetInstance();
@@ -103,6 +101,9 @@ int FClientApp::InitializeSystem() const
 	// Create Default Level
 	// TODO(KHJ): 나중에 Init에서 처리하도록 하는 게 맞을 듯
 	ULevelManager::GetInstance().CreateDefaultLevel();
+
+	// Initialize Editor
+	Editor = new UEditor;
 
 	return S_OK;
 }
@@ -170,4 +171,6 @@ void FClientApp::ShutdownSystem()
 
 	// 레벨 매니저 정리
 	// ULevelManager::GetInstance().Release();
+	delete Editor;
+	delete Window;
 }

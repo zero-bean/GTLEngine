@@ -197,6 +197,7 @@
     <ClInclude Include="Render\Renderer\Public\Renderer.h" />
     <ClInclude Include="Render\UI\Factory\Public\UIWindowFactory.h" />
     <ClInclude Include="Render\UI\ImGui\Public\ImGuiHelper.h" />
+    <ClInclude Include="Render\UI\Widget\Public\CameraControlWidget.h" />
     <ClInclude Include="Render\UI\Widget\Public\FPSWidget.h" />
     <ClInclude Include="Render\UI\Widget\Public\PrimitiveSpawnWidget.h" />
     <ClInclude Include="Render\UI\Widget\Public\SceneIOWidget.h" />
@@ -255,6 +256,7 @@
     <ClCompile Include="Render\Renderer\Private\Renderer.cpp"/>
     <ClCompile Include="Render\UI\Factory\Private\UIWindowFactory.cpp"/>
     <ClCompile Include="Render\UI\ImGui\Private\ImGuiHelper.cpp"/>
+    <ClCompile Include="Render\UI\Widget\Private\CameraControlWIdget.cpp" />
     <ClCompile Include="Render\UI\Widget\Private\FPSWidget.cpp" />
     <ClCompile Include="Render\UI\Widget\Private\PrimitiveSpawnWidget.cpp" />
     <ClCompile Include="Render\UI\Widget\Private\SceneIOWidget.cpp" />

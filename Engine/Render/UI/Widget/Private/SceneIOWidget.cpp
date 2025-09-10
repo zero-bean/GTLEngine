@@ -22,6 +22,8 @@ void USceneIOWidget::RenderWidget()
 {
 	// Save Section
 	ImGui::Text("Scene Save & Load");
+	ImGui::Spacing();
+
 	if (ImGui::Button("Save Scene", ImVec2(90, 20)))
 	{
 		path FilePath = OpenSaveFileDialog();
@@ -53,6 +55,8 @@ void USceneIOWidget::RenderWidget()
 
 	// New Level Section
 	ImGui::Text("새로운 Scene 생성");
+	ImGui::Spacing();
+
 	ImGui::InputText("Level Name", NewLevelNameBuffer, sizeof(NewLevelNameBuffer));
 	if (ImGui::Button("Create New Scene", ImVec2(120, 25)))
 	{

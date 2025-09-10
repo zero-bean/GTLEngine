@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/Public/Object.h"
+#include "Editor/Public/Editor.h"
 
 /**
  * @brief UI의 기능 단위인 위젯 클래스의 Interface Class

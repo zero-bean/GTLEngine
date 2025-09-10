@@ -105,6 +105,7 @@ public:
 	int GetPriority() const { return Config.Priority; }
 	float GetLastFocusTime() const { return LastFocusTime; }
 	bool IsFocused() const { return bIsFocused; }
+	const TArray<UWidget*>& GetWidgets() const { return Widgets; }
 
 	bool IsVisible() const
 	{
@@ -138,7 +139,7 @@ private:
 	float LastFocusTime = 0.0f;
 
 	// ImGui 내부 상태
-	bool bIsWindowOpen = true;
+	bool bIsWindowOpen = false;
 	ImVec2 LastWindowSize;
 	ImVec2 LastWindowPosition;
 

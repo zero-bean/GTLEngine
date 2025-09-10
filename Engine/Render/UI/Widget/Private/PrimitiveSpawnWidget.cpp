@@ -28,6 +28,7 @@ void UPrimitiveSpawnWidget::Update()
 void UPrimitiveSpawnWidget::RenderWidget()
 {
 	ImGui::Text("Primitive Actor 생성");
+	ImGui::Spacing();
 
 	// Primitive 타입 선택 DropDown
 	const char* PrimitiveTypes[] = {

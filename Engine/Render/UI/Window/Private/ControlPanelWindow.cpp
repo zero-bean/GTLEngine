@@ -10,6 +10,7 @@
 #include "Manager/Level/Public/LevelManager.h"
 #include "Level/Public/Level.h"
 #include "Manager/Time/Public/TimeManager.h"
+#include "Render/UI/Widget/Public/CameraControlWidget.h"
 #include "Render/UI/Widget/Public/FPSWidget.h"
 #include "Render/UI/Widget/Public/PrimitiveSpawnWidget.h"
 #include "Render/UI/Widget/Public/SceneIOWidget.h"
@@ -21,9 +22,9 @@ UControlPanelWindow::UControlPanelWindow()
 {
 	FUIWindowConfig Config;
 	Config.WindowTitle = "Control Panel";
-	Config.DefaultSize = ImVec2(320, 400);
+	Config.DefaultSize = ImVec2(400, 580);
 	Config.DefaultPosition = ImVec2(10, 10);
-	Config.MinSize = ImVec2(280, 250);
+	Config.MinSize = ImVec2(400, 200);
 	Config.DockDirection = EUIDockDirection::Left;
 	Config.Priority = 15;
 	Config.bResizable = true;
@@ -36,6 +37,7 @@ UControlPanelWindow::UControlPanelWindow()
 	AddWidget(new UFPSWidget);
 	AddWidget(new UPrimitiveSpawnWidget);
 	AddWidget(new USceneIOWidget);
+	AddWidget(new UCameraControlWidget);
 }
 
 /**

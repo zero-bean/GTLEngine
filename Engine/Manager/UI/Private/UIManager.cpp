@@ -3,6 +3,7 @@
 #include "Manager/Time/Public/TimeManager.h"
 #include "Render/UI/Window/Public/UIWindow.h"
 #include "Render/UI/ImGui/Public/ImGuiHelper.h"
+#include "Render/UI/Widget/Public/Widget.h"
 
 IMPLEMENT_SINGLETON(UUIManager)
 
@@ -221,8 +222,8 @@ bool UUIManager::UnregisterUIWindow(UUIWindow* InWindow)
 
 	UIWindows.erase(It);
 
-	UE_LOG("UIManager: Unregistered UI window: %d", InWindow->GetWindowID());
-	UE_LOG("UIManager: Total registered windows: %zu", UIWindows.size());
+	UE_LOG("UIManager: Unregistered UI Window: %d", InWindow->GetWindowID());
+	UE_LOG("UIManager: Total Registered Windows: %zu", UIWindows.size());
 
 	return true;
 }
@@ -239,6 +240,21 @@ UUIWindow* UUIManager::FindUIWindow(const FString& InWindowName) const
 		if (Window && Window->GetWindowTitle() == InWindowName)
 		{
 			return Window;
+		}
+	}
+	return nullptr;
+}
+
+UWidget* UUIManager::FindWidget(const FString& InWidgetName) const
+{
+	for (auto* Window : UIWindows)
+	{
+		for (auto* Widget : Window->GetWidgets())
+		{
+			if (Widget->GetName() == InWidgetName)
+			{
+				return Widget;
+			}
 		}
 	}
 	return nullptr;

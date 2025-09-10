@@ -59,9 +59,7 @@ void UUIWindow::RenderWindow()
 	// 크기 제한 설정
 	ImGui::SetNextWindowSizeConstraints(Config.MinSize, Config.MaxSize);
 
-	bool bIsOpen = bIsWindowOpen;
-
-	if (ImGui::Begin(Config.WindowTitle.c_str(), &bIsOpen, Config.WindowFlags))
+	if (ImGui::Begin(Config.WindowTitle.c_str(), &bIsWindowOpen, Config.WindowFlags))
 	{
 		// 실제 UI 컨텐츠 렌더링
 		RenderWidget();
@@ -73,7 +71,7 @@ void UUIWindow::RenderWindow()
 	ImGui::End();
 
 	// 윈도우가 닫혔는지 확인
-	if (!bIsOpen && bIsWindowOpen)
+	if (!bIsWindowOpen && bIsWindowOpen)
 	{
 		if (OnWindowClose())
 		{
@@ -86,8 +84,6 @@ void UUIWindow::RenderWindow()
 			bIsWindowOpen = true;
 		}
 	}
-
-	bIsWindowOpen = bIsOpen;
 }
 
 void UUIWindow::RenderWidget() const
