@@ -41,7 +41,7 @@ UGizmo::UGizmo()
 
 UGizmo::~UGizmo() = default;
 
-void UGizmo::RenderGizmo(AActor* Actor, UObjectPicker& ObjectPicker)
+void UGizmo::RenderGizmo(AActor* Actor)
 {
 
 	TargetActor = Actor;
@@ -49,11 +49,7 @@ void UGizmo::RenderGizmo(AActor* Actor, UObjectPicker& ObjectPicker)
 	if (TargetActor)
 	{
 		FVector DistanceVector{ 0,0,0 };
-		if (bIsDragging)
-		{
-			DistanceVector = MoveGizmo(ObjectPicker); 
-			TargetActor->SetActorLocation(DistanceVector);
-		}
+		
 		Primitive.Location = TargetActor->GetActorLocation();
 		Primitive.Rotation = { 0,89.99f,0 };
 		Primitive.Color = RightColor;
@@ -69,46 +65,11 @@ void UGizmo::RenderGizmo(AActor* Actor, UObjectPicker& ObjectPicker)
 	}
 }
 
-FVector UGizmo::MoveGizmo(UObjectPicker& ObjectPicker)
+void UGizmo::SetLocation(const FVector& Location)
 {
-	
-	FVector4 PointOnPlane;
-	FVector4 PlaneOrigin{ Primitive.Location.X,Primitive.Location.Y ,Primitive.Location.Z,1.0f };
-	switch (GizmoDirection)
-	{
-	case EGizmoDirection::Right:
-	{
-		if (ObjectPicker.IsCollideWithPlane(PlaneOrigin, FVector4{ 1,0,0,0 }, PointOnPlane))
-		{
-			FVector4 MouseDistance = PointOnPlane - DragStartMouseLocation;
-			return DragStartActorLocation + FVector(1, 0, 0) * MouseDistance.Dot3(FVector(1, 0, 0));
-		}
-		else
-			return Primitive.Location;
-	}
-	case EGizmoDirection::Forward:
-	{
-		if (ObjectPicker.IsCollideWithPlane(PlaneOrigin, FVector4{ 0,0,1,0 }, PointOnPlane))
-		{
-			FVector4 MouseDistance = PointOnPlane - DragStartMouseLocation;	//현재 오브젝트 위치부터 충돌점까지 거리벡터
-			return DragStartActorLocation + FVector(0, 0, 1) * MouseDistance.Dot3(FVector(0, 0, 1));
-		}
-		else
-			return Primitive.Location;
-
-	}
-	case EGizmoDirection::Up:
-		if (ObjectPicker.IsCollideWithPlane(PlaneOrigin, FVector4{ 0,1,0,0 }, PointOnPlane))
-		{
-			FVector4 MouseDistance = PointOnPlane - DragStartMouseLocation;	//현재 오브젝트 위치부터 충돌점까지 거리벡터
-			return DragStartActorLocation + FVector(0, 1, 0) * MouseDistance.Dot3(FVector(0, 1, 0));
-		}
-		else
-			return Primitive.Location;
-	}
-
-	return Primitive.Location;
+	TargetActor->SetActorLocation(Location);
 }
+
 void UGizmo::SetGizmoDirection(EGizmoDirection Direction)
 {
 	GizmoDirection = Direction;
@@ -132,6 +93,16 @@ const EGizmoDirection UGizmo::GetGizmoDirection()
 const FVector& UGizmo::GetGizmoLocation()
 {
 	return Primitive.Location;
+}
+
+const FVector& UGizmo::GetDragStartMouseLocation()
+{
+	return DragStartMouseLocation;
+}
+
+const FVector& UGizmo::GetDragStartActorLocation()
+{
+	return DragStartActorLocation;
 }
 
 float UGizmo::GetGizmoRadius()
@@ -171,7 +142,7 @@ void UGizmo::OnMouseHovering()
 	}
 }
 
-void UGizmo::OnMouseClick(FVector4& CollisionPoint)
+void UGizmo::OnMouseDragStart(FVector& CollisionPoint)
 {
 	bIsDragging = true;
 	DragStartMouseLocation = CollisionPoint;

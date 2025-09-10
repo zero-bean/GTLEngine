@@ -25,6 +25,7 @@ struct FVector
 	 */
 	FVector(const FVector& InOther);
 
+	void operator=(const FVector4& InOther);
 	/**
 	 * @brief 두 벡터를 더한 새로운 벡터를 반환하는 함수
 	 */

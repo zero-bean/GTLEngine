@@ -19,91 +19,43 @@ void UObjectPicker::SetCamera(UCamera& Camera)
 	this->Camera = Camera;
 }
 
-void UObjectPicker::RayCast(ULevel* InLevel, UGizmo& InGizmo)
+FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 {
-	const UInputManager& InputManager = UInputManager::GetInstance();
-	FVector MousePosition = InputManager.GetMouseNDCPosition();
+	FMatrix ModelInverse = Primitive->GetWorldTransformMatrixInverse();
 
-	static EGizmoDirection PreviousGizmoDirection = EGizmoDirection::None;
-	AActor* ActorPicked = InLevel->GetSelectedActor();
-	FVector4 CollisionPoint;
-	float ActorDistance = -1;
-
-	if (InputManager.IsKeyReleased(EKeyInput::MouseLeft))
-	{
-		InGizmo.EndDrag();
-	}
-	if (InGizmo.IsDragging())
-		return;
-	if (InLevel->GetSelectedActor()) //기즈모가 출력되고있음. 레이캐스팅을 계속 해야함.
-	{
-		FRay WorldRay = Camera.ConvertToWorldRay(MousePosition.X, MousePosition.Y);
-		InGizmo.SetGizmoDirection(PickGizmo(WorldRay, InGizmo, CollisionPoint));
-	}
-	if (!ImGui::GetIO().WantCaptureMouse && InputManager.IsKeyPressed(EKeyInput::MouseLeft))
-	{
-		FRay WorldRay = Camera.ConvertToWorldRay(MousePosition.X, MousePosition.Y);
-		ActorPicked = PickActor(InLevel, WorldRay, &ActorDistance);
-	}
-
-	if (InGizmo.GetGizmoDirection() == EGizmoDirection::None) //기즈모에 호버링되거나 클릭되지 않았을 때. Actor 업데이트해줌.
-	{
-		InLevel->SetSelectedActor(ActorPicked);
-		if (PreviousGizmoDirection != EGizmoDirection::None)
-		{
-			InGizmo.OnMouseRelease(PreviousGizmoDirection);
-		}
-	}
-	//기즈모가 선택되었을 때. Actor가 선택되지 않으면 기즈모도 선택되지 않으므로 이미 Actor가 선택된 상황.
-	//SelectedActor를 update하지 않고 마우스 인풋에 따라 hovering or drag
-	else
-	{
-		PreviousGizmoDirection = InGizmo.GetGizmoDirection();
-		if (InputManager.IsKeyPressed(EKeyInput::MouseLeft)) //드래그
-		{
-			InGizmo.OnMouseClick(CollisionPoint);
-		}
-		else
-		{
-			InGizmo.OnMouseHovering();
-		}
-	}
+	FRay ModelRay;
+	ModelRay.Origin = Ray.Origin * ModelInverse;
+	ModelRay.Direction = Ray.Direction * ModelInverse;
+	ModelRay.Direction.Normalize();
+	return ModelRay;
 }
 
-AActor* UObjectPicker::PickActor(ULevel* InLevel, const FRay& WorldRay, float* ShortestDistance)
+UPrimitiveComponent* UObjectPicker::PickPrimitive(const FRay& WorldRay, TArray<UPrimitiveComponent*> Candidate, float* Distance)
 {
-	//Level로부터 Actor순회하면서 picked objects중에서 가장 가까운 거리 리턴
-	AActor* ShortestActor = nullptr;
-	*ShortestDistance = D3D11_FLOAT32_MAX;
+	UPrimitiveComponent* ShortestPrimitive = nullptr;
+	float ShortestDistance = D3D11_FLOAT32_MAX;
 	float PrimitiveDistance = D3D11_FLOAT32_MAX;
-
-	for (AActor* Actor : InLevel->GetLevelActors())
+	
+	for (UPrimitiveComponent* Primitive : Candidate)
 	{
-		for (auto& ActorComponent : Actor->GetOwnedComponents())
+		FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
+		FRay ModelRay = GetModelRay(WorldRay, Primitive);
+		if (IsRayPrimitiveCollided(ModelRay, Primitive, ModelMat, &PrimitiveDistance))
+			//Ray와 Primitive가 충돌했다면 거리 테스트 후 가까운 Actor Picking
 		{
-			UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(ActorComponent);
-			if (Primitive)
+			if (PrimitiveDistance < ShortestDistance)
 			{
-				FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
-				FRay ModelRay = GetModelRay(WorldRay, Primitive); //Actor로부터 Primitive를 얻고 Ray를 모델 좌표계로 변환함
-				if (IsRayPrimitiveCollided(ModelRay, Primitive, ModelMat, &PrimitiveDistance))
-				//Ray와 Primitive가 충돌했다면 거리 테스트 후 가까운 Actor Picking
-				{
-					if (PrimitiveDistance < *ShortestDistance)
-					{
-						ShortestActor = Actor;
-						*ShortestDistance = PrimitiveDistance;
-					}
-				}
+				ShortestPrimitive = Primitive;
+				ShortestDistance = PrimitiveDistance;
 			}
 		}
 	}
+	*Distance = ShortestDistance;
 
-
-	return ShortestActor;
+	return ShortestPrimitive;
 }
 
-EGizmoDirection UObjectPicker::PickGizmo( const FRay& WorldRay, UGizmo& Gizmo, FVector4& CollisionPoint)
+EGizmoDirection UObjectPicker::PickGizmo( const FRay& WorldRay, UGizmo& Gizmo, FVector& CollisionPoint)
 {
 	//Forward, Right, Up순으로 테스트할거임.
 	//원기둥 위의 한 점 P, 축 위의 임의의 점 A에(기즈모 포지션) 대해, AP벡터와 축 벡터 V와 피타고라스 정리를 적용해서 점 P의 축부터의 거리 r을 구할 수 있음.
@@ -170,17 +122,6 @@ EGizmoDirection UObjectPicker::PickGizmo( const FRay& WorldRay, UGizmo& Gizmo, F
 		}
 	}
 	return EGizmoDirection::None;
-}
-
-FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
-{
-	FMatrix ModelInverse = Primitive->GetWorldTransformMatrixInverse();
-
-	FRay ModelRay;
-	ModelRay.Origin = Ray.Origin * ModelInverse;
-	ModelRay.Direction = Ray.Direction * ModelInverse;
-	ModelRay.Direction.Normalize();
-	return ModelRay;
 }
 
 //개별 primitive와 ray 충돌 검사
@@ -278,19 +219,16 @@ bool UObjectPicker::IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex
 }
 
 
-bool UObjectPicker::IsCollideWithPlane(FVector4 PlanePoint, FVector4 Axis, FVector4& PointOnPlane)
+bool UObjectPicker::IsRayCollideWithPlane(FRay& WorldRay, FVector PlanePoint, FVector Normal, FVector& PointOnPlane)
 {
-	const UInputManager& Input = UInputManager::GetInstance();
+	FVector WorldRayOrigin{ WorldRay.Origin.X, WorldRay.Origin.Y ,WorldRay.Origin.Z };
 
-	FVector MousePositionNDC = Input.GetMouseNDCPosition();
+	if (abs(WorldRay.Direction.Dot3(Normal)) < 0.01f)
+		return false;
 
-	FRay WorldRay = Camera.ConvertToWorldRay(MousePositionNDC.X, MousePositionNDC.Y);
+	float Distance = (PlanePoint - WorldRayOrigin).Dot(Normal) / WorldRay.Direction.Dot3(Normal);
 
-	FVector Normal = Camera.CalculatePlaneNormal(Axis);
-
-	float Distance = (PlanePoint - WorldRay.Origin).Dot3(Normal) / WorldRay.Direction.Dot3(Normal);
-
-	if (abs(WorldRay.Direction.Dot3(Normal)) < 0.01f || Distance < 0)
+	if (Distance < 0)
 		return false;
 	PointOnPlane = WorldRay.Origin + WorldRay.Direction * Distance;
 

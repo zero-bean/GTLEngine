@@ -13,10 +13,18 @@ public:
 	UEditor();
 	~UEditor();
 
+	
 	void Update();
 	void RenderEditor();
 
 private:
+
+	void ProcessMouseInput(ULevel* InLevel);
+	TArray<UPrimitiveComponent*> FindCandidatePrimitives(ULevel* InLevel);
+
+	FVector GetGizmoDragLocation(FRay& WorldRay);
+
+
 	UCamera Camera;
 	UObjectPicker ObjectPicker;
 	

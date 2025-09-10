@@ -3,12 +3,9 @@
 
 ATriangleActor::ATriangleActor()
 {
-	TriangleComponent = GetTriangleComponent();
+	TriangleComponent = CreateDefaultSubobject<UTriangleComponent>("TriangleComponent");
 	TriangleComponent->SetRelativeRotation({ 90, 0, 0 });
+	TriangleComponent->SetOwner(this);
 	SetRootComponent(TriangleComponent);
 }
 
-UTriangleComponent* ATriangleActor::GetTriangleComponent()
-{
-	return CreateDefaultSubobject<UTriangleComponent>("TriangleComponent");
-}
