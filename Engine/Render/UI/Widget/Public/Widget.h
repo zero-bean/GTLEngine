@@ -15,6 +15,9 @@ public:
 	virtual void Update() = 0;
 	virtual void RenderWidget() = 0;
 
+	// 후처리는 취사 선택
+	virtual void PostProcess() {}
+
 	// Special Member Function
 	UWidget() = default;
 	UWidget(const FString& InName);

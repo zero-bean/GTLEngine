@@ -91,6 +91,7 @@ void UUIWindow::RenderWidget() const
 	for (auto* Widget : Widgets)
 	{
 		Widget->RenderWidget();
+		Widget->PostProcess(); // 선택
 	}
 }
 
