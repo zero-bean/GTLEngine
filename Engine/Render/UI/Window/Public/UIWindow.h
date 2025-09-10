@@ -106,6 +106,7 @@ public:
 	float GetLastFocusTime() const { return LastFocusTime; }
 	bool IsFocused() const { return bIsFocused; }
 	const TArray<UWidget*>& GetWidgets() const { return Widgets; }
+	void SetIsResized(bool IsResized) { bIsResized = IsResized; }
 
 	bool IsVisible() const
 	{
@@ -119,7 +120,10 @@ public:
 	void ToggleVisibility() { SetWindowState(IsVisible() ? EUIWindowState::Hidden : EUIWindowState::Visible); }
 	void AddWidget(UWidget* Widget) { Widgets.push_back(Widget); }
 
+	void OnMainWindowResized();
+	void ClampWindow();
 protected:
+	void RenderInternal();
 	void ApplyDockingSettings() const;
 	void UpdateWindowInfo();
 
@@ -144,4 +148,8 @@ private:
 	ImVec2 LastWindowPosition;
 
 	TArray<UWidget*> Widgets;
+
+	ImVec2 PositionRatio = { 0.5f, 0.5f };
+	ImVec2 SizeRatio = { 0.5f, 0.5f };
+	bool bIsResized = false;
 };

@@ -386,3 +386,12 @@ LRESULT UUIManager::WndProcHandler(HWND hwnd, uint32 msg, WPARAM wParam, LPARAM 
 {
 	return UImGuiHelper::WndProcHandler(hwnd, msg, wParam, lParam);
 }
+
+void UUIManager::RepositionImGuiWindows()
+{
+	// 1. 현재 화면(Viewport)의 작업 영역을 가져옵니다.
+	for (auto& window : UIWindows)
+	{
+		window->SetIsResized(true);
+	}
+}

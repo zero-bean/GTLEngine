@@ -59,6 +59,10 @@ public:
 	void RenderEnd() const;
 	void RenderPrimitive(FEditorPrimitive& InPrimitive, struct FRenderState& InRenderState);
 
+	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
+	bool GetIsResizing() { return bIsResizing;}
+	void SetIsResizing(bool isResizing) { bIsResizing = isResizing; }
+
 	//Testing Func
 	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, uint32 InByteWidth) const;
 	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, uint32 InByteWidth) const;
@@ -75,6 +79,7 @@ public:
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceResources->GetDeviceContext(); }
 	IDXGISwapChain* GetSwapChain() const { return DeviceResources->GetSwapChain();}
 	ID3D11RenderTargetView* GetRenderTargetView() const { return DeviceResources->GetRenderTargetView(); }
+	UDeviceResources* GetDeviceResources() const { return DeviceResources; }
 
 private:
 	UPipeline* Pipeline = nullptr;
@@ -127,4 +132,12 @@ private:
 	TMap<FRasterKey, ID3D11RasterizerState*, FRasterKeyHasher> RasterCache;
 
 	ID3D11RasterizerState* GetRasterizerState(const FRenderState& InRenderState);
+
+	bool bIsResizing = false;
+
+	///////////////////////////////////////////
+	// 카메라 VP Matrix 값 전달 받는 용도
+	// (차후 리팩터링이 필요합니다)
+	FViewProjConstants ViewProjConstants;
+	///////////////////////////////////////////
 };

@@ -41,6 +41,7 @@ public:
 	// ImGui 관련 메서드
 	static LRESULT WndProcHandler(HWND hwnd, uint32 msg, WPARAM wParam, LPARAM lParam);
 
+	void RepositionImGuiWindows();
 private:
 	TArray<UUIWindow*> UIWindows;
 	UUIWindow* FocusedWindow = nullptr;
