@@ -15,7 +15,7 @@
 #include "Manager/Input/Public/InputManager.h"
 #include "Mesh/Public/Actor.h"
 #include "Level/Public/Level.h"
-
+#include "Render/UI/Widget/Public/CameraControlWidget.h"
 
 
 
@@ -23,12 +23,13 @@ UEditor::UEditor()
 	:Camera(),
 	ObjectPicker(Camera)
 {
-	if (UCameraPanelWindow* Window =
-		dynamic_cast<UCameraPanelWindow*>(UUIManager::GetInstance().FindUIWindow("Camera Control")))
-	{
-		Window->SetCamera(&Camera);
-	}
 	ObjectPicker.SetCamera(Camera);
+
+	// Set Camera to Control Panel
+	auto& UIManager = UUIManager::GetInstance();
+	auto* CameraControlWidget =
+		reinterpret_cast<UCameraControlWidget*>(UIManager.FindWidget("Camera Control Widget"));
+	CameraControlWidget->SetCamera(&Camera);
 };
 
 UEditor::~UEditor() = default;
