@@ -129,6 +129,7 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 	case WM_EXITSIZEMOVE: //드래그 종료
 		URenderer::GetInstance().SetIsResizing(false);
 		URenderer::GetInstance().OnResize();
+		UUIManager::GetInstance().RepositionImGuiWindows();
 		break;
 	case WM_SIZE:
 		if (InWParam != SIZE_MINIMIZED)
@@ -136,6 +137,7 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 			if (!URenderer::GetInstance().GetIsResizing())
 			{ //드래그 X 일때 추가 처리 (최대화 버튼, ...)
 				URenderer::GetInstance().OnResize(LOWORD(InLParam), HIWORD(InLParam));
+				UUIManager::GetInstance().RepositionImGuiWindows();
 			}
 		}
 		break;

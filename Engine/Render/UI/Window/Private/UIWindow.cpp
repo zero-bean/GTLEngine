@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Render/UI/Window/Public/UIWindow.h"
 
+#include "ImGui/imgui_internal.h"
+
 int UUIWindow::IssuedWindowID = 0;
 
 UUIWindow::UUIWindow(const FUIWindowConfig& InConfig)
@@ -24,6 +26,78 @@ UUIWindow::UUIWindow(const FUIWindowConfig& InConfig)
 	else
 	{
 		UE_LOG("UIWindow: Created: %d (%s)", WindowID, Config.WindowTitle.c_str());
+	}
+}
+
+/**
+ * @brief 뷰포트가 리사이징 되었을 때 앵커/좌상단 기준 상대 위치 비율을 고정하는 로직
+ */
+void UUIWindow::OnMainWindowResized()
+{
+	if (!ImGui::GetCurrentContext() || !IsVisible())
+		return;
+
+	const ImVec2 referenceSize(1920.0f, 1200.0f);
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+	const ImVec2 currentViewportSize = viewport->WorkSize;
+
+ 	const ImVec2 anchor = PositionRatio;
+	const ImVec2 pivot = { 0.f, 0.f };
+
+	float scaleX = currentViewportSize.x / referenceSize.x;
+	float scaleY = currentViewportSize.y / referenceSize.y;
+
+	ImVec2 responsiveSize(
+	   Config.DefaultSize.x * scaleX,
+	   Config.DefaultSize.y * scaleY
+	);
+
+	ImVec2 targetPos(
+		viewport->WorkPos.x + currentViewportSize.x * anchor.x,
+		viewport->WorkPos.y + currentViewportSize.y * anchor.y
+	);
+
+	ImVec2 finalPos(
+		targetPos.x - responsiveSize.x * pivot.x,
+		targetPos.y - responsiveSize.y * pivot.y
+	);
+
+	ImGui::SetWindowSize(responsiveSize, ImGuiCond_Always);
+	ImGui::SetWindowPos(finalPos, ImGuiCond_Always);
+}
+
+/**
+ * @brief 윈도우가 뷰포트 범위 밖으로 나갔을 시 클램프 하는 로직
+ */
+void UUIWindow::ClampWindow()
+{
+	if (!IsVisible())
+	{
+		return;
+	}
+
+	const ImGuiViewport* Viewport = ImGui::GetMainViewport();
+	const ImVec2 WorkPos = Viewport->WorkPos;
+	const ImVec2 WorkSize = Viewport->WorkSize;
+
+	ImVec2 pos = LastWindowPosition;
+	ImVec2 size = LastWindowSize;
+
+	bool size_changed = false;
+	if (size.x > WorkSize.x) { size.x = WorkSize.x; size_changed = true; }
+	if (size.y > WorkSize.y) { size.y = WorkSize.y; size_changed = true; }
+	if (size_changed)
+	{
+		ImGui::SetWindowSize(size);
+	}
+	bool pos_changed = false;
+	if (pos.x + size.x > WorkPos.x + WorkSize.x) { pos.x = WorkPos.x + WorkSize.x - size.x; pos_changed = true; }
+	if (pos.y + size.y > WorkPos.y + WorkSize.y) { pos.y = WorkPos.y + WorkSize.y - size.y; pos_changed = true; }
+	if (pos.x < WorkPos.x) { pos.x = WorkPos.x; pos_changed = true; }
+	if (pos.y < WorkPos.y) { pos.y = WorkPos.y; pos_changed = true; }
+	if (pos_changed)
+	{
+		ImGui::SetWindowPos(pos);
 	}
 }
 
@@ -53,11 +127,27 @@ void UUIWindow::RenderInternal()
 
 	if (ImGui::Begin(Config.WindowTitle.c_str(), &bIsOpen, Config.WindowFlags))
 	{
+		if (!bIsResized)
+		{
+			const ImGuiViewport* viewport = ImGui::GetMainViewport();
+			ImVec2 currentPos = ImGui::GetWindowPos();
+			ImVec2 currentSize = ImGui::GetWindowSize();
+			ImVec2 pivot = { 0.f, 0.f };
+			PositionRatio.x = (currentPos.x - viewport->WorkPos.x + currentSize.x * pivot.x) / viewport->WorkSize.x;
+			PositionRatio.y = (currentPos.y - viewport->WorkPos.y + currentSize.y * pivot.y) / viewport->WorkSize.y;
+		}
+
 		// 실제 UI 컨텐츠 렌더링 (서브클래스에서 구현)
 		Render();
 
 		// 윈도우 정보 업데이트
 		UpdateWindowInfo();
+	}
+	//ClampWindow();
+	if (bIsResized)
+	{
+		OnMainWindowResized();
+		bIsResized = false;
 	}
 
 	ImGui::End();
@@ -91,22 +181,22 @@ void UUIWindow::ApplyDockingSettings() const
 	switch (Config.DockDirection)
 	{
 	case EUIDockDirection::Left:
-		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 		ImGui::SetNextWindowSize(ImVec2(Config.DefaultSize.x, ScreenHeight), ImGuiCond_Always);
 		break;
 
 	case EUIDockDirection::Right:
-		ImGui::SetNextWindowPos(ImVec2(ScreenWidth - Config.DefaultSize.x, 0), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(ScreenWidth - Config.DefaultSize.x, 0), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 		ImGui::SetNextWindowSize(ImVec2(Config.DefaultSize.x, ScreenHeight), ImGuiCond_Always);
 		break;
 
 	case EUIDockDirection::Top:
-		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 		ImGui::SetNextWindowSize(ImVec2(ScreenWidth, Config.DefaultSize.y), ImGuiCond_Always);
 		break;
 
 	case EUIDockDirection::Bottom:
-		ImGui::SetNextWindowPos(ImVec2(0, ScreenHeight - Config.DefaultSize.y), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(0, ScreenHeight - Config.DefaultSize.y), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 		ImGui::SetNextWindowSize(ImVec2(ScreenWidth, Config.DefaultSize.y), ImGuiCond_Always);
 		break;
 
@@ -115,7 +205,7 @@ void UUIWindow::ApplyDockingSettings() const
 			ImVec2 Center = ImVec2(ScreenWidth * 0.5f, ScreenHeight * 0.5f);
 			ImVec2 WindowPosition = ImVec2(Center.x - Config.DefaultSize.x * 0.5f,
 			                               Center.y - Config.DefaultSize.y * 0.5f);
-			ImGui::SetNextWindowPos(WindowPosition, ImGuiCond_Always);
+			ImGui::SetNextWindowPos(WindowPosition, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 		}
 		break;
 

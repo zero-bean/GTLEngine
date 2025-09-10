@@ -109,6 +109,7 @@ public:
 	int GetPriority() const { return Config.Priority; }
 	float GetLastFocusTime() const { return LastFocusTime; }
 	bool IsFocused() const { return bIsFocused; }
+	void SetIsResized(bool IsResized) { bIsResized = IsResized; }
 
 	bool IsVisible() const
 	{
@@ -121,6 +122,8 @@ public:
 	void SetConfig(const FUIWindowConfig& InConfig) { Config = InConfig; }
 	void ToggleVisibility() { SetWindowState(IsVisible() ? EUIWindowState::Hidden : EUIWindowState::Visible); }
 
+	void OnMainWindowResized();
+	void ClampWindow();
 protected:
 	void RenderInternal();
 	void ApplyDockingSettings() const;
@@ -140,4 +143,7 @@ private:
 	bool bIsWindowOpen = true;
 	ImVec2 LastWindowSize;
 	ImVec2 LastWindowPosition;
+	ImVec2 PositionRatio = { 0.5f, 0.5f };
+
+	bool bIsResized = false;
 };
