@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Core\Public\Class.h" />
     <ClInclude Include="Core\Public\Object.h"/>
     <ClInclude Include="Editor\Public\Axis.h"/>
     <ClInclude Include="Editor\Public\Camera.h"/>
@@ -217,6 +218,8 @@
     <ClInclude Include="Utility\Public\Metadata.h"/>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Core\Private\Class.cpp" />
+    <ClCompile Include="Core\Private\Object.cpp" />
     <ClCompile Include="Editor\Private\Axis.cpp"/>
     <ClCompile Include="Editor\Private\Camera.cpp"/>
     <ClCompile Include="Editor\Private\Editor.cpp"/>
@@ -226,7 +229,6 @@
     <ClCompile Include="Global\Matrix.cpp"/>
     <ClCompile Include="Global\Memory.cpp"/>
     <ClCompile Include="Global\Vector.cpp"/>
-    <ClCompile Include="Core\Private\Object.cpp"/>
     <ClCompile Include="ImGui\imgui.cpp"/>
     <ClCompile Include="ImGui\imgui_demo.cpp"/>
     <ClCompile Include="ImGui\imgui_draw.cpp"/>

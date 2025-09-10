@@ -115,10 +115,8 @@ FPrimitiveMetadata FLevelSerializer::JsonToPrimitive(const JSON& InJsonData, uin
 			PrimitiveMeta.Scale = JsonToVector(ScaleJson);
 			PrimitiveMeta.Type = StringToPrimitiveType(TypeJson.ToString());
 
-			cout << "[JsonToPrimitive] ID " << InID << ": Scale = ("
-				<< PrimitiveMeta.Scale.X << ", "
-				<< PrimitiveMeta.Scale.Y << ", "
-				<< PrimitiveMeta.Scale.Z << ")" << "\n";
+			UE_LOG("LevelSerializer: JsonToPrimitive: ID: %d | Scale: (%.3f, %.3f, %.3f)",
+			       InID, PrimitiveMeta.Scale.X, PrimitiveMeta.Scale.Y, PrimitiveMeta.Scale.Z);
 		}
 	}
 	catch (const exception&)

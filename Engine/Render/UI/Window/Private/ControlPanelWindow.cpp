@@ -14,8 +14,8 @@ UControlPanelWindow::UControlPanelWindow()
 {
 	FUIWindowConfig Config;
 	Config.WindowTitle = "Control Panel";
-	Config.DefaultSize = ImVec2(400, 580);
-	Config.DefaultPosition = ImVec2(0, 0);
+	Config.DefaultSize = ImVec2(400, 620);
+	Config.DefaultPosition = ImVec2(10, 10);
 	Config.MinSize = ImVec2(400, 200);
 	Config.DockDirection = EUIDockDirection::Left;
 	Config.Priority = 15;

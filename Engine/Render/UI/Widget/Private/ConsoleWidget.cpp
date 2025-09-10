@@ -3,6 +3,8 @@
 #include <sstream>
 #include <iostream>
 #include <cstdio>
+#include <vector>
+#include <stdexcept>
 
 IMPLEMENT_SINGLETON(UConsoleWidget)
 
@@ -123,16 +125,23 @@ void UConsoleWidget::RenderWidget()
 	ImGui::EndChild();
 	ImGui::Separator();
 
-	// Input Command
+	// Input Command with History Navigation
 	bool ReclaimFocus = false;
-	ImGuiInputTextFlags InputFlags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EscapeClearsAll;
-	if (ImGui::InputText("Input", InputBuf, sizeof(InputBuf), InputFlags))
+	ImGuiInputTextFlags InputFlags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EscapeClearsAll |
+		ImGuiInputTextFlags_CallbackHistory;
+	if (ImGui::InputText("Input", InputBuf, sizeof(InputBuf), InputFlags,
+	                     [](ImGuiInputTextCallbackData* data) -> int
+	                     {
+		                     return static_cast<UConsoleWidget*>(data->UserData)->HandleHistoryCallback(data);
+	                     }, this))
 	{
 		if (strlen(InputBuf) > 0)
 		{
 			ProcessCommand(InputBuf);
 			strcpy_s(InputBuf, sizeof(InputBuf), "");
 			ReclaimFocus = true;
+			// 새로운 명령어 입력 후 히스토리 위치 초기화
+			HistoryPosition = -1;
 		}
 	}
 
@@ -237,6 +246,80 @@ void UConsoleWidget::AddLog(ELogType InType, const char* fmt, ...)
 	bIsScrollToBottom = true;
 }
 
+/**
+ * @brief 명령어 히스토리 탐색 콜백 함수
+ * @param InData ImGui InputText 콜백 데이터
+ * @return 콜백 처리 결과 (0: 성공)
+ */
+int UConsoleWidget::HandleHistoryCallback(ImGuiInputTextCallbackData* InData)
+{
+	switch (InData->EventFlag)
+	{
+	case ImGuiInputTextFlags_CallbackHistory:
+		{
+			// 비어있는 히스토리는 처리하지 않음
+			if (CommandHistory.empty())
+			{
+				return 0;
+			}
+
+			const int HistorySize = static_cast<int>(CommandHistory.size());
+			int PreviousHistoryPos = HistoryPosition;
+
+			if (InData->EventKey == ImGuiKey_UpArrow)
+			{
+				// 위 화살표: 이전 명령어로 이동
+				if (HistoryPosition == -1)
+				{
+					// 처음에는 가장 최근 명령어로 이동
+					HistoryPosition = HistorySize - 1;
+				}
+				else if (HistoryPosition > 0)
+				{
+					// 더 이전 명령어로 이동
+					--HistoryPosition;
+				}
+			}
+			else if (InData->EventKey == ImGuiKey_DownArrow)
+			{
+				// 아래 화살표: 다음 명령어로 이동
+				if (HistoryPosition != -1)
+				{
+					++HistoryPosition;
+					if (HistoryPosition >= HistorySize)
+					{
+						// 범위를 벗어나면 입력창을 비우고 현재 상태로 돌아감
+						HistoryPosition = -1;
+					}
+				}
+			}
+
+			// 히스토리 위치가 변경되었을 때만 입력창 업데이트
+			if (PreviousHistoryPos != HistoryPosition)
+			{
+				if (HistoryPosition >= 0 && HistoryPosition < HistorySize)
+				{
+					// 선택된 히스토리 명령어로 입력창 채우기
+					const FString& SelectedCommand = CommandHistory[HistoryPosition];
+					InData->DeleteChars(0, InData->BufTextLen);
+					InData->InsertChars(0, SelectedCommand.c_str());
+				}
+				else
+				{
+					// HistoryPosition == -1: 입력창 비우기
+					InData->DeleteChars(0, InData->BufTextLen);
+				}
+			}
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 void UConsoleWidget::ProcessCommand(const char* InCommand)
 {
 	if (!InCommand || strlen(InCommand) == 0)
@@ -280,55 +363,229 @@ void UConsoleWidget::ProcessCommand(const char* InCommand)
 							RemainingArguments = RemainingArguments.substr(1);
 					}
 
-					// printf 스타일 처리
+					// printf 스타일 다중 인자 처리 개선
 					if (!RemainingArguments.empty())
 					{
-						if (FormatString.find("%d") != FString::npos)
+						try
 						{
-							try
+							// 인자들을 콤마로 분리
+							TArray<FString> Args;
+							std::istringstream ArgStream(RemainingArguments);
+							FString Token;
+
+							// 콤마로 분리하되 따옴표 안의 콤마는 무시
+							bool bInQuotes = false;
+							FString CurrentArg;
+
+							for (size_t i = 0; i < RemainingArguments.length(); ++i)
 							{
-								int Value = std::stoi(RemainingArguments);
-								char Buffer[512];
-								(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(), Value);
-								// Prevent Recursive
-								FLogEntry LogEntry;
-								LogEntry.Type = ELogType::UELog;
-								LogEntry.Message = FString(Buffer);
-								LogItems.push_back(LogEntry);
-								bIsScrollToBottom = true;
+								char Character = RemainingArguments[i];
+
+								if (Character == '"')
+								{
+									bInQuotes = !bInQuotes;
+									CurrentArg += Character;
+								}
+								else if (Character == ',' && !bInQuotes)
+								{
+									// 인자 완료
+									// 앞뒤 공백 제거
+									while (!CurrentArg.empty() && (CurrentArg.front() == ' ' || CurrentArg.front() ==
+										'\t'))
+									{
+										CurrentArg = CurrentArg.substr(1);
+									}
+									while (!CurrentArg.empty() && (CurrentArg.back() == ' ' || CurrentArg.back() ==
+										'\t'))
+									{
+										CurrentArg.pop_back();
+									}
+
+									if (!CurrentArg.empty())
+									{
+										Args.push_back(CurrentArg);
+									}
+
+									CurrentArg.clear();
+								}
+								else
+								{
+									CurrentArg += Character;
+								}
 							}
-							catch (...)
+
+							// 마지막 인자 처리
+							while (!CurrentArg.empty() && (CurrentArg.front() == ' ' || CurrentArg.front() == '\t'))
+								CurrentArg = CurrentArg.substr(1);
+							while (!CurrentArg.empty() && (CurrentArg.back() == ' ' || CurrentArg.back() == '\t'))
+								CurrentArg.pop_back();
+							if (!CurrentArg.empty())
+								Args.push_back(CurrentArg);
+
+							// 더 큰 버퍼로 안전하게 처리
+							TArray<char> Buffer(4096);
+
+							// 포맷 스트링의 플레이스홀더 개수와 인자 개수 확인
+							size_t FormatSpecifiers = 0;
+							size_t pos = 0;
+							while ((pos = FormatString.find('%', pos)) != FString::npos)
+							{
+								if (pos + 1 < FormatString.length() && FormatString[pos + 1] != '%')
+								{
+									++FormatSpecifiers;
+								}
+								++pos;
+							}
+
+							if (FormatSpecifiers != Args.size())
 							{
 								FLogEntry ErrorEntry;
 								ErrorEntry.Type = ELogType::Error;
-								ErrorEntry.Message = "Failed To Parse Integer: " + RemainingArguments;
+								ErrorEntry.Message = "UE_LOG: 포맷 지정자(" + std::to_string(FormatSpecifiers) +
+									")와 인자 개수(" + std::to_string(Args.size()) + ")가 일치하지 않습니다.";
 								LogItems.push_back(ErrorEntry);
 								bIsScrollToBottom = true;
+								return;
 							}
-						}
-						else if (FormatString.find("%s") != FString::npos)
-						{
-							// Remove quotes from string argument
-							FString StringArg = RemainingArguments;
-							if (StringArg.length() >= 2 && StringArg.front() == '"' && StringArg.back() == '"')
+
+							// 실제 포맷팅 처리
+							int Result = 0;
+
+							if (Args.size() == 1)
 							{
-								StringArg = StringArg.substr(1, StringArg.length() - 2);
+								if (FormatString.find("%d") != FString::npos || FormatString.find("%i") !=
+									FString::npos)
+								{
+									int Value = std::stoi(Args[0]);
+									Result = snprintf(Buffer.data(), Buffer.size(), FormatString.c_str(), Value);
+								}
+								else if (FormatString.find("%s") != FString::npos)
+								{
+									FString StringArg = Args[0];
+									if (StringArg.length() >= 2 && StringArg.front() == '"' && StringArg.back() == '"')
+										StringArg = StringArg.substr(1, StringArg.length() - 2);
+									Result = snprintf(Buffer.data(), Buffer.size(), FormatString.c_str(),
+									                  StringArg.c_str());
+								}
+								else if (FormatString.find("%f") != FString::npos)
+								{
+									float Value = std::stof(Args[0]);
+									Result = snprintf(Buffer.data(), Buffer.size(), FormatString.c_str(), Value);
+								}
 							}
-							char Buffer[512];
-							(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(),
-							               StringArg.c_str());
-							FLogEntry UELogEntry;
-							UELogEntry.Type = ELogType::UELog;
-							UELogEntry.Message = FString(Buffer);
-							LogItems.push_back(UELogEntry);
+							else if (Args.size() == 2)
+							{
+								// 2개 인자 동시 처리 (가장 흔한 케이스들)
+								size_t firstPercent = FormatString.find('%');
+								size_t secondPercent = FormatString.find('%', firstPercent + 1);
+
+								if (firstPercent != FString::npos && secondPercent != FString::npos)
+								{
+									char firstType = FormatString[firstPercent + 1];
+									char secondType = FormatString[secondPercent + 1];
+
+									// %d %d
+									if ((firstType == 'd' || firstType == 'i') && (secondType == 'd' || secondType ==
+										'i'))
+									{
+										int val1 = std::stoi(Args[0]);
+										int val2 = std::stoi(Args[1]);
+										Result = snprintf(Buffer.data(), Buffer.size(), FormatString.c_str(), val1,
+										                  val2);
+									}
+									// %s %s
+									else if (firstType == 's' && secondType == 's')
+									{
+										FString str1 = Args[0];
+										FString str2 = Args[1];
+										if (str1.length() >= 2 && str1.front() == '"' && str1.back() == '"')
+											str1 = str1.substr(1, str1.length() - 2);
+										if (str2.length() >= 2 && str2.front() == '"' && str2.back() == '"')
+											str2 = str2.substr(1, str2.length() - 2);
+										Result = snprintf(Buffer.data(), Buffer.size(), FormatString.c_str(),
+										                  str1.c_str(), str2.c_str());
+									}
+									// %s %d 또는 %d %s
+									else if ((firstType == 's' && (secondType == 'd' || secondType == 'i')) ||
+										((firstType == 'd' || firstType == 'i') && secondType == 's'))
+									{
+										if (firstType == 's')
+										{
+											FString str = Args[0];
+											if (str.length() >= 2 && str.front() == '"' && str.back() == '"')
+												str = str.substr(1, str.length() - 2);
+											int val = std::stoi(Args[1]);
+											Result = snprintf(Buffer.data(), Buffer.size(), FormatString.c_str(),
+											                  str.c_str(), val);
+										}
+										else
+										{
+											int val = std::stoi(Args[0]);
+											FString str = Args[1];
+											if (str.length() >= 2 && str.front() == '"' && str.back() == '"')
+												str = str.substr(1, str.length() - 2);
+											Result = snprintf(Buffer.data(), Buffer.size(), FormatString.c_str(), val,
+											                  str.c_str());
+										}
+									}
+								}
+							}
+							else
+							{
+								// 3개 이상 인자 또는 지원되지 않는 조합에 대한 일반적 처리
+								FLogEntry ErrorEntry;
+								ErrorEntry.Type = ELogType::Error;
+								ErrorEntry.Message = "UE_LOG: " + std::to_string(Args.size()) +
+									"개 인자 또는 현재 포맷 조합은 지원되지 않습니다. "
+									"단순 형식만 사용해주세요 (1-2개 인자).";
+								LogItems.push_back(ErrorEntry);
+								bIsScrollToBottom = true;
+								return;
+							}
+
+							// 포맷팅 결과 확인 및 안전성 검사
+							if (Result < 0)
+							{
+								FLogEntry ErrorEntry;
+								ErrorEntry.Type = ELogType::Error;
+								ErrorEntry.Message = "UE_LOG: snprintf 포맷팅 오류가 발생했습니다.";
+								LogItems.push_back(ErrorEntry);
+								bIsScrollToBottom = true;
+								return;
+							}
+							else if (Result >= static_cast<int>(Buffer.size()))
+							{
+								FLogEntry ErrorEntry;
+								ErrorEntry.Type = ELogType::Error;
+								ErrorEntry.Message = "UE_LOG: 출력이 버퍼 크기(" + std::to_string(Buffer.size()) +
+									")를 초과했습니다. 필요한 크기: " + std::to_string(Result + 1);
+								LogItems.push_back(ErrorEntry);
+								bIsScrollToBottom = true;
+								return;
+							}
+
+							// 성공적으로 포맷팅된 경우
+							// Result는 null terminator를 제외한 길이이므로 Buffer[Result]는 안전함
+							FLogEntry LogEntry;
+							LogEntry.Type = ELogType::UELog;
+							LogEntry.Message = FString(Buffer.data());
+							LogItems.push_back(LogEntry);
 							bIsScrollToBottom = true;
 						}
-						else
+						catch (const std::exception& e)
 						{
-							FLogEntry UELogEntry;
-							UELogEntry.Type = ELogType::UELog;
-							UELogEntry.Message = FormatString + RemainingArguments;
-							LogItems.push_back(UELogEntry);
+							FLogEntry ErrorEntry;
+							ErrorEntry.Type = ELogType::Error;
+							ErrorEntry.Message = "UE_LOG: 인자 처리 중 오류 발생: " + FString(e.what());
+							LogItems.push_back(ErrorEntry);
+							bIsScrollToBottom = true;
+						}
+						catch (...)
+						{
+							FLogEntry ErrorEntry;
+							ErrorEntry.Type = ELogType::Error;
+							ErrorEntry.Message = "UE_LOG: 알 수 없는 인자 처리 오류가 발생했습니다: " + RemainingArguments;
+							LogItems.push_back(ErrorEntry);
 							bIsScrollToBottom = true;
 						}
 					}
@@ -378,8 +635,11 @@ void UConsoleWidget::ProcessCommand(const char* InCommand)
 		AddLog(ELogType::Info, "  CLEAR - Clear The Console");
 		AddLog(ELogType::Info, "  HELP - Show This Help");
 		AddLog(ELogType::Info, "  UE_LOG(\"String with format\", Args...) - Log With printf Formatting");
-		AddLog(ELogType::Debug, "    Example: UE_LOG(\"Hello World %%d\", 2025)");
-		AddLog(ELogType::Debug, "    Example: UE_LOG(\"User: %%s\", \"John\")");
+		AddLog(ELogType::Debug, "    1개 인자 예제: UE_LOG(\"Hello World %%d\", 2025)");
+		AddLog(ELogType::Debug, "    1개 인자 예제: UE_LOG(\"User: %%s\", \"John\")");
+		AddLog(ELogType::Debug, "    2개 인자 예제: UE_LOG(\"Player %%s has %%d points\", \"Alice\", 1500)");
+		AddLog(ELogType::Debug, "    2개 인자 예제: UE_LOG(\"Score: %%d, Lives: %%d\", 2500, 3)");
+		AddLog(ELogType::Warning, "    주의: 포맷 지정자와 인자 개수가 일치해야 합니다!");
 		AddLog(ELogType::Info, "");
 		AddLog(ELogType::System, "Terminal Commands:");
 		AddLog(ELogType::Info, "  dir, ls - List directory contents");
@@ -490,7 +750,8 @@ void UConsoleWidget::ExecuteTerminalCommand(const char* InCommand)
 			{
 				// 프로세스가 종료되었으면 남은 모든 데이터를 읽고 종료
 				DWORD AvailableBytes = 0;
-				while (PeekNamedPipe(PipeReadHandle, nullptr, 0, nullptr, &AvailableBytes, nullptr) && AvailableBytes > 0)
+				while (PeekNamedPipe(PipeReadHandle, nullptr, 0, nullptr, &AvailableBytes, nullptr) && AvailableBytes >
+					0)
 				{
 					if (ReadFile(PipeReadHandle, Buffer, sizeof(Buffer) - 1,
 					             &ReadDoubleWord, nullptr) && ReadDoubleWord > 0)

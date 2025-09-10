@@ -41,9 +41,9 @@ void UEditor::Update()
 }
 void UEditor::RenderEditor()
 {
-	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor(), Camera.GetLocation());
 	Grid.RenderGrid();
 	Axis.Render();
+	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor(), Camera.GetLocation());
 }
 
 
@@ -76,7 +76,7 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 	}
 	WorldRay = Camera.ConvertToWorldRay(MousePositionNdc.X, MousePositionNdc.Y);
 
-	if(Gizmo.IsDragging())
+	if(Gizmo.IsDragging() && Gizmo.GetSelectedActor())
 	{
 		switch (Gizmo.GetGizmoMode())
 		{
@@ -103,6 +103,10 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 		if (InLevel->GetSelectedActor()) //기즈모가 출력되고있음. 레이캐스팅을 계속 해야함.
 		{
 			ObjectPicker.PickGizmo(WorldRay, Gizmo, CollisionPoint);
+		}
+		else
+		{
+			Gizmo.SetGizmoDirection(EGizmoDirection::None);
 		}
 		if (!ImGui::GetIO().WantCaptureMouse && InputManager.IsKeyPressed(EKeyInput::MouseLeft))
 		{

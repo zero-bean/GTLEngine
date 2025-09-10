@@ -4,6 +4,7 @@
 using std::streambuf;
 
 class UConsoleWidget;
+struct ImGuiInputTextCallbackData;
 
 struct FLogEntry {
 	ELogType Type;
@@ -56,6 +57,9 @@ public:
 	void InitializeSystemRedirect();
 	void CleanupSystemRedirect();
 	void AddSystemLog(const char* InText, bool bInIsError = false);
+
+	// History Navigation
+	int HandleHistoryCallback(ImGuiInputTextCallbackData* InData);
 
 	// Special Member Function
 	UConsoleWidget();

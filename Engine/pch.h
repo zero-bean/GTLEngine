@@ -20,6 +20,7 @@
 #include <functional>
 #include <filesystem>
 #include <iterator>
+#include <sstream>
 
 // Global Included
 #include "Global/Types.h"

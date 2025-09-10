@@ -1,11 +1,12 @@
 #pragma once
 #include "Core/Public/Object.h"
 
+#include "Editor/Public/Camera.h"
+
 class AAxis;
 class AGizmo;
 class AGrid;
 class AActor;
-class UCamera;
 class UPrimitiveComponent;
 
 class ULevel :
