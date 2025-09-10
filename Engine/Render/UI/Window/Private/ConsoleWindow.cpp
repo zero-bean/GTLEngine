@@ -18,10 +18,10 @@ UConsoleWindow::UConsoleWindow(const FUIWindowConfig& InConfig)
 {
 	// 콘솔 윈도우 기본 설정
 	FUIWindowConfig Config = InConfig;
-	Config.WindowTitle = "Game Console";
-	Config.DefaultSize = ImVec2(520, 600);
-	Config.DefaultPosition = ImVec2(100, 100);
-	Config.MinSize = ImVec2(400, 300);
+	Config.WindowTitle = "GTL Console";
+	Config.DefaultSize = ImVec2(1000, 250);
+	Config.DefaultPosition = ImVec2(570, 600);
+	Config.MinSize = ImVec2(1000, 250);
 	Config.bResizable = true;
 	Config.bMovable = true;
 	Config.bCollapsible = true;
@@ -33,11 +33,11 @@ UConsoleWindow::UConsoleWindow(const FUIWindowConfig& InConfig)
 
 void UConsoleWindow::Initialize()
 {
-	AddLog(ELogType::Success, "ConsoleWindow: Game Console 초기화 성공");
-	AddLog(ELogType::System, "ConsoleWindow: Logging System Ready");
-
 	// Initialize System Output Redirection
 	ConsoleWidget->InitializeSystemRedirect();
+
+	AddLog(ELogType::Success, "ConsoleWindow: Game Console 초기화 성공");
+	AddLog(ELogType::System, "ConsoleWindow: Logging System Ready");
 }
 
 /**

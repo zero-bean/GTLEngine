@@ -153,16 +153,16 @@ void USceneIOWidget::LoadLevel(const FString& InFilePath)
 
 		if (bSuccess)
 		{
-			StatusMessage = "Level Loaded Successfully!";
+			StatusMessage = "레벨을 성공적으로 로드했습니다";
 			StatusMessageTimer = STATUS_MESSAGE_DURATION;
-			UE_LOG("SceneIO: Level Loaded Successfully");
 		}
 		else
 		{
-			StatusMessage = "Failed To Load Level!";
+			StatusMessage = "레벨을 로드하는 데에 실패했습니다";
 			StatusMessageTimer = STATUS_MESSAGE_DURATION;
-			UE_LOG("SceneIO: Failed To Load Level");
 		}
+
+		UE_LOG("SceneIO: %s", StatusMessage.c_str());
 	}
 	catch (const exception& Exception)
 	{

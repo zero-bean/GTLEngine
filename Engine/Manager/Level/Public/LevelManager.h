@@ -2,6 +2,7 @@
 #include "Core/Public/Object.h"
 
 class ULevel;
+struct FLevelMetadata;
 
 class ULevelManager :
 	public UObject
@@ -22,12 +23,12 @@ public:
 	bool SaveCurrentLevel(const FString& InFilePath) const;
 	bool LoadLevel(const FString& InLevelName, const FString& InFilePath);
 	bool CreateNewLevel(const FString& InLevelName);
-	path GetLevelDirectory() const;
-	path GenerateLevelFilePath(const FString& InLevelName) const;
+	static path GetLevelDirectory();
+	static path GenerateLevelFilePath(const FString& InLevelName);
 
 	// Metadata Conversion Functions
-	struct FLevelMetadata ConvertLevelToMetadata(ULevel* InLevel) const;
-	bool LoadLevelFromMetadata(ULevel* InLevel, const struct FLevelMetadata& InMetadata) const;
+	static FLevelMetadata ConvertLevelToMetadata(ULevel* InLevel);
+	static bool LoadLevelFromMetadata(ULevel* InLevel, const FLevelMetadata& InMetadata);
 
 private:
 	ULevel* CurrentLevel;

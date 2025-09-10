@@ -1,7 +1,12 @@
 #pragma once
+#include "Class.h"
 
+UCLASS()
 class UObject
 {
+	GENERATED_BODY()
+	DECLARE_CLASS(UObject, UObject)
+
 public:
 	// Special Member Function
 	UObject();
@@ -15,11 +20,13 @@ public:
 	void SetName(const FString& InName) { Name = InName; }
 	void SetOuter(UObject* InObject);
 
-	void AddMemoryUsage(uint64 Bytes, uint32 Count = 1);
-	void RemoveMemoryUsage(uint64 Bytes, uint32 Count = 1);
+	void AddMemoryUsage(uint64 InBytes, uint32 InCount = 1);
+	void RemoveMemoryUsage(uint64 InBytes, uint32 InCount = 1);
 
 	uint64 GetAllocatedBytes() const { return AllocatedBytes; }
 	uint32 GetAllocatedCount() const { return AllocatedCounts; }
+
+	bool IsA(const UClass* InClass) const;
 
 private:
 	uint32 UUID = -1;

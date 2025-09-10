@@ -52,8 +52,7 @@ void UActorTerminationWidget::RenderWidget()
 	if (SelectedActor)
 	{
 		ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.6f, 1.0f), "Selected: %s (%p)",
-		                   SelectedActor->GetName().empty() ? "UnNamed" : SelectedActor->GetName().c_str(),
-		                   SelectedActor);
+		                   SelectedActor->GetName().c_str(), SelectedActor);
 
 		if (ImGui::Button("Delete Selected") || InputManager.IsKeyDown(EKeyInput::Delete))
 		{

@@ -87,6 +87,13 @@ void UInputManager::Update(FAppWindow* InWindow)
 		return;
 	}
 
+	// ImGui Input 받는 경우 다른 시스템 입력 중단
+	ImGuiIO& IO = ImGui::GetIO();
+	if (IO.WantCaptureKeyboard)
+	{
+		return;
+	}
+
 	// 마우스 위치 업데이트
 	UpdateMousePosition(InWindow);
 

@@ -83,8 +83,8 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 		return;
 	}
 
-	UE_LOG("ControlPanel: Spawning %d Actors Of Type %s", NumberOfSpawn,
-		   (SelectedPrimitiveType == 0 ? "Cube" : "Sphere"));
+	UE_LOG("ControlPanel: %s 타입의 Actor를 %d개 생성했습니다",
+		(SelectedPrimitiveType == 0 ? "Cube" : "Sphere"), NumberOfSpawn);
 
 	// 지정된 개수만큼 액터 생성
 	for (int32 i = 0; i < NumberOfSpawn; i++)
@@ -122,11 +122,11 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 			float RandomScale = 0.5f + (static_cast<float>(rand()) / RAND_MAX) * 1.5f;
 			NewActor->SetActorScale3D(FVector(RandomScale, RandomScale, RandomScale));
 
-			UE_LOG("ControlPanel: Spawned Actor At (%.2f, %.2f, %.2f)", RandomX, RandomY, RandomZ);
+			UE_LOG("ControlPanel: (%.2f, %.2f, %.2f) 지점에 Actor를 생성했습니다", RandomX, RandomY, RandomZ);
 		}
 		else
 		{
-			UE_LOG("ControlPanel: Failed To Spawn Actor %d", i);
+			UE_LOG("ControlPanel: Actor 생성에 실패했습니다 %d", i);
 		}
 	}
 }
