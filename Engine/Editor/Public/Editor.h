@@ -23,7 +23,7 @@ private:
 	TArray<UPrimitiveComponent*> FindCandidatePrimitives(ULevel* InLevel);
 
 	FVector GetGizmoDragLocation(FRay& WorldRay);
-
+	FVector GetGizmoDragRotation(FRay& WorldRay);
 
 	UCamera Camera;
 	UObjectPicker ObjectPicker;
