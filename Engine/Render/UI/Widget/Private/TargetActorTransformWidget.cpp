@@ -63,7 +63,7 @@ void UTargetActorTransformWidget::RenderWidget()
 		bRotationChanged |= ImGui::DragFloat3("Rotation", &EditRotation.X, 0.1f);
 
 		// Uniform Scale 옵션
-		static bool bUniformScale = false;
+		bool bUniformScale = SelectedActor->IsUniformScale();
 		if (bUniformScale)
 		{
 			float UniformScale = EditScale.X;
@@ -80,6 +80,8 @@ void UTargetActorTransformWidget::RenderWidget()
 		}
 
 		ImGui::Checkbox("Uniform Scale", &bUniformScale);
+
+		SelectedActor->SetUniformScale(bUniformScale);
 	}
 	else
 	{

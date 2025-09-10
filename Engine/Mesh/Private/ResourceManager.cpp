@@ -19,6 +19,7 @@ void UResourceManager::Initialize()
 	VertexDatas.emplace(EPrimitiveType::Square, &VerticesSquare);
 	VertexDatas.emplace(EPrimitiveType::Torus, &VerticesTorus);
 	VertexDatas.emplace(EPrimitiveType::Arrow, &VerticesArrow);
+	VertexDatas.emplace(EPrimitiveType::CubeArrow, &VerticesCubeArrow);
 	VertexDatas.emplace(EPrimitiveType::Ring, &VerticesRing);
 	VertexDatas.emplace(EPrimitiveType::Line, &VerticesLine);
 
@@ -35,6 +36,8 @@ void UResourceManager::Initialize()
 		VerticesTorus.data(), static_cast<int>(VerticesTorus.size() * sizeof(FVertex))));
 	Vertexbuffers.emplace(EPrimitiveType::Arrow, Renderer.CreateVertexBuffer(
 		VerticesArrow.data(), static_cast<int>(VerticesArrow.size() * sizeof(FVertex))));
+	Vertexbuffers.emplace(EPrimitiveType::CubeArrow, Renderer.CreateVertexBuffer(
+		VerticesCubeArrow.data(), static_cast<int>(VerticesCubeArrow.size() * sizeof(FVertex))));
 	Vertexbuffers.emplace(EPrimitiveType::Ring, Renderer.CreateVertexBuffer(
 		VerticesRing.data(), static_cast<int>(VerticesRing.size() * sizeof(FVertex))));
 	Vertexbuffers.emplace(EPrimitiveType::Line, Renderer.CreateVertexBuffer(
@@ -46,6 +49,7 @@ void UResourceManager::Initialize()
 	NumVertices.emplace(EPrimitiveType::Square, static_cast<uint32>(VerticesSquare.size()));
 	NumVertices.emplace(EPrimitiveType::Torus, static_cast<uint32>(VerticesTorus.size()));
 	NumVertices.emplace(EPrimitiveType::Arrow, static_cast<uint32>(VerticesArrow.size()));
+	NumVertices.emplace(EPrimitiveType::CubeArrow, static_cast<uint32>(VerticesCubeArrow.size()));
 	NumVertices.emplace(EPrimitiveType::Ring, static_cast<uint32>(VerticesRing.size()));
 	NumVertices.emplace(EPrimitiveType::Line, static_cast<uint32>(VerticesLine.size()));
 }

@@ -48,6 +48,13 @@ void UCamera::Update()
 		if (RelativeRotation.Y < -180.0f) RelativeRotation.Y += 360.0f;
 	}
 
+	if (URenderer::GetInstance().GetDeviceResources())
+	{
+		float Width = URenderer::GetInstance().GetDeviceResources()->GetViewportInfo().Width;
+		float Height = URenderer::GetInstance().GetDeviceResources()->GetViewportInfo().Height;
+		SetAspect(Width / Height);
+	}
+
 	switch (CameraType)
 	{
 	case ECameraType::ECT_Perspective:
@@ -58,7 +65,7 @@ void UCamera::Update()
 		break;
 	}
 
-	// TEST CODE 
+	// TEST CODE
 	URenderer::GetInstance().UpdateConstant(ViewProjConstants);
 }
 

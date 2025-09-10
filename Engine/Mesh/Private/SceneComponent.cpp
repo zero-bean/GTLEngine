@@ -74,8 +74,25 @@ void USceneComponent::SetRelativeRotation(const FVector& Rotation)
 }
 void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 {
-	RelativeScale3D = Scale;
+	FVector ActualScale = Scale;
+	if (ActualScale.X < MinScale)
+		ActualScale.X = MinScale;
+	if (ActualScale.Y < MinScale)
+		ActualScale.Y = MinScale;
+	if (ActualScale.Z < MinScale)
+		ActualScale.Z = MinScale;
+	RelativeScale3D = ActualScale;
 	MarkAsDirty();
+}
+
+void USceneComponent::SetUniformScale(bool bIsUniform)
+{
+	bIsUniformScale = bIsUniform;
+}
+
+bool USceneComponent::IsUniformScale() const
+{
+	return bIsUniformScale;
 }
 
 const FVector& USceneComponent::GetRelativeLocation() const
@@ -168,6 +185,8 @@ USphereComponent::USphereComponent()
     Vertices = ResourceManager.GetVertexData(Type);
     Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
     NumVertices = ResourceManager.GetNumVertices(Type);
+	RenderState.CullMode = ECullMode::Back;
+	RenderState.FillMode = EFillMode::Solid;
 }
 
 UCubeComponent::UCubeComponent()
@@ -177,6 +196,8 @@ UCubeComponent::UCubeComponent()
 	Vertices = ResourceManager.GetVertexData(Type);
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
+	RenderState.CullMode = ECullMode::Back;
+	RenderState.FillMode = EFillMode::Solid;
 }
 
 ULineComponent::ULineComponent()
@@ -187,6 +208,8 @@ ULineComponent::ULineComponent()
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	RenderState.CullMode = ECullMode::None;
+	RenderState.FillMode = EFillMode::WireFrame;
 }
 
 UTriangleComponent::UTriangleComponent()
@@ -196,6 +219,8 @@ UTriangleComponent::UTriangleComponent()
 	Vertices = ResourceManager.GetVertexData(Type);
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
+	RenderState.CullMode = ECullMode::None;
+	RenderState.FillMode = EFillMode::Solid;
 }
 
 USquareComponent::USquareComponent()
@@ -205,4 +230,6 @@ USquareComponent::USquareComponent()
 	Vertices = ResourceManager.GetVertexData(Type);
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
+	RenderState.CullMode = ECullMode::None;
+	RenderState.FillMode = EFillMode::Solid;
 }

@@ -22,6 +22,7 @@ public:
 	ID3D11RenderTargetView* GetRenderTargetView() const { return FrameBufferRTV; }
 	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
 	const D3D11_VIEWPORT& GetViewportInfo() const { return ViewportInfo; }
+	void UpdateViewport();
 
 private:
 	ID3D11Device* Device = nullptr;

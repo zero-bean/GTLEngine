@@ -1,17 +1,22 @@
 #include "pch.h"
-#include "Editor/Public/Editor.h"
 
+#include "Editor/Public/Editor.h"
 #include "Editor/Public/Camera.h"
 #include "Editor/Public/Gizmo.h"
 #include "Editor/Public/Grid.h"
 #include "Editor/Public/Axis.h"
 #include "Editor/Public/ObjectPicker.h"
-#include "Level/Public/Level.h"
+#include "Core/Public/Object.h"
+#include "Core/Public/AppWindow.h"
 #include "Render/Renderer/Public/Renderer.h"
-#include "Manager/Input/Public/InputManager.h"
+#include "Render/UI/Window/Public/CameraPanelWindow.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/UI/Public/UIManager.h"
+#include "Manager/Input/Public/InputManager.h"
+#include "Mesh/Public/Actor.h"
+#include "Level/Public/Level.h"
 #include "Render/UI/Widget/Public/CameraControlWidget.h"
+
 
 UEditor::UEditor()
 	: ObjectPicker(Camera)
@@ -19,11 +24,12 @@ UEditor::UEditor()
 	ObjectPicker.SetCamera(Camera);
 
 	// Set Camera to Control Panel
-	auto& UIManager =UUIManager::GetInstance();
+	auto& UIManager = UUIManager::GetInstance();
 	auto* CameraControlWidget =
 		reinterpret_cast<UCameraControlWidget*>(UIManager.FindWidget("Camera Control Widget"));
 	CameraControlWidget->SetCamera(&Camera);
-}
+
+};
 
 UEditor::~UEditor() = default;
 
@@ -56,6 +62,14 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 	FVector CollisionPoint;
 	float ActorDistance = -1;
 
+	//로컬 기즈모, 쿼터니언 구현 후 사용
+	/*if (InputManager.IsKeyPressed(EKeyInput::Tab))
+	{
+		if (Gizmo.IsWorld())
+			Gizmo.SetLocal();
+		else
+			Gizmo.SetWorld();
+	}*/
 	if (InputManager.IsKeyPressed(EKeyInput::Space))
 	{
 		Gizmo.ChangeGizmoMode();
@@ -78,10 +92,15 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 		case EGizmoMode::Rotate:
 		{
 			FVector GizmoDragRotation = GetGizmoDragRotation(WorldRay);
-			Gizmo.SetActorRotation(GizmoDragRotation);
+			Gizmo.SetActorRotation(GizmoDragRotation); break;
+		}
+		case EGizmoMode::Scale:
+		{
+			FVector GizmoDragScale = GetGizmoDragScale(WorldRay);
+			Gizmo.SetActorScale(GizmoDragScale);
 		}
 		}
-
+		
 	}
 	else
 	{
@@ -95,8 +114,10 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 
 			UPrimitiveComponent* PrimitiveCollided= ObjectPicker.PickPrimitive( WorldRay, Candidate, &ActorDistance);
 
-			if(PrimitiveCollided)
+			if (PrimitiveCollided)
 				ActorPicked = PrimitiveCollided->GetOwner();
+			else
+				ActorPicked = nullptr;
 		}
 
 		if (Gizmo.GetGizmoDirection() == EGizmoDirection::None) //기즈모에 호버링되거나 클릭되지 않았을 때. Actor 업데이트해줌.
@@ -145,42 +166,25 @@ TArray<UPrimitiveComponent*> UEditor::FindCandidatePrimitives(ULevel* InLevel)
 
 FVector UEditor::GetGizmoDragLocation(FRay& WorldRay)
 {
-	FVector PointOnPlane;
+	FVector MouseWorld;
 	FVector PlaneOrigin{ Gizmo.GetGizmoLocation() };
-	switch (Gizmo.GetGizmoDirection())
-	{
-	case EGizmoDirection::Right:
-	{
-		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, Camera.CalculatePlaneNormal(FVector{1,0,0}), PointOnPlane))
-		{
-			FVector MouseDistance = PointOnPlane - Gizmo.GetDragStartMouseLocation();
-			return Gizmo.GetDragStartActorLocation() + FVector(1, 0, 0) * MouseDistance.Dot(FVector(1, 0, 0));
-		}
-		else
-			return Gizmo.GetGizmoLocation();
-	}
-	case EGizmoDirection::Forward:
-	{
-		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, Camera.CalculatePlaneNormal(FVector{ 0,0,1 }), PointOnPlane))
-		{
-			FVector MouseDistance = PointOnPlane - Gizmo.GetDragStartMouseLocation();	//현재 오브젝트 위치부터 충돌점까지 거리벡터
-			return Gizmo.GetDragStartActorLocation() + FVector(0, 0, 1) * MouseDistance.Dot(FVector(0, 0, 1));
-		}
-		else
-			return Gizmo.GetGizmoLocation();
+	FVector GizmoAxis = Gizmo.GetGizmoAxis();
 
+	//로컬 기즈모, 쿼터니언 구현 후 사용
+	//if (!Gizmo.IsWorld())	//local
+	//{
+	//	FVector4 GizmoAxis4{ GizmoAxis.X,GizmoAxis.Y ,GizmoAxis.Z, 0.0f };
+	//	GizmoAxis = GizmoAxis4 * FMatrix::RotationMatrix(Gizmo.GetActorRotation());
+	//}
+	
+	if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, Camera.CalculatePlaneNormal(GizmoAxis), MouseWorld))
+	{
+		FVector MouseDistance = MouseWorld - Gizmo.GetDragStartMouseLocation();
+		return Gizmo.GetDragStartActorLocation() + GizmoAxis * MouseDistance.Dot(GizmoAxis);
 	}
-	case EGizmoDirection::Up:
-		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, Camera.CalculatePlaneNormal(FVector{ 0,1,0 }), PointOnPlane))
-		{
-			FVector MouseDistance = PointOnPlane - Gizmo.GetDragStartMouseLocation();	//현재 오브젝트 위치부터 충돌점까지 거리벡터
-			return Gizmo.GetDragStartActorLocation() + FVector(0, 1, 0) * MouseDistance.Dot(FVector(0, 1, 0));
-		}
-		else
-			return Gizmo.GetGizmoLocation();
-	}
-
-	return Gizmo.GetGizmoLocation();
+	else
+		return Gizmo.GetGizmoLocation();
+	
 }
 
 FVector UEditor::GetGizmoDragRotation(FRay& WorldRay)
@@ -188,65 +192,73 @@ FVector UEditor::GetGizmoDragRotation(FRay& WorldRay)
 
 	FVector MouseWorld;
 	FVector PlaneOrigin{ Gizmo.GetGizmoLocation() };
-	switch (Gizmo.GetGizmoDirection())
-	{
-	case EGizmoDirection::Right:
-	{
-		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, FVector{ 1,0,0 }, MouseWorld))
-		{
-			FVector PlaneOriginToMouse = MouseWorld - PlaneOrigin;
-			FVector PlaneOriginToMouseStart = Gizmo.GetDragStartMouseLocation() - PlaneOrigin;
-			PlaneOriginToMouse.Normalize();
-			PlaneOriginToMouseStart.Normalize();
-			float Angle = acosf((PlaneOriginToMouseStart).Dot(PlaneOriginToMouse));	//플레인 중심부터 마우스까지 벡터 이용해서 회전각도 구하기
-			if ((PlaneOriginToMouse.Cross(PlaneOriginToMouseStart)).Dot(FVector{ 1,0,0 }) < 0) // 회전축 구하기
-			{
-				Angle = -Angle;
-			}
-			return Gizmo.GetDragStartActorRotation() + FVector{ 1,0,0 }*FVector::GetRadianToDegree(Angle);
+	FVector GizmoAxis = Gizmo.GetGizmoAxis();
 
-		}
-		else
-			return Gizmo.GetActorRotation();
-	}
-	case EGizmoDirection::Forward:
+	//로컬 기즈모, 쿼터니언 구현 후 사용
+	//if (!Gizmo.IsWorld())	//local
+	//{
+	//	FVector4 GizmoAxis4{ GizmoAxis.X,GizmoAxis.Y ,GizmoAxis.Z, 0.0f };
+	//	GizmoAxis = GizmoAxis4 * FMatrix::RotationMatrix(Gizmo.GetActorRotation());
+	//}
+	
+	if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, GizmoAxis, MouseWorld))
 	{
-		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, FVector{ 0,0,1 }, MouseWorld))
+		FVector PlaneOriginToMouse = MouseWorld - PlaneOrigin;
+		FVector PlaneOriginToMouseStart = Gizmo.GetDragStartMouseLocation() - PlaneOrigin;
+		PlaneOriginToMouse.Normalize();
+		PlaneOriginToMouseStart.Normalize();
+		float Angle = acosf((PlaneOriginToMouseStart).Dot(PlaneOriginToMouse));	//플레인 중심부터 마우스까지 벡터 이용해서 회전각도 구하기
+		if ((PlaneOriginToMouse.Cross(PlaneOriginToMouseStart)).Dot(GizmoAxis) < 0) // 회전축 구하기
 		{
-			FVector PlaneOriginToMouse = MouseWorld - PlaneOrigin;
-			FVector PlaneOriginToMouseStart = Gizmo.GetDragStartMouseLocation() - PlaneOrigin;
-			PlaneOriginToMouse.Normalize();
-			PlaneOriginToMouseStart.Normalize();
-			float Angle = acosf((PlaneOriginToMouseStart).Dot(PlaneOriginToMouse));	//플레인 중심부터 마우스까지 벡터 이용해서 회전각도 구하기
-			if ((PlaneOriginToMouse.Cross(PlaneOriginToMouseStart)).Dot(FVector{ 0,0,1 }) < 0) // 회전축 구하기
-			{
-				Angle = -Angle;
-			}
-			return Gizmo.GetDragStartActorRotation() + FVector{ 0,0,1 }*FVector::GetRadianToDegree(Angle);
-
+			Angle = -Angle;
 		}
-		else
-			return Gizmo.GetActorRotation();
+		return Gizmo.GetDragStartActorRotation() + GizmoAxis *FVector::GetRadianToDegree(Angle);
 
 	}
-	case EGizmoDirection::Up:
-		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, FVector{ 0,1,0 }, MouseWorld))
-		{
-			FVector PlaneOriginToMouse = MouseWorld - PlaneOrigin;
-			FVector PlaneOriginToMouseStart = Gizmo.GetDragStartMouseLocation() - PlaneOrigin;
-			PlaneOriginToMouse.Normalize();
-			PlaneOriginToMouseStart.Normalize();
-			float Angle = acosf((PlaneOriginToMouseStart).Dot(PlaneOriginToMouse));	//플레인 중심부터 마우스까지 벡터 이용해서 회전각도 구하기
-			if ((PlaneOriginToMouse.Cross(PlaneOriginToMouseStart)).Dot(FVector{ 0,1,0 }) < 0) // 회전축 구하기
-			{
-				Angle = -Angle;
-			}
-			return Gizmo.GetDragStartActorRotation() + FVector{ 0,1,0 }*FVector::GetRadianToDegree(Angle);
+	else
+		return Gizmo.GetActorRotation();
+	
+}
 
+FVector UEditor::GetGizmoDragScale(FRay& WorldRay)
+{
+	FVector MouseWorld;
+	FVector PlaneOrigin{ Gizmo.GetGizmoLocation() };
+	FVector GizmoAxis = Gizmo.GetGizmoAxis();
+
+	//로컬 기즈모, 쿼터니언 구현 후 사용
+	//if (!Gizmo.IsWorld())	//local
+	//{
+	//	FVector4 GizmoAxis4{ GizmoAxis.X,GizmoAxis.Y ,GizmoAxis.Z, 0.0f };
+	//	GizmoAxis = GizmoAxis4 * FMatrix::RotationMatrix(Gizmo.GetActorRotation());
+	//}
+
+	if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, Camera.CalculatePlaneNormal(GizmoAxis), MouseWorld))
+	{
+		FVector PlaneOriginToMouse = MouseWorld - PlaneOrigin;
+		FVector PlaneOriginToMouseStart = Gizmo.GetDragStartMouseLocation() - PlaneOrigin;
+		float DragStartAxisDistance = PlaneOriginToMouseStart.Dot(GizmoAxis);
+		float DragAxisDistance = PlaneOriginToMouse.Dot(GizmoAxis);
+		float ScaleFactor = 1.0f;
+		if (abs(DragStartAxisDistance) > 0.001f)
+		{
+			ScaleFactor = DragAxisDistance / DragStartAxisDistance;
+		}
+		
+		FVector DragStartScale = Gizmo.GetDragStartActorScale();
+		if (ScaleFactor > MinScale)
+		{
+			if (Gizmo.GetSelectedActor()->IsUniformScale())
+			{
+				float UniformValue = DragStartScale.Dot(GizmoAxis);
+				return FVector(UniformValue, UniformValue, UniformValue) + FVector(1, 1, 1) * (ScaleFactor - 1)* UniformValue;
+			}
+			else
+				return DragStartScale + GizmoAxis * (ScaleFactor - 1) * DragStartScale.Dot(GizmoAxis);
 		}
 		else
-			return Gizmo.GetActorRotation();
+			return Gizmo.GetActorScale();
 	}
-
-	return Gizmo.GetGizmoLocation();
+	else
+		return Gizmo.GetActorScale();
 }

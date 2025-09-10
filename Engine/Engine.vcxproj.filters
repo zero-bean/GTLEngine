@@ -115,6 +115,7 @@
     <ClInclude Include="Global\Types.h" />
     <ClInclude Include="Mesh\Public\SquareActor.h" />
     <ClInclude Include="Global\Vector.h" />
+    <ClInclude Include="Global\CoreTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Engine.rc" />

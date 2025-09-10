@@ -40,11 +40,17 @@ UGizmo::UGizmo()
 	/* *
 	* @brief Scale Setting
 	*/
-	Primitives[2].Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Arrow);
-	Primitives[2].NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Arrow);
+	Primitives[2].Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::CubeArrow);
+	Primitives[2].NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::CubeArrow);
 	Primitives[2].Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	Primitives[2].Scale = FVector(ScaleT, ScaleT, ScaleT);
 	Primitives[2].bShouldAlwaysVisible = true;
+
+	/* *
+	* @brief Render State
+	*/
+	RenderState.FillMode = EFillMode::Solid;
+	RenderState.CullMode = ECullMode::None;
 }
 
 UGizmo::~UGizmo() = default;
@@ -59,20 +65,26 @@ void UGizmo::RenderGizmo(AActor* Actor)
 	auto& P = Primitives[Mode];
 	P.Location = TargetActor->GetActorLocation();
 
+	FVector LocalRotation{ 0,0,0 };
+	//로컬 기즈모. 쿼터니언 구현후 사용
+	/*if (!bIsWorld && TargetActor)
+	{
+		LocalRotation = TargetActor->GetActorRotation();
+	}*/
 	// X (Right)
-	P.Rotation = { 0, 89.99f, 0 };
+	P.Rotation = FVector{0,89.99f,0} + LocalRotation;
 	P.Color = ColorFor(EGizmoDirection::Right);
-	Renderer.RenderPrimitive(P);
+	Renderer.RenderPrimitive(P, RenderState);
 
 	// Y (Up)
-	P.Rotation = { -89.99f, 0, 0 };
+	P.Rotation = FVector{ -89.99f,0,0 } + LocalRotation;
 	P.Color = ColorFor(EGizmoDirection::Up);
-	Renderer.RenderPrimitive(P);
+	Renderer.RenderPrimitive(P, RenderState);
 
 	// Z (Forward)
-	P.Rotation = { 0, 0, 0 };
+	P.Rotation = FVector{ 0, 0, 0 } + LocalRotation;
 	P.Color = ColorFor(EGizmoDirection::Forward);
-	Renderer.RenderPrimitive(P);
+	Renderer.RenderPrimitive(P, RenderState);
 }
 
 void UGizmo::ChangeGizmoMode()
@@ -106,6 +118,7 @@ void UGizmo::OnMouseDragStart(FVector& CollisionPoint)
 	DragStartMouseLocation = CollisionPoint;
 	DragStartActorLocation = Primitives[(int)GizmoMode].Location;
 	DragStartActorRotation = TargetActor->GetActorRotation();
+	DragStartActorScale = TargetActor->GetActorScale3D();
 }
 
 // 하이라이트 색상은 렌더 시점에만 계산 (상태 오염 방지)
@@ -113,7 +126,12 @@ FVector4 UGizmo::ColorFor(EGizmoDirection InAxis) const
 {
 	const int Idx = AxisIndex(InAxis);
 	const FVector4& BaseColor = GizmoColor[Idx];
-	const bool Highlight = (InAxis == GizmoDirection);
-	const float Paint = Highlight ? HoveringFactor : 1.0f;
-	return FVector4(BaseColor.X * Paint, BaseColor.Y * Paint, BaseColor.Z * Paint, BaseColor.W);
+	const bool bIsHighlight = (InAxis == GizmoDirection);
+
+	const FVector4 Paint = bIsHighlight ? FVector4(1,1,0,1) : BaseColor;
+
+	if (bIsDragging)
+		return BaseColor;
+	else
+		return Paint;
 }

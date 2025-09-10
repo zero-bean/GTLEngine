@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Render/UI/Window/Public/UIWindow.h"
 
+#include "ImGui/imgui_internal.h"
+
 #include "Render/UI/Widget/Public/Widget.h"
 
 int UUIWindow::IssuedWindowID = 0;
@@ -38,6 +40,74 @@ UUIWindow::~UUIWindow()
 }
 
 /**
+ * @brief 뷰포트가 리사이징 되었을 때 앵커/좌상단 기준 상대 위치 비율을 고정하는 로직
+ */
+void UUIWindow::OnMainWindowResized()
+{
+	if (!ImGui::GetCurrentContext() || !IsVisible())
+		return;
+
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+	const ImVec2 currentViewportSize = viewport->WorkSize;
+
+ 	const ImVec2 anchor = PositionRatio;
+	const ImVec2 pivot = { 0.f, 0.f };
+
+	ImVec2 responsiveSize(
+		currentViewportSize.x * SizeRatio.x,
+		currentViewportSize.y * SizeRatio.y
+	);
+
+	ImVec2 targetPos(
+		viewport->WorkPos.x + currentViewportSize.x * anchor.x,
+		viewport->WorkPos.y + currentViewportSize.y * anchor.y
+	);
+
+	ImVec2 finalPos(
+		targetPos.x - responsiveSize.x * pivot.x,
+		targetPos.y - responsiveSize.y * pivot.y
+	);
+
+	ImGui::SetWindowSize(responsiveSize, ImGuiCond_Always);
+	ImGui::SetWindowPos(finalPos, ImGuiCond_Always);
+}
+
+/**
+ * @brief 윈도우가 뷰포트 범위 밖으로 나갔을 시 클램프 하는 로직
+ */
+void UUIWindow::ClampWindow()
+{
+	if (!IsVisible())
+	{
+		return;
+	}
+
+	const ImGuiViewport* Viewport = ImGui::GetMainViewport();
+	const ImVec2 WorkPos = Viewport->WorkPos;
+	const ImVec2 WorkSize = Viewport->WorkSize;
+
+	ImVec2 pos = LastWindowPosition;
+	ImVec2 size = LastWindowSize;
+
+	bool size_changed = false;
+	if (size.x > WorkSize.x) { size.x = WorkSize.x; size_changed = true; }
+	if (size.y > WorkSize.y) { size.y = WorkSize.y; size_changed = true; }
+	if (size_changed)
+	{
+		ImGui::SetWindowSize(size);
+	}
+	bool pos_changed = false;
+	if (pos.x + size.x > WorkPos.x + WorkSize.x) { pos.x = WorkPos.x + WorkSize.x - size.x; pos_changed = true; }
+	if (pos.y + size.y > WorkPos.y + WorkSize.y) { pos.y = WorkPos.y + WorkSize.y - size.y; pos_changed = true; }
+	if (pos.x < WorkPos.x) { pos.x = WorkPos.x; pos_changed = true; }
+	if (pos.y < WorkPos.y) { pos.y = WorkPos.y; pos_changed = true; }
+	if (pos_changed)
+	{
+		ImGui::SetWindowPos(pos);
+	}
+}
+
+/**
  * @brief 내부적으로 사용되는 윈도우 렌더링 처리
  * 서브클래스에서 직접 호출할 수 없도록 접근한정자 설정
  */
@@ -57,15 +127,36 @@ void UUIWindow::RenderWindow()
 	ImGui::SetNextWindowPos(Config.DefaultPosition, ImGuiCond_FirstUseEver);
 
 	// 크기 제한 설정
-	ImGui::SetNextWindowSizeConstraints(Config.MinSize, Config.MaxSize);
+	//ImGui::SetNextWindowSizeConstraints(Config.MinSize, Config.MaxSize);
 
-	if (ImGui::Begin(Config.WindowTitle.c_str(), &bIsWindowOpen, Config.WindowFlags))
+	bool bIsOpen = bIsWindowOpen;
+
+	if (ImGui::Begin(Config.WindowTitle.c_str(), &bIsOpen, Config.WindowFlags))
 	{
+		if (!bIsResized)
+		{
+			const ImGuiViewport* viewport = ImGui::GetMainViewport();
+			ImVec2 currentPos = ImGui::GetWindowPos();
+			ImVec2 currentSize = ImGui::GetWindowSize();
+			ImVec2 pivot = { 0.f, 0.f };
+
+			PositionRatio.x = (currentPos.x - viewport->WorkPos.x + currentSize.x * pivot.x) / viewport->WorkSize.x;
+			PositionRatio.y = (currentPos.y - viewport->WorkPos.y + currentSize.y * pivot.y) / viewport->WorkSize.y;
+
+			SizeRatio.x = currentSize.x  / viewport->WorkSize.x;
+			SizeRatio.y = currentSize.y  / viewport->WorkSize.y;
+		}
 		// 실제 UI 컨텐츠 렌더링
 		RenderWidget();
 
 		// 윈도우 정보 업데이트
 		UpdateWindowInfo();
+	}
+	//ClampWindow();
+	if (bIsResized)
+	{
+		OnMainWindowResized();
+		bIsResized = false;
 	}
 
 	ImGui::End();

@@ -29,12 +29,6 @@ void URenderer::Init(HWND InWindowHandle)
 
 void URenderer::Release()
 {
-	if (vertexBufferSphere)
-	{
-		ReleaseVertexBuffer(vertexBufferSphere);
-		vertexBufferSphere = nullptr;
-	}
-
 	ReleaseConstantBuffer();
 	ReleaseDefaultShader();
 	ReleaseResource();
@@ -48,28 +42,24 @@ void URenderer::Release()
  */
 void URenderer::CreateRasterizerState()
 {
-	D3D11_RASTERIZER_DESC rasterizerdesc = {};
-	rasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
-	//rasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
-	rasterizerdesc.CullMode = D3D11_CULL_NONE;
 
-	GetDevice()->CreateRasterizerState(&rasterizerdesc, &RasterizerState);
 }
 
 void URenderer::CreateDepthStencilState()
 {
-	D3D11_DEPTH_STENCIL_DESC descDefault = {};
+	D3D11_DEPTH_STENCIL_DESC DescDefault = {};
 
-	descDefault.DepthEnable = TRUE;
-	descDefault.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	descDefault.DepthFunc = D3D11_COMPARISON_LESS;
+	DescDefault.DepthEnable = TRUE;
+	DescDefault.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 
-	descDefault.StencilEnable = FALSE;
-	descDefault.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
-	descDefault.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+	DescDefault.DepthFunc = D3D11_COMPARISON_LESS;
+
+	DescDefault.StencilEnable = FALSE;
+	DescDefault.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	DescDefault.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
 
 	HRESULT hr = DeviceResources->GetDevice()->CreateDepthStencilState(
-		&descDefault,
+		&DescDefault,
 		&DefaultDepthStencilState
 	);
 
@@ -77,9 +67,9 @@ void URenderer::CreateDepthStencilState()
 
 	descDisabled.DepthEnable = FALSE;
 
-	descDefault.StencilEnable = FALSE;
-	descDefault.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
-	descDefault.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+	DescDefault.StencilEnable = FALSE;
+	DescDefault.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	DescDefault.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
 
 	hr = DeviceResources->GetDevice()->CreateDepthStencilState(
 		&descDisabled,
@@ -92,11 +82,14 @@ void URenderer::CreateDepthStencilState()
  */
 void URenderer::ReleaseRasterizerState()
 {
-	if (RasterizerState)
+	for (auto& Cache : RasterCache)
 	{
-		RasterizerState->Release();
-		RasterizerState = nullptr;
+		if (Cache.second != nullptr)
+		{
+			Cache.second->Release();
+		}
 	}
+	RasterCache.clear();
 }
 
 /**
@@ -104,11 +97,14 @@ void URenderer::ReleaseRasterizerState()
  */
 void URenderer::ReleaseResource()
 {
-	if (RasterizerState)
+	for (auto& Cache : RasterCache)
 	{
-		RasterizerState->Release();
-		RasterizerState = nullptr;
+		if (Cache.second != nullptr)
+		{
+			Cache.second->Release();
+		}
 	}
+	RasterCache.clear();
 
 	if (DefaultDepthStencilState)
 	{
@@ -217,6 +213,7 @@ void URenderer::RenderBegin()
 	ID3D11RenderTargetView* rtvs[] = { rtv };  // 배열 생성
 
 	GetDeviceContext()->OMSetRenderTargets(1, rtvs, DeviceResources->GetDepthStencilView());
+	DeviceResources->UpdateViewport();
 }
 
 /**
@@ -232,16 +229,18 @@ void URenderer::RenderLevel()
 
 	for (auto& PrimitiveComponent : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelPrimitiveComponents())
 	{
-		if (!PrimitiveComponent) continue;
-
+		if (!PrimitiveComponent) { continue; }
+		///////////////////////////////////////////////////////////////////////////////////////////////////////
+		ID3D11RasterizerState* LoadedRasterizerState = GetRasterizerState(PrimitiveComponent->GetRenderState());
 		FPipelineInfo PipelineInfo = {
 			DefaultInputLayout,
 			DefaultVertexShader,
-			RasterizerState,
+			LoadedRasterizerState,
 			DefaultDepthStencilState,
 			DefaultPixelShader,
 			nullptr,
 		};
+		///////////////////////////////////////////////////////////////////////////////////////////////////////
 		Pipeline->UpdatePipeline(PipelineInfo);
 
 		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
@@ -258,53 +257,47 @@ void URenderer::RenderLevel()
 	}
 }
 
-
-//Deprecated : EditorPrimitive는 에디터에서 처리
-//void URenderer::RenderEditor()
-//{
-//	if (!ULevelManager::GetInstance().GetCurrentLevel())
-//		return;
-//
-//	for (auto& PrimitiveComponent :  ULevelManager::GetInstance().GetCurrentLevel()->GetEditorPrimitiveComponents())
-//	{
-//		if (!PrimitiveComponent) continue;
-//
-//		FPipelineInfo PipelineInfo = {
-//			DefaultInputLayout,
-//			DefaultVertexShader,
-//			RasterizerState,
-//			DepthStencilState,
-//			DefaultPixelShader,
-//			nullptr,
-//			PrimitiveComponent->GetTopology()
-//		};
-//
-//		Pipeline->UpdatePipeline(PipelineInfo);
-//
-//		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
-//		UpdateConstant(
-//			PrimitiveComponent);
-//
-//		Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
-//		UpdateConstant(PrimitiveComponent->GetColor());
-//
-//		Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
-//		Pipeline->Draw(static_cast<uint32>(PrimitiveComponent->GetVerticesData()->size()), 0);
-//	}
-//}
-
 /**
  * @brief 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
  */
-void URenderer::RenderEnd()
+void URenderer::RenderEnd() const
 {
 	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
 }
 
-void URenderer::RenderPrimitive(FEditorPrimitive& Primitive)
+static inline D3D11_CULL_MODE ToD3D11(ECullMode InCull)
+{
+	switch (InCull) {
+	case ECullMode::Back:
+		return D3D11_CULL_BACK;
+	case ECullMode::Front:
+		return D3D11_CULL_FRONT;
+	case ECullMode::None:
+		return D3D11_CULL_NONE;
+	default:
+		return D3D11_CULL_BACK; 
+	}
+}
+
+static inline D3D11_FILL_MODE ToD3D11(EFillMode InFill)
+{
+	switch (InFill) {
+	case EFillMode::Solid:
+		return D3D11_FILL_SOLID;
+	case EFillMode::WireFrame:
+		return D3D11_FILL_WIREFRAME;
+	default:
+		return D3D11_FILL_SOLID;
+	}
+}
+
+void URenderer::RenderPrimitive(FEditorPrimitive& Primitive, struct FRenderState& InRenderState)
 {
 	ID3D11DepthStencilState* DepthStencilState =
 		Primitive.bShouldAlwaysVisible ? DisabledDepthStencilState : DefaultDepthStencilState;
+
+	ID3D11RasterizerState* RasterizerState =
+		GetRasterizerState(InRenderState);
 
 	FPipelineInfo PipelineInfo = {
 			DefaultInputLayout,
@@ -370,6 +363,31 @@ ID3D11Buffer* URenderer::CreateIndexBuffer(const void* InIndices, uint32 InByteW
 	ID3D11Buffer* buffer = nullptr;
 	GetDevice()->CreateBuffer(&desc, &srd, &buffer);
 	return buffer;
+}
+
+void URenderer::OnResize(uint32 InWidth, uint32 InHeight)
+{
+	if (!DeviceResources || !GetDevice() || !GetDeviceContext() || !GetSwapChain()) return;
+
+	DeviceResources->ReleaseFrameBuffer();
+	DeviceResources->ReleaseDepthBuffer();
+	GetDeviceContext()->OMSetRenderTargets(0, nullptr, nullptr);
+
+	// ResizeBuffers 호출
+	HRESULT hr = GetSwapChain()->ResizeBuffers(2, InWidth, InHeight, DXGI_FORMAT_UNKNOWN, 0);
+	if (FAILED(hr))
+	{
+		UE_LOG("OnResize Failed");
+		return;
+	}
+	DeviceResources->UpdateViewport();
+
+	DeviceResources->CreateFrameBuffer();
+	DeviceResources->CreateDepthBuffer();
+
+	auto* rtv = DeviceResources->GetRenderTargetView();
+	ID3D11RenderTargetView* rtvs[] = { rtv };  // 배열 생성
+	GetDeviceContext()->OMSetRenderTargets(1, rtvs, DeviceResources->GetDepthStencilView());
 }
 
 /**
@@ -528,4 +546,26 @@ void URenderer::UpdateConstant(const FVector4& Color) const
 		}
 		GetDeviceContext()->Unmap(ConstantBufferColor, 0);
 	}
+}
+
+ID3D11RasterizerState* URenderer::GetRasterizerState(const FRenderState& InRenderState)
+{
+	D3D11_FILL_MODE FillMode = ToD3D11(InRenderState.FillMode);
+	D3D11_CULL_MODE CillMode = ToD3D11(InRenderState.CullMode);
+
+	const FRasterKey Key{ FillMode, CillMode };
+	if (auto It = RasterCache.find(Key); It != RasterCache.end())
+		return It->second;
+
+	ID3D11RasterizerState* RasterizerState = nullptr;
+	D3D11_RASTERIZER_DESC RasterizerDesc = {};
+	RasterizerDesc.FillMode = FillMode;
+	RasterizerDesc.CullMode = CillMode;
+
+	HRESULT Hr = GetDevice()->CreateRasterizerState(&RasterizerDesc, &RasterizerState);
+
+	if (FAILED(Hr)) { return nullptr; }
+
+	RasterCache.emplace(Key, RasterizerState);
+	return RasterizerState;
 }
