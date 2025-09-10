@@ -7,6 +7,7 @@ public:
 	{
 		return NextUUID++;
 	}
+
 private:
 	static uint32 NextUUID;
 };

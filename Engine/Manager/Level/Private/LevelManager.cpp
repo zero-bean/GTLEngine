@@ -170,7 +170,7 @@ bool ULevelManager::LoadLevel(const FString& InLevelName, const FString& InFileP
 	if (bSuccess)
 	{
 		// 기존 레벨이 있다면 정리
-		ULevel* OldLevel = nullptr;
+		ULevel* OldLevel;
 
 		if (Levels.find(InLevelName) != Levels.end())
 		{
@@ -199,13 +199,13 @@ bool ULevelManager::LoadLevel(const FString& InLevelName, const FString& InFileP
 		CurrentLevel = NewLevel;
 		CurrentLevel->Init();
 
-		UE_LOG("LevelManager: Successfully Loaded And Switched To Level '%s'", InLevelName.c_str());
+		UE_LOG("LevelManager: Level이 성공적으로 로드되어 Level '%s' (으)로 레벨을 교체 완료했습니다", InLevelName.c_str());
 	}
 	else
 	{
 		// 로드 실패 시 정리
 		delete NewLevel;
-		UE_LOG("LevelManager: Failed To Load Level From File");
+		UE_LOG("LevelManager: 파일로부터 Level을 로드하는 데에 실패했습니다");
 	}
 
 	return bSuccess;
@@ -248,7 +248,7 @@ bool ULevelManager::CreateNewLevel(const FString& InLevelName)
 /**
  * @brief 레벨 저장 디렉토리 경로 반환
  */
-path ULevelManager::GetLevelDirectory() const
+path ULevelManager::GetLevelDirectory()
 {
 	UPathManager& PathManager = UPathManager::GetInstance();
 	return PathManager.GetWorldPath();
@@ -257,7 +257,7 @@ path ULevelManager::GetLevelDirectory() const
 /**
  * @brief 레벨 이름을 바탕으로 전체 파일 경로 생성
  */
-path ULevelManager::GenerateLevelFilePath(const FString& InLevelName) const
+path ULevelManager::GenerateLevelFilePath(const FString& InLevelName)
 {
 	path LevelDirectory = GetLevelDirectory();
 	path FileName = InLevelName + ".json";
@@ -268,7 +268,7 @@ path ULevelManager::GenerateLevelFilePath(const FString& InLevelName) const
 /**
  * @brief ULevel을 FLevelMetadata로 변환
  */
-FLevelMetadata ULevelManager::ConvertLevelToMetadata(ULevel* InLevel) const
+FLevelMetadata ULevelManager::ConvertLevelToMetadata(ULevel* InLevel)
 {
 	FLevelMetadata Metadata;
 	Metadata.Version = 1;
@@ -329,7 +329,7 @@ FLevelMetadata ULevelManager::ConvertLevelToMetadata(ULevel* InLevel) const
 /**
  * @brief FLevelMetadata로부터 ULevel에 Actor Load
  */
-bool ULevelManager::LoadLevelFromMetadata(ULevel* InLevel, const FLevelMetadata& InMetadata) const
+bool ULevelManager::LoadLevelFromMetadata(ULevel* InLevel, const FLevelMetadata& InMetadata)
 {
 	if (!InLevel)
 	{
@@ -376,17 +376,16 @@ bool ULevelManager::LoadLevelFromMetadata(ULevel* InLevel, const FLevelMetadata&
 			NewActor->SetActorRotation(PrimitiveMeta.Rotation);
 			NewActor->SetActorScale3D(PrimitiveMeta.Scale);
 
-			UE_LOG("LevelManager: Created %s at (%.2f, %.2f, %.2f)",
-				FLevelSerializer::PrimitiveTypeToWideString(PrimitiveMeta.Type).c_str(),
-				PrimitiveMeta.Location.X, PrimitiveMeta.Location.Y, PrimitiveMeta.Location.Z);
+			UE_LOG("LevelManager: (%.2f, %.2f, %.2f) 지점에 %s (을)를 생성했습니다 ",
+			       PrimitiveMeta.Location.X, PrimitiveMeta.Location.Y, PrimitiveMeta.Location.Z,
+			       FLevelSerializer::PrimitiveTypeToWideString(PrimitiveMeta.Type).c_str());
 		}
 		else
 		{
-			UE_LOG("LevelManager: Failed To Create Actor For Primitive ID: %d", ID);
+			UE_LOG("LevelManager: Actor 생성에 실패했습니다 (Primitive ID: %d)", ID);
 		}
 	}
 
-	UE_LOG("LevelManager: Level Loaded From Metadata Successfully");
-	// UE_LOG로 이미 처리됨
+	UE_LOG("LevelManager: 레벨이 메타데이터로부터 성공적으로 로드되었습니다");
 	return true;
 }

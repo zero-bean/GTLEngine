@@ -10,9 +10,9 @@ UExperimentalFeatureWindow::UExperimentalFeatureWindow()
 {
 	FUIWindowConfig Config;
 	Config.WindowTitle = "Experimental Feature";
-	Config.DefaultSize = ImVec2(300, 400);
-	Config.DefaultPosition = ImVec2(10, 220);
-	Config.MinSize = ImVec2(250, 200);
+	Config.DefaultSize = ImVec2(350, 10);
+	Config.DefaultPosition = ImVec2(380, 10);
+	Config.MinSize = ImVec2(350, 10);
 	Config.DockDirection = EUIDockDirection::Right;
 	Config.Priority = 5;
 	Config.bResizable = true;
@@ -30,5 +30,5 @@ UExperimentalFeatureWindow::UExperimentalFeatureWindow()
  */
 void UExperimentalFeatureWindow::Initialize()
 {
-	UE_LOG("ExperimentalFeatureWindow: Successfully Initialized");
+	UE_LOG("ExperimentalFeatureWindow: Window가 성공적으로 생성되었습니다");
 }
