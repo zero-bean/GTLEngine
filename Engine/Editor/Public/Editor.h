@@ -24,10 +24,12 @@ private:
 
 	FVector GetGizmoDragLocation(FRay& WorldRay);
 	FVector GetGizmoDragRotation(FRay& WorldRay);
+	FVector GetGizmoDragScale(FRay& WorldRay);
 
 	UCamera Camera;
 	UObjectPicker ObjectPicker;
-	
+
+	const float MinScale = 0.001f;
 	UGizmo Gizmo;
 	UAxis Axis;
 	UGrid Grid;

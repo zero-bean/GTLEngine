@@ -72,7 +72,7 @@ void UObjectPicker::PickGizmo( const FRay& WorldRay, UGizmo& Gizmo, FVector& Col
 	switch (Gizmo.GetGizmoMode())
 	{
 	case EGizmoMode::Translate:
-	
+	case EGizmoMode::Scale:
 	{
 		FVector GizmoDistanceVector = WorldRayOrigin - GizmoLocation;
 		bool bIsCollide = false;
