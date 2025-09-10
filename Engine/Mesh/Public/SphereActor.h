@@ -7,7 +7,6 @@ class ASphereActor : public AActor
 {
 public:
 	ASphereActor();
-	USphereComponent* GetSphereComponent();
 private:
 	USphereComponent* SphereComponent = nullptr;
 };

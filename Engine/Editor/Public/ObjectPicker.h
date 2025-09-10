@@ -12,9 +12,8 @@ class UObjectPicker : public UObject
 public:
 	UObjectPicker(UCamera& InCamera);
 	void SetCamera(UCamera& Camera);
-	void RayCast(ULevel* InLevel, UGizmo& InGizmo);
-	AActor* PickActor(ULevel* Level, const FRay& WorldRay, float* ShortedDistance);
 	EGizmoDirection PickGizmo(const FRay& WorldRay, UGizmo& Gizmo, FVector4& CollisionPoint);
+	UPrimitiveComponent* PickPrimitive( const FRay& WorldRay, TArray<UPrimitiveComponent*> Candidate, float* Distance);
 	bool IsCollideWithPlane(FVector4 PlanePoint, FVector4 Normal, FVector4& PointOnPlane);
 
 private:

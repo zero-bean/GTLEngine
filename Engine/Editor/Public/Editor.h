@@ -13,10 +13,15 @@ public:
 	UEditor();
 	~UEditor();
 
+	
 	void Update();
 	void RenderEditor();
 
 private:
+
+	void ProcessMouseInput(ULevel* InLevel, UGizmo& InGizmo);
+	TArray<UPrimitiveComponent*> FindCandidatePrimitives(ULevel* InLevel);
+
 	UCamera Camera;
 	UObjectPicker ObjectPicker;
 	

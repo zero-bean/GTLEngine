@@ -18,6 +18,7 @@ public:
 	UGizmo();
 	~UGizmo() override;
 	void RenderGizmo(AActor* Actor, UObjectPicker& ObjectPicker);
+	void UpdateGizmo();
 
 	FVector MoveGizmo(UObjectPicker& ObjectPicker);
 
@@ -31,7 +32,7 @@ public:
 	float GetGizmoHeight();
 
 	void OnMouseHovering();
-	void OnMouseClick(FVector4& CollisionPoint);
+	void OnMouseDragStart(FVector4& CollisionPoint);
 	void OnMouseRelease(EGizmoDirection DirectionReleased);
 
 

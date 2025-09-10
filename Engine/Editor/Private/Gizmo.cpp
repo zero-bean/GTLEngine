@@ -171,7 +171,7 @@ void UGizmo::OnMouseHovering()
 	}
 }
 
-void UGizmo::OnMouseClick(FVector4& CollisionPoint)
+void UGizmo::OnMouseDragStart(FVector4& CollisionPoint)
 {
 	bIsDragging = true;
 	DragStartMouseLocation = CollisionPoint;

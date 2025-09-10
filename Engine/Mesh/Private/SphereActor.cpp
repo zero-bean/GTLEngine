@@ -3,11 +3,7 @@
 
 ASphereActor::ASphereActor()
 {
-	SphereComponent = GetSphereComponent();
+	SphereComponent = CreateDefaultSubobject<USphereComponent>("SphereComponent");
+	SphereComponent->SetOwner(this);
 	SetRootComponent(SphereComponent);
-}
-
-USphereComponent* ASphereActor::GetSphereComponent()
-{
-	return CreateDefaultSubobject<USphereComponent>("SphereComponent");
 }
