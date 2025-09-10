@@ -6,7 +6,7 @@
 #include "Render/UI/Window/Public/ControlPanelWindow.h"
 #include "Render/UI/Window/Public/InputStatusWindow.h"
 #include "Render/UI/Window/Public/PerformanceWindow.h"
-#include "Render/UI/Window/Public/LevelManangerWindow.h"
+#include "Render/UI/Window/Public/OutlinerWindow.h"
 #include "Render/UI/Window/Public/CameraPanelWindow.h"
 
 UConsoleWindow* UUIWindowFactory::CreateConsoleWindow(EUIDockDirection InDockDirection)
@@ -14,6 +14,20 @@ UConsoleWindow* UUIWindowFactory::CreateConsoleWindow(EUIDockDirection InDockDir
 	auto& Window = UConsoleWindow::GetInstance();
 	Window.GetMutableConfig().DockDirection = InDockDirection;
 	return &Window;
+}
+
+UControlPanelWindow* UUIWindowFactory::CreateControlPanelWindow(EUIDockDirection InDockDirection)
+{
+	auto* Window = new UControlPanelWindow();
+	Window->GetMutableConfig().DockDirection = InDockDirection;
+	return Window;
+}
+
+UOutlinerWindow* UUIWindowFactory::CreateOutlinerWindow(EUIDockDirection InDockDirection)
+{
+	auto* Window = new UOutlinerWindow();
+	Window->GetMutableConfig().DockDirection = InDockDirection;
+	return Window;
 }
 
 UPerformanceWindow* UUIWindowFactory::CreatePerformanceWindow(EUIDockDirection InDockDirection)
@@ -26,20 +40,6 @@ UPerformanceWindow* UUIWindowFactory::CreatePerformanceWindow(EUIDockDirection I
 UInputStatusWindow* UUIWindowFactory::CreateInputStatusWindow(EUIDockDirection InDockDirection)
 {
 	auto* Window = new UInputStatusWindow();
-	Window->GetMutableConfig().DockDirection = InDockDirection;
-	return Window;
-}
-
-UControlPanelWindow* UUIWindowFactory::CreateActorInspectorWindow(EUIDockDirection InDockDirection)
-{
-	auto* Window = new UControlPanelWindow();
-	Window->GetMutableConfig().DockDirection = InDockDirection;
-	return Window;
-}
-
-ULevelManagerWindow* UUIWindowFactory::CreateLevelIOWindow(EUIDockDirection InDockDirection)
-{
-	auto* Window = new ULevelManagerWindow();
 	Window->GetMutableConfig().DockDirection = InDockDirection;
 	return Window;
 }
@@ -57,10 +57,10 @@ void UUIWindowFactory::CreateDefaultUILayout()
 
 	// 기본 레이아웃 생성
 	UIManager.RegisterUIWindow(CreateConsoleWindow(EUIDockDirection::Bottom));
-	UIManager.RegisterUIWindow(CreatePerformanceWindow(EUIDockDirection::Right));
-	UIManager.RegisterUIWindow(CreateInputStatusWindow(EUIDockDirection::Right));
-	UIManager.RegisterUIWindow(CreateActorInspectorWindow(EUIDockDirection::Left));
-	UIManager.RegisterUIWindow(CreateLevelIOWindow(EUIDockDirection::Center));
-	UIManager.RegisterUIWindow(CreateCameraPanelWindow(EUIDockDirection::Left));
+	UIManager.RegisterUIWindow(CreateControlPanelWindow(EUIDockDirection::Left));
+	UIManager.RegisterUIWindow(CreateOutlinerWindow(EUIDockDirection::Center));
+	// UIManager.RegisterUIWindow(CreatePerformanceWindow(EUIDockDirection::Right));
+	// UIManager.RegisterUIWindow(CreateInputStatusWindow(EUIDockDirection::Right));
+	// UIManager.RegisterUIWindow(CreateCameraPanelWindow(EUIDockDirection::Left));
 	UE_LOG("UIWindowFactory: Default UI Layout Created Successfully");
 }
