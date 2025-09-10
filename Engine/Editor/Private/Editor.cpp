@@ -248,8 +248,11 @@ FVector UEditor::GetGizmoDragScale(FRay& WorldRay)
 		FVector DragStartScale = Gizmo.GetDragStartActorScale();
 		if (ScaleFactor > MinScale)
 		{
-			if(Gizmo.GetSelectedActor()->IsUniformScale())
-				return DragStartScale + FVector(1,1,1)* (ScaleFactor - 1);
+			if (Gizmo.GetSelectedActor()->IsUniformScale())
+			{
+				float UniformValue = DragStartScale.Dot(GizmoAxis);
+				return FVector(UniformValue, UniformValue, UniformValue) + FVector(1, 1, 1) * (ScaleFactor - 1)* UniformValue;
+			}
 			else
 				return DragStartScale + GizmoAxis * (ScaleFactor - 1) * DragStartScale.Dot(GizmoAxis);
 		}
