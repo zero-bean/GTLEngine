@@ -64,3 +64,9 @@ using filesystem::create_directories;
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "Render/UI/Window/Public/ConsoleWindow.h"
+
+// DT Include Once
+#ifndef TIME_MANAGER
+#define TIME_MANAGER
+#include "Manager/Time/Public/TimeManager.h"
+#endif // _TIME_MANAGER

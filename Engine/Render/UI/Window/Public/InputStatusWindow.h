@@ -10,8 +10,8 @@ class UInputStatusWindow : public UUIWindow
 public:
 	UInputStatusWindow();
 	void Initialize() override;
-	void Render() override;
-	void Update() override;
+	// void Render() override;
+	// void Update() override;
 
 private:
 	// 키 입력 히스토리
