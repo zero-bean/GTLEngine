@@ -57,10 +57,10 @@ enum class EPrimitiveType : uint8_t
 	Cube,
 	Triangle,
 	Square,
-
+	Torus,
+	Arrow,
+	Ring,
 	Line,
-
-	Gizmo,
 
 	End = 0xFF
 };

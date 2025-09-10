@@ -3,11 +3,7 @@
 
 ACubeActor::ACubeActor()
 {
-	CubeComponent = GetCubeComponent();
+	CubeComponent = CreateDefaultSubobject<UCubeComponent>("CubeComponent");
+	CubeComponent->SetOwner(this);
 	SetRootComponent(CubeComponent);
-}
-
-UCubeComponent* ACubeActor::GetCubeComponent()
-{
-	return CreateDefaultSubobject<UCubeComponent>("CubeComponent");
 }

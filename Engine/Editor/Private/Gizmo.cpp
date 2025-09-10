@@ -7,231 +7,113 @@
 
 UGizmo::UGizmo()
 {
-
 	UResourceManager& ResourceManager = UResourceManager::GetInstance();
+	Primitives.resize(3);
+	GizmoColor.resize(3);
 
-	VerticesGizmo = ResourceManager.GetVertexData(EPrimitiveType::Gizmo);
-	Primitive.Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Gizmo);
-	Primitive.NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Gizmo);
-	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	Primitive.Scale = FVector(Scale, Scale, Scale);
-	Primitive.bShouldAlwaysVisible = true;
-	/*SetRootComponent(CreateDefaultSubobject<USceneComponent>("Root"));
+	/* *
+	* @brief 0: Right, 1: Up, 2: Forward
+	*/
+	GizmoColor[0] = FVector4(1, 0, 0, 1);
+	GizmoColor[1] = FVector4(0, 1, 0, 1);
+	GizmoColor[2] = FVector4(0, 0, 1, 1);
 
-	GizmoArrowR = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowRed");
-	GizmoArrowR->SetForward({ 1.f, 0.f, 0.f });
-	GizmoArrowR->SetColor({1.f, 0.f, 0.f, 1.f});
-	GizmoArrowR->SetRelativeRotation({0.f, 89.99f, 0.f});
-	GizmoArrowR->SetVisibility(false);
+	/* *
+	* @brief Translation Setting
+	*/
+	const float ScaleT = TranslateCollisionConfig.Scale;
+	Primitives[0].Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Arrow);
+	Primitives[0].NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Arrow);
+	Primitives[0].Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	Primitives[0].Scale = FVector(ScaleT, ScaleT, ScaleT);
+	Primitives[0].bShouldAlwaysVisible = true;
 
-	GizmoArrowG = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowGreen");
-	GizmoArrowG->SetForward({ 0.f, 1.f, 0.f });
-	GizmoArrowG->SetColor({0.f, 1.f, 0.f, 1.f});
-	GizmoArrowG->SetRelativeRotation({-89.99f, 0.f, 0.f});
-	GizmoArrowG->SetVisibility(false);
+	/* *
+	* @brief Rotation Setting
+	*/
+	Primitives[1].Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Ring);
+	Primitives[1].NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Ring);
+	Primitives[1].Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	Primitives[1].Scale = FVector(ScaleT, ScaleT, ScaleT);
+	Primitives[1].bShouldAlwaysVisible = true;
 
-	GizmoArrowB = CreateDefaultSubobject<UGizmoArrowComponent>("GizmoArrowBlue");
-	GizmoArrowB->SetForward({ 0.f, 0.f, 1.f });
-	GizmoArrowB->SetColor({0.f, 0.f, 1.f, 1.f});
-	GizmoArrowB->SetRelativeRotation({0.f, 0.f, 0.f});
-	GizmoArrowB->SetVisibility(false);
-
-	SetActorRotation({0.f,0.f,0.f});*/
+	/* *
+	* @brief Scale Setting
+	*/
+	Primitives[2].Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Arrow);
+	Primitives[2].NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Arrow);
+	Primitives[2].Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	Primitives[2].Scale = FVector(ScaleT, ScaleT, ScaleT);
+	Primitives[2].bShouldAlwaysVisible = true;
 }
 
 UGizmo::~UGizmo() = default;
 
-void UGizmo::RenderGizmo(AActor* Actor, UObjectPicker& ObjectPicker)
+void UGizmo::RenderGizmo(AActor* Actor)
 {
-
 	TargetActor = Actor;
+	if (!TargetActor) { return; }
+
 	URenderer& Renderer = URenderer::GetInstance();
-	if (TargetActor)
+	const int Mode = static_cast<int>(GizmoMode);
+	auto& P = Primitives[Mode];
+	P.Location = TargetActor->GetActorLocation();
+
+	// X (Right)
+	P.Rotation = { 0, 89.99f, 0 };
+	P.Color = ColorFor(EGizmoDirection::Right);
+	Renderer.RenderPrimitive(P);
+
+	// Y (Up)
+	P.Rotation = { -89.99f, 0, 0 };
+	P.Color = ColorFor(EGizmoDirection::Up);
+	Renderer.RenderPrimitive(P);
+
+	// Z (Forward)
+	P.Rotation = { 0, 0, 0 };
+	P.Color = ColorFor(EGizmoDirection::Forward);
+	Renderer.RenderPrimitive(P);
+}
+
+void UGizmo::ChangeGizmoMode()
+{
+	switch (GizmoMode)
 	{
-		FVector DistanceVector{ 0,0,0 };
-		if (bIsDragging)
-		{
-			DistanceVector = MoveGizmo(ObjectPicker); 
-			TargetActor->SetActorLocation(DistanceVector);
-		}
-		Primitive.Location = TargetActor->GetActorLocation();
-		Primitive.Rotation = { 0,89.99f,0 };
-		Primitive.Color = RightColor;
-		Renderer.RenderPrimitive(Primitive);
-
-		Primitive.Rotation = { -89.99f, 0, 0 };
-		Primitive.Color = UpColor;
-		Renderer.RenderPrimitive(Primitive);
-
-		Primitive.Rotation = { 0, 0, 0 };
-		Primitive.Color = ForwardColor;
-		Renderer.RenderPrimitive(Primitive);
+	case EGizmoMode::Translate:
+		GizmoMode = EGizmoMode::Rotate; break;
+	case EGizmoMode::Rotate:
+		GizmoMode = EGizmoMode::Scale; break;
+	case EGizmoMode::Scale:
+		GizmoMode = EGizmoMode::Translate; 
 	}
 }
 
-FVector UGizmo::MoveGizmo(UObjectPicker& ObjectPicker)
+void UGizmo::SetLocation(const FVector& Location)
 {
-	
-	FVector4 PointOnPlane;
-	FVector4 PlaneOrigin{ Primitive.Location.X,Primitive.Location.Y ,Primitive.Location.Z,1.0f };
-	switch (GizmoDirection)
-	{
-	case EGizmoDirection::Right:
-	{
-		if (ObjectPicker.IsCollideWithPlane(PlaneOrigin, FVector4{ 1,0,0,0 }, PointOnPlane))
-		{
-			FVector4 MouseDistance = PointOnPlane - DragStartMouseLocation;
-			return DragStartActorLocation + FVector(1, 0, 0) * MouseDistance.Dot3(FVector(1, 0, 0));
-		}
-		else
-			return Primitive.Location;
-	}
-	case EGizmoDirection::Forward:
-	{
-		if (ObjectPicker.IsCollideWithPlane(PlaneOrigin, FVector4{ 0,0,1,0 }, PointOnPlane))
-		{
-			FVector4 MouseDistance = PointOnPlane - DragStartMouseLocation;	//현재 오브젝트 위치부터 충돌점까지 거리벡터
-			return DragStartActorLocation + FVector(0, 0, 1) * MouseDistance.Dot3(FVector(0, 0, 1));
-		}
-		else
-			return Primitive.Location;
-
-	}
-	case EGizmoDirection::Up:
-		if (ObjectPicker.IsCollideWithPlane(PlaneOrigin, FVector4{ 0,1,0,0 }, PointOnPlane))
-		{
-			FVector4 MouseDistance = PointOnPlane - DragStartMouseLocation;	//현재 오브젝트 위치부터 충돌점까지 거리벡터
-			return DragStartActorLocation + FVector(0, 1, 0) * MouseDistance.Dot3(FVector(0, 1, 0));
-		}
-		else
-			return Primitive.Location;
-	}
-
-	return Primitive.Location;
-}
-void UGizmo::SetGizmoDirection(EGizmoDirection Direction)
-{
-	GizmoDirection = Direction;
+	TargetActor->SetActorLocation(Location);
 }
 
-void UGizmo::EndDrag()
+bool UGizmo::IsInRadius(float Radius)
 {
-	bIsDragging = false;
+	if (Radius >= RotateCollisionConfig.InnerRadius * RotateCollisionConfig.Scale && Radius <= RotateCollisionConfig.OuterRadius * RotateCollisionConfig.Scale)
+		return true;
+	return false;
 }
 
-bool UGizmo::IsDragging()
-{
-	return bIsDragging;
-}
-
-const EGizmoDirection UGizmo::GetGizmoDirection()
-{
-	return GizmoDirection;
-}
-
-const FVector& UGizmo::GetGizmoLocation()
-{
-	return Primitive.Location;
-}
-
-float UGizmo::GetGizmoRadius()
-{
-	return Radius*Scale;
-}
-
-float UGizmo::GetGizmoHeight()
-{
-	return Height*Scale;
-}
-
-void UGizmo::OnMouseRelease(EGizmoDirection DirectionReleased)
-{
-	switch (DirectionReleased)
-	{
-	case EGizmoDirection::Forward:
-		ForwardColor.Z = 1.0f; break;
-	case EGizmoDirection::Right:
-		RightColor.X = 1.0f; break;
-	case EGizmoDirection::Up:
-		UpColor.Y = 1.0f;
-	}
-}
-
-
-void UGizmo::OnMouseHovering()
-{
-	switch (GizmoDirection)
-	{
-	case EGizmoDirection::Forward:
-		ForwardColor.Z = HoveringFactor; break;
-	case EGizmoDirection::Right:
-		RightColor.X = HoveringFactor; break;
-	case EGizmoDirection::Up:
-		UpColor.Y = HoveringFactor;
-	}
-}
-
-void UGizmo::OnMouseClick(FVector4& CollisionPoint)
+void UGizmo::OnMouseDragStart(FVector& CollisionPoint)
 {
 	bIsDragging = true;
 	DragStartMouseLocation = CollisionPoint;
-	DragStartActorLocation = Primitive.Location;
+	DragStartActorLocation = Primitives[(int)GizmoMode].Location;
+	DragStartActorRotation = TargetActor->GetActorRotation();
 }
 
-//void AGizmo::SetTargetActor(AActor* actor)
-//{
-//	TargetActor = actor;
-//	if (TargetActor)
-//	{
-//		SetActorLocation(TargetActor->GetActorLocation());
-//	}
-//	for (auto& Component : GetOwnedComponents())
-//	{
-//		if (Component->GetComponentType() >= EComponentType::Primitive)
-//		{
-//			UPrimitiveComponent* PrimitiveComponent = static_cast<UPrimitiveComponent*>(Component);
-//			if (TargetActor)
-//			{
-//				PrimitiveComponent->SetVisibility(true);
-//			}
-//			else
-//			{
-//				PrimitiveComponent->SetVisibility(false);
-//			}
-//		}
-//	}
-//}
-//
-//void AGizmo::BeginPlay()
-//{
-//	AActor::BeginPlay();
-//}
-//
-//void AGizmo::Tick()
-//{
-//	AActor::Tick();
-//
-//	if (TargetActor)
-//	{
-//		SetActorLocation(TargetActor->GetActorLocation());
-//
-//		////Deprecated
-//		//GizmoArrowR->SetRelativeLocation(GetActorLocation());
-//		//GizmoArrowG->SetRelativeLocation(GetActorLocation());
-//		//GizmoArrowB->SetRelativeLocation(GetActorLocation());
-//	}
-//	if (bIsWorld)
-//	{
-//		SetActorRotation({0, 0, 0});
-//	}
-//	else
-//	{
-//		//... 로컬 기준 기즈모 정렬
-//
-//	}
-//}
-//
-//void AGizmo::EndPlay()
-//{
-//	AActor::EndPlay();
-//}
+// 하이라이트 색상은 렌더 시점에만 계산 (상태 오염 방지)
+FVector4 UGizmo::ColorFor(EGizmoDirection InAxis) const
+{
+	const int Idx = AxisIndex(InAxis);
+	const FVector4& BaseColor = GizmoColor[Idx];
+	const bool Highlight = (InAxis == GizmoDirection);
+	const float Paint = Highlight ? HoveringFactor : 1.0f;
+	return FVector4(BaseColor.X * Paint, BaseColor.Y * Paint, BaseColor.Z * Paint, BaseColor.W);
+}

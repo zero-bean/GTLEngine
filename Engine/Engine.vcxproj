@@ -52,24 +52,24 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros"/>
+  <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)Build\$(Configuration)\Intermediate\</IntDir>
@@ -163,6 +163,7 @@
     <ClInclude Include="Global\Memory.h" />
     <ClInclude Include="Global\Types.h" />
     <ClInclude Include="Global\Struct.h" />
+    <ClInclude Include="Global\Vector.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_impl_dx11.h" />
@@ -197,11 +198,6 @@
     <ClInclude Include="Render\Renderer\Public\Renderer.h" />
     <ClInclude Include="Render\UI\Factory\Public\UIWindowFactory.h" />
     <ClInclude Include="Render\UI\ImGui\Public\ImGuiHelper.h" />
-    <ClInclude Include="Render\UI\Widget\Public\CameraControlWidget.h" />
-    <ClInclude Include="Render\UI\Widget\Public\FPSWidget.h" />
-    <ClInclude Include="Render\UI\Widget\Public\PrimitiveSpawnWidget.h" />
-    <ClInclude Include="Render\UI\Widget\Public\SceneIOWidget.h" />
-    <ClInclude Include="Render\UI\Widget\Public\Widget.h" />
     <ClInclude Include="Render\UI\Window\Public\CameraPanelWindow.h" />
     <ClInclude Include="Render\UI\Window\Public\ConsoleWindow.h" />
     <ClInclude Include="Render\UI\Window\Public\ControlPanelWindow.h" />
@@ -270,13 +266,13 @@
     <ClCompile Include="Render\UI\Window\Private\UIWindow.cpp"/>
     <ClCompile Include="Utility\Private\LevelSerializer.cpp"/>
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
-    <Content Include="Core\Public\EngineStatics.h"/>
-    <Content Include="Render\AxisLine\Public\Axis.h"/>
-    <Content Include="Render\AxisLine\Public\AxisLine.h"/>
+    <Content Include="Core\Public\EngineStatics.h" />
+    <Content Include="Render\AxisLine\Public\Axis.h" />
+    <Content Include="Render\AxisLine\Public\AxisLine.h" />
     <Content Include="Asset\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -288,6 +284,6 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Engine.rc"/>
+    <ResourceCompile Include="Engine.rc" />
   </ItemGroup>
 </Project>
