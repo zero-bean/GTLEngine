@@ -82,7 +82,8 @@ void UUIWindow::RenderWindow()
 		}
 		else
 		{
-			bIsWindowOpen = true; // 닫기 취소
+			// 닫기 취소
+			bIsWindowOpen = true;
 		}
 	}
 

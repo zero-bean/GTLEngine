@@ -3,10 +3,14 @@
 
 #include "Manager/Time/Public/TimeManager.h"
 
+constexpr float REFRESH_INTERVAL = 0.1f;
+
 UFPSWidget::UFPSWidget()
 	: UWidget("FPS Widget")
 {
 }
+
+UFPSWidget::~UFPSWidget() = default;
 
 void UFPSWidget::Initialize()
 {
@@ -14,7 +18,8 @@ void UFPSWidget::Initialize()
 }
 
 void UFPSWidget::Update()
-{	CurrentDeltaTime = DT;
+{
+	CurrentDeltaTime = DT;
 	TotalGameTime += DT;
 
 	auto& TimeManager = UTimeManager::GetInstance();
@@ -37,15 +42,20 @@ void UFPSWidget::Update()
 	AverageFrameTime = Total / 60.0f;
 }
 
-
 void UFPSWidget::RenderWidget()
 {
-	// FPS 표시 (색상 포함)
-	ImVec4 FPSColor = GetFPSColor(CurrentFPS);
-	ImGui::TextColored(FPSColor, "FPS: %.1f", CurrentFPS);
+	// 러프한 일정 간격으로 FPS 및 Delta Time 정보 출력
+	if (TotalGameTime - PreviousTime > REFRESH_INTERVAL)
+	{
+		PrintFPS = CurrentFPS;
+		PrintDeltaTime = CurrentDeltaTime * 1000.0f;
+		PreviousTime = TotalGameTime;
+	}
 
-	// Delta Time 정보
-	ImGui::Text("Frame Time: %.2f ms", CurrentDeltaTime * 1000.0f);
+	ImVec4 FPSColor = GetFPSColor(CurrentFPS);
+	ImGui::TextColored(FPSColor, "FPS: %.1f (%.2f ms)", PrintFPS, PrintDeltaTime);
+
+	// Game Time 출력
 	ImGui::Text("Game Time: %.1f s", TotalGameTime);
 
 	ImGui::Separator();

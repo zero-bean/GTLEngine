@@ -9,6 +9,7 @@ class UWidget : public UObject
 {
 public:
 	// Essential Role
+	// 필요하지 않은 기능이 있을 수 있으나 구현 시 반드시 고려하라는 의미의 순수 가상 함수 처리
 	virtual void Initialize() = 0;
 	virtual void Update() = 0;
 	virtual void RenderWidget() = 0;

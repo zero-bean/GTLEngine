@@ -11,6 +11,8 @@
 #include "Level/Public/Level.h"
 #include "Manager/Time/Public/TimeManager.h"
 #include "Render/UI/Widget/Public/FPSWidget.h"
+#include "Render/UI/Widget/Public/PrimitiveSpawnWidget.h"
+#include "Render/UI/Widget/Public/SceneIOWidget.h"
 
 /**
  * @brief Control Panel 생성자
@@ -31,7 +33,9 @@ UControlPanelWindow::UControlPanelWindow()
 	Config.UpdateWindowFlags();
 	SetConfig(Config);
 
-	AddWidget(new UFPSWidget());
+	AddWidget(new UFPSWidget);
+	AddWidget(new UPrimitiveSpawnWidget);
+	AddWidget(new USceneIOWidget);
 }
 
 /**
