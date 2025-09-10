@@ -8,7 +8,6 @@
 UGizmo::UGizmo()
 {
 	UResourceManager& ResourceManager = UResourceManager::GetInstance();
-	GizmoVertices.resize(3);
 	Primitives.resize(3);
 	GizmoColor.resize(3);
 
@@ -23,7 +22,6 @@ UGizmo::UGizmo()
 	* @brief Translation Setting
 	*/
 	const float ScaleT = TranslateCollisionConfig.Scale;
-	GizmoVertices[0] = ResourceManager.GetVertexData(EPrimitiveType::Arrow);
 	Primitives[0].Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Arrow);
 	Primitives[0].NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Arrow);
 	Primitives[0].Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -33,7 +31,6 @@ UGizmo::UGizmo()
 	/* *
 	* @brief Rotation Setting
 	*/
-	GizmoVertices[1] = ResourceManager.GetVertexData(EPrimitiveType::Ring);
 	Primitives[1].Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Ring);
 	Primitives[1].NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Ring);
 	Primitives[1].Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -43,7 +40,6 @@ UGizmo::UGizmo()
 	/* *
 	* @brief Scale Setting
 	*/
-	GizmoVertices[2] = ResourceManager.GetVertexData(EPrimitiveType::Arrow);
 	Primitives[2].Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Arrow);
 	Primitives[2].NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Arrow);
 	Primitives[2].Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -79,9 +75,29 @@ void UGizmo::RenderGizmo(AActor* Actor)
 	Renderer.RenderPrimitive(P);
 }
 
+void UGizmo::ChangeGizmoMode()
+{
+	switch (GizmoMode)
+	{
+	case EGizmoMode::Translate:
+		GizmoMode = EGizmoMode::Rotate; break;
+	case EGizmoMode::Rotate:
+		GizmoMode = EGizmoMode::Scale; break;
+	case EGizmoMode::Scale:
+		GizmoMode = EGizmoMode::Translate; 
+	}
+}
+
 void UGizmo::SetLocation(const FVector& Location)
 {
 	TargetActor->SetActorLocation(Location);
+}
+
+bool UGizmo::IsInRadius(float Radius)
+{
+	if (Radius >= RotateCollisionConfig.InnerRadius * RotateCollisionConfig.Scale && Radius <= RotateCollisionConfig.OuterRadius * RotateCollisionConfig.Scale)
+		return true;
+	return false;
 }
 
 void UGizmo::OnMouseDragStart(FVector& CollisionPoint)
@@ -89,6 +105,7 @@ void UGizmo::OnMouseDragStart(FVector& CollisionPoint)
 	bIsDragging = true;
 	DragStartMouseLocation = CollisionPoint;
 	DragStartActorLocation = Primitives[(int)GizmoMode].Location;
+	DragStartActorRotation = TargetActor->GetActorRotation();
 }
 
 // 하이라이트 색상은 렌더 시점에만 계산 (상태 오염 방지)
