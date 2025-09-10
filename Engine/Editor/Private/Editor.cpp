@@ -141,7 +141,7 @@ FVector UEditor::GetGizmoDragLocation(FRay& WorldRay)
 	{
 	case EGizmoDirection::Right:
 	{
-		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, FVector{ 1,0,0 }, PointOnPlane))
+		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, Camera.CalculatePlaneNormal(FVector{1,0,0}), PointOnPlane))
 		{
 			FVector MouseDistance = PointOnPlane - Gizmo.GetDragStartMouseLocation();
 			return Gizmo.GetDragStartActorLocation() + FVector(1, 0, 0) * MouseDistance.Dot(FVector(1, 0, 0));
@@ -151,7 +151,7 @@ FVector UEditor::GetGizmoDragLocation(FRay& WorldRay)
 	}
 	case EGizmoDirection::Forward:
 	{
-		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, FVector{ 0,0,1 }, PointOnPlane))
+		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, Camera.CalculatePlaneNormal(FVector{ 0,0,1 }), PointOnPlane))
 		{
 			FVector MouseDistance = PointOnPlane - Gizmo.GetDragStartMouseLocation();	//현재 오브젝트 위치부터 충돌점까지 거리벡터
 			return Gizmo.GetDragStartActorLocation() + FVector(0, 0, 1) * MouseDistance.Dot(FVector(0, 0, 1));
@@ -161,7 +161,7 @@ FVector UEditor::GetGizmoDragLocation(FRay& WorldRay)
 
 	}
 	case EGizmoDirection::Up:
-		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, FVector{ 0,1,0 }, PointOnPlane))
+		if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, Camera.CalculatePlaneNormal(FVector{ 0,1,0 }), PointOnPlane))
 		{
 			FVector MouseDistance = PointOnPlane - Gizmo.GetDragStartMouseLocation();	//현재 오브젝트 위치부터 충돌점까지 거리벡터
 			return Gizmo.GetDragStartActorLocation() + FVector(0, 1, 0) * MouseDistance.Dot(FVector(0, 1, 0));

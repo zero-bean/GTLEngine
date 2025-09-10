@@ -219,10 +219,8 @@ bool UObjectPicker::IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex
 }
 
 
-bool UObjectPicker::IsRayCollideWithPlane(FRay& WorldRay, FVector PlanePoint, FVector Axis, FVector& PointOnPlane)
+bool UObjectPicker::IsRayCollideWithPlane(FRay& WorldRay, FVector PlanePoint, FVector Normal, FVector& PointOnPlane)
 {
-	FVector Normal = Camera.CalculatePlaneNormal(Axis);
-
 	FVector WorldRayOrigin{ WorldRay.Origin.X, WorldRay.Origin.Y ,WorldRay.Origin.Z };
 
 	if (abs(WorldRay.Direction.Dot3(Normal)) < 0.01f)
