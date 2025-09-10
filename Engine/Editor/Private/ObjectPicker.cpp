@@ -69,8 +69,8 @@ EGizmoDirection UObjectPicker::PickGizmo( const FRay& WorldRay, UGizmo& Gizmo, F
 	FVector4 GizmoDistanceVector = WorldRay.Origin - GizmoLocation;
 	bool bIsCollide = false;
 
-	float GizmoRadius = Gizmo.GetGizmoRadius();
-	float GizmoHeight = Gizmo.GetGizmoHeight();
+	float GizmoRadius = Gizmo.GetTranslateRadius();
+	float GizmoHeight = Gizmo.GetTranslateHeight();
 	float A, B, C; //Ax^2 + Bx + C의 ABC
 	float X; //해
 	float Det; //판별식
