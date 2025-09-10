@@ -156,6 +156,7 @@
     <ClInclude Include="Editor\Public\Grid.h"/>
     <ClInclude Include="Editor\Public\ObjectPicker.h"/>
     <ClInclude Include="Global\Constant.h"/>
+    <ClInclude Include="Global\CoreTypes.h" />
     <ClInclude Include="Global\Enum.h"/>
     <ClInclude Include="Global\Function.h"/>
     <ClInclude Include="Global\Macro.h"/>
@@ -201,6 +202,7 @@
     <ClInclude Include="Render\UI\Widget\Public\CameraControlWidget.h" />
     <ClInclude Include="Render\UI\Widget\Public\ConsoleWidget.h" />
     <ClInclude Include="Render\UI\Widget\Public\FPSWidget.h" />
+    <ClInclude Include="Render\UI\Widget\Public\InputInformationWidget.h" />
     <ClInclude Include="Render\UI\Widget\Public\PrimitiveSpawnWidget.h" />
     <ClInclude Include="Render\UI\Widget\Public\SceneIOWidget.h" />
     <ClInclude Include="Render\UI\Widget\Public\TargetActorTransformWidget.h" />
@@ -260,6 +262,7 @@
     <ClCompile Include="Render\UI\Widget\Private\CameraControlWIdget.cpp"/>
     <ClCompile Include="Render\UI\Widget\Private\ConsoleWidget.cpp" />
     <ClCompile Include="Render\UI\Widget\Private\FPSWidget.cpp"/>
+    <ClCompile Include="Render\UI\Widget\Private\InputInformationWidget.cpp" />
     <ClCompile Include="Render\UI\Widget\Private\PrimitiveSpawnWidget.cpp"/>
     <ClCompile Include="Render\UI\Widget\Private\SceneIOWidget.cpp"/>
     <ClCompile Include="Render\UI\Widget\Private\TargetActorTransformWidget.cpp" />
