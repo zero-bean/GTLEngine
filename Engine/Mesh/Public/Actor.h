@@ -16,6 +16,9 @@ public:
 	void SetActorLocation(const FVector& InLocation) const;
 	void SetActorRotation(const FVector& InRotation) const;
 	void SetActorScale3D(const FVector& InScale) const;
+	void SetUniformScale(bool IsUniform);
+
+	bool IsUniformScale() const;
 
 	template <typename T>
 	T* CreateDefaultSubobject(const FString& InName);

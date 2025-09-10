@@ -56,6 +56,23 @@ void AActor::SetActorScale3D(const FVector& InScale) const
 	}
 }
 
+void AActor::SetUniformScale(bool IsUniform)
+{
+	if (RootComponent)
+	{
+		RootComponent->SetUniformScale(IsUniform);
+	}
+}
+
+bool AActor::IsUniformScale() const
+{
+	if (RootComponent)
+	{
+		return RootComponent->IsUniformScale();
+	}
+	return false;
+}
+
 const FVector& AActor::GetActorLocation() const
 {
 	assert(RootComponent);

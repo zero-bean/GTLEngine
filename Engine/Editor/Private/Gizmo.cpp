@@ -65,18 +65,24 @@ void UGizmo::RenderGizmo(AActor* Actor)
 	auto& P = Primitives[Mode];
 	P.Location = TargetActor->GetActorLocation();
 
+	FVector LocalRotation{ 0,0,0 };
+	//로컬 기즈모. 쿼터니언 구현후 사용
+	/*if (!bIsWorld && TargetActor)
+	{
+		LocalRotation = TargetActor->GetActorRotation();
+	}*/
 	// X (Right)
-	P.Rotation = { 0, 89.99f, 0 };
+	P.Rotation = FVector{0,89.99f,0} + LocalRotation;
 	P.Color = ColorFor(EGizmoDirection::Right);
 	Renderer.RenderPrimitive(P, RenderState);
 
 	// Y (Up)
-	P.Rotation = { -89.99f, 0, 0 };
+	P.Rotation = FVector{ -89.99f,0,0 } + LocalRotation;
 	P.Color = ColorFor(EGizmoDirection::Up);
 	Renderer.RenderPrimitive(P, RenderState);
 
 	// Z (Forward)
-	P.Rotation = { 0, 0, 0 };
+	P.Rotation = FVector{ 0, 0, 0 } + LocalRotation;
 	P.Color = ColorFor(EGizmoDirection::Forward);
 	Renderer.RenderPrimitive(P, RenderState);
 }

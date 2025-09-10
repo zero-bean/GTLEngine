@@ -74,8 +74,25 @@ void USceneComponent::SetRelativeRotation(const FVector& Rotation)
 }
 void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 {
-	RelativeScale3D = Scale;
+	FVector ActualScale = Scale;
+	if (ActualScale.X < MinScale)
+		ActualScale.X = MinScale;
+	if (ActualScale.Y < MinScale)
+		ActualScale.Y = MinScale;
+	if (ActualScale.Z < MinScale)
+		ActualScale.Z = MinScale;
+	RelativeScale3D = ActualScale;
 	MarkAsDirty();
+}
+
+void USceneComponent::SetUniformScale(bool bIsUniform)
+{
+	bIsUniformScale = bIsUniform;
+}
+
+bool USceneComponent::IsUniformScale() const
+{
+	return bIsUniformScale;
 }
 
 const FVector& USceneComponent::GetRelativeLocation() const
