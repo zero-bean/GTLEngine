@@ -190,7 +190,7 @@ bool ULevel::DestroyActor(AActor* InActor)
 	// Remove
 	delete InActor;
 
-	UE_LOG("[Level] Actor Destroyed Successfully");
+	UE_LOG("Level: Actor Destroyed Successfully");
 	return true;
 }
 
@@ -201,7 +201,7 @@ void ULevel::MarkActorForDeletion(AActor* InActor)
 {
 	if (!InActor)
 	{
-		UE_LOG("[Level] MarkActorForDeletion: InActor Is Null");
+		UE_LOG("Level: MarkActorForDeletion: InActor Is Null");
 		return;
 	}
 
@@ -210,14 +210,14 @@ void ULevel::MarkActorForDeletion(AActor* InActor)
 	{
 		if (PendingActor == InActor)
 		{
-			UE_LOG("[Level] Actor Already Marked For Deletion");
+			UE_LOG("Level: Actor Already Marked For Deletion");
 			return;
 		}
 	}
 
 	// 삭제 대기 리스트에 추가
 	ActorsToDelete.push_back(InActor);
-	UE_LOG("[Level] Actor Marked For Deletion In Next Tick: %p", InActor);
+	UE_LOG("Level: Actor Marked For Deletion In Next Tick: %p", InActor);
 
 	// 선택 해제는 바로 처리
 	if (SelectedActor == InActor)

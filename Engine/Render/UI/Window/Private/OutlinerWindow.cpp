@@ -1,15 +1,16 @@
 #include "pch.h"
 #include "Render/UI/Window/Public/OutlinerWindow.h"
 
+#include "Render/UI/Widget/Public/ActorTerminationWidget.h"
 #include "Render/UI/Widget/Public/TargetActorTransformWidget.h"
 
 UOutlinerWindow::UOutlinerWindow()
 {
 	FUIWindowConfig Config;
 	Config.WindowTitle = "Outliner Window";
-	Config.DefaultSize = ImVec2(350, 160);
+	Config.DefaultSize = ImVec2(350, 220);
 	Config.DefaultPosition = ImVec2(0, 700);
-	Config.MinSize = ImVec2(350, 160);
+	Config.MinSize = ImVec2(350, 220);
 	Config.bResizable = true;
 	Config.bMovable = true;
 	Config.bCollapsible = true;
@@ -19,6 +20,7 @@ UOutlinerWindow::UOutlinerWindow()
 	SetConfig(Config);
 
 	AddWidget(new UTargetActorTransformWidget);
+	AddWidget(new UActorTerminationWidget);
 }
 
 void UOutlinerWindow::Initialize()

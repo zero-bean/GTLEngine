@@ -74,8 +74,10 @@ void UTargetActorTransformWidget::RenderWidget()
 	}
 	else
 	{
-		ImGui::TextUnformatted("No Actor Seleted");
+		ImGui::TextUnformatted("Select Actor For Indicating");
 	}
+
+	ImGui::Separator();
 }
 
 /**
