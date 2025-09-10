@@ -40,8 +40,8 @@ UGizmo::UGizmo()
 	/* *
 	* @brief Scale Setting
 	*/
-	Primitives[2].Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::Arrow);
-	Primitives[2].NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::Arrow);
+	Primitives[2].Vertexbuffer = ResourceManager.GetVertexbuffer(EPrimitiveType::CubeArrow);
+	Primitives[2].NumVertices = ResourceManager.GetNumVertices(EPrimitiveType::CubeArrow);
 	Primitives[2].Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	Primitives[2].Scale = FVector(ScaleT, ScaleT, ScaleT);
 	Primitives[2].bShouldAlwaysVisible = true;
@@ -49,8 +49,8 @@ UGizmo::UGizmo()
 	/* *
 	* @brief Render State
 	*/
-	RenderState.CullMode = ECullMode::None;
 	RenderState.FillMode = EFillMode::Solid;
+	RenderState.CullMode = ECullMode::None;
 }
 
 UGizmo::~UGizmo() = default;
@@ -62,7 +62,6 @@ void UGizmo::RenderGizmo(AActor* Actor)
 
 	URenderer& Renderer = URenderer::GetInstance();
 	const int Mode = static_cast<int>(GizmoMode);
-	const int CullMode = GizmoMode == EGizmoMode::Rotate ? 1 : 1;
 	auto& P = Primitives[Mode];
 	P.Location = TargetActor->GetActorLocation();
 
@@ -113,6 +112,7 @@ void UGizmo::OnMouseDragStart(FVector& CollisionPoint)
 	DragStartMouseLocation = CollisionPoint;
 	DragStartActorLocation = Primitives[(int)GizmoMode].Location;
 	DragStartActorRotation = TargetActor->GetActorRotation();
+	DragStartActorScale = TargetActor->GetActorScale3D();
 }
 
 // 하이라이트 색상은 렌더 시점에만 계산 (상태 오염 방지)
@@ -120,7 +120,12 @@ FVector4 UGizmo::ColorFor(EGizmoDirection InAxis) const
 {
 	const int Idx = AxisIndex(InAxis);
 	const FVector4& BaseColor = GizmoColor[Idx];
-	const bool Highlight = (InAxis == GizmoDirection);
-	const float Paint = Highlight ? HoveringFactor : 1.0f;
-	return FVector4(BaseColor.X * Paint, BaseColor.Y * Paint, BaseColor.Z * Paint, BaseColor.W);
+	const bool bIsHighlight = (InAxis == GizmoDirection);
+
+	const FVector4 Paint = bIsHighlight ? FVector4(1,1,0,1) : BaseColor;
+
+	if (bIsDragging)
+		return BaseColor;
+	else
+		return Paint;
 }

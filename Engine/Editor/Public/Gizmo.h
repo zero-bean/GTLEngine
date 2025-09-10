@@ -56,17 +56,23 @@ public:
 	void SetLocation(const FVector& Location);
 	void SetGizmoDirection(EGizmoDirection Direction) { GizmoDirection = Direction; }
 	void SetActorRotation(const FVector& Rotation) { TargetActor->SetActorRotation(Rotation); }
+	void SetActorScale(const FVector& Scale) { TargetActor->SetActorScale3D(Scale); }
 
 	/* *
 	* @brief Getter
 	*/
-	const EGizmoDirection GetGizmoDirection() const { return GizmoDirection; }
+	const EGizmoDirection GetGizmoDirection() { return GizmoDirection; }
 	const FVector& GetGizmoLocation() { return Primitives[(int)GizmoMode].Location; }
 	const FVector& GetActorRotation() { return TargetActor->GetActorRotation(); }
+	const FVector& GetActorScale() { return TargetActor->GetActorScale3D(); }
 	const FVector& GetDragStartMouseLocation() { return DragStartMouseLocation; }
 	const FVector& GetDragStartActorLocation() { return DragStartActorLocation; }
 	const FVector& GetDragStartActorRotation() { return DragStartActorRotation; }
+	const FVector& GetDragStartActorScale() { return DragStartActorScale; }
 	const EGizmoMode GetGizmoMode() { return GizmoMode; }
+	const FVector GetGizmoAxis() {
+		FVector Axis[3]{ {1,0,0},{0,1,0},{0,0,1} }; return Axis[AxisIndex(GizmoDirection)];
+	}
 
 	float GetTranslateRadius() const { return TranslateCollisionConfig.Radius * TranslateCollisionConfig.Scale; }
 	float GetTranslateHeight() const { return TranslateCollisionConfig.Height * TranslateCollisionConfig.Scale; }
@@ -107,13 +113,15 @@ private:
 	FVector DragStartActorLocation;
 	FVector DragStartMouseLocation;
 	FVector DragStartActorRotation;
+	FVector DragStartActorScale;
 
 	FGizmoTranslationCollisionConfig TranslateCollisionConfig;
 	FGizmoRotateCollisionConfig RotateCollisionConfig;
 	float HoveringFactor = 0.8f;
 	bool bIsDragging = false;
+	//bool bIsWorld = true;
 
-	FRenderState RenderState = {};
+	FRenderState RenderState;
 
 	EGizmoDirection GizmoDirection = EGizmoDirection::None;
 	EGizmoMode      GizmoMode = EGizmoMode::Translate;
