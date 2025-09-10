@@ -275,7 +275,7 @@ static inline D3D11_CULL_MODE ToD3D11(ECullMode InCull)
 	case ECullMode::None:
 		return D3D11_CULL_NONE;
 	default:
-		return D3D11_CULL_BACK; 
+		return D3D11_CULL_BACK;
 	}
 }
 
@@ -561,6 +561,7 @@ ID3D11RasterizerState* URenderer::GetRasterizerState(const FRenderState& InRende
 	D3D11_RASTERIZER_DESC RasterizerDesc = {};
 	RasterizerDesc.FillMode = FillMode;
 	RasterizerDesc.CullMode = CillMode;
+	RasterizerDesc.DepthClipEnable = TRUE; // ✅ 근/원거리 평면 클리핑 활성화 (핵심)
 
 	HRESULT Hr = GetDevice()->CreateRasterizerState(&RasterizerDesc, &RasterizerState);
 
