@@ -47,7 +47,7 @@ class UGizmo : public UObject
 public:
 	UGizmo();
 	~UGizmo() override;
-	void RenderGizmo(AActor* Actor);
+	void RenderGizmo(AActor* Actor, const FVector& CameraLocation);
 	void ChangeGizmoMode();
 
 	/* *
@@ -127,6 +127,8 @@ private:
 	FGizmoTranslationCollisionConfig TranslateCollisionConfig;
 	FGizmoRotateCollisionConfig RotateCollisionConfig;
 	float HoveringFactor = 0.8f;
+	const float ScaleFactor = 0.2f;
+	const float MinScaleFactor = 7.0f;
 	bool bIsDragging = false;
 
 	//로컬 기즈모. 쿼터니언 구현 후 사용

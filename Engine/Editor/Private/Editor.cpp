@@ -41,7 +41,7 @@ void UEditor::Update()
 }
 void UEditor::RenderEditor()
 {
-	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor());
+	Gizmo.RenderGizmo(ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor(), Camera.GetLocation());
 	Grid.RenderGrid();
 	Axis.Render();
 }
