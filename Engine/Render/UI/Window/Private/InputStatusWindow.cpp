@@ -30,12 +30,12 @@ UInputStatusWindow::UInputStatusWindow()
  */
 void UInputStatusWindow::Initialize()
 {
-	UE_LOG("InputStatusWindow Initialized");
-
 	RecentKeyPresses.clear();
 	KeyPressCount.clear();
 	LastMousePosition = FVector(0, 0, 0);
 	MouseDelta = FVector(0, 0, 0);
+
+	UE_LOG("InputStatusWindow: Successfully Initialized");
 }
 
 /**

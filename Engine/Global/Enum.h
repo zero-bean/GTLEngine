@@ -63,3 +63,28 @@ enum class EKeyStatus : uint8
 
 	End
 };
+
+/**
+ * @brief 로그 타입 열거형
+ * 콘솔 윈도우에서 로그의 종류와 색상을 결정하는데 사용
+ */
+enum class ELogType : uint8
+{
+	// 기본 로그 타입
+	Info,        // 일반 정보 (흰색)
+	Warning,     // 경고 (노란색)
+	Error,       // 에러 (빨간색)
+	Success,     // 성공 (초록색)
+	
+	// 시스템 로그 타입
+	System,      // 시스템 메시지 (회색)
+	Debug,       // 디버그 메시지 (파란색)
+	
+	// 사용자 정의 로그 타입
+	UELog,       // UE_LOG 명령어 (초록색)
+	Terminal,    // 터미널 명령어 (하늘색)
+	TerminalError, // 터미널 에러 (빨간색)
+	Command,     // 사용자 입력 명령어 (주황색)
+	
+	End
+};

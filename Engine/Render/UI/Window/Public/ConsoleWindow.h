@@ -5,6 +5,11 @@ using std::streambuf;
 
 class UConsoleWindow;
 
+struct FLogEntry {
+	ELogType Type;
+	FString Message;
+};
+
 /**
  * @brief Custom Stream Buffer
  * Redirects Output to ConsoleWindow
@@ -43,6 +48,7 @@ public:
 	void Cleanup() override;
 
 	void AddLog(const char* fmt, ...);
+	void AddLog(ELogType InType, const char* fmt, ...);
 	void ClearLog();
 
 	void ProcessCommand(const char* InCommand);
@@ -51,7 +57,13 @@ public:
 	void InitializeSystemRedirect();
 	void CleanupSystemRedirect();
 	void AddSystemLog(const char* InText, bool bInIsError = false);
+	void AddSystemLog(ELogType InType, const char* InText);
 
+private:
+	// Helper Functions
+	static ImVec4 GetColorByLogType(ELogType InType);
+
+public:
 	// Special Member Function
 	explicit UConsoleWindow(const FUIWindowConfig& InConfig = FUIWindowConfig());
 	~UConsoleWindow() override;
@@ -68,7 +80,7 @@ private:
 	int HistoryPosition;
 
 	// Log Output
-	TArray<FString> LogItems;
+	TArray<FLogEntry> LogItems;
 	bool bIsAutoScroll;
 	bool bIsScrollToBottom;
 

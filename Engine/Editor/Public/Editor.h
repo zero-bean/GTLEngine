@@ -17,8 +17,9 @@ public:
 	void RenderEditor();
 
 private:
-	UObjectPicker ObjectPicker;
 	UCamera Camera;
+	UObjectPicker ObjectPicker;
+	
 	UGizmo Gizmo;
 	UAxis Axis;
 	UGrid Grid;

@@ -34,7 +34,7 @@ UControlPanelWindow::UControlPanelWindow()
  */
 void UControlPanelWindow::Initialize()
 {
-	UE_LOG("[ControlPanelWindow] Initialized");
+	UE_LOG("ControlPanelWindow: Initialized");
 
 	SelectedActor = nullptr;
 	EditLocation = FVector(0, 0, 0);
@@ -348,11 +348,11 @@ void UControlPanelWindow::SpawnActors() const
 
 	if (!CurrentLevel)
 	{
-		UE_LOG("[ControlPanel] No Current Level To Spawn Actors");
+		UE_LOG("ControlPanel: No Current Level To Spawn Actors");
 		return;
 	}
 
-	UE_LOG("[ControlPanel] Spawning %d Actors Of Type %s", NumberOfSpawn,
+	UE_LOG("ControlPanel: Spawning %d Actors Of Type %s", NumberOfSpawn,
 	       (SelectedPrimitiveType == 0 ? "Cube" : "Sphere"));
 
 	// 지정된 개수만큼 액터 생성
@@ -391,11 +391,11 @@ void UControlPanelWindow::SpawnActors() const
 			float RandomScale = 0.5f + (static_cast<float>(rand()) / RAND_MAX) * 1.5f;
 			NewActor->SetActorScale3D(FVector(RandomScale, RandomScale, RandomScale));
 
-			UE_LOG("[ControlPanel] Spawned Actor At (%.2f, %.2f, %.2f)", RandomX, RandomY, RandomZ);
+			UE_LOG("ControlPanel: Spawned Actor At (%.2f, %.2f, %.2f)", RandomX, RandomY, RandomZ);
 		}
 		else
 		{
-			UE_LOG("[ControlPanel] Failed To Spawn Actor %d", i);
+			UE_LOG("ControlPanel: Failed To Spawn Actor %d", i);
 		}
 	}
 }
@@ -407,7 +407,7 @@ void UControlPanelWindow::DeleteSelectedActor()
 {
 	if (!HasValidActor())
 	{
-		UE_LOG("[ControlPanel] No Actor Selected For Deletion");
+		UE_LOG("ControlPanel: No Actor Selected For Deletion");
 		return;
 	}
 
@@ -416,16 +416,16 @@ void UControlPanelWindow::DeleteSelectedActor()
 
 	if (!CurrentLevel)
 	{
-		UE_LOG("[ControlPanel] No Current Level To Delete Actor From");
+		UE_LOG("ControlPanel: No Current Level To Delete Actor From");
 		return;
 	}
 
-	UE_LOG("[ControlPanel] Marking Selected Actor For Deletion: %p", SelectedActor);
+	UE_LOG("ControlPanel: Marking Selected Actor For Deletion: %p", SelectedActor);
 
 	// 지연 삭제를 사용하여 안전하게 다음 틱에서 삭제
 	CurrentLevel->MarkActorForDeletion(SelectedActor);
 
 	// MarkActorForDeletion에서 선택 해제도 처리하므로 여기에서는 단순히 nullptr로 설정
 	SelectedActor = nullptr;
-	UE_LOG("[ControlPanel] Actor Marked For Deletion In Next Tick");
+	UE_LOG("ControlPanel: Actor Marked For Deletion In Next Tick");
 }

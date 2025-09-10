@@ -71,9 +71,10 @@ streamsize ConsoleStreamBuffer::xsputn(const char* InString, streamsize InCount)
 
 void UConsoleWindow::Initialize()
 {
-	AddLog("Game Console Initialized - Logging System Ready");
+	AddLog(ELogType::Success, "ConsoleWindow: Game Console 초기화 성공");
+	AddLog(ELogType::System, "ConsoleWindow: Logging System Ready");
 
-	// Initialize system output redirection
+	// Initialize System Output Redirection
 	InitializeSystemRedirect();
 }
 
@@ -95,51 +96,20 @@ void UConsoleWindow::Render()
 	                      ImGuiWindowFlags_HorizontalScrollbar))
 	{
 		// 로그 리스트 출력
-		for (const auto& Log : LogItems)
+		for (const auto& LogEntry : LogItems)
 		{
-			// 색상 지정
-			ImVec4 Color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // 기본 하양
-			bool HasColor = false;
+			// ELogType을 기반으로 색상 결정
+			ImVec4 Color = GetColorByLogType(LogEntry.Type);
+			bool bShouldApplyColor = (LogEntry.Type != ELogType::Info);
 
-			if (Log.find("[error]") != FString::npos || Log.find("[ERROR]") != FString::npos)
-			{
-				Color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f); // Red
-				HasColor = true;
-			}
-			else if (Log.find("[warning]") != FString::npos || Log.find("[WARNING]") != FString::npos)
-			{
-				Color = ImVec4(1.0f, 1.0f, 0.4f, 1.0f); // Yellow
-				HasColor = true;
-			}
-			else if (Log.find("[UE_LOG]") != FString::npos)
-			{
-				Color = ImVec4(0.4f, 1.0f, 0.4f, 1.0f); // Green
-				HasColor = true;
-			}
-			else if (Log.find("[Terminal]") != FString::npos)
-			{
-				Color = ImVec4(0.6f, 0.8f, 1.0f, 1.0f); // Light Blue
-				HasColor = true;
-			}
-			else if (Log.find("[Terminal Error]") != FString::npos)
-			{
-				Color = ImVec4(1.0f, 0.3f, 0.3f, 1.0f); // Red
-				HasColor = true;
-			}
-			else if (Log.find("# ") == 0)
-			{
-				Color = ImVec4(1.0f, 0.8f, 0.6f, 1.0f); // Orange
-				HasColor = true;
-			}
-
-			if (HasColor)
+			if (bShouldApplyColor)
 			{
 				ImGui::PushStyleColor(ImGuiCol_Text, Color);
 			}
 
-			ImGui::TextUnformatted(Log.c_str());
+			ImGui::TextUnformatted(LogEntry.Message.c_str());
 
-			if (HasColor)
+			if (bShouldApplyColor)
 			{
 				ImGui::PopStyleColor();
 			}
@@ -195,6 +165,39 @@ void UConsoleWindow::ClearLog()
 	LogItems.clear();
 }
 
+/**
+ * @brief ELogType에 따른 색상 반환
+ */
+ImVec4 UConsoleWindow::GetColorByLogType(ELogType InType)
+{
+	switch (InType)
+	{
+	case ELogType::Info:
+		return {1.0f, 1.0f, 1.0f, 1.0f}; // 흰색
+	case ELogType::Warning:
+		return {1.0f, 1.0f, 0.4f, 1.0f}; // 노란색
+	case ELogType::Error:
+	case ELogType::TerminalError:
+		return {1.0f, 0.4f, 0.4f, 1.0f}; // 빨간색
+	case ELogType::Success:
+	case ELogType::UELog:
+		return {0.4f, 1.0f, 0.4f, 1.0f}; // 초록색
+	case ELogType::System:
+		return {0.7f, 0.7f, 0.7f, 1.0f}; // 회색
+	case ELogType::Debug:
+		return {0.4f, 0.6f, 1.0f, 1.0f}; // 파란색
+	case ELogType::Terminal:
+		return {0.6f, 0.8f, 1.0f, 1.0f}; // 하늘색
+	case ELogType::Command:
+		return {1.0f, 0.8f, 0.6f, 1.0f}; // 주황색
+	default:
+		return {1.0f, 1.0f, 1.0f, 1.0f}; // 기본 흰색
+	}
+}
+
+/**
+ * @brief 기본 로그 추가 함수
+ */
 void UConsoleWindow::AddLog(const char* fmt, ...)
 {
 	char buf[1024];
@@ -208,7 +211,37 @@ void UConsoleWindow::AddLog(const char* fmt, ...)
 
 	va_end(args);
 
-	LogItems.push_back(FString(buf));
+	// 기본 Info 타입으로 로그 추가
+	FLogEntry LogEntry;
+	LogEntry.Type = ELogType::Info;
+	LogEntry.Message = FString(buf);
+	LogItems.push_back(LogEntry);
+
+	// Auto Scroll
+	bIsScrollToBottom = true;
+}
+
+/**
+ * @brief 타입 특정 로그 추가 함수
+ */
+void UConsoleWindow::AddLog(ELogType InType, const char* fmt, ...)
+{
+	char buf[1024];
+
+	// Variable Argument List 접근
+	va_list args;
+	va_start(args, fmt);
+
+	(void)vsnprintf(buf, sizeof(buf), fmt, args);
+	buf[sizeof(buf) - 1] = 0;
+
+	va_end(args);
+
+	// 지정된 타입으로 로그 추가
+	FLogEntry LogEntry;
+	LogEntry.Type = InType;
+	LogEntry.Message = FString(buf);
+	LogItems.push_back(LogEntry);
 
 	// Auto Scroll
 	bIsScrollToBottom = true;
@@ -217,198 +250,154 @@ void UConsoleWindow::AddLog(const char* fmt, ...)
 void UConsoleWindow::ProcessCommand(const char* InCommand)
 {
 	if (!InCommand || strlen(InCommand) == 0)
+	{
 		return;
-
-	// 명령어를 로그에 표시
-	// AddLog("# %s", InCommand);
+	}
 
 	// 명령 히스토리에 추가
 	CommandHistory.push_back(FString(InCommand));
 	HistoryPosition = -1;
 
-	// UE_LOG( 구문 처리 먼저 확인
-	if (strncmp(InCommand, "UE_LOG(", 7) == 0)
+	FString Input = InCommand;
+
+	// UE_LOG( 우선 탐색
+	size_t StartPosition = Input.find("UE_LOG(");
+	if (StartPosition != FString::npos && StartPosition == 0)
 	{
-		// UE_LOG("내용", 인수...) 형태 파싱
-		FString Input = InCommand;
+		StartPosition += 7; // "UE_LOG(" 길이
+		size_t EndPosition = Input.rfind(')');
 
-		// UE_LOG( 찾기
-		size_t StartPosition = Input.find("UE_LOG(");
-		if (StartPosition != FString::npos)
+		if (EndPosition != FString::npos && EndPosition > StartPosition)
 		{
-			StartPosition += 7; // "UE_LOG(" 길이
-			size_t EndPosition = Input.rfind(')');
+			FString Arguments = Input.substr(StartPosition, EndPosition - StartPosition);
 
-			if (EndPosition != FString::npos && EndPosition > StartPosition)
+			// 첫 번째 인수는 문자열 (" 로 시작)
+			if (!Arguments.empty() && Arguments[0] == '"')
 			{
-				FString Arguments = Input.substr(StartPosition, EndPosition - StartPosition);
-
-				// 첫 번째 인수는 문자열 (" 로 시작)
-				if (!Arguments.empty() && Arguments[0] == '"')
+				size_t FirstQuoteEnd = Arguments.find('"', 1);
+				if (FirstQuoteEnd != FString::npos)
 				{
-					size_t FirstQuoteEnd = Arguments.find('"', 1);
-					if (FirstQuoteEnd != FString::npos)
+					FString FormatString = Arguments.substr(1, FirstQuoteEnd - 1);
+
+					// 뒤쪽에 있는 인수들 처리
+					FString RemainingArguments;
+					if (FirstQuoteEnd + 1 < Arguments.length())
 					{
-						FString FormatString = Arguments.substr(1, FirstQuoteEnd - 1);
+						RemainingArguments = Arguments.substr(FirstQuoteEnd + 1);
+						// 앞의 콤마와 공백 제거
+						while (!RemainingArguments.empty() &&
+							(RemainingArguments[0] == ',' || RemainingArguments[0] == ' '))
+							RemainingArguments = RemainingArguments.substr(1);
+					}
 
-						// 뒤쪽에 있는 인수들 처리
-						FString RemainingArguments;
-						if (FirstQuoteEnd + 1 < Arguments.length())
+					// printf 스타일 처리
+					if (!RemainingArguments.empty())
+					{
+						if (FormatString.find("%d") != FString::npos)
 						{
-							RemainingArguments = Arguments.substr(FirstQuoteEnd + 1);
-							// 앞의 콤마와 공백 제거
-							while (!RemainingArguments.empty() &&
-								(RemainingArguments[0] == ',' || RemainingArguments[0] == ' '))
-								RemainingArguments = RemainingArguments.substr(1);
-						}
-
-						// printf 스타일 처리
-						if (!RemainingArguments.empty())
-						{
-							if (FormatString.find("%d") != FString::npos)
+							try
 							{
-								try
-								{
-									int Value = std::stoi(RemainingArguments);
-									char Buffer[512];
-									(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(), Value);
-									// Prevent Recursive
-									LogItems.push_back(u8"[UE_LOG] " + FString(Buffer));
-									bIsScrollToBottom = true;
-								}
-								catch (...)
-								{
-									LogItems.push_back(u8"[UE_LOG] Failed To Parse Integer: " + RemainingArguments);
-									bIsScrollToBottom = true;
-								}
-							}
-							else if (FormatString.find("%s") != FString::npos)
-							{
+								int Value = std::stoi(RemainingArguments);
 								char Buffer[512];
-								(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(),
-								               RemainingArguments.c_str());
-								LogItems.push_back(u8"[UE_LOG] " + FString(Buffer));
+								(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(), Value);
+								// Prevent Recursive
+								FLogEntry LogEntry;
+								LogEntry.Type = ELogType::UELog;
+								LogEntry.Message = FString(Buffer);
+								LogItems.push_back(LogEntry);
 								bIsScrollToBottom = true;
 							}
-							else
+							catch (...)
 							{
-								LogItems.push_back(u8"[UE_LOG] " + FormatString + " " + RemainingArguments);
+								FLogEntry ErrorEntry;
+								ErrorEntry.Type = ELogType::Error;
+								ErrorEntry.Message = "Failed To Parse Integer: " + RemainingArguments;
+								LogItems.push_back(ErrorEntry);
 								bIsScrollToBottom = true;
 							}
+						}
+						else if (FormatString.find("%s") != FString::npos)
+						{
+							// Remove quotes from string argument
+							FString StringArg = RemainingArguments;
+							if (StringArg.length() >= 2 && StringArg.front() == '"' && StringArg.back() == '"')
+							{
+								StringArg = StringArg.substr(1, StringArg.length() - 2);
+							}
+							char Buffer[512];
+							(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(),
+							               StringArg.c_str());
+							FLogEntry UELogEntry;
+							UELogEntry.Type = ELogType::UELog;
+							UELogEntry.Message = FString(Buffer);
+							LogItems.push_back(UELogEntry);
+							bIsScrollToBottom = true;
 						}
 						else
 						{
-							// 인수 없는 경우
-							LogItems.push_back(u8"[UE_LOG] " + FormatString);
+							FLogEntry UELogEntry;
+							UELogEntry.Type = ELogType::UELog;
+							UELogEntry.Message = FormatString + RemainingArguments;
+							LogItems.push_back(UELogEntry);
 							bIsScrollToBottom = true;
 						}
 					}
 					else
 					{
-						LogItems.emplace_back(u8"[Error] Invalid UE_LOG Format - Missing Closing Quote");
+						// 인수 없는 경우
+						FLogEntry UELogEntry;
+						UELogEntry.Type = ELogType::UELog;
+						UELogEntry.Message = FormatString;
+						LogItems.push_back(UELogEntry);
 						bIsScrollToBottom = true;
 					}
 				}
 				else
 				{
-					LogItems.emplace_back(u8"[Error] Invalid UE_LOG Format - First Argument Must Be A String");
+					AddLog(ELogType::Error, "UELog: Error: Invalid Format: 문자열 종료 따옴표가 없습니다");
 					bIsScrollToBottom = true;
 				}
 			}
 			else
 			{
-				LogItems.emplace_back(u8"[Error] Invalid UE_LOG Format - Missing Closing Parenthesis");
+				AddLog(ELogType::Error, "UELog: Error: Invalid Format: 첫 인자는 반드시 문자열이어야 합니다");
 				bIsScrollToBottom = true;
 			}
 		}
+		else
+		{
+			AddLog(ELogType::Error, "UELog: Error: Invalid Format: 맨 뒤 괄호가 존재하지 않습니다");
+			bIsScrollToBottom = true;
+		}
 	}
-	// 대소문자 구분없이 비교하기 위해 소문자로 변환
+
+	// Clear 명령어 입력
 	else if (FString CommandLower = InCommand;
 		std::transform(CommandLower.begin(), CommandLower.end(), CommandLower.begin(), ::tolower),
 		CommandLower == "clear")
 	{
 		ClearLog();
 	}
+
+	// Help 명령어 입력
 	else if (FString CommandLower = InCommand;
 		std::transform(CommandLower.begin(), CommandLower.end(), CommandLower.begin(), ::tolower),
 		CommandLower == "help")
 	{
-		AddLog("Available Commands:");
-		AddLog("  CLEAR - Clear The Console");
-		AddLog("  HELP - Show This Help");
-		AddLog("  UE_LOG(\"String With Format\", Args...) - Log With Printf Formatting");
-		AddLog("    Example: UE_LOG(\"Hello World %%d\", 2025)");
-		AddLog("    Example: UE_LOG(\"User: %%s\", \"John\")");
-		AddLog("");
-		AddLog("Terminal Commands:");
-		AddLog("  dir, ls - List directory contents");
-		AddLog("  cd [path] - Change directory");
-		AddLog("  echo [text] - Display text");
-		AddLog("  type [file] - Display file contents");
-		AddLog("  ping [host] - Network ping");
-		AddLog("  Any Windows command will be executed directly");
-	}
-	else if (strncmp(InCommand, "ue_log", 6) == 0)
-	{
-		FString Input = InCommand;
-		size_t UELogPosition = Input.find("ue_log");
-		if (UELogPosition != FString::npos)
-		{
-			// "ue_log " 다음 부분 추출
-			FString Arguments = Input.substr(UELogPosition + 7); // "ue_log " 길이는 7
-
-			// 앞에 있는 공백 제거
-			while (!Arguments.empty() && Arguments[0] == ' ')
-				Arguments = Arguments.substr(1);
-
-			if (!Arguments.empty())
-			{
-				// printf 방식으로 처리하기 위해 간단한 파싱
-				// 첫 번째 공백까지를 format string으로 처리
-				size_t FirstSpace = Arguments.find(' ');
-
-				if (FirstSpace != FString::npos)
-				{
-					FString FormatString = Arguments.substr(0, FirstSpace);
-					FString Remaining = Arguments.substr(FirstSpace + 1);
-
-					// 간단한 %d 처리만 지원
-					if (FormatString.find("%d") != FString::npos)
-					{
-						try
-						{
-							int Value = std::stoi(Remaining);
-							char Buffer[512];
-							(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(), Value);
-							AddLog("[UE_LOG] %s", Buffer);
-						}
-						catch (...)
-						{
-							AddLog("[UE_LOG] %s (failed to parse: %s)", FormatString.c_str(), Remaining.c_str());
-						}
-					}
-					else if (FormatString.find("%s") != FString::npos)
-					{
-						char Buffer[512];
-						(void)snprintf(Buffer, sizeof(Buffer), FormatString.c_str(), Remaining.c_str());
-						AddLog("[UE_LOG] %s", Buffer);
-					}
-					else
-					{
-						AddLog("[UE_LOG] %s %s", FormatString.c_str(), Remaining.c_str());
-					}
-				}
-				else
-				{
-					// 인수가 없는 경우
-					AddLog("[UE_LOG] %s", Arguments.c_str());
-				}
-			}
-			else
-			{
-				AddLog("Usage: ue_log \"format string\" [args...]");
-			}
-		}
+		AddLog(ELogType::System, "Available Commands:");
+		AddLog(ELogType::Info, "  CLEAR - Clear The Console");
+		AddLog(ELogType::Info, "  HELP - Show This Help");
+		AddLog(ELogType::Info, "  UE_LOG(\"String with format\", Args...) - Log With printf Formatting");
+		AddLog(ELogType::Debug, "    Example: UE_LOG(\"Hello World %%d\", 2025)");
+		AddLog(ELogType::Debug, "    Example: UE_LOG(\"User: %%s\", \"John\")");
+		AddLog(ELogType::Info, "");
+		AddLog(ELogType::System, "Terminal Commands:");
+		AddLog(ELogType::Info, "  dir, ls - List directory contents");
+		AddLog(ELogType::Info, "  cd [path] - Change directory");
+		AddLog(ELogType::Info, "  echo [text] - Display text");
+		AddLog(ELogType::Info, "  type [file] - Display file contents");
+		AddLog(ELogType::Info, "  ping [host] - Network ping");
+		AddLog(ELogType::Info, "  Any Windows command will be executed directly");
 	}
 	else
 	{
@@ -472,7 +461,7 @@ void UConsoleWindow::ExecuteTerminalCommand(const char* InCommand)
 		                    nullptr, TRUE, CREATE_NO_WINDOW,
 		                    nullptr, nullptr, &StartUpInfo, &ProcessInformation))
 		{
-			AddLog("[Terminal Error] Failed To Execute Command: %s", InCommand);
+			AddLog("ConsoleWindow: Error: Failed To Execute Command: %s", InCommand);
 			CloseHandle(PipeReadHandle);
 			CloseHandle(PipeWriteHandle);
 			return;
@@ -481,25 +470,93 @@ void UConsoleWindow::ExecuteTerminalCommand(const char* InCommand)
 		// 부모 프로세스에서는 쓰기 핸들이 불필요하므로 바로 닫도록 처리
 		CloseHandle(PipeWriteHandle);
 
-		// Read Execution Process
+		// Read Execution Process With Timeout
 		char Buffer[256];
 		DWORD ReadDoubleWord;
 		FString Output;
 		bool bHasOutput = false;
 
-		while (ReadFile(PipeReadHandle, Buffer, sizeof(Buffer) - 1, &ReadDoubleWord, nullptr) && ReadDoubleWord != 0)
+		DWORD StartTime = GetTickCount();
+		const DWORD TimeoutMsec = 2000;
+		while (true)
 		{
-			Buffer[ReadDoubleWord] = '\0'; // Null 문자로 String 끝 세팅
-			Output += Buffer;
-			bHasOutput = true;
+			// 타임아웃 체크
+			if (GetTickCount() - StartTime > TimeoutMsec)
+			{
+				// 프로세스가 아직 실행 중이면 강제 종료
+				DWORD ProcessExitCode;
+				if (GetExitCodeProcess(ProcessInformation.hProcess, &ProcessExitCode) && ProcessExitCode ==
+					STILL_ACTIVE)
+				{
+					TerminateProcess(ProcessInformation.hProcess, 1);
+				}
+				AddLog("ConsoleWindow: Error: Reading Timeout");
+				break;
+			}
+
+			// 프로세스가 아직 실행 중인지 확인
+			DWORD ProcessExitCode;
+			if (GetExitCodeProcess(ProcessInformation.hProcess, &ProcessExitCode) && ProcessExitCode != STILL_ACTIVE)
+			{
+				// 프로세스가 종료되었으면 남은 모든 데이터를 읽고 종료
+				DWORD AvailableBytes = 0;
+				while (PeekNamedPipe(PipeReadHandle, nullptr, 0, nullptr, &AvailableBytes, nullptr) && AvailableBytes > 0)
+				{
+					if (ReadFile(PipeReadHandle, Buffer, sizeof(Buffer) - 1,
+					             &ReadDoubleWord, nullptr) && ReadDoubleWord > 0)
+					{
+						Buffer[ReadDoubleWord] = '\0';
+						Output += Buffer;
+						bHasOutput = true;
+					}
+					else
+					{
+						break; // ReadFile 실패 시 종료
+					}
+				}
+				break;
+			}
+
+			// 파이프에 데이터가 있는지 확인
+			DWORD AvailableBytes = 0;
+			if (!PeekNamedPipe(PipeReadHandle, nullptr, 0, nullptr, &AvailableBytes, nullptr) || AvailableBytes == 0)
+			{
+				// 데이터가 없으면 잠시 대기
+				Sleep(100);
+				continue;
+			}
+
+			// 데이터 읽기
+			if (ReadFile(PipeReadHandle, Buffer, sizeof(Buffer) - 1, &ReadDoubleWord, nullptr) && ReadDoubleWord > 0)
+			{
+				Buffer[ReadDoubleWord] = '\0'; // Null 문자로 String 끝 세팅
+				Output += Buffer;
+				bHasOutput = true;
+				StartTime = GetTickCount();
+			}
+			else
+			{
+				// ReadFile 실패시 종료
+				break;
+			}
 		}
 
 		// Process 종료 대기
-		WaitForSingleObject(ProcessInformation.hProcess, INFINITE);
+		DWORD WaitResult = WaitForSingleObject(ProcessInformation.hProcess, 2000);
 
 		// 종료 코드 확인
-		DWORD ExitCode;
-		GetExitCodeProcess(ProcessInformation.hProcess, &ExitCode);
+		DWORD ExitCode = 0;
+		if (WaitResult == WAIT_TIMEOUT)
+		{
+			// 타임아웃 발생 시 프로세스 강제 종료
+			TerminateProcess(ProcessInformation.hProcess, 1);
+			AddLog("ConsoleWindow: Error: Command Timeout & Terminated");
+			ExitCode = 1;
+		}
+		else
+		{
+			GetExitCodeProcess(ProcessInformation.hProcess, &ExitCode);
+		}
 
 		// Release Handle
 		CloseHandle(PipeReadHandle);
@@ -565,11 +622,11 @@ void UConsoleWindow::InitializeSystemRedirect()
 		cout.rdbuf(ConsoleOutputBuffer);
 		cerr.rdbuf(ConsoleErrorBuffer);
 
-		AddLog("[System] Console Output Redirection Initialized");
+		AddLog(ELogType::System, "ConsoleWindow: Console Output Redirection Initialized");
 	}
 	catch (...)
 	{
-		AddLog("[error] Failed To Initialize Console Output Redirection");
+		AddLog(ELogType::Error, "ConsoleWindow: Failed To Initialize Console Output Redirection");
 	}
 }
 
@@ -617,13 +674,17 @@ void UConsoleWindow::AddSystemLog(const char* InText, bool bInIsError)
 	}
 
 	FString LogText;
+	ELogType LogType;
+
 	if (bInIsError)
 	{
 		LogText = "[Error] " + FString(InText);
+		LogType = ELogType::Error;
 	}
 	else
 	{
 		LogText = "[System] " + FString(InText);
+		LogType = ELogType::System;
 	}
 
 	// 끝에 있는 개행 문자 제거
@@ -632,7 +693,10 @@ void UConsoleWindow::AddSystemLog(const char* InText, bool bInIsError)
 		LogText.pop_back();
 	}
 
-	LogItems.push_back(LogText);
+	FLogEntry LogEntry;
+	LogEntry.Type = LogType;
+	LogEntry.Message = LogText;
+	LogItems.push_back(LogEntry);
 
 	// Auto Scroll
 	bIsScrollToBottom = true;
