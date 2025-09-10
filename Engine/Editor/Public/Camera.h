@@ -55,6 +55,15 @@ public:
 	const float GetFarZ() const { return FarZ; }
 	const ECameraType GetCameraType() const { return CameraType; }
 
+	// Camera Movement Speed Control
+	float GetMoveSpeed() const { return CurrentMoveSpeed; }
+	void SetMoveSpeed(float InSpeed)
+	{
+		CurrentMoveSpeed = max(InSpeed, MIN_CAMERA_SPEED);
+		CurrentMoveSpeed = min(InSpeed, MAX_CAMERA_SPEED);
+	}
+	void AdjustMoveSpeed(float InDelta) { SetMoveSpeed(CurrentMoveSpeed + InDelta); }
+
 	/* *
 	 * @brief 행렬 형태로 저장된 좌표와 변환 행렬과의 연산한 결과를 반환합니다.
 	 */
@@ -70,6 +79,13 @@ public:
 	}
 
 private:
+	// Camera Speed Constants
+	static constexpr float MIN_CAMERA_SPEED = 0.5f;
+	static constexpr float MAX_CAMERA_SPEED = 50.0f;
+	static constexpr float DEFAULT_CAMERA_SPEED = 6.0f;
+	static constexpr float SPEED_ADJUST_STEP = 0.5f;
+
+private:
 	FViewProjConstants ViewProjConstants = {};
 	FVector RelativeLocation = {};
 	FVector RelativeRotation = {};
@@ -82,4 +98,7 @@ private:
 	float FarZ = {};
 	float OrthoWidth = {};
 	ECameraType CameraType = {};
+
+	// Dynamic Movement Speed
+	float CurrentMoveSpeed = DEFAULT_CAMERA_SPEED;
 };

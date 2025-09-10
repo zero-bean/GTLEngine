@@ -5,7 +5,7 @@
 IMPLEMENT_SINGLETON(UInputManager)
 
 UInputManager::UInputManager()
-	: bIsWindowFocused(true)
+	: bIsWindowFocused(true), MouseWheelDelta(0.0f)
 {
 	InitializeKeyMapping();
 }
@@ -96,6 +96,9 @@ void UInputManager::Update(FAppWindow* InWindow)
 
 	// 마우스 위치 업데이트
 	UpdateMousePosition(InWindow);
+
+	// 마우스 휠 델타 리셋
+	MouseWheelDelta = 0.0f;
 
 	// GetAsyncKeyState를 사용하여 현재 키 상태를 업데이트
 	for (auto& Pair : VirtualKeyMap)
@@ -224,6 +227,15 @@ void UInputManager::ProcessKeyMessage(uint32 InMessage, WPARAM WParam, LPARAM LP
 
 	case WM_MBUTTONUP:
 		CurrentKeyState[EKeyInput::MouseMiddle] = false;
+		break;
+
+	case WM_MOUSEWHEEL:
+		{
+			// WParam의 상위 16비트에 휠 델타 값이 들어있음
+			// WHEEL_DELTA(120)로 정규화하여 -1.0f ~ 1.0f 범위로 변환
+			short WheelDelta = GET_WHEEL_DELTA_WPARAM(WParam);
+			MouseWheelDelta = static_cast<float>(WheelDelta) / WHEEL_DELTA;
+		}
 		break;
 
 	default:
