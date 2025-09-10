@@ -168,6 +168,8 @@ USphereComponent::USphereComponent()
     Vertices = ResourceManager.GetVertexData(Type);
     Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
     NumVertices = ResourceManager.GetNumVertices(Type);
+	RenderState.CullMode = ECullMode::Back;
+	RenderState.FillMode = EFillMode::Solid;
 }
 
 UCubeComponent::UCubeComponent()
@@ -177,6 +179,8 @@ UCubeComponent::UCubeComponent()
 	Vertices = ResourceManager.GetVertexData(Type);
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
+	RenderState.CullMode = ECullMode::Back;
+	RenderState.FillMode = EFillMode::Solid;
 }
 
 ULineComponent::ULineComponent()
@@ -187,6 +191,8 @@ ULineComponent::ULineComponent()
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	RenderState.CullMode = ECullMode::None;
+	RenderState.FillMode = EFillMode::WireFrame;
 }
 
 UTriangleComponent::UTriangleComponent()
@@ -196,6 +202,8 @@ UTriangleComponent::UTriangleComponent()
 	Vertices = ResourceManager.GetVertexData(Type);
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
+	RenderState.CullMode = ECullMode::None;
+	RenderState.FillMode = EFillMode::Solid;
 }
 
 USquareComponent::USquareComponent()
@@ -205,4 +213,6 @@ USquareComponent::USquareComponent()
 	Vertices = ResourceManager.GetVertexData(Type);
 	Vertexbuffer = ResourceManager.GetVertexbuffer(Type);
 	NumVertices = ResourceManager.GetNumVertices(Type);
+	RenderState.CullMode = ECullMode::None;
+	RenderState.FillMode = EFillMode::Solid;
 }
