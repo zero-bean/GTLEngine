@@ -1,22 +1,18 @@
 #include "pch.h"
-
 #include "Editor/Public/Editor.h"
+
 #include "Editor/Public/Camera.h"
 #include "Editor/Public/Gizmo.h"
 #include "Editor/Public/Grid.h"
 #include "Editor/Public/Axis.h"
 #include "Editor/Public/ObjectPicker.h"
-#include "Core/Public/Object.h"
-#include "Core/Public/AppWindow.h"
 #include "Render/Renderer/Public/Renderer.h"
-#include "Render/UI/Window/Public/CameraPanelWindow.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Mesh/Public/Actor.h"
 #include "Level/Public/Level.h"
 #include "Render/UI/Widget/Public/CameraControlWidget.h"
-
 
 UEditor::UEditor()
 	: ObjectPicker(Camera)
@@ -100,7 +96,7 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 			Gizmo.SetActorScale(GizmoDragScale);
 		}
 		}
-		
+
 	}
 	else
 	{
@@ -176,7 +172,7 @@ FVector UEditor::GetGizmoDragLocation(FRay& WorldRay)
 	//	FVector4 GizmoAxis4{ GizmoAxis.X,GizmoAxis.Y ,GizmoAxis.Z, 0.0f };
 	//	GizmoAxis = GizmoAxis4 * FMatrix::RotationMatrix(Gizmo.GetActorRotation());
 	//}
-	
+
 	if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, Camera.CalculatePlaneNormal(GizmoAxis), MouseWorld))
 	{
 		FVector MouseDistance = MouseWorld - Gizmo.GetDragStartMouseLocation();
@@ -184,7 +180,7 @@ FVector UEditor::GetGizmoDragLocation(FRay& WorldRay)
 	}
 	else
 		return Gizmo.GetGizmoLocation();
-	
+
 }
 
 FVector UEditor::GetGizmoDragRotation(FRay& WorldRay)
@@ -200,7 +196,7 @@ FVector UEditor::GetGizmoDragRotation(FRay& WorldRay)
 	//	FVector4 GizmoAxis4{ GizmoAxis.X,GizmoAxis.Y ,GizmoAxis.Z, 0.0f };
 	//	GizmoAxis = GizmoAxis4 * FMatrix::RotationMatrix(Gizmo.GetActorRotation());
 	//}
-	
+
 	if (ObjectPicker.IsRayCollideWithPlane(WorldRay, PlaneOrigin, GizmoAxis, MouseWorld))
 	{
 		FVector PlaneOriginToMouse = MouseWorld - PlaneOrigin;
@@ -217,7 +213,7 @@ FVector UEditor::GetGizmoDragRotation(FRay& WorldRay)
 	}
 	else
 		return Gizmo.GetActorRotation();
-	
+
 }
 
 FVector UEditor::GetGizmoDragScale(FRay& WorldRay)
@@ -244,7 +240,7 @@ FVector UEditor::GetGizmoDragScale(FRay& WorldRay)
 		{
 			ScaleFactor = DragAxisDistance / DragStartAxisDistance;
 		}
-		
+
 		FVector DragStartScale = Gizmo.GetDragStartActorScale();
 		if (ScaleFactor > MinScale)
 		{

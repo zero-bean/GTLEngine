@@ -26,4 +26,6 @@ private:
 	bool bScaleChanged;
 	bool bRotationChanged;
 	bool bPositionChanged;
+	uint64 LevelMemoryByte;
+	uint32 LevelActorCount;
 };

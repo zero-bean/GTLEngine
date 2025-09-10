@@ -22,6 +22,9 @@ void UTargetActorTransformWidget::Update()
 	ULevelManager& LevelManager = ULevelManager::GetInstance();
 	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
 
+	LevelMemoryByte = CurrentLevel->GetAllocatedBytes();
+ 	LevelActorCount = CurrentLevel->GetAllocatedCount();
+
 	if (CurrentLevel)
 	{
 		AActor* CurrentSelectedActor = CurrentLevel->GetSelectedActor();
@@ -46,6 +49,12 @@ void UTargetActorTransformWidget::Update()
 
 void UTargetActorTransformWidget::RenderWidget()
 {
+	// Level Memory Information
+	ImGui::Text("Level Memory Information");
+	ImGui::Text("Actor Count: %s", to_string(LevelActorCount).c_str());
+	ImGui::Text("Memory Byte: %s", to_string(LevelMemoryByte).c_str());
+	ImGui::Separator();
+
 	ImGui::Text("Transform");
 
 	if (SelectedActor)
@@ -76,8 +85,10 @@ void UTargetActorTransformWidget::RenderWidget()
 	}
 	else
 	{
-		ImGui::TextUnformatted("No Actor Seleted");
+		ImGui::TextUnformatted("Select Actor For Indicating");
 	}
+
+	ImGui::Separator();
 }
 
 /**

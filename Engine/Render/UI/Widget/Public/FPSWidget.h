@@ -34,4 +34,5 @@ private:
 	float PreviousTime = 0.0f;
 	float PrintFPS;
 	float PrintDeltaTime;
+	bool bShowGraph;
 };

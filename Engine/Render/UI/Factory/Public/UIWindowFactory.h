@@ -2,7 +2,7 @@
 
 class UConsoleWindow;
 class UControlPanelWindow;
-class UInputStatusWindow;
+class UExperimentalFeatureWindow;
 class UPerformanceWindow;
 class UOutlinerWindow;
 class UCameraPanelWindow;
@@ -28,10 +28,9 @@ class UUIWindowFactory
 public:
 	static void CreateDefaultUILayout();
 	static UConsoleWindow* CreateConsoleWindow(EUIDockDirection InDockDirection = EUIDockDirection::Bottom);
-	static UPerformanceWindow* CreatePerformanceWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
-	static UInputStatusWindow* CreateInputStatusWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
 	static UControlPanelWindow* CreateControlPanelWindow(EUIDockDirection InDockDirection = EUIDockDirection::Left);
 	static UOutlinerWindow* CreateOutlinerWindow(EUIDockDirection InDockDirection = EUIDockDirection::Center);
-	static UCameraPanelWindow* CreateCameraPanelWindow(EUIDockDirection InDockDirection = EUIDockDirection::Left);
+	static UPerformanceWindow* CreatePerformanceWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
+	static UExperimentalFeatureWindow*
+		CreateExperimentalFeatureWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
 };
-
