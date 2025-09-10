@@ -32,6 +32,9 @@ public:
 	// Helper Function
 	static const wchar_t* KeyInputToString(EKeyInput InKey);
 
+	// Mouse Wheel
+	float GetMouseWheelDelta() const { return MouseWheelDelta; }
+
 	// Getter
 	const FVector& GetMouseNDCPosition() const { return NDCMousePosition; }
 	const FVector& GetMousePosition() const { return CurrentMousePosition; }
@@ -47,6 +50,9 @@ private:
 	FVector CurrentMousePosition;
 	FVector PreviousMousePosition;
 	FVector MouseDelta;
+
+	// Mouse Wheel
+	float MouseWheelDelta;
 
 	// NDC Mouse Position
 	FVector NDCMousePosition;
