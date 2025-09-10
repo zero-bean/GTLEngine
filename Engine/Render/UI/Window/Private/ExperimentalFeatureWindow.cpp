@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Render/UI/Window/Public/InputStatusWindow.h"
+#include "Render/UI/Window/Public/ExperimentalFeatureWindow.h"
 
 #include "Manager/Input/Public/InputManager.h"
 
@@ -8,7 +8,7 @@ constexpr int MaxKeyHistory = 10;
 /**
  * @brief 생성자
  */
-UInputStatusWindow::UInputStatusWindow()
+UExperimentalFeatureWindow::UExperimentalFeatureWindow()
 {
 	FUIWindowConfig Config;
 	Config.WindowTitle = "Key Input Status";
@@ -28,14 +28,14 @@ UInputStatusWindow::UInputStatusWindow()
 /**
  * @brief 초기화
  */
-void UInputStatusWindow::Initialize()
+void UExperimentalFeatureWindow::Initialize()
 {
 	RecentKeyPresses.clear();
 	KeyPressCount.clear();
 	LastMousePosition = FVector(0, 0, 0);
 	MouseDelta = FVector(0, 0, 0);
 
-	UE_LOG("InputStatusWindow: Successfully Initialized");
+	UE_LOG("ExperimentalFeatureWindow: Successfully Initialized");
 }
 
 // /**
@@ -134,7 +134,7 @@ void UInputStatusWindow::Initialize()
 // 	}
 // }
 
-void UInputStatusWindow::AddKeyToHistory(const FString& InKeyName)
+void UExperimentalFeatureWindow::AddKeyToHistory(const FString& InKeyName)
 {
 	RecentKeyPresses.push_back(InKeyName);
 
@@ -145,7 +145,7 @@ void UInputStatusWindow::AddKeyToHistory(const FString& InKeyName)
 	}
 }
 
-void UInputStatusWindow::RenderKeyList(const TArray<EKeyInput>& InPressedKeys)
+void UExperimentalFeatureWindow::RenderKeyList(const TArray<EKeyInput>& InPressedKeys)
 {
 	ImGui::Text("Pressed Keys:");
 	ImGui::Separator();
@@ -167,7 +167,7 @@ void UInputStatusWindow::RenderKeyList(const TArray<EKeyInput>& InPressedKeys)
 	}
 }
 
-void UInputStatusWindow::RenderMouseInfo() const
+void UExperimentalFeatureWindow::RenderMouseInfo() const
 {
 	ImGui::Text("Mouse Position: (%.0f, %.0f)", LastMousePosition.X, LastMousePosition.Y);
 	ImGui::Text("Mouse Delta: (%.2f, %.2f)", MouseDelta.X, MouseDelta.Y);
@@ -194,7 +194,7 @@ void UInputStatusWindow::RenderMouseInfo() const
 	ImGui::Dummy(CanvasSize);
 }
 
-void UInputStatusWindow::RenderControlHelp()
+void UExperimentalFeatureWindow::RenderControlHelp()
 {
 	ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Game Controls:");
 	ImGui::Separator();
@@ -210,7 +210,7 @@ void UInputStatusWindow::RenderControlHelp()
 	ImGui::Text("Click & Drag: Move Windows");
 }
 
-void UInputStatusWindow::RenderKeyStatistics()
+void UExperimentalFeatureWindow::RenderKeyStatistics()
 {
 	ImGui::Text("Key Press Statistics:");
 	ImGui::Separator();

@@ -2,13 +2,13 @@
 #include "UIWindow.h"
 
 /**
- * @brief 키 입력 상태를 표시하는 UI 윈도우
+ * @brief
  * 기존에 있던 Key Input Status를 분리한 클래스
  */
-class UInputStatusWindow : public UUIWindow
+class UExperimentalFeatureWindow : public UUIWindow
 {
 public:
-	UInputStatusWindow();
+	UExperimentalFeatureWindow();
 	void Initialize() override;
 	// void Render() override;
 	// void Update() override;

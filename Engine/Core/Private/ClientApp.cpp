@@ -9,7 +9,6 @@
 
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/Renderer/Public/Renderer.h"
-#include "Render/UI/Window/Public/PerformanceWindow.h"
 
 #include "Render/UI/Window/Public/ConsoleWindow.h"
 

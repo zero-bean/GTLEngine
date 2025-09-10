@@ -75,8 +75,15 @@ void UConsoleWidget::RenderWidget()
 	{
 		ClearLog();
 	}
+
 	ImGui::SameLine();
-	ImGui::Checkbox("Auto-Scroll", &bIsAutoScroll);
+	if (ImGui::Button("Copy"))
+	{
+		ImGui::LogToClipboard();
+	}
+
+	// ImGui::SameLine();
+	// ImGui::Checkbox("AutoScroll", &bIsAutoScroll);
 
 	ImGui::Separator();
 

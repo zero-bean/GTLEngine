@@ -20,7 +20,7 @@ UControlPanelWindow::UControlPanelWindow()
 	Config.DockDirection = EUIDockDirection::Left;
 	Config.Priority = 15;
 	Config.bResizable = true;
-	Config.bMovable = false;
+	Config.bMovable = true;
 	Config.bCollapsible = true;
 
 	Config.UpdateWindowFlags();
