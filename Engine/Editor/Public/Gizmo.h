@@ -60,7 +60,7 @@ public:
 	/* *
 	* @brief Getter
 	*/
-	const EGizmoDirection GetGizmoDirection() { return GizmoDirection; }
+	const EGizmoDirection GetGizmoDirection() const { return GizmoDirection; }
 	const FVector& GetGizmoLocation() { return Primitives[(int)GizmoMode].Location; }
 	const FVector& GetActorRotation() { return TargetActor->GetActorRotation(); }
 	const FVector& GetDragStartMouseLocation() { return DragStartMouseLocation; }
@@ -112,6 +112,8 @@ private:
 	FGizmoRotateCollisionConfig RotateCollisionConfig;
 	float HoveringFactor = 0.8f;
 	bool bIsDragging = false;
+
+	FRenderState RenderState = {};
 
 	EGizmoDirection GizmoDirection = EGizmoDirection::None;
 	EGizmoMode      GizmoMode = EGizmoMode::Translate;

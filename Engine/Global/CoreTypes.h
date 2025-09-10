@@ -59,8 +59,38 @@ enum class EPrimitiveType : uint8_t
 	Square,
 	Torus,
 	Arrow,
+	CubeArrow,
 	Ring,
 	Line,
 
 	End = 0xFF
+};
+
+/**
+ * @brief RasterizerState Enum
+ */
+enum class ECullMode : uint8_t
+{
+	Back,
+	Front,
+	None,
+
+	End = 0xFF
+};
+
+enum class EFillMode : uint8_t
+{
+	WireFrame,
+	Solid,
+
+	End = 0xFF
+};
+
+/**
+ * @brief Render State Settings for Actor's Component 
+ */
+struct FRenderState
+{
+	ECullMode CullMode = ECullMode::None;
+	EFillMode FillMode = EFillMode::Solid;
 };

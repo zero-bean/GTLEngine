@@ -45,6 +45,12 @@ UGizmo::UGizmo()
 	Primitives[2].Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	Primitives[2].Scale = FVector(ScaleT, ScaleT, ScaleT);
 	Primitives[2].bShouldAlwaysVisible = true;
+
+	/* *
+	* @brief Render State
+	*/
+	RenderState.CullMode = ECullMode::None;
+	RenderState.FillMode = EFillMode::Solid;
 }
 
 UGizmo::~UGizmo() = default;
@@ -56,23 +62,24 @@ void UGizmo::RenderGizmo(AActor* Actor)
 
 	URenderer& Renderer = URenderer::GetInstance();
 	const int Mode = static_cast<int>(GizmoMode);
+	const int CullMode = GizmoMode == EGizmoMode::Rotate ? 1 : 1;
 	auto& P = Primitives[Mode];
 	P.Location = TargetActor->GetActorLocation();
 
 	// X (Right)
 	P.Rotation = { 0, 89.99f, 0 };
 	P.Color = ColorFor(EGizmoDirection::Right);
-	Renderer.RenderPrimitive(P);
+	Renderer.RenderPrimitive(P, RenderState);
 
 	// Y (Up)
 	P.Rotation = { -89.99f, 0, 0 };
 	P.Color = ColorFor(EGizmoDirection::Up);
-	Renderer.RenderPrimitive(P);
+	Renderer.RenderPrimitive(P, RenderState);
 
 	// Z (Forward)
 	P.Rotation = { 0, 0, 0 };
 	P.Color = ColorFor(EGizmoDirection::Forward);
-	Renderer.RenderPrimitive(P);
+	Renderer.RenderPrimitive(P, RenderState);
 }
 
 void UGizmo::ChangeGizmoMode()
