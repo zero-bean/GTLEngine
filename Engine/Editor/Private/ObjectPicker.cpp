@@ -67,6 +67,13 @@ void UObjectPicker::PickGizmo( const FRay& WorldRay, UGizmo& Gizmo, FVector& Col
 	
 	FVector GizmoLocation = Gizmo.GetGizmoLocation();
 	FVector GizmoAxises[3] = { {0, 0, 1}, {1, 0, 0}, {0, 1, 0} };
+
+	//로컬 기즈모, 쿼터니언 구현 후 사용
+	/*if (!Gizmo.IsWorld())	
+	{
+		for (int a = 0;a < 3;a++)
+			GizmoAxises[a] = FVector4(GizmoAxises[a].X, GizmoAxises[a].Y, GizmoAxises[a].Z, 0.0f) * FMatrix::RotationMatrix(FVector::GetDegreeToRadian(Gizmo.GetActorRotation()));
+	}*/
 	FVector WorldRayOrigin{ WorldRay.Origin.X,WorldRay.Origin.Y ,WorldRay.Origin.Z };
 	FVector WorldRayDirection(WorldRay.Direction.X, WorldRay.Direction.Y, WorldRay.Direction.Z);
 	switch (Gizmo.GetGizmoMode())

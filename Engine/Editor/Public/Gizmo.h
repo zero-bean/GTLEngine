@@ -58,6 +58,11 @@ public:
 	void SetActorRotation(const FVector& Rotation) { TargetActor->SetActorRotation(Rotation); }
 	void SetActorScale(const FVector& Scale) { TargetActor->SetActorScale3D(Scale); }
 
+	//로컬 기즈모, 쿼터니언 구현 후 사용
+	//void SetWorld() { bIsWorld = true; }
+	//void SetLocal() { bIsWorld = false; }
+	//////////////////
+
 	/* *
 	* @brief Getter
 	*/
@@ -79,6 +84,7 @@ public:
 	float GetRotateOuterRadius() const { return RotateCollisionConfig.OuterRadius * RotateCollisionConfig.Scale; }
 	float GetRotateInnerRadius() const { return RotateCollisionConfig.InnerRadius * RotateCollisionConfig.Scale; }
 	float GetRotateThickness()   const { return std::max(0.001f, RotateCollisionConfig.InnerRadius * RotateCollisionConfig.Scale); }
+	AActor* GetSelectedActor() const { return TargetActor; }
 	bool IsInRadius(float Radius);
 
 	/* *
@@ -86,6 +92,9 @@ public:
 	*/
 	void EndDrag() { bIsDragging = false; }
 	bool IsDragging() const { return bIsDragging; }
+	 
+	//로컬 기즈모, 쿼터니언 구현 후 사용
+	//bool IsWorld() const { return bIsWorld; }
 	void OnMouseHovering() {}
 	void OnMouseDragStart(FVector& CollisionPoint);
 	void OnMouseRelease(EGizmoDirection DirectionReleased) {}
@@ -119,6 +128,8 @@ private:
 	FGizmoRotateCollisionConfig RotateCollisionConfig;
 	float HoveringFactor = 0.8f;
 	bool bIsDragging = false;
+
+	//로컬 기즈모. 쿼터니언 구현 후 사용
 	//bool bIsWorld = true;
 
 	FRenderState RenderState;

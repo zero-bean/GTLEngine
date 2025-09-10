@@ -29,7 +29,7 @@ private:
 	UCamera Camera;
 	UObjectPicker ObjectPicker;
 
-	const float MinScale = 0.001f;
+	const float MinScale = 0.01f;
 	UGizmo Gizmo;
 	UAxis Axis;
 	UGrid Grid;

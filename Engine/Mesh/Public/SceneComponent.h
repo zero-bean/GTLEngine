@@ -15,6 +15,9 @@ public:
 	void SetRelativeLocation(const FVector& Location);
 	void SetRelativeRotation(const FVector& Rotation);
 	void SetRelativeScale3D(const FVector& Scale);
+	void SetUniformScale(bool bIsUniform);
+
+	bool IsUniformScale() const;
 
 	const FVector& GetRelativeLocation() const;
 	const FVector& GetRelativeRotation() const;
@@ -34,6 +37,8 @@ private:
 	FVector RelativeLocation = FVector{ 0,0,0.f };
 	FVector RelativeRotation = FVector{ 0,0,0.f };
 	FVector RelativeScale3D = FVector{ 0.3f,0.3f,0.3f };
+	bool bIsUniformScale = false;
+	const float MinScale = 0.01f;
 };
 
 class UPrimitiveComponent : public USceneComponent
