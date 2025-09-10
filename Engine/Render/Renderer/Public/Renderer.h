@@ -61,10 +61,14 @@ public:
 	void RenderEnd();
 	void RenderPrimitive(FEditorPrimitive& Primitive);
 
+	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
+	bool GetIsResizing() { return bIsResizing;}
+	void SetIsResizing(bool isResizing) { bIsResizing = isResizing; }
+
 	//Testing Func
 	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, uint32 InByteWidth) const;
 	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, uint32 InByteWidth) const;
-	static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
+static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
 
 	void CreateConstantBuffer();
 	void ReleaseConstantBuffer();
@@ -78,6 +82,7 @@ public:
 	IDXGISwapChain* GetSwapChain() const { return DeviceResources->GetSwapChain();}
 	ID3D11RenderTargetView* GetRenderTargetView() const { return DeviceResources->GetRenderTargetView(); }
 
+	UDeviceResources* GetDeviceResources() const { return DeviceResources; }
 private:
 	UPipeline* Pipeline = nullptr;
 	UDeviceResources* DeviceResources = nullptr;
@@ -101,6 +106,8 @@ private:
 	uint32 Stride = 0;
 
 	ID3D11Buffer* vertexBufferSphere = nullptr;
+
+	bool bIsResizing = false;
 
 	///////////////////////////////////////////
 	// 카메라 VP Matrix 값 전달 받는 용도

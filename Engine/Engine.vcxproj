@@ -162,7 +162,6 @@
     <ClInclude Include="Global\Matrix.h" />
     <ClInclude Include="Global\Memory.h" />
     <ClInclude Include="Global\Types.h" />
-    <ClInclude Include="Global\Struct.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_impl_dx11.h" />
@@ -265,8 +264,6 @@
   </ImportGroup>
   <ItemGroup>
     <Content Include="Core\Public\EngineStatics.h"/>
-    <Content Include="Render\AxisLine\Public\Axis.h"/>
-    <Content Include="Render\AxisLine\Public\AxisLine.h"/>
     <Content Include="Asset\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -5,6 +5,7 @@
 #include "ImGui/imgui.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Manager/Input/Public/InputManager.h"
+#include "Render/Renderer/Public/Renderer.h"
 
 FAppWindow::FAppWindow(FClientApp* InOwner)
 	: Owner(InOwner), InstanceHandle(nullptr), MainWindowHandle(nullptr)
@@ -120,6 +121,23 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 	{
 	case WM_DESTROY:
 		PostQuitMessage(0);
+		break;
+
+	case WM_ENTERSIZEMOVE: //드래그 시작
+		URenderer::GetInstance().SetIsResizing(true);
+		break;
+	case WM_EXITSIZEMOVE: //드래그 종료
+		URenderer::GetInstance().SetIsResizing(false);
+		URenderer::GetInstance().OnResize();
+		break;
+	case WM_SIZE:
+		if (InWParam != SIZE_MINIMIZED)
+		{
+			if (!URenderer::GetInstance().GetIsResizing())
+			{ //드래그 X 일때 추가 처리 (최대화 버튼, ...)
+				URenderer::GetInstance().OnResize(LOWORD(InLParam), HIWORD(InLParam));
+			}
+		}
 		break;
 
 	default:

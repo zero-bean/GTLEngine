@@ -183,11 +183,11 @@ void UInputStatusWindow::RenderMouseInfo() const
 	                        IM_COL32(50, 50, 50, 255));
 
 	// 마우스 위치 점
+	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 MousePosNormalized = ImVec2(
-		(LastMousePosition.X / 1920.0f) * CanvasSize.x,
-		(LastMousePosition.Y / 1080.0f) * CanvasSize.y
+		(LastMousePosition.X / io.DisplaySize.x) * CanvasSize.x,
+		(LastMousePosition.Y / io.DisplaySize.y) * CanvasSize.y
 	);
-
 	DrawList->AddCircleFilled(ImVec2(CanvasPos.x + MousePosNormalized.x, CanvasPos.y + MousePosNormalized.y),
 	                          3.0f, IM_COL32(255, 0, 0, 255));
 

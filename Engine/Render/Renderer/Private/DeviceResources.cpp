@@ -169,3 +169,16 @@ void UDeviceResources::ReleaseDepthBuffer()
 		DepthBuffer = nullptr;
 	}
 }
+
+void UDeviceResources::UpdateViewport()
+{
+	DXGI_SWAP_CHAIN_DESC SwapChainDescription = {};
+	SwapChain->GetDesc(&SwapChainDescription);
+
+	ViewportInfo = {
+		0.0f, 0.0f, static_cast<float>(SwapChainDescription.BufferDesc.Width),
+		static_cast<float>(SwapChainDescription.BufferDesc.Height), 0.0f, 1.0f
+	};
+	Width = static_cast<float>(SwapChainDescription.BufferDesc.Width);
+	Height = static_cast<float>(SwapChainDescription.BufferDesc.Height);
+}

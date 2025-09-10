@@ -216,6 +216,7 @@ void URenderer::RenderBegin()
 	ID3D11RenderTargetView* rtvs[] = { rtv };  // 배열 생성
 
 	GetDeviceContext()->OMSetRenderTargets(1, rtvs, DeviceResources->GetDepthStencilView());
+	DeviceResources->UpdateViewport();
 }
 
 /**
@@ -369,6 +370,31 @@ ID3D11Buffer* URenderer::CreateIndexBuffer(const void* InIndices, uint32 InByteW
 	ID3D11Buffer* buffer = nullptr;
 	GetDevice()->CreateBuffer(&desc, &srd, &buffer);
 	return buffer;
+}
+
+void URenderer::OnResize(uint32 InWidth, uint32 InHeight)
+{
+	if (!DeviceResources || !GetDevice() || !GetDeviceContext() || !GetSwapChain()) return;
+
+	DeviceResources->ReleaseFrameBuffer();
+	DeviceResources->ReleaseDepthBuffer();
+	GetDeviceContext()->OMSetRenderTargets(0, nullptr, nullptr);
+
+	// ResizeBuffers 호출
+	HRESULT hr = GetSwapChain()->ResizeBuffers(2, InWidth, InHeight, DXGI_FORMAT_UNKNOWN, 0);
+	if (FAILED(hr))
+	{
+		UE_LOG("OnResize Failed");
+		return;
+	}
+	DeviceResources->UpdateViewport();
+
+	DeviceResources->CreateFrameBuffer();
+	DeviceResources->CreateDepthBuffer();
+
+	auto* rtv = DeviceResources->GetRenderTargetView();
+	ID3D11RenderTargetView* rtvs[] = { rtv };  // 배열 생성
+	GetDeviceContext()->OMSetRenderTargets(1, rtvs, DeviceResources->GetDepthStencilView());
 }
 
 /**
