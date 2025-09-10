@@ -43,6 +43,7 @@ public:
 	FRay ConvertToWorldRay(float NdcX, float NdcY) const;
 
 	FVector CalculatePlaneNormal(const FVector4& Axis);
+	FVector CalculatePlaneNormal(const FVector& Axis);
 	FVector& GetLocation() { return RelativeLocation; }
 	FVector& GetRotation() { return RelativeRotation; }
 	const FVector& GetForward() const { return Forward; }

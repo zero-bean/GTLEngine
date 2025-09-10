@@ -17,10 +17,8 @@ class UGizmo : public UObject
 public:
 	UGizmo();
 	~UGizmo() override;
-	void RenderGizmo(AActor* Actor, UObjectPicker& ObjectPicker);
-	void UpdateGizmo();
-
-	FVector MoveGizmo(UObjectPicker& ObjectPicker);
+	void RenderGizmo(AActor* Actor);
+	void SetLocation(const FVector& Location);
 
 	void SetGizmoDirection(EGizmoDirection Direction);
 	void EndDrag();
@@ -28,11 +26,13 @@ public:
 
 	const EGizmoDirection GetGizmoDirection();
 	const FVector& GetGizmoLocation();
+	const FVector& GetDragStartMouseLocation();
+	const FVector& GetDragStartActorLocation();
 	float GetGizmoRadius();
 	float GetGizmoHeight();
 
 	void OnMouseHovering();
-	void OnMouseDragStart(FVector4& CollisionPoint);
+	void OnMouseDragStart(FVector& CollisionPoint);
 	void OnMouseRelease(EGizmoDirection DirectionReleased);
 
 
@@ -44,7 +44,7 @@ private:
 	FVector4 RightColor{ 1,0,0,1 };
 	FVector4 UpColor{ 0,1,0,1 };
 	FVector DragStartActorLocation;
-	FVector4 DragStartMouseLocation;
+	FVector DragStartMouseLocation;
 
 	float Radius = 0.04f;
 	float Height = 0.9f;

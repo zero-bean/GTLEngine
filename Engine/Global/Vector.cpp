@@ -27,6 +27,11 @@ FVector::FVector(const FVector& InOther)
 {
 }
 
+void FVector::operator=(const FVector4& InOther)
+{
+	*this = FVector(InOther.X, InOther.Y, InOther.Z);
+}
+
 
 /**
  * @brief 두 벡터를 더한 새로운 벡터를 반환하는 함수

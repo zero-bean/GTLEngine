@@ -55,7 +55,7 @@ UPrimitiveComponent* UObjectPicker::PickPrimitive(const FRay& WorldRay, TArray<U
 	return ShortestPrimitive;
 }
 
-EGizmoDirection UObjectPicker::PickGizmo( const FRay& WorldRay, UGizmo& Gizmo, FVector4& CollisionPoint)
+EGizmoDirection UObjectPicker::PickGizmo( const FRay& WorldRay, UGizmo& Gizmo, FVector& CollisionPoint)
 {
 	//Forward, Right, Up순으로 테스트할거임.
 	//원기둥 위의 한 점 P, 축 위의 임의의 점 A에(기즈모 포지션) 대해, AP벡터와 축 벡터 V와 피타고라스 정리를 적용해서 점 P의 축부터의 거리 r을 구할 수 있음.
@@ -219,19 +219,18 @@ bool UObjectPicker::IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex
 }
 
 
-bool UObjectPicker::IsCollideWithPlane(FVector4 PlanePoint, FVector4 Axis, FVector4& PointOnPlane)
+bool UObjectPicker::IsRayCollideWithPlane(FRay& WorldRay, FVector PlanePoint, FVector Axis, FVector& PointOnPlane)
 {
-	const UInputManager& Input = UInputManager::GetInstance();
-
-	FVector MousePositionNDC = Input.GetMouseNDCPosition();
-
-	FRay WorldRay = Camera.ConvertToWorldRay(MousePositionNDC.X, MousePositionNDC.Y);
-
 	FVector Normal = Camera.CalculatePlaneNormal(Axis);
 
-	float Distance = (PlanePoint - WorldRay.Origin).Dot3(Normal) / WorldRay.Direction.Dot3(Normal);
+	FVector WorldRayOrigin{ WorldRay.Origin.X, WorldRay.Origin.Y ,WorldRay.Origin.Z };
 
-	if (abs(WorldRay.Direction.Dot3(Normal)) < 0.01f || Distance < 0)
+	if (abs(WorldRay.Direction.Dot3(Normal)) < 0.01f)
+		return false;
+
+	float Distance = (PlanePoint - WorldRayOrigin).Dot(Normal) / WorldRay.Direction.Dot3(Normal);
+
+	if (Distance < 0)
 		return false;
 	PointOnPlane = WorldRay.Origin + WorldRay.Direction * Distance;
 

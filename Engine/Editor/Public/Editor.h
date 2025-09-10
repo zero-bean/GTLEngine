@@ -19,8 +19,11 @@ public:
 
 private:
 
-	void ProcessMouseInput(ULevel* InLevel, UGizmo& InGizmo);
+	void ProcessMouseInput(ULevel* InLevel);
 	TArray<UPrimitiveComponent*> FindCandidatePrimitives(ULevel* InLevel);
+
+	FVector GetGizmoDragLocation(FRay& WorldRay);
+
 
 	UCamera Camera;
 	UObjectPicker ObjectPicker;
