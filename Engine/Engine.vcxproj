@@ -197,6 +197,8 @@
     <ClInclude Include="Render\Renderer\Public\Renderer.h" />
     <ClInclude Include="Render\UI\Factory\Public\UIWindowFactory.h" />
     <ClInclude Include="Render\UI\ImGui\Public\ImGuiHelper.h" />
+    <ClInclude Include="Render\UI\Widget\Public\FPSWidget.h" />
+    <ClInclude Include="Render\UI\Widget\Public\Widget.h" />
     <ClInclude Include="Render\UI\Window\Public\CameraPanelWindow.h" />
     <ClInclude Include="Render\UI\Window\Public\ConsoleWindow.h" />
     <ClInclude Include="Render\UI\Window\Public\ControlPanelWindow.h" />
@@ -251,6 +253,8 @@
     <ClCompile Include="Render\Renderer\Private\Renderer.cpp"/>
     <ClCompile Include="Render\UI\Factory\Private\UIWindowFactory.cpp"/>
     <ClCompile Include="Render\UI\ImGui\Private\ImGuiHelper.cpp"/>
+    <ClCompile Include="Render\UI\Widget\Private\FPSWidget.cpp" />
+    <ClCompile Include="Render\UI\Widget\Private\Widget.cpp" />
     <ClCompile Include="Render\UI\Window\Private\CameraPanelWindow.cpp"/>
     <ClCompile Include="Render\UI\Window\Private\ConsoleWindow.cpp"/>
     <ClCompile Include="Render\UI\Window\Private\ControlPanelWindow.cpp"/>

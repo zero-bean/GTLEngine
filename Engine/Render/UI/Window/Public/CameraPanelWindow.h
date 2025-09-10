@@ -12,10 +12,10 @@ public:
 	~UCameraPanelWindow() override {}
 
 	virtual void Initialize() override;
-	virtual void Render() override;
+	// virtual void Render() override;
 
 	/*
-	 * @brief Setter 
+	 * @brief Setter
 	 */
 	void SetCamera(UCamera* InCamera) { CameraPtr = InCamera; }
 
@@ -31,6 +31,6 @@ private:
 	float UiFovY = 80.f;
 	float UiNearZ = 0.1f;
 	float UiFarZ = 1000.f;
-	int   CameraModeIndex = 0; 
+	int   CameraModeIndex = 0;
 };
 

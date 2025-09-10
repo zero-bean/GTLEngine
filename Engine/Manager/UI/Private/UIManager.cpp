@@ -143,7 +143,7 @@ void UUIManager::Render()
 	{
 		if (Window)
 		{
-			Window->RenderInternal();
+			Window->RenderWindow();
 		}
 	}
 

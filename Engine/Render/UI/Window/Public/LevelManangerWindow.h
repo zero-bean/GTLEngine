@@ -11,7 +11,7 @@ class ULevelManagerWindow : public UUIWindow
 {
 public:
 	void Initialize() override;
-	void Render() override;
+	// void Render() override;
 
 	// Special Member Function
     ULevelManagerWindow();

@@ -43,8 +43,8 @@ public:
 	static UConsoleWindow& GetInstance();
 
 	void Initialize() override;
-	void Render() override;
-	void Update() override;
+	// void Render() override;
+	// void Update() override;
 	void Cleanup() override;
 
 	void AddLog(const char* fmt, ...);

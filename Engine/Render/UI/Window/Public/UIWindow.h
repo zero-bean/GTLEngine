@@ -3,6 +3,7 @@
 #include "ImGui/imgui.h"
 #include "Render/UI/Factory/Public/UIWindowFactory.h"
 
+class UWidget;
 /**
  * @brief UI 윈도우 표시 상태 열거형
  */
@@ -76,14 +77,9 @@ class UUIWindow :
 
 public:
 	UUIWindow(const FUIWindowConfig& InConfig = FUIWindowConfig());
-	virtual ~UUIWindow() = default;
+	~UUIWindow() override;
 
 	virtual void Initialize() = 0;
-	virtual void Render() = 0;
-
-	virtual void Update()
-	{
-	}
 
 	virtual void Cleanup()
 	{
@@ -98,7 +94,7 @@ public:
 	}
 
 	virtual bool OnWindowClose() { return true; }
-	virtual bool IsSingleton() {return false;}
+	virtual bool IsSingleton() { return false; }
 
 	// Getter & Setter
 	const FUIWindowConfig& GetConfig() const { return Config; }
@@ -120,11 +116,16 @@ public:
 	void SetPriority(int NewPriority) { Config.Priority = NewPriority; }
 	void SetConfig(const FUIWindowConfig& InConfig) { Config = InConfig; }
 	void ToggleVisibility() { SetWindowState(IsVisible() ? EUIWindowState::Hidden : EUIWindowState::Visible); }
+	void AddWidget(UWidget* Widget) { Widgets.push_back(Widget); }
 
 protected:
-	void RenderInternal();
 	void ApplyDockingSettings() const;
 	void UpdateWindowInfo();
+
+	// Render
+	void RenderWindow();
+	void RenderWidget() const;
+	void Update() const;
 
 private:
 	static int IssuedWindowID;
@@ -140,4 +141,6 @@ private:
 	bool bIsWindowOpen = true;
 	ImVec2 LastWindowSize;
 	ImVec2 LastWindowPosition;
+
+	TArray<UWidget*> Widgets;
 };

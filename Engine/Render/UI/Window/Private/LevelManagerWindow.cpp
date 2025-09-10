@@ -32,73 +32,73 @@ void ULevelManagerWindow::Initialize()
 	UE_LOG("LevelManagerWindow: Successfully Initialized");
 }
 
-void ULevelManagerWindow::Render()
-{
-	bool bIsVisible = IsVisible();
-
-	if (!bIsVisible)
-	{
-		return;
-	}
-
-	ImGui::Text("Level Save & Load Manager");
-	ImGui::Separator();
-
-	// Save Section
-	ImGui::Text("Save Current Level");
-	if (ImGui::Button("Save Level", ImVec2(120, 30)))
-	{
-		path FilePath = OpenSaveFileDialog();
-		if (!FilePath.empty())
-		{
-			SaveLevel(FilePath.string());
-		}
-	}
-
-	ImGui::SameLine();
-	if (ImGui::Button("Quick Save", ImVec2(120, 30)))
-	{
-		// 빠른 저장 - 기본 경로에 저장
-		SaveLevel("");
-	}
-
-	ImGui::Separator();
-
-	// Load Section
-	ImGui::Text("Load Level");
-	if (ImGui::Button("Load Level", ImVec2(120, 30)))
-	{
-		path FilePath = OpenLoadFileDialog();
-		if (!FilePath.empty())
-		{
-			LoadLevel(FilePath.string());
-		}
-	}
-
-	ImGui::Separator();
-
-	// New Level Section
-	ImGui::Text("Create New Level");
-	ImGui::InputText("Level Name", NewLevelNameBuffer, sizeof(NewLevelNameBuffer));
-
-	if (ImGui::Button("Create New Level", ImVec2(150, 30)))
-	{
-		CreateNewLevel();
-	}
-
-	ImGui::Separator();
-
-	// Status Message
-	if (StatusMessageTimer > 0.0f)
-	{
-		ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), StatusMessage.c_str());
-		StatusMessageTimer -= UTimeManager::GetInstance().GetDeltaTime();
-	}
-
-	// Help Text
-	ImGui::Separator();
-	ImGui::TextWrapped("Tip: Level Files Are Saved In JSON Format With .json Extension.");
-}
+// void ULevelManagerWindow::Render()
+// {
+// 	bool bIsVisible = IsVisible();
+//
+// 	if (!bIsVisible)
+// 	{
+// 		return;
+// 	}
+//
+// 	ImGui::Text("Level Save & Load Manager");
+// 	ImGui::Separator();
+//
+// 	// Save Section
+// 	ImGui::Text("Save Current Level");
+// 	if (ImGui::Button("Save Level", ImVec2(120, 30)))
+// 	{
+// 		path FilePath = OpenSaveFileDialog();
+// 		if (!FilePath.empty())
+// 		{
+// 			SaveLevel(FilePath.string());
+// 		}
+// 	}
+//
+// 	ImGui::SameLine();
+// 	if (ImGui::Button("Quick Save", ImVec2(120, 30)))
+// 	{
+// 		// 빠른 저장 - 기본 경로에 저장
+// 		SaveLevel("");
+// 	}
+//
+// 	ImGui::Separator();
+//
+// 	// Load Section
+// 	ImGui::Text("Load Level");
+// 	if (ImGui::Button("Load Level", ImVec2(120, 30)))
+// 	{
+// 		path FilePath = OpenLoadFileDialog();
+// 		if (!FilePath.empty())
+// 		{
+// 			LoadLevel(FilePath.string());
+// 		}
+// 	}
+//
+// 	ImGui::Separator();
+//
+// 	// New Level Section
+// 	ImGui::Text("Create New Level");
+// 	ImGui::InputText("Level Name", NewLevelNameBuffer, sizeof(NewLevelNameBuffer));
+//
+// 	if (ImGui::Button("Create New Level", ImVec2(150, 30)))
+// 	{
+// 		CreateNewLevel();
+// 	}
+//
+// 	ImGui::Separator();
+//
+// 	// Status Message
+// 	if (StatusMessageTimer > 0.0f)
+// 	{
+// 		ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), StatusMessage.c_str());
+// 		StatusMessageTimer -= UTimeManager::GetInstance().GetDeltaTime();
+// 	}
+//
+// 	// Help Text
+// 	ImGui::Separator();
+// 	ImGui::TextWrapped("Tip: Level Files Are Saved In JSON Format With .json Extension.");
+// }
 
 /**
  * @brief Windows API를 활용한 파일 저장 Dialog Modal을 생성하는 UI Window 기능
