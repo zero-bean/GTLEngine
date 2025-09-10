@@ -127,7 +127,7 @@ void UUIWindow::RenderWindow()
 	ImGui::SetNextWindowPos(Config.DefaultPosition, ImGuiCond_FirstUseEver);
 
 	// 크기 제한 설정
-	ImGui::SetNextWindowSizeConstraints(Config.MinSize, Config.MaxSize);
+	//ImGui::SetNextWindowSizeConstraints(Config.MinSize, Config.MaxSize);
 
 	bool bIsOpen = bIsWindowOpen;
 
