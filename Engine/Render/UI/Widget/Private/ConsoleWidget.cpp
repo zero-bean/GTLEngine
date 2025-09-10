@@ -641,6 +641,12 @@ void UConsoleWidget::ProcessCommand(const char* InCommand)
 		AddLog(ELogType::Debug, "    2개 인자 예제: UE_LOG(\"Score: %%d, Lives: %%d\", 2500, 3)");
 		AddLog(ELogType::Warning, "    주의: 포맷 지정자와 인자 개수가 일치해야 합니다!");
 		AddLog(ELogType::Info, "");
+		AddLog(ELogType::System, "Camera Controls:");
+		AddLog(ELogType::Info, "  우클릭 + WASD - 카메라 이돘");
+		AddLog(ELogType::Info, "  우클릭 + Q/E - 위/아래 이돘");
+		AddLog(ELogType::Info, "  우클릭 + 마우스 이동 - 카메라 회전");
+		AddLog(ELogType::Success, "  우클릭 + 마우스 휠 - 이동속도 조절 (0.5~50.0)");
+		AddLog(ELogType::Info, "");
 		AddLog(ELogType::System, "Terminal Commands:");
 		AddLog(ELogType::Info, "  dir, ls - List directory contents");
 		AddLog(ELogType::Info, "  cd [path] - Change directory");

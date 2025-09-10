@@ -47,6 +47,11 @@ void UCameraControlWidget::RenderWidget()
 	ImGui::TextUnformatted("Camera Transform");
 	ImGui::Spacing();
 
+	// 카메라 이동속도 표시 및 조절
+	float CurrentSpeed = Camera->GetMoveSpeed();
+	ImGui::Text("이동속도: %.1f", CurrentSpeed);
+	ImGui::Spacing();
+
 	if (ImGui::Combo("Mode", &CameraModeIndex, CameraMode, IM_ARRAYSIZE(CameraMode)))
 	{
 		PushToCamera();

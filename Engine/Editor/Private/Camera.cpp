@@ -30,7 +30,15 @@ void UCamera::Update()
 		if (Input.IsKeyDown(EKeyInput::Q)) { Direction += -Up; }
 		if (Input.IsKeyDown(EKeyInput::E)) { Direction += Up; }
 		Direction.Normalize();
-		RelativeLocation += Direction * CameraSpeed * DT;
+		RelativeLocation += Direction * CurrentMoveSpeed * DT;
+
+		// 오른쪽 마우스 버튼 + 마우스 휠로 카메라 이동속도 조절
+		float WheelDelta = Input.GetMouseWheelDelta();
+		if (WheelDelta != 0.0f)
+		{
+			// 휠 위로 돌리면 속도 증가, 아래로 돌리면 속도 감소
+			AdjustMoveSpeed(WheelDelta * SPEED_ADJUST_STEP);
+		}
 
 		/**
 		* @brief 마우스 위치 변화량을 감지하여 카메라의 회전을 담당합니다.
