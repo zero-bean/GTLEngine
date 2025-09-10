@@ -58,7 +58,7 @@ public:
 	/* *
 	* @brief Getter
 	*/
-	const EGizmoDirection GetGizmoDirection() { return GizmoDirection; }
+	const EGizmoDirection GetGizmoDirection() const { return GizmoDirection; }
 	const FVector& GetGizmoLocation() { return Primitives[(int)GizmoMode].Location; }
 	const FVector& GetDragStartMouseLocation() { return DragStartMouseLocation; }
 	const FVector& GetDragStartActorLocation() { return DragStartActorLocation; }
@@ -107,6 +107,8 @@ private:
 	float HoveringFactor = 0.8f;
 	bool bIsDragging = false;
 
+	FRenderState RenderState = {};
+
 	EGizmoDirection GizmoDirection = EGizmoDirection::None;
-	EGizmoMode      GizmoMode = EGizmoMode::Rotate;
+	EGizmoMode      GizmoMode = EGizmoMode::Translate;
 };

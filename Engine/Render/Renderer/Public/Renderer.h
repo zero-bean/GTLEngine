@@ -56,10 +56,8 @@ public:
 	//void Update();
 	void RenderBegin();
 	void RenderLevel();
-	//Deprecated: EditorPrimitive는 에디터에서 처리
-	//void RenderEditor();
-	void RenderEnd();
-	void RenderPrimitive(FEditorPrimitive& Primitive);
+	void RenderEnd() const;
+	void RenderPrimitive(FEditorPrimitive& InPrimitive, struct FRenderState& InRenderState);
 
 	//Testing Func
 	ID3D11Buffer* CreateVertexBuffer(FVertex* InVertices, uint32 InByteWidth) const;
@@ -81,12 +79,9 @@ public:
 private:
 	UPipeline* Pipeline = nullptr;
 	UDeviceResources* DeviceResources = nullptr;
-
 	TArray<UPrimitiveComponent*> PrimitiveComponents;
 
-	//AGizmo* Gizmo = nullptr;
 private:
-	ID3D11RasterizerState* RasterizerState = nullptr;
 	ID3D11DepthStencilState* DefaultDepthStencilState = nullptr;
 	ID3D11DepthStencilState* DisabledDepthStencilState = nullptr;
 	ID3D11Buffer* ConstantBufferModels = nullptr;
@@ -100,11 +95,36 @@ private:
 	ID3D11InputLayout* DefaultInputLayout = nullptr;
 	uint32 Stride = 0;
 
-	ID3D11Buffer* vertexBufferSphere = nullptr;
+private:
+	struct FRasterKey
+	{
+		D3D11_FILL_MODE FillMode = {};
+		D3D11_CULL_MODE CullMode = {};
 
-	///////////////////////////////////////////
-	// 카메라 VP Matrix 값 전달 받는 용도
-	// (차후 리팩터링이 필요합니다)
-	FViewProjConstants ViewProjConstants;
-	///////////////////////////////////////////
+		bool operator==(const FRasterKey& InKey) const
+		{
+			return FillMode == InKey.FillMode && CullMode == InKey.CullMode;
+		}
+	};
+
+	struct FRasterKeyHasher
+	{
+		size_t operator()(const FRasterKey& InKey) const noexcept
+		{
+			auto Mix = [](size_t& H, size_t V)
+				{
+					H ^= V + 0x9e3779b97f4a7c15ULL + (H << 6) + (H << 2);
+				};
+
+			size_t H = 0;
+			Mix(H, (size_t)InKey.FillMode);
+			Mix(H, (size_t)InKey.CullMode);
+
+			return H;
+		}
+	};
+
+	TMap<FRasterKey, ID3D11RasterizerState*, FRasterKeyHasher> RasterCache;
+
+	ID3D11RasterizerState* GetRasterizerState(const FRenderState& InRenderState);
 };

@@ -31,5 +31,5 @@ UAxis::~UAxis()
 void UAxis::Render()
 {
 	URenderer& Renderer = URenderer::GetInstance();
-	Renderer.RenderPrimitive(Primitive);
+	Renderer.RenderPrimitive(Primitive, Primitive.RenderState);
 }

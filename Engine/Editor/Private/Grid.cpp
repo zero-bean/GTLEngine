@@ -27,7 +27,7 @@ void UGrid::RenderGrid()
 {
 	URenderer& Renderer = URenderer::GetInstance();
 
-	Renderer.RenderPrimitive(Primitive);
+	Renderer.RenderPrimitive(Primitive, Primitive.RenderState);
 
 }
 void UGrid::SetGridProperty(float InCellSize, int32 InNumLines)

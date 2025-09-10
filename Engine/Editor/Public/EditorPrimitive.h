@@ -11,5 +11,6 @@ struct FEditorPrimitive
 	FVector Location;
 	FVector Rotation;
 	FVector Scale;
+	FRenderState RenderState;
 	bool bShouldAlwaysVisible = false;
 };
