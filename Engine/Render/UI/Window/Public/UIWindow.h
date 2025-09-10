@@ -148,7 +148,8 @@ private:
 	ImVec2 LastWindowPosition;
 
 	TArray<UWidget*> Widgets;
-	ImVec2 PositionRatio = { 0.5f, 0.5f };
 
+	ImVec2 PositionRatio = { 0.5f, 0.5f };
+	ImVec2 SizeRatio = { 0.5f, 0.5f };
 	bool bIsResized = false;
 };

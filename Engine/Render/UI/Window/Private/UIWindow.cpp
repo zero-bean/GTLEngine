@@ -58,8 +58,8 @@ void UUIWindow::OnMainWindowResized()
 	float scaleY = currentViewportSize.y / referenceSize.y;
 
 	ImVec2 responsiveSize(
-	   Config.DefaultSize.x * scaleX,
-	   Config.DefaultSize.y * scaleY
+		currentViewportSize.x * SizeRatio.x,
+		currentViewportSize.y * SizeRatio.y
 	);
 
 	ImVec2 targetPos(
@@ -143,8 +143,12 @@ void UUIWindow::RenderWindow()
 			ImVec2 currentPos = ImGui::GetWindowPos();
 			ImVec2 currentSize = ImGui::GetWindowSize();
 			ImVec2 pivot = { 0.f, 0.f };
+
 			PositionRatio.x = (currentPos.x - viewport->WorkPos.x + currentSize.x * pivot.x) / viewport->WorkSize.x;
 			PositionRatio.y = (currentPos.y - viewport->WorkPos.y + currentSize.y * pivot.y) / viewport->WorkSize.y;
+
+			SizeRatio.x = currentSize.x  / viewport->WorkSize.x;
+			SizeRatio.y = currentSize.y  / viewport->WorkSize.y;
 		}
 		// 실제 UI 컨텐츠 렌더링
 		RenderWidget();
