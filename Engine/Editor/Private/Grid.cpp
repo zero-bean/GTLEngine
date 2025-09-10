@@ -10,7 +10,7 @@ UGrid::UGrid()
 	SetLineVertices();
 
 	Primitive.NumVertices = static_cast<uint32>(LineVertices.size());
-	Primitive.Color = FVector4(1, 1, 1, 1);
+	Primitive.Color = FVector4(1, 1, 1, 0.2);
 	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 	Primitive.Vertexbuffer = Renderer.CreateVertexBuffer(
 		LineVertices.data(), Primitive.NumVertices * sizeof(FVertex));
