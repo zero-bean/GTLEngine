@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Render/UI/Window/Public/UIWindow.h"
 
+#include "Render/UI/Widget/Public/Widget.h"
+
 int UUIWindow::IssuedWindowID = 0;
 
 UUIWindow::UUIWindow(const FUIWindowConfig& InConfig)
@@ -27,11 +29,19 @@ UUIWindow::UUIWindow(const FUIWindowConfig& InConfig)
 	}
 }
 
+UUIWindow::~UUIWindow()
+{
+	for (UWidget* Widget : Widgets)
+	{
+		SafeDelete(Widget);
+	}
+}
+
 /**
  * @brief 내부적으로 사용되는 윈도우 렌더링 처리
  * 서브클래스에서 직접 호출할 수 없도록 접근한정자 설정
  */
-void UUIWindow::RenderInternal()
+void UUIWindow::RenderWindow()
 {
 	// 숨겨진 상태면 렌더링하지 않음
 	if (!IsVisible())
@@ -49,12 +59,10 @@ void UUIWindow::RenderInternal()
 	// 크기 제한 설정
 	ImGui::SetNextWindowSizeConstraints(Config.MinSize, Config.MaxSize);
 
-	bool bIsOpen = bIsWindowOpen;
-
-	if (ImGui::Begin(Config.WindowTitle.c_str(), &bIsOpen, Config.WindowFlags))
+	if (ImGui::Begin(Config.WindowTitle.c_str(), &bIsWindowOpen, Config.WindowFlags))
 	{
-		// 실제 UI 컨텐츠 렌더링 (서브클래스에서 구현)
-		Render();
+		// 실제 UI 컨텐츠 렌더링
+		RenderWidget();
 
 		// 윈도우 정보 업데이트
 		UpdateWindowInfo();
@@ -63,7 +71,7 @@ void UUIWindow::RenderInternal()
 	ImGui::End();
 
 	// 윈도우가 닫혔는지 확인
-	if (!bIsOpen && bIsWindowOpen)
+	if (!bIsWindowOpen && bIsWindowOpen)
 	{
 		if (OnWindowClose())
 		{
@@ -72,11 +80,26 @@ void UUIWindow::RenderInternal()
 		}
 		else
 		{
-			bIsWindowOpen = true; // 닫기 취소
+			// 닫기 취소
+			bIsWindowOpen = true;
 		}
 	}
+}
 
-	bIsWindowOpen = bIsOpen;
+void UUIWindow::RenderWidget() const
+{
+	for (auto* Widget : Widgets)
+	{
+		Widget->RenderWidget();
+	}
+}
+
+void UUIWindow::Update() const
+{
+	for (UWidget* Widget : Widgets)
+	{
+		Widget->Update();
+	}
 }
 
 /**

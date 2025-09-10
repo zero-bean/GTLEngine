@@ -27,6 +27,7 @@ public:
 	void PrintDebugInfo() const;
 
 	UUIWindow* FindUIWindow(const FString& InWindowName) const;
+	UWidget* FindWidget(const FString& InWidgetName) const;
 	void HideAllWindows() const;
 	void ShowAllWindows() const;
 

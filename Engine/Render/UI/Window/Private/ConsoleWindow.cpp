@@ -77,81 +77,81 @@ void UConsoleWindow::Initialize()
 	// Initialize System Output Redirection
 	InitializeSystemRedirect();
 }
-
-void UConsoleWindow::Render()
-{
-	// 제어 버튼들
-	if (ImGui::Button("Clear"))
-	{
-		ClearLog();
-	}
-	ImGui::SameLine();
-	ImGui::Checkbox("Auto-Scroll", &bIsAutoScroll);
-
-	ImGui::Separator();
-
-	// 로그 출력 영역 미리 예약
-	const float ReservedHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-	if (ImGui::BeginChild("LogOutput", ImVec2(0, -ReservedHeight), ImGuiChildFlags_NavFlattened,
-	                      ImGuiWindowFlags_HorizontalScrollbar))
-	{
-		// 로그 리스트 출력
-		for (const auto& LogEntry : LogItems)
-		{
-			// ELogType을 기반으로 색상 결정
-			ImVec4 Color = GetColorByLogType(LogEntry.Type);
-			bool bShouldApplyColor = (LogEntry.Type != ELogType::Info);
-
-			if (bShouldApplyColor)
-			{
-				ImGui::PushStyleColor(ImGuiCol_Text, Color);
-			}
-
-			ImGui::TextUnformatted(LogEntry.Message.c_str());
-
-			if (bShouldApplyColor)
-			{
-				ImGui::PopStyleColor();
-			}
-		}
-
-		// Auto Scroll
-		if (bIsScrollToBottom || (bIsAutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-		{
-			ImGui::SetScrollHereY(1.0f);
-		}
-		bIsScrollToBottom = false;
-	}
-
-	ImGui::EndChild();
-	ImGui::Separator();
-
-	// Input Command
-	bool ReclaimFocus = false;
-	ImGuiInputTextFlags InputFlags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EscapeClearsAll;
-	if (ImGui::InputText("Input", InputBuf, sizeof(InputBuf), InputFlags))
-	{
-		if (strlen(InputBuf) > 0)
-		{
-			ProcessCommand(InputBuf);
-			strcpy_s(InputBuf, sizeof(InputBuf), "");
-			ReclaimFocus = true;
-		}
-	}
-
-	// 입력 포커스 설정
-	ImGui::SetItemDefaultFocus();
-	if (ReclaimFocus)
-	{
-		ImGui::SetKeyboardFocusHere(-1);
-	}
-}
-
-void UConsoleWindow::Update()
-{
-	// 필요한 경우 여기에 업데이트 로직 추가할 것
-	// ImGui 위주라서 필요하지 않을 것으로 보이긴 함...
-}
+//
+// void UConsoleWindow::Render()
+// {
+// 	// 제어 버튼들
+// 	if (ImGui::Button("Clear"))
+// 	{
+// 		ClearLog();
+// 	}
+// 	ImGui::SameLine();
+// 	ImGui::Checkbox("Auto-Scroll", &bIsAutoScroll);
+//
+// 	ImGui::Separator();
+//
+// 	// 로그 출력 영역 미리 예약
+// 	const float ReservedHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+// 	if (ImGui::BeginChild("LogOutput", ImVec2(0, -ReservedHeight), ImGuiChildFlags_NavFlattened,
+// 	                      ImGuiWindowFlags_HorizontalScrollbar))
+// 	{
+// 		// 로그 리스트 출력
+// 		for (const auto& LogEntry : LogItems)
+// 		{
+// 			// ELogType을 기반으로 색상 결정
+// 			ImVec4 Color = GetColorByLogType(LogEntry.Type);
+// 			bool bShouldApplyColor = (LogEntry.Type != ELogType::Info);
+//
+// 			if (bShouldApplyColor)
+// 			{
+// 				ImGui::PushStyleColor(ImGuiCol_Text, Color);
+// 			}
+//
+// 			ImGui::TextUnformatted(LogEntry.Message.c_str());
+//
+// 			if (bShouldApplyColor)
+// 			{
+// 				ImGui::PopStyleColor();
+// 			}
+// 		}
+//
+// 		// Auto Scroll
+// 		if (bIsScrollToBottom || (bIsAutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+// 		{
+// 			ImGui::SetScrollHereY(1.0f);
+// 		}
+// 		bIsScrollToBottom = false;
+// 	}
+//
+// 	ImGui::EndChild();
+// 	ImGui::Separator();
+//
+// 	// Input Command
+// 	bool ReclaimFocus = false;
+// 	ImGuiInputTextFlags InputFlags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EscapeClearsAll;
+// 	if (ImGui::InputText("Input", InputBuf, sizeof(InputBuf), InputFlags))
+// 	{
+// 		if (strlen(InputBuf) > 0)
+// 		{
+// 			ProcessCommand(InputBuf);
+// 			strcpy_s(InputBuf, sizeof(InputBuf), "");
+// 			ReclaimFocus = true;
+// 		}
+// 	}
+//
+// 	// 입력 포커스 설정
+// 	ImGui::SetItemDefaultFocus();
+// 	if (ReclaimFocus)
+// 	{
+// 		ImGui::SetKeyboardFocusHere(-1);
+// 	}
+// }
+//
+// void UConsoleWindow::Update()
+// {
+// 	// 필요한 경우 여기에 업데이트 로직 추가할 것
+// 	// ImGui 위주라서 필요하지 않을 것으로 보이긴 함...
+// }
 
 void UConsoleWindow::Cleanup()
 {

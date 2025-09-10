@@ -1,6 +1,8 @@
 #pragma once
 #include "UIWindow.h"
 
+class UCamera;
+class ULevelManager;
 class AActor;
 
 /**
@@ -12,12 +14,47 @@ class UControlPanelWindow : public UUIWindow
 public:
 	UControlPanelWindow();
 	void Initialize() override;
-	void Render() override;
+
+	// Common Options
+	void RenderPrimitiveSpawn();
+	void RenderLevelIO();
+	void RenderCamera();
+
+	// FPS UI
+	static ImVec4 GetFPSColor(float InFPS);
+
+	// Level IO
+	path OpenSaveFileDialog();
+	path OpenLoadFileDialog();
+	void SaveLevel(const FString& InFilePath);
+	void LoadLevel(const FString& InFilePath);
+	void CreateNewLevel();
+
+	// Camera
+	void SyncFromCamera();
+	void PushToCamera();
 
 	AActor* GetSelectedActor() const { return SelectedActor; }
 	void SetSelectedActor(AActor* Actor) { SelectedActor = Actor; }
 
 private:
+
+
+	// Level IO
+	ULevelManager* LevelManager;
+	char NewLevelNameBuffer[256] = "Default";
+	FString StatusMessage;
+	float StatusMessageTimer = 0.0f;
+
+	static constexpr float STATUS_MESSAGE_DURATION = 3.0f;
+
+	// Camera
+	UCamera* CameraPtr = nullptr;
+	float UiFovY = 80.f;
+	float UiNearZ = 0.1f;
+	float UiFarZ = 1000.f;
+	int   CameraModeIndex = 0;
+
 	AActor* SelectedActor = nullptr;
 
 	// Transform 편집
