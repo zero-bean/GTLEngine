@@ -10,8 +10,8 @@ class UPerformanceWindow : public UUIWindow
 public:
 	UPerformanceWindow();
 	void Initialize() override;
-	void Render() override;
-	void Update() override;
+	// void Render() override;
+	// void Update() override;
 
 private:
 	// 성능 통계

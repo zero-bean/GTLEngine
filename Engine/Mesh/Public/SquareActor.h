@@ -9,8 +9,6 @@ public:
 	ASquareActor();
 	virtual ~ASquareActor() override {}
 
-	USquareComponent* GetSquareComponent();
-
 private:
 	USquareComponent* SquareComponent = nullptr;
 };

@@ -19,159 +19,6 @@ void UObjectPicker::SetCamera(UCamera& Camera)
 	this->Camera = Camera;
 }
 
-void UObjectPicker::RayCast(ULevel* InLevel, UGizmo& InGizmo)
-{
-	const UInputManager& InputManager = UInputManager::GetInstance();
-	FVector MousePosition = InputManager.GetMouseNDCPosition();
-
-	static EGizmoDirection PreviousGizmoDirection = EGizmoDirection::None;
-	AActor* ActorPicked = InLevel->GetSelectedActor();
-	FVector4 CollisionPoint;
-	float ActorDistance = -1;
-
-	if (InputManager.IsKeyReleased(EKeyInput::MouseLeft))
-	{
-		InGizmo.EndDrag();
-	}
-	if (InGizmo.IsDragging())
-		return;
-	if (InLevel->GetSelectedActor()) //기즈모가 출력되고있음. 레이캐스팅을 계속 해야함.
-	{
-		FRay WorldRay = Camera.ConvertToWorldRay(MousePosition.X, MousePosition.Y);
-		InGizmo.SetGizmoDirection(PickGizmo(WorldRay, InGizmo, CollisionPoint));
-	}
-	if (!ImGui::GetIO().WantCaptureMouse && InputManager.IsKeyPressed(EKeyInput::MouseLeft))
-	{
-		FRay WorldRay = Camera.ConvertToWorldRay(MousePosition.X, MousePosition.Y);
-		ActorPicked = PickActor(InLevel, WorldRay, &ActorDistance);
-	}
-
-	if (InGizmo.GetGizmoDirection() == EGizmoDirection::None) //기즈모에 호버링되거나 클릭되지 않았을 때. Actor 업데이트해줌.
-	{
-		InLevel->SetSelectedActor(ActorPicked);
-		if (PreviousGizmoDirection != EGizmoDirection::None)
-		{
-			InGizmo.OnMouseRelease(PreviousGizmoDirection);
-		}
-	}
-	//기즈모가 선택되었을 때. Actor가 선택되지 않으면 기즈모도 선택되지 않으므로 이미 Actor가 선택된 상황.
-	//SelectedActor를 update하지 않고 마우스 인풋에 따라 hovering or drag
-	else
-	{
-		PreviousGizmoDirection = InGizmo.GetGizmoDirection();
-		if (InputManager.IsKeyPressed(EKeyInput::MouseLeft)) //드래그
-		{
-			InGizmo.OnMouseClick(CollisionPoint);
-		}
-		else
-		{
-			InGizmo.OnMouseHovering();
-		}
-	}
-}
-
-AActor* UObjectPicker::PickActor(ULevel* InLevel, const FRay& WorldRay, float* ShortestDistance)
-{
-	//Level로부터 Actor순회하면서 picked objects중에서 가장 가까운 거리 리턴
-	AActor* ShortestActor = nullptr;
-	*ShortestDistance = D3D11_FLOAT32_MAX;
-	float PrimitiveDistance = D3D11_FLOAT32_MAX;
-
-	for (AActor* Actor : InLevel->GetLevelActors())
-	{
-		for (auto& ActorComponent : Actor->GetOwnedComponents())
-		{
-			UPrimitiveComponent* Primitive = dynamic_cast<UPrimitiveComponent*>(ActorComponent);
-			if (Primitive)
-			{
-				FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
-				FRay ModelRay = GetModelRay(WorldRay, Primitive); //Actor로부터 Primitive를 얻고 Ray를 모델 좌표계로 변환함
-				if (IsRayPrimitiveCollided(ModelRay, Primitive, ModelMat, &PrimitiveDistance))
-				//Ray와 Primitive가 충돌했다면 거리 테스트 후 가까운 Actor Picking
-				{
-					if (PrimitiveDistance < *ShortestDistance)
-					{
-						ShortestActor = Actor;
-						*ShortestDistance = PrimitiveDistance;
-					}
-				}
-			}
-		}
-	}
-
-
-	return ShortestActor;
-}
-
-EGizmoDirection UObjectPicker::PickGizmo( const FRay& WorldRay, UGizmo& Gizmo, FVector4& CollisionPoint)
-{
-	//Forward, Right, Up순으로 테스트할거임.
-	//원기둥 위의 한 점 P, 축 위의 임의의 점 A에(기즈모 포지션) 대해, AP벡터와 축 벡터 V와 피타고라스 정리를 적용해서 점 P의 축부터의 거리 r을 구할 수 있음.
-	//r이 원기둥의 반지름과 같다고 방정식을 세운 후 근의공식을 적용해서 충돌여부 파악하고 distance를 구할 수 있음.
-
-	//FVector4 PointOnCylinder = WorldRay.Origin + WorldRay.Direction * X;
-	//dot(PointOnCylinder - GizmoLocation)*Dot(PointOnCylinder - GizmoLocation) - Dot(PointOnCylinder - GizmoLocation, GizmoAxis)^2 = r^2 = radiusOfGizmo
-	//이 t에 대한 방정식을 풀어서 근의공식 적용하면 됨.
-	FVector GizmoLocationVec3 = Gizmo.GetGizmoLocation();
-	FVector4 GizmoLocation{GizmoLocationVec3.X, GizmoLocationVec3.Y, GizmoLocationVec3.Z, 1.0f};
-	FVector4 GizmoDistanceVector = WorldRay.Origin - GizmoLocation;
-	bool bIsCollide = false;
-
-	float GizmoRadius = Gizmo.GetGizmoRadius();
-	float GizmoHeight = Gizmo.GetGizmoHeight();
-	float A, B, C; //Ax^2 + Bx + C의 ABC
-	float X; //해
-	float Det; //판별식
-
-	EGizmoDirection ResultDirection = EGizmoDirection::None;
-	//0 = forward 1 = Right 2 = UP
-	FVector4 GizmoAxises[3] = {{0, 0, 1, 0}, {1, 0, 0, 0}, {0, 1, 0, 0}};
-	for (int a = 0; a < 3; a++)
-	{
-		FVector4 GizmoAxis = GizmoAxises[a];
-		A = 1 - static_cast<float>(pow(WorldRay.Direction.Dot3(GizmoAxis), 2));
-		B = WorldRay.Direction.Dot3(GizmoDistanceVector) - WorldRay.Direction.Dot3(GizmoAxis) * GizmoDistanceVector.
-			Dot3(GizmoAxis); //B가 2의 배수이므로 미리 약분
-		C = static_cast<float>(GizmoDistanceVector.Dot3(GizmoDistanceVector) -
-			pow(GizmoDistanceVector.Dot3(GizmoAxis), 2)) - GizmoRadius * GizmoRadius;
-
-		Det = B * B - A * C;
-		if (Det >= 0) //판별식 0이상 => 근 존재. 높이테스트만 통과하면 충돌
-		{
-			X = (-B + sqrtf(Det)) / A;
-			FVector4 PointOnCylinder = WorldRay.Origin + WorldRay.Direction * X;
-			if ((PointOnCylinder - GizmoLocation).Dot3(GizmoAxis) <= GizmoHeight) //충돌
-			{
-				CollisionPoint = PointOnCylinder;
-				bIsCollide = true;
-				
-			}
-			X = (-B - sqrtf(Det)) / A;
-			PointOnCylinder = WorldRay.Origin + WorldRay.Direction * X;
-			if ((PointOnCylinder - GizmoLocation).Dot3(GizmoAxis) <= GizmoHeight)
-			{
-				CollisionPoint = PointOnCylinder;
-				bIsCollide = true;
-			}
-			if (bIsCollide)
-			{
-				switch (a)
-				{
-				case 0:
-					return EGizmoDirection::Forward;
-					break;
-				case 1:
-					return EGizmoDirection::Right;
-					break;
-				case 2:
-					return EGizmoDirection::Up;
-				}
-			}
-		}
-	}
-	return EGizmoDirection::None;
-}
-
 FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 {
 	FMatrix ModelInverse = Primitive->GetWorldTransformMatrixInverse();
@@ -181,6 +28,137 @@ FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 	ModelRay.Direction = Ray.Direction * ModelInverse;
 	ModelRay.Direction.Normalize();
 	return ModelRay;
+}
+
+UPrimitiveComponent* UObjectPicker::PickPrimitive(const FRay& WorldRay, TArray<UPrimitiveComponent*> Candidate, float* Distance)
+{
+	UPrimitiveComponent* ShortestPrimitive = nullptr;
+	float ShortestDistance = D3D11_FLOAT32_MAX;
+	float PrimitiveDistance = D3D11_FLOAT32_MAX;
+	
+	for (UPrimitiveComponent* Primitive : Candidate)
+	{
+		FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
+		FRay ModelRay = GetModelRay(WorldRay, Primitive);
+		if (IsRayPrimitiveCollided(ModelRay, Primitive, ModelMat, &PrimitiveDistance))
+			//Ray와 Primitive가 충돌했다면 거리 테스트 후 가까운 Actor Picking
+		{
+			if (PrimitiveDistance < ShortestDistance)
+			{
+				ShortestPrimitive = Primitive;
+				ShortestDistance = PrimitiveDistance;
+			}
+		}
+	}
+	*Distance = ShortestDistance;
+
+	return ShortestPrimitive;
+}
+
+void UObjectPicker::PickGizmo( const FRay& WorldRay, UGizmo& Gizmo, FVector& CollisionPoint)
+{
+	//Forward, Right, Up순으로 테스트할거임.
+	//원기둥 위의 한 점 P, 축 위의 임의의 점 A에(기즈모 포지션) 대해, AP벡터와 축 벡터 V와 피타고라스 정리를 적용해서 점 P의 축부터의 거리 r을 구할 수 있음.
+	//r이 원기둥의 반지름과 같다고 방정식을 세운 후 근의공식을 적용해서 충돌여부 파악하고 distance를 구할 수 있음.
+
+	//FVector4 PointOnCylinder = WorldRay.Origin + WorldRay.Direction * X;
+	//dot(PointOnCylinder - GizmoLocation)*Dot(PointOnCylinder - GizmoLocation) - Dot(PointOnCylinder - GizmoLocation, GizmoAxis)^2 = r^2 = radiusOfGizmo
+	//이 t에 대한 방정식을 풀어서 근의공식 적용하면 됨.
+	
+	FVector GizmoLocation = Gizmo.GetGizmoLocation();
+	FVector GizmoAxises[3] = { {0, 0, 1}, {1, 0, 0}, {0, 1, 0} };
+	FVector WorldRayOrigin{ WorldRay.Origin.X,WorldRay.Origin.Y ,WorldRay.Origin.Z };
+	FVector WorldRayDirection(WorldRay.Direction.X, WorldRay.Direction.Y, WorldRay.Direction.Z);
+	switch (Gizmo.GetGizmoMode())
+	{
+	case EGizmoMode::Translate:
+	
+	{
+		FVector GizmoDistanceVector = WorldRayOrigin - GizmoLocation;
+		bool bIsCollide = false;
+
+		float GizmoRadius = Gizmo.GetTranslateRadius();
+		float GizmoHeight = Gizmo.GetTranslateHeight();
+		float A, B, C; //Ax^2 + Bx + C의 ABC
+		float X; //해
+		float Det; //판별식
+		//0 = forward 1 = Right 2 = UP
+
+		for (int a = 0; a < 3; a++)
+		{
+			FVector GizmoAxis = GizmoAxises[a];
+			A = 1 - static_cast<float>(pow(WorldRay.Direction.Dot3(GizmoAxis), 2));
+			B = WorldRay.Direction.Dot3(GizmoDistanceVector) - WorldRay.Direction.Dot3(GizmoAxis) * GizmoDistanceVector.
+				Dot(GizmoAxis); //B가 2의 배수이므로 미리 약분
+			C = static_cast<float>(GizmoDistanceVector.Dot(GizmoDistanceVector) -
+				pow(GizmoDistanceVector.Dot(GizmoAxis), 2)) - GizmoRadius * GizmoRadius;
+
+			Det = B * B - A * C;
+			if (Det >= 0) //판별식 0이상 => 근 존재. 높이테스트만 통과하면 충돌
+			{
+				X = (-B + sqrtf(Det)) / A;
+				FVector PointOnCylinder = WorldRayOrigin + WorldRayDirection * X;
+				float Height = (PointOnCylinder - GizmoLocation).Dot(GizmoAxis);
+				if (Height <= GizmoHeight && Height >= 0) //충돌
+				{
+					CollisionPoint = PointOnCylinder;
+					bIsCollide = true;
+
+				}
+				X = (-B - sqrtf(Det)) / A;
+				PointOnCylinder = WorldRay.Origin + WorldRay.Direction * X;
+				Height = (PointOnCylinder - GizmoLocation).Dot(GizmoAxis);
+				if (Height <= GizmoHeight && Height >= 0)
+				{
+					CollisionPoint = PointOnCylinder;
+					bIsCollide = true;
+				}
+				if (bIsCollide)
+				{
+					switch (a)
+					{
+					case 0:
+						Gizmo.SetGizmoDirection(EGizmoDirection::Forward);
+						return;
+					case 1:
+						Gizmo.SetGizmoDirection(EGizmoDirection::Right);
+						return;
+					case 2:
+						Gizmo.SetGizmoDirection(EGizmoDirection::Up);
+						return;
+					}
+				}
+			}
+		}
+	} break;
+	case EGizmoMode::Rotate:
+	{
+		for (int a = 0;a < 3;a++)
+		{
+			if (IsRayCollideWithPlane(WorldRay, GizmoLocation, GizmoAxises[a], CollisionPoint))
+			{
+				FVector RadiusVector = CollisionPoint - GizmoLocation;
+				if (Gizmo.IsInRadius(RadiusVector.Length()))
+				{
+					switch (a)
+					{
+					case 0:
+						Gizmo.SetGizmoDirection(EGizmoDirection::Forward);
+						return;
+					case 1:
+						Gizmo.SetGizmoDirection(EGizmoDirection::Right);
+						return;
+					case 2:
+						Gizmo.SetGizmoDirection(EGizmoDirection::Up);
+						return;
+					}
+				}
+			}
+		}
+	}
+	}
+	
+	Gizmo.SetGizmoDirection(EGizmoDirection::None);
 }
 
 //개별 primitive와 ray 충돌 검사
@@ -278,19 +256,16 @@ bool UObjectPicker::IsRayTriangleCollided(const FRay& Ray, const FVector& Vertex
 }
 
 
-bool UObjectPicker::IsCollideWithPlane(FVector4 PlanePoint, FVector4 Axis, FVector4& PointOnPlane)
+bool UObjectPicker::IsRayCollideWithPlane(const FRay& WorldRay, FVector PlanePoint, FVector Normal, FVector& PointOnPlane)
 {
-	const UInputManager& Input = UInputManager::GetInstance();
+	FVector WorldRayOrigin{ WorldRay.Origin.X, WorldRay.Origin.Y ,WorldRay.Origin.Z };
 
-	FVector MousePositionNDC = Input.GetMouseNDCPosition();
+	if (abs(WorldRay.Direction.Dot3(Normal)) < 0.01f)
+		return false;
 
-	FRay WorldRay = Camera.ConvertToWorldRay(MousePositionNDC.X, MousePositionNDC.Y);
+	float Distance = (PlanePoint - WorldRayOrigin).Dot(Normal) / WorldRay.Direction.Dot3(Normal);
 
-	FVector Normal = Camera.CalculatePlaneNormal(Axis);
-
-	float Distance = (PlanePoint - WorldRay.Origin).Dot3(Normal) / WorldRay.Direction.Dot3(Normal);
-
-	if (abs(WorldRay.Direction.Dot3(Normal)) < 0.01f || Distance < 0)
+	if (Distance < 0)
 		return false;
 	PointOnPlane = WorldRay.Origin + WorldRay.Direction * Distance;
 

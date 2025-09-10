@@ -4,7 +4,7 @@ class UConsoleWindow;
 class UControlPanelWindow;
 class UInputStatusWindow;
 class UPerformanceWindow;
-class ULevelManagerWindow;
+class UOutlinerWindow;
 class UCameraPanelWindow;
 
 /**
@@ -30,8 +30,8 @@ public:
 	static UConsoleWindow* CreateConsoleWindow(EUIDockDirection InDockDirection = EUIDockDirection::Bottom);
 	static UPerformanceWindow* CreatePerformanceWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
 	static UInputStatusWindow* CreateInputStatusWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
-	static UControlPanelWindow* CreateActorInspectorWindow(EUIDockDirection InDockDirection = EUIDockDirection::Left);
-	static ULevelManagerWindow* CreateLevelIOWindow(EUIDockDirection InDockDirection = EUIDockDirection::Center);
+	static UControlPanelWindow* CreateControlPanelWindow(EUIDockDirection InDockDirection = EUIDockDirection::Left);
+	static UOutlinerWindow* CreateOutlinerWindow(EUIDockDirection InDockDirection = EUIDockDirection::Center);
 	static UCameraPanelWindow* CreateCameraPanelWindow(EUIDockDirection InDockDirection = EUIDockDirection::Left);
 };
 

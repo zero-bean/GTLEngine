@@ -21,10 +21,10 @@ public:
     ~FClientApp();
 
 private:
-    int InitializeSystem() const;
+    int InitializeSystem();
     void UpdateSystem();
     void MainLoop();
-	static void ShutdownSystem();
+	void ShutdownSystem();
 
     HACCEL AcceleratorTable;
     MSG MainMessage;

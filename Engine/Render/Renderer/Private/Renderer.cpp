@@ -50,7 +50,8 @@ void URenderer::CreateRasterizerState()
 {
 	D3D11_RASTERIZER_DESC rasterizerdesc = {};
 	rasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
-	rasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
+	//rasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
+	rasterizerdesc.CullMode = D3D11_CULL_NONE;
 
 	GetDevice()->CreateRasterizerState(&rasterizerdesc, &RasterizerState);
 }

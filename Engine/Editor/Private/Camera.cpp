@@ -241,3 +241,7 @@ FVector UCamera::CalculatePlaneNormal(const FVector4& Axis)
 {
 	return Forward.Cross(FVector(Axis.X, Axis.Y, Axis.Z));
 }
+FVector UCamera::CalculatePlaneNormal(const FVector& Axis)
+{
+	return Forward.Cross(FVector(Axis.X, Axis.Y, Axis.Z));
+}

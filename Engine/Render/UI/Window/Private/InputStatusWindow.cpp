@@ -38,101 +38,101 @@ void UInputStatusWindow::Initialize()
 	UE_LOG("InputStatusWindow: Successfully Initialized");
 }
 
-/**
- * @brief 업데이트
- */
-void UInputStatusWindow::Update()
-{
-	auto& InputManager = UInputManager::GetInstance();
-
-	// 마우스 위치 업데이트
-	FVector CurrentMousePosition = InputManager.GetMousePosition();
-	MouseDelta = CurrentMousePosition - LastMousePosition;
-	LastMousePosition = CurrentMousePosition;
-
-	// 새로운 키 입력 확인 및 히스토리에 추가
-	TArray<EKeyInput> PressedKeys = InputManager.GetPressedKeys();
-	for (const auto& Key : PressedKeys)
-	{
-		const wchar_t* KeyString = UInputManager::KeyInputToString(Key);
-		FString KeyName = FString(reinterpret_cast<const char*>(KeyString));
-
-		// 키 통계 업데이트
-		if (KeyPressCount.find(KeyName) == KeyPressCount.end())
-		{
-			KeyPressCount[KeyName] = 0;
-		}
-		KeyPressCount[KeyName]++;
-
-		// 히스토리에 추가 (중복 방지)
-		if (RecentKeyPresses.empty() || RecentKeyPresses.back() != KeyName)
-		{
-			AddKeyToHistory(KeyName);
-		}
-	}
-}
-
-/**
- * @brief 렌더링
- */
-void UInputStatusWindow::Render()
-{
-	auto& InputManager = UInputManager::GetInstance();
-	TArray<EKeyInput> PressedKeys = InputManager.GetPressedKeys();
-
-	// 탭으로 구분
-	if (ImGui::BeginTabBar("InputTabs"))
-	{
-		// 현재 입력 탭
-		if (ImGui::BeginTabItem("Current Input"))
-		{
-			RenderKeyList(PressedKeys);
-			ImGui::EndTabItem();
-		}
-
-		// 마우스 정보 탭
-		if (ImGui::BeginTabItem("Mouse Info"))
-		{
-			RenderMouseInfo();
-			ImGui::EndTabItem();
-		}
-
-		// 키 히스토리 탭
-		if (ImGui::BeginTabItem("Key History"))
-		{
-			ImGui::Text("Recent Key Presses:");
-			ImGui::Separator();
-
-			for (int i = static_cast<int>(RecentKeyPresses.size()) - 1; i >= 0; --i)
-			{
-				ImGui::Text("- %s", RecentKeyPresses[i].c_str());
-			}
-
-			if (ImGui::Button("Clear History"))
-			{
-				RecentKeyPresses.clear();
-			}
-
-			ImGui::EndTabItem();
-		}
-
-		// 통계 탭
-		if (ImGui::BeginTabItem("Statistics"))
-		{
-			RenderKeyStatistics();
-			ImGui::EndTabItem();
-		}
-
-		// 도움말 탭
-		if (ImGui::BeginTabItem("Help"))
-		{
-			RenderControlHelp();
-			ImGui::EndTabItem();
-		}
-
-		ImGui::EndTabBar();
-	}
-}
+// /**
+//  * @brief 업데이트
+//  */
+// void UInputStatusWindow::Update()
+// {
+// 	auto& InputManager = UInputManager::GetInstance();
+//
+// 	// 마우스 위치 업데이트
+// 	FVector CurrentMousePosition = InputManager.GetMousePosition();
+// 	MouseDelta = CurrentMousePosition - LastMousePosition;
+// 	LastMousePosition = CurrentMousePosition;
+//
+// 	// 새로운 키 입력 확인 및 히스토리에 추가
+// 	TArray<EKeyInput> PressedKeys = InputManager.GetPressedKeys();
+// 	for (const auto& Key : PressedKeys)
+// 	{
+// 		const wchar_t* KeyString = UInputManager::KeyInputToString(Key);
+// 		FString KeyName = FString(reinterpret_cast<const char*>(KeyString));
+//
+// 		// 키 통계 업데이트
+// 		if (KeyPressCount.find(KeyName) == KeyPressCount.end())
+// 		{
+// 			KeyPressCount[KeyName] = 0;
+// 		}
+// 		KeyPressCount[KeyName]++;
+//
+// 		// 히스토리에 추가 (중복 방지)
+// 		if (RecentKeyPresses.empty() || RecentKeyPresses.back() != KeyName)
+// 		{
+// 			AddKeyToHistory(KeyName);
+// 		}
+// 	}
+// }
+//
+// /**
+//  * @brief 렌더링
+//  */
+// void UInputStatusWindow::Render()
+// {
+// 	auto& InputManager = UInputManager::GetInstance();
+// 	TArray<EKeyInput> PressedKeys = InputManager.GetPressedKeys();
+//
+// 	// 탭으로 구분
+// 	if (ImGui::BeginTabBar("InputTabs"))
+// 	{
+// 		// 현재 입력 탭
+// 		if (ImGui::BeginTabItem("Current Input"))
+// 		{
+// 			RenderKeyList(PressedKeys);
+// 			ImGui::EndTabItem();
+// 		}
+//
+// 		// 마우스 정보 탭
+// 		if (ImGui::BeginTabItem("Mouse Info"))
+// 		{
+// 			RenderMouseInfo();
+// 			ImGui::EndTabItem();
+// 		}
+//
+// 		// 키 히스토리 탭
+// 		if (ImGui::BeginTabItem("Key History"))
+// 		{
+// 			ImGui::Text("Recent Key Presses:");
+// 			ImGui::Separator();
+//
+// 			for (int i = static_cast<int>(RecentKeyPresses.size()) - 1; i >= 0; --i)
+// 			{
+// 				ImGui::Text("- %s", RecentKeyPresses[i].c_str());
+// 			}
+//
+// 			if (ImGui::Button("Clear History"))
+// 			{
+// 				RecentKeyPresses.clear();
+// 			}
+//
+// 			ImGui::EndTabItem();
+// 		}
+//
+// 		// 통계 탭
+// 		if (ImGui::BeginTabItem("Statistics"))
+// 		{
+// 			RenderKeyStatistics();
+// 			ImGui::EndTabItem();
+// 		}
+//
+// 		// 도움말 탭
+// 		if (ImGui::BeginTabItem("Help"))
+// 		{
+// 			RenderControlHelp();
+// 			ImGui::EndTabItem();
+// 		}
+//
+// 		ImGui::EndTabBar();
+// 	}
+// }
 
 void UInputStatusWindow::AddKeyToHistory(const FString& InKeyName)
 {

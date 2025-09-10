@@ -9,7 +9,6 @@ public:
 	ATriangleActor();
 	virtual ~ATriangleActor() override {}
 
-	UTriangleComponent* GetTriangleComponent();
 
 private:
 	UTriangleComponent* TriangleComponent = nullptr;

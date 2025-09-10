@@ -3,6 +3,8 @@
 
 #include "ImGui/imgui_internal.h"
 
+#include "Render/UI/Widget/Public/Widget.h"
+
 int UUIWindow::IssuedWindowID = 0;
 
 UUIWindow::UUIWindow(const FUIWindowConfig& InConfig)
@@ -26,6 +28,14 @@ UUIWindow::UUIWindow(const FUIWindowConfig& InConfig)
 	else
 	{
 		UE_LOG("UIWindow: Created: %d (%s)", WindowID, Config.WindowTitle.c_str());
+	}
+}
+
+UUIWindow::~UUIWindow()
+{
+	for (UWidget* Widget : Widgets)
+	{
+		SafeDelete(Widget);
 	}
 }
 
@@ -105,7 +115,7 @@ void UUIWindow::ClampWindow()
  * @brief 내부적으로 사용되는 윈도우 렌더링 처리
  * 서브클래스에서 직접 호출할 수 없도록 접근한정자 설정
  */
-void UUIWindow::RenderInternal()
+void UUIWindow::RenderWindow()
 {
 	// 숨겨진 상태면 렌더링하지 않음
 	if (!IsVisible())
@@ -136,9 +146,8 @@ void UUIWindow::RenderInternal()
 			PositionRatio.x = (currentPos.x - viewport->WorkPos.x + currentSize.x * pivot.x) / viewport->WorkSize.x;
 			PositionRatio.y = (currentPos.y - viewport->WorkPos.y + currentSize.y * pivot.y) / viewport->WorkSize.y;
 		}
-
-		// 실제 UI 컨텐츠 렌더링 (서브클래스에서 구현)
-		Render();
+		// 실제 UI 컨텐츠 렌더링
+		RenderWidget();
 
 		// 윈도우 정보 업데이트
 		UpdateWindowInfo();
@@ -153,7 +162,7 @@ void UUIWindow::RenderInternal()
 	ImGui::End();
 
 	// 윈도우가 닫혔는지 확인
-	if (!bIsOpen && bIsWindowOpen)
+	if (!bIsWindowOpen && bIsWindowOpen)
 	{
 		if (OnWindowClose())
 		{
@@ -162,11 +171,27 @@ void UUIWindow::RenderInternal()
 		}
 		else
 		{
-			bIsWindowOpen = true; // 닫기 취소
+			// 닫기 취소
+			bIsWindowOpen = true;
 		}
 	}
+}
 
-	bIsWindowOpen = bIsOpen;
+void UUIWindow::RenderWidget() const
+{
+	for (auto* Widget : Widgets)
+	{
+		Widget->RenderWidget();
+		Widget->PostProcess(); // 선택
+	}
+}
+
+void UUIWindow::Update() const
+{
+	for (UWidget* Widget : Widgets)
+	{
+		Widget->Update();
+	}
 }
 
 /**
@@ -181,22 +206,22 @@ void UUIWindow::ApplyDockingSettings() const
 	switch (Config.DockDirection)
 	{
 	case EUIDockDirection::Left:
-		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(Config.DefaultSize.x, ScreenHeight), ImGuiCond_Always);
 		break;
 
 	case EUIDockDirection::Right:
-		ImGui::SetNextWindowPos(ImVec2(ScreenWidth - Config.DefaultSize.x, 0), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowPos(ImVec2(ScreenWidth - Config.DefaultSize.x, 0), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(Config.DefaultSize.x, ScreenHeight), ImGuiCond_Always);
 		break;
 
 	case EUIDockDirection::Top:
-		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(ScreenWidth, Config.DefaultSize.y), ImGuiCond_Always);
 		break;
 
 	case EUIDockDirection::Bottom:
-		ImGui::SetNextWindowPos(ImVec2(0, ScreenHeight - Config.DefaultSize.y), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowPos(ImVec2(0, ScreenHeight - Config.DefaultSize.y), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(ScreenWidth, Config.DefaultSize.y), ImGuiCond_Always);
 		break;
 
@@ -205,7 +230,7 @@ void UUIWindow::ApplyDockingSettings() const
 			ImVec2 Center = ImVec2(ScreenWidth * 0.5f, ScreenHeight * 0.5f);
 			ImVec2 WindowPosition = ImVec2(Center.x - Config.DefaultSize.x * 0.5f,
 			                               Center.y - Config.DefaultSize.y * 0.5f);
-			ImGui::SetNextWindowPos(WindowPosition, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+			ImGui::SetNextWindowPos(WindowPosition, ImGuiCond_Always);
 		}
 		break;
 
