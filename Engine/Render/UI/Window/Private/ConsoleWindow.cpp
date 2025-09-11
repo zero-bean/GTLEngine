@@ -19,12 +19,13 @@ UConsoleWindow::UConsoleWindow(const FUIWindowConfig& InConfig)
 	// 콘솔 윈도우 기본 설정
 	FUIWindowConfig Config = InConfig;
 	Config.WindowTitle = "GTL Console";
-	Config.DefaultSize = ImVec2(1000, 250);
-	Config.DefaultPosition = ImVec2(570, 600);
-	Config.MinSize = ImVec2(1000, 250);
+	Config.DefaultSize = ImVec2(1000, 260);
+	Config.DefaultPosition = ImVec2(575, 590);
+	Config.MinSize = ImVec2(1000, 260);
 	Config.bResizable = true;
 	Config.bMovable = true;
 	Config.bCollapsible = true;
+	Config.DockDirection = EUIDockDirection::Bottom; // 바텀업 도킹 설정
 	SetConfig(Config);
 
 	ConsoleWidget = new UConsoleWidget;

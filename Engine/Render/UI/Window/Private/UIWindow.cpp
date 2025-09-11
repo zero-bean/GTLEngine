@@ -23,11 +23,11 @@ UUIWindow::UUIWindow(const FUIWindowConfig& InConfig)
 
 	if (IssuedWindowID == 1)
 	{
-		cout << "UIWindow: Created: " << WindowID << " (" << Config.WindowTitle << ")" << "\n";
+		cout << "UIWindow: Created: " << WindowID << "\n";
 	}
 	else
 	{
-		UE_LOG("UIWindow: Created: %d (%s)", WindowID, Config.WindowTitle.c_str());
+		UE_LOG("UIWindow: Created: %u", WindowID);
 	}
 }
 
@@ -196,6 +196,7 @@ void UUIWindow::Update() const
 
 /**
  * @brief 윈도우 위치와 크기 자동 설정
+ * XXX(KHJ): 기본적으로 가볍게 어디에 위치할지 세팅할 수 있게 잡아두긴 했는데 잘 안 쓰는 느낌, 필요 없다면 Deprecated 처리할 것
  */
 void UUIWindow::ApplyDockingSettings() const
 {
@@ -206,23 +207,23 @@ void UUIWindow::ApplyDockingSettings() const
 	switch (Config.DockDirection)
 	{
 	case EUIDockDirection::Left:
-		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(Config.DefaultSize.x, ScreenHeight), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(Config.DefaultSize.x, ScreenHeight), ImGuiCond_FirstUseEver);
 		break;
 
 	case EUIDockDirection::Right:
-		ImGui::SetNextWindowPos(ImVec2(ScreenWidth - Config.DefaultSize.x, 0), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(Config.DefaultSize.x, ScreenHeight), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(ScreenWidth - Config.DefaultSize.x, 0), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(Config.DefaultSize.x, ScreenHeight), ImGuiCond_FirstUseEver);
 		break;
 
 	case EUIDockDirection::Top:
-		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(ScreenWidth, Config.DefaultSize.y), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(ScreenWidth, Config.DefaultSize.y), ImGuiCond_FirstUseEver);
 		break;
 
 	case EUIDockDirection::Bottom:
-		ImGui::SetNextWindowPos(ImVec2(0, ScreenHeight - Config.DefaultSize.y), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(ScreenWidth, Config.DefaultSize.y), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(0, ScreenHeight - Config.DefaultSize.y), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(ScreenWidth, Config.DefaultSize.y), ImGuiCond_FirstUseEver);
 		break;
 
 	case EUIDockDirection::Center:
@@ -230,7 +231,7 @@ void UUIWindow::ApplyDockingSettings() const
 			ImVec2 Center = ImVec2(ScreenWidth * 0.5f, ScreenHeight * 0.5f);
 			ImVec2 WindowPosition = ImVec2(Center.x - Config.DefaultSize.x * 0.5f,
 			                               Center.y - Config.DefaultSize.y * 0.5f);
-			ImGui::SetNextWindowPos(WindowPosition, ImGuiCond_Always);
+			ImGui::SetNextWindowPos(WindowPosition, ImGuiCond_FirstUseEver);
 		}
 		break;
 
