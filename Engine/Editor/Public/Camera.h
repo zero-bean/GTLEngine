@@ -10,6 +10,12 @@ enum class ECameraType
 class UCamera : public UObject
 {
 public:
+	// Camera Speed Constants
+	static constexpr float MIN_SPEED = 10.0f;
+	static constexpr float MAX_SPEED = 50.0f;
+	static constexpr float DEFAULT_SPEED = 20.0f;
+	static constexpr float SPEED_ADJUST_STEP = 0.5f;
+
 	UCamera() :
 		ViewProjConstants(FViewProjConstants()),
 		RelativeLocation(FVector(-5.f, 10.f, -5.f)), RelativeRotation(FVector(45, 45, 0)),
@@ -49,11 +55,11 @@ public:
 	const FVector& GetForward() const { return Forward; }
 	const FVector& GetUp() const { return Up; }
 	const FVector& GetRight() const { return Right; }
-	const float GetFovY() const { return FovY; }
-	const float GetAspect() const { return Aspect; }
-	const float GetNearZ() const { return NearZ; }
-	const float GetFarZ() const { return FarZ; }
-	const ECameraType GetCameraType() const { return CameraType; }
+	float GetFovY() const { return FovY; }
+	float GetAspect() const { return Aspect; }
+	float GetNearZ() const { return NearZ; }
+	float GetFarZ() const { return FarZ; }
+	ECameraType GetCameraType() const { return CameraType; }
 
 	// Camera Movement Speed Control
 	float GetMoveSpeed() const { return CurrentMoveSpeed; }
@@ -79,12 +85,6 @@ public:
 	}
 
 private:
-	// Camera Speed Constants
-	static constexpr float MIN_SPEED = 10.0f;
-	static constexpr float MAX_SPEED = 50.0f;
-	static constexpr float DEFAULT_SPEED = 20.0f;
-	static constexpr float SPEED_ADJUST_STEP = 0.5f;
-
 	FViewProjConstants ViewProjConstants = {};
 	FVector RelativeLocation = {};
 	FVector RelativeRotation = {};

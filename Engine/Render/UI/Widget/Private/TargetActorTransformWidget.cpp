@@ -50,7 +50,7 @@ void UTargetActorTransformWidget::Update()
 void UTargetActorTransformWidget::RenderWidget()
 {
 	// Memory Information
-	ImGui::Text("Level 메모리 정보");
+	ImGui::Text("레벨 메모리 정보");
 	ImGui::Text("Level Object Count: %u", LevelObjectCount);
 	ImGui::Text("Level Memory: %.3f KB", static_cast<float>(LevelMemoryByte) / KILO);
 	ImGui::Separator();
@@ -60,7 +60,7 @@ void UTargetActorTransformWidget::RenderWidget()
 	ImGui::Text("Overall Memory: %.3f KB", static_cast<float>(TotalAllocationBytes) / KILO);
 	ImGui::Separator();
 
-	ImGui::Text("Transform");
+	ImGui::Text("Actor Transform");
 
 	if (SelectedActor)
 	{

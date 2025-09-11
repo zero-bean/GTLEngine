@@ -1,7 +1,7 @@
 #include "pch.h"
+#include "Render/UI/Widget/Public/CameraControlWidget.h"
 
 #include "Editor/Public/Camera.h"
-# include "Render/UI/Widget/Public/CameraControlWidget.h"
 
 // Camera Mode
 static const char* CameraMode[] = {
@@ -34,9 +34,7 @@ void UCameraControlWidget::RenderWidget()
 		return;
 	}
 
-	/*
-	 * @brief 최초 1회 동기화
-	 */
+	// 최초 1회 동기화
 	static bool bSyncedOnce = false;
 	if (bSyncedOnce == false)
 	{
@@ -48,8 +46,12 @@ void UCameraControlWidget::RenderWidget()
 	ImGui::Spacing();
 
 	// 카메라 이동속도 표시 및 조절
+	// 슬라이더 값이 변경된 경우, 실제 카메라 객체에 새로운 속도를 설정
 	float CurrentSpeed = Camera->GetMoveSpeed();
-	ImGui::Text("이동속도: %.1f", CurrentSpeed);
+	if (ImGui::SliderFloat("Move Speed", &CurrentSpeed, UCamera::MIN_SPEED, UCamera::MAX_SPEED, "%.1f"))
+	{
+		Camera->SetMoveSpeed(CurrentSpeed);
+	}
 	ImGui::Spacing();
 
 	if (ImGui::Combo("Mode", &CameraModeIndex, CameraMode, IM_ARRAYSIZE(CameraMode)))
@@ -116,7 +118,6 @@ void UCameraControlWidget::RenderWidget()
 	}
 }
 
-
 void UCameraControlWidget::SyncFromCamera()
 {
 	if (!Camera) { return; }
@@ -129,18 +130,15 @@ void UCameraControlWidget::SyncFromCamera()
 
 void UCameraControlWidget::PushToCamera()
 {
-	if (!Camera) { return; }
+	if (!Camera)
+	{
+		return;
+	}
 
-	/*
-	 * @brief 카메라 모드 설정
-	 */
-	Camera->SetCameraType(CameraModeIndex == 0
-		                      ? ECameraType::ECT_Perspective
-		                      : ECameraType::ECT_Orthographic);
+	// 카메라 모드 설정
+	Camera->SetCameraType(CameraModeIndex == 0 ? ECameraType::ECT_Perspective : ECameraType::ECT_Orthographic);
 
-	/*
-	 * @brief 카메라 파라미터 설정
-	 */
+	// 카메라 파라미터 설정
 	UiNearZ = std::max(0.0001f, UiNearZ);
 	UiFarZ = std::max(UiNearZ + 0.0001f, UiFarZ);
 	UiFovY = std::min(170.0f, std::max(1.0f, UiFovY));
@@ -149,9 +147,7 @@ void UCameraControlWidget::PushToCamera()
 	Camera->SetFarZ(UiFarZ);
 	Camera->SetFovY(UiFovY);
 
-	/*
-	 * @brief 카메라 업데이트
-	 */
+	// 카메라 업데이트
 	if (CameraModeIndex == 0)
 	{
 		Camera->UpdateMatrixByPers();
