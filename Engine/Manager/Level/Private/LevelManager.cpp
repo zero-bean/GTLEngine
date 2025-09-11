@@ -87,7 +87,7 @@ bool ULevelManager::SaveCurrentLevel(const FString& InFilePath) const
 		FilePath = GenerateLevelFilePath(CurrentLevel->GetName().empty() ? "Untitled" : CurrentLevel->GetName());
 	}
 
-	UE_LOG("LevelManager: Saving Current Level To: %s", FilePath.string().c_str());
+	UE_LOG("LevelManager: 현재 레벨을 다음 경로에 저장합니다: %s", FilePath.string().c_str());
 
 	// LevelSerializer를 사용하여 저장
 	try
@@ -99,18 +99,18 @@ bool ULevelManager::SaveCurrentLevel(const FString& InFilePath) const
 
 		if (bSuccess)
 		{
-			UE_LOG("LevelManager: Level Saved Successfully");
+			UE_LOG("LevelManager: 레벨이 성공적으로 저장되었습니다");
 		}
 		else
 		{
-			UE_LOG("LevelManager: Failed To Save Level");
+			UE_LOG("LevelManager: 레벨을 저장하는 데에 실패했습니다");
 		}
 
 		return bSuccess;
 	}
 	catch (const exception& Exception)
 	{
-		UE_LOG("LevelManager: Exception During Save: %s", Exception.what());
+		UE_LOG("LevelManager: 저장 과정에서 Exception 발생: %s", Exception.what());
 		return false;
 	}
 }

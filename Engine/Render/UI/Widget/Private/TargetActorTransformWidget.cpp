@@ -23,7 +23,7 @@ void UTargetActorTransformWidget::Update()
 	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
 
 	LevelMemoryByte = CurrentLevel->GetAllocatedBytes();
- 	LevelObjectCount = CurrentLevel->GetAllocatedCount();
+	LevelObjectCount = CurrentLevel->GetAllocatedCount();
 
 	if (CurrentLevel)
 	{
@@ -49,16 +49,25 @@ void UTargetActorTransformWidget::Update()
 
 void UTargetActorTransformWidget::RenderWidget()
 {
-	// Level Memory Information
-	ImGui::Text("Level Memory Information");
-	ImGui::Text("Object Count: %s", to_string(LevelObjectCount).c_str());
-	ImGui::Text("Memory Byte: %s", to_string(LevelMemoryByte).c_str());
+	// Memory Information
+	ImGui::Text("레벨 메모리 정보");
+	ImGui::Text("Level Object Count: %u", LevelObjectCount);
+	ImGui::Text("Level Memory: %.3f KB", static_cast<float>(LevelMemoryByte) / KILO);
 	ImGui::Separator();
 
-	ImGui::Text("Transform");
+	ImGui::Text("동적 할당된 메모리 정보");
+	ImGui::Text("Overall Object Count: %u", TotalAllocationCount);
+	ImGui::Text("Overall Memory: %.3f KB", static_cast<float>(TotalAllocationBytes) / KILO);
+	ImGui::Separator();
+
+	ImGui::Text("Actor 정보");
 
 	if (SelectedActor)
 	{
+		// Actor 이름 표시
+		ImGui::Text("Name: %s", SelectedActor->GetName().c_str());
+		ImGui::Spacing();
+
 		bPositionChanged |= ImGui::DragFloat3("Location", &EditLocation.X, 0.1f);
 		bRotationChanged |= ImGui::DragFloat3("Rotation", &EditRotation.X, 0.1f);
 
@@ -85,7 +94,7 @@ void UTargetActorTransformWidget::RenderWidget()
 	}
 	else
 	{
-		ImGui::TextUnformatted("Select Actor For Indicating");
+		ImGui::TextUnformatted("선택된 Actor가 존재하지 않습니다");
 	}
 
 	ImGui::Separator();

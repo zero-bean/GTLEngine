@@ -79,11 +79,11 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 
 	if (!CurrentLevel)
 	{
-		UE_LOG("ControlPanel: No Current Level To Spawn Actors");
+		UE_LOG("ControlPanel: Actor를 생성할 레벨이 존재하지 않습니다");
 		return;
 	}
 
-	UE_LOG("ControlPanel: %s 타입의 Actor를 %d개 생성했습니다",
+	UE_LOG("ControlPanel: %s 타입의 Actor를 %d개 생성 시도합니다",
 		(SelectedPrimitiveType == 0 ? "Cube" : "Sphere"), NumberOfSpawn);
 
 	// 지정된 개수만큼 액터 생성

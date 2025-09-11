@@ -216,19 +216,12 @@ void ULevel::MarkActorForDeletion(AActor* InActor)
 
 	// 삭제 대기 리스트에 추가
 	ActorsToDelete.push_back(InActor);
-	UE_LOG("Level: Actor Marked For Deletion In Next Tick: %p", InActor);
+	UE_LOG("Level: 다음 Tick에 Actor를 제거하기 위한 마킹 처리: %s", InActor->GetName().data());
 
 	// 선택 해제는 바로 처리
 	if (SelectedActor == InActor)
 	{
 		SelectedActor = nullptr;
-
-		//Deprecated : Gizmo는 에디터에서 처리
-		// Gizmo Target도 즉시 해제
-		/*if (Gizmo)
-		{
-			Gizmo->SetTargetActor(nullptr);
-		}*/
 	}
 }
 
@@ -243,7 +236,7 @@ void ULevel::ProcessPendingDeletions()
 		return;
 	}
 
-	UE_LOG("[Level] Processing %zu Pending Deletions", ActorsToDelete.size());
+	UE_LOG("Level: %zu 개의 지연 삭제 프로세스 처리 시작", ActorsToDelete.size());
 
 	// 대기 중인 액터들을 삭제
 	for (AActor* ActorToDelete : ActorsToDelete)
@@ -255,10 +248,6 @@ void ULevel::ProcessPendingDeletions()
 		if (SelectedActor == ActorToDelete)
 		{
 			SelectedActor = nullptr;
-			/*if (Gizmo)
-			{
-				Gizmo->SetTargetActor(nullptr);
-			}*/
 		}
 
 		// LevelActors 리스트에서 제거
@@ -271,23 +260,14 @@ void ULevel::ProcessPendingDeletions()
 			}
 		}
 
-		//Deprecated : EditorActor는 에디터에서 처리
-		// EditorActors 리스트에서도 제거
-		/*for (auto Iterator = EditorActors.begin(); Iterator != EditorActors.end(); ++Iterator)
-		{
-			if (*Iterator == ActorToDelete)
-			{
-				EditorActors.erase(Iterator);
-				break;
-			}
-		}*/
+		FString DeletedActorName = ActorToDelete->GetName();
 
 		// Release Memory
 		delete ActorToDelete;
-		UE_LOG("[Level] Actor Deleted: %p", ActorToDelete);
+		UE_LOG("Level: Actor 제거: %s (%p)", DeletedActorName.data(), static_cast<void*>(ActorToDelete));
 	}
 
 	// Clear TArray
 	ActorsToDelete.clear();
-	UE_LOG("[Level] All Pending Deletions Processed");
+	UE_LOG("Level: 모든 지연 삭제 프로세스 완료");
 }

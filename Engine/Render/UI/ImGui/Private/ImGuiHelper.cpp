@@ -37,6 +37,10 @@ void UImGuiHelper::Initialize(HWND InWindowHandle)
 	ImGui_ImplWin32_Init(InWindowHandle);
 
 	ImGuiIO& IO = ImGui::GetIO();
+	
+	// imgui.ini 파일 생성 비활성화
+	IO.IniFilename = nullptr;
+	
 	path FontFilePath = UPathManager::GetInstance().GetFontPath() / "Pretendard-Regular.otf";
 	IO.Fonts->AddFontFromFileTTF(FontFilePath.string().c_str(), 16.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
 
