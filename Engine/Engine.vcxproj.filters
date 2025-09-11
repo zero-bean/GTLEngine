@@ -1,0 +1,344 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="IMGUI">
+      <UniqueIdentifier>{61a1363f-6c03-4ee5-809e-f3ca59d628dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader">
+      <UniqueIdentifier>{b5ee73bf-5ed7-4ad4-8513-4f2f46dd7a41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{dede8fab-ea4f-4fe8-a08b-7f6cdbc0b95e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine">
+      <UniqueIdentifier>{c35182b9-6331-4580-b811-36b815326b28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Subsystem">
+      <UniqueIdentifier>{95a49174-d001-4d86-91cd-9ca3f7be5dec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Core">
+      <UniqueIdentifier>{c494f6ca-bbb8-4610-ab4b-5154ab3c0402}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Core\Mesh">
+      <UniqueIdentifier>{d5c39ddf-e1a3-455b-8433-f8ecd8dde2e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Core\Component">
+      <UniqueIdentifier>{645654cb-5141-4fc2-a077-d9d9099e9ccf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Application">
+      <UniqueIdentifier>{4299df6c-7c51-43d8-9b73-d6ee1d98e5a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application">
+      <UniqueIdentifier>{28dd924c-86fe-4ef5-89d7-9139acebca38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Runtime">
+      <UniqueIdentifier>{98c1323d-f205-475a-8aec-27c28bdf3809}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PCH">
+      <UniqueIdentifier>{48e8ced0-0377-42e8-bc6f-fd2d07d3474f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{e719ba2a-a73e-446c-aa43-416adf6bea31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\UI">
+      <UniqueIdentifier>{3a65dfd5-299b-4436-96c7-b669986cfa16}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ImGui\imgui.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_demo.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_draw.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_impl_dx11.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_impl_dx12.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_impl_win32.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_tables.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_widgets.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="UGizmoManager.cpp">
+      <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="USceneManager.cpp">
+      <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="USceneComponent.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Math.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="GizmoVertices.cpp">
+      <Filter>Engine\Core\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="UGizmoComponent.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="UMesh.cpp">
+      <Filter>Engine\Core\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="UMeshManager.cpp">
+      <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="URenderer.cpp">
+      <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="UInputManager.cpp">
+      <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="UTImeManager.cpp">
+      <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="URaycastManager.cpp">
+      <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorApplication.cpp">
+      <Filter>Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="UDefaultScene.cpp">
+      <Filter>Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="UObject.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="UGUI.cpp">
+      <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="UEngineStatics.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="UPrimitiveComponent.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="UScene.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="UApplication.cpp">
+      <Filter>Engine\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Vector4.h">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="UEngineSubsystem.cpp">
+      <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGuiWindowWrapper.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UControlPanel.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="USceneComponentPropertyWindow.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ImguiConsole.cpp" />
+    <ClCompile Include="UPlaneComp.cpp" />
+    <ClCompile Include="UCubeComp.cpp" />
+    <ClCompile Include="UCamera.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="UClass.cpp" />
+    <ClCompile Include="UGizmoScaleHandleComp.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="UGizmoRotationHandleComp.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="UGizmoGridComp.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="UGizmoArrowComp.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="USphereComp.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>PCH</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ImGui\imconfig.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_dx11.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_dx12.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_win32.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_internal.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_rectpack.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_textedit.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_truetype.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorApplication.h">
+      <Filter>Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="UDefaultScene.h">
+      <Filter>Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="FVertexPosColor.h">
+      <Filter>Engine\Core\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="GizmoVertices.h">
+      <Filter>Engine\Core\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="ISerializable.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Sphere.h">
+      <Filter>Engine\Core\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Quaternion.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UApplication.h">
+      <Filter>Engine\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="UEngineStatics.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="UCamera.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="UGizmoComponent.h">
+      <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="UGizmoArrowComp.h">
+      <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="UGizmoGridComp.h">
+      <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="UPrimitiveComponent.h">
+      <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="UMeshManager.h">
+      <Filter>Engine\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="URaycastManager.h">
+      <Filter>Engine\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="UInputManager.h">
+      <Filter>Engine\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="UGizmoManager.h">
+      <Filter>Engine\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="UTimeManager.h">
+      <Filter>Engine\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="USceneManager.h">
+      <Filter>Engine\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="URenderer.h">
+      <Filter>Engine\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="USphereComp.h">
+      <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="USceneComponent.h">
+      <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="UScene.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="UObject.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="UGUI.h">
+      <Filter>Engine\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="UMesh.h">
+      <Filter>Engine\Core\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>PCH</Filter>
+    </ClInclude>
+    <ClInclude Include="json.hpp">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="ImguiConsole.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="UEngineSubsystem.h">
+      <Filter>Engine\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="TArray.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiWindowWrapper.h">
+      <Filter>Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UControlPanel.h">
+      <Filter>Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="USceneComponentPropertyWindow.h">
+      <Filter>Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Quaternion.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UPlaneComp.h" />
+    <ClInclude Include="CubeVertices.h" />
+    <ClInclude Include="PlaneVertices.h" />
+    <ClInclude Include="UCubeComp.h" />
+    <ClInclude Include="UGizmoScaleHandleComp.h">
+      <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="UClass.h" />
+    <ClInclude Include="FDynamicBitset.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="UGizmoRotationHandleComp.h">
+      <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ShaderW0.ps">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="ShaderW0.vs">
+      <Filter>Shader</Filter>
+    </None>
+  </ItemGroup>
+</Project>
