@@ -35,13 +35,6 @@ void USceneIOWidget::RenderWidget()
 		}
 	}
 
-	// ImGui::SameLine();
-	// if (ImGui::Button("Quick Save", ImVec2(120, 30)))
-	// {
-	// 	// 빠른 저장 - 기본 경로에 저장
-	// 	SaveLevel("");
-	// }
-
 	// Load Section
 	ImGui::SameLine();
 	if (ImGui::Button("Load Scene", ImVec2(90, 20)))
@@ -144,7 +137,7 @@ void USceneIOWidget::LoadLevel(const FString& InFilePath)
 			LevelName = LevelName.substr(LastSlash + 1);
 		}
 
-		size_t LastDot = LevelName.find_last_of(".");
+		size_t LastDot = LevelName.find_last_of('.');
 		if (LastDot != std::wstring::npos)
 		{
 			LevelName = LevelName.substr(0, LastDot);
@@ -181,11 +174,11 @@ void USceneIOWidget::CreateNewLevel()
 {
 	try
 	{
-		FString LevelName = FString(NewLevelNameBuffer, NewLevelNameBuffer + strlen(NewLevelNameBuffer));
+		FString LevelName = FString(NewLevelNameBuffer);
 
 		if (LevelName.empty())
 		{
-			StatusMessage = "Please Enter A Level Name!";
+			StatusMessage = "추가할 레벨의 이름을 작성해야 합니다!";
 			StatusMessageTimer = STATUS_MESSAGE_DURATION;
 			return;
 		}
@@ -195,20 +188,20 @@ void USceneIOWidget::CreateNewLevel()
 
 		if (bSuccess)
 		{
-			StatusMessage = "New Level Created Successfully!";
+			StatusMessage = "레벨이 성공적으로 생성되었습니다!";
 			StatusMessageTimer = STATUS_MESSAGE_DURATION;
-			UE_LOG("SceneIO: New Level Created: %s", FString(NewLevelNameBuffer).c_str());
+			UE_LOG("SceneIO: 새로운 레벨 생성: %s", FString(NewLevelNameBuffer).c_str());
 		}
 		else
 		{
-			StatusMessage = "Failed To Create New Level!";
+			StatusMessage = "새로운 레벨 생성에 실패했습니다!";
 			StatusMessageTimer = STATUS_MESSAGE_DURATION;
-			UE_LOG("SceneIO: Failed To Create New Level");
+			UE_LOG("SceneIO: 새로운 레벨 생성 실패");
 		}
 	}
 	catch (const exception& Exception)
 	{
-		StatusMessage = std::string("Create Error: ") + Exception.what();
+		StatusMessage = string("Create Error: ") + Exception.what();
 		StatusMessageTimer = STATUS_MESSAGE_DURATION;
 		UE_LOG("SceneIO: Create Error: ");
 	}

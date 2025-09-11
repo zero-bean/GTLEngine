@@ -59,8 +59,8 @@ public:
 	float GetMoveSpeed() const { return CurrentMoveSpeed; }
 	void SetMoveSpeed(float InSpeed)
 	{
-		CurrentMoveSpeed = max(InSpeed, MIN_CAMERA_SPEED);
-		CurrentMoveSpeed = min(InSpeed, MAX_CAMERA_SPEED);
+		CurrentMoveSpeed = clamp(InSpeed, MIN_SPEED, MAX_SPEED);
+		// CurrentMoveSpeed = min(InSpeed, MAX_SPEED);
 	}
 	void AdjustMoveSpeed(float InDelta) { SetMoveSpeed(CurrentMoveSpeed + InDelta); }
 
@@ -80,12 +80,11 @@ public:
 
 private:
 	// Camera Speed Constants
-	static constexpr float MIN_CAMERA_SPEED = 0.5f;
-	static constexpr float MAX_CAMERA_SPEED = 50.0f;
-	static constexpr float DEFAULT_CAMERA_SPEED = 6.0f;
+	static constexpr float MIN_SPEED = 10.0f;
+	static constexpr float MAX_SPEED = 50.0f;
+	static constexpr float DEFAULT_SPEED = 20.0f;
 	static constexpr float SPEED_ADJUST_STEP = 0.5f;
 
-private:
 	FViewProjConstants ViewProjConstants = {};
 	FVector RelativeLocation = {};
 	FVector RelativeRotation = {};
@@ -100,5 +99,5 @@ private:
 	ECameraType CameraType = {};
 
 	// Dynamic Movement Speed
-	float CurrentMoveSpeed = DEFAULT_CAMERA_SPEED;
+	float CurrentMoveSpeed = DEFAULT_SPEED;
 };

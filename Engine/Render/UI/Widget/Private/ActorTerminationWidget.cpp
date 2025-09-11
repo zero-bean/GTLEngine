@@ -70,9 +70,10 @@ void UActorTerminationWidget::RenderWidget()
  */
 void UActorTerminationWidget::DeleteSelectedActor()
 {
+	UE_LOG("ActorTerminationWidget: 삭제를 위한 Actor Marking 시작");
 	if (!SelectedActor)
 	{
-		UE_LOG("ActorTerminationWidget: No Actor Selected For Deletion");
+		UE_LOG("ActorTerminationWidget: 삭제를 위한 Actor가 선택되지 않았습니다");
 		return;
 	}
 
@@ -85,7 +86,7 @@ void UActorTerminationWidget::DeleteSelectedActor()
 		return;
 	}
 
-	UE_LOG("ActorTerminationWidget: Marking Selected Actor For Deletion: %s (%p)",
+	UE_LOG("ActorTerminationWidget: 선택된 Actor를 삭제를 위해 마킹 처리: %s (%p)",
 	       SelectedActor->GetName().empty() ? "UnNamed" : SelectedActor->GetName().c_str(),
 	       SelectedActor);
 
@@ -94,5 +95,4 @@ void UActorTerminationWidget::DeleteSelectedActor()
 
 	// MarkActorForDeletion에서 선택 해제도 처리하므로 여기에서는 단순히 nullptr로 설정
 	SelectedActor = nullptr;
-	UE_LOG("ActorTerminationWidget: Actor Marked For Deletion In Next Tick");
 }
