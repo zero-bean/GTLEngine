@@ -11,7 +11,7 @@ UExperimentalFeatureWindow::UExperimentalFeatureWindow()
 	FUIWindowConfig Config;
 	Config.WindowTitle = "Experimental Feature";
 	Config.DefaultSize = ImVec2(350, 10);
-	Config.DefaultPosition = ImVec2(380, 10);
+	Config.DefaultPosition = ImVec2(420, 10);
 	Config.MinSize = ImVec2(350, 10);
 	Config.DockDirection = EUIDockDirection::Right;
 	Config.Priority = 5;

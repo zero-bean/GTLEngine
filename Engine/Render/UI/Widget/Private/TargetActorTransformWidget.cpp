@@ -60,10 +60,14 @@ void UTargetActorTransformWidget::RenderWidget()
 	ImGui::Text("Overall Memory: %.3f KB", static_cast<float>(TotalAllocationBytes) / KILO);
 	ImGui::Separator();
 
-	ImGui::Text("Actor Transform");
+	ImGui::Text("Actor 정보");
 
 	if (SelectedActor)
 	{
+		// Actor 이름 표시
+		ImGui::Text("Name: %s", SelectedActor->GetName().c_str());
+		ImGui::Spacing();
+
 		bPositionChanged |= ImGui::DragFloat3("Location", &EditLocation.X, 0.1f);
 		bRotationChanged |= ImGui::DragFloat3("Rotation", &EditRotation.X, 0.1f);
 
