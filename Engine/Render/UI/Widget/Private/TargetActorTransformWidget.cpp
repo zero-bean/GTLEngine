@@ -23,7 +23,7 @@ void UTargetActorTransformWidget::Update()
 	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
 
 	LevelMemoryByte = CurrentLevel->GetAllocatedBytes();
- 	LevelObjectCount = CurrentLevel->GetAllocatedCount();
+	LevelObjectCount = CurrentLevel->GetAllocatedCount();
 
 	if (CurrentLevel)
 	{
@@ -49,10 +49,15 @@ void UTargetActorTransformWidget::Update()
 
 void UTargetActorTransformWidget::RenderWidget()
 {
-	// Level Memory Information
-	ImGui::Text("Level Memory Information");
-	ImGui::Text("Object Count: %s", to_string(LevelObjectCount).c_str());
-	ImGui::Text("Memory Byte: %s", to_string(LevelMemoryByte).c_str());
+	// Memory Information
+	ImGui::Text("Level 메모리 정보");
+	ImGui::Text("Level Object Count: %u", LevelObjectCount);
+	ImGui::Text("Level Memory: %.3f KB", static_cast<float>(LevelMemoryByte) / KILO);
+	ImGui::Separator();
+
+	ImGui::Text("동적 할당된 메모리 정보");
+	ImGui::Text("Overall Object Count: %u", TotalAllocationCount);
+	ImGui::Text("Overall Memory: %.3f KB", static_cast<float>(TotalAllocationBytes) / KILO);
 	ImGui::Separator();
 
 	ImGui::Text("Transform");
@@ -85,7 +90,7 @@ void UTargetActorTransformWidget::RenderWidget()
 	}
 	else
 	{
-		ImGui::TextUnformatted("Select Actor For Indicating");
+		ImGui::TextUnformatted("선택된 Actor가 존재하지 않습니다");
 	}
 
 	ImGui::Separator();
