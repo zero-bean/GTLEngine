@@ -236,7 +236,7 @@ void ULevel::ProcessPendingDeletions()
 		return;
 	}
 
-	UE_LOG("Level: %zu 개의 지연 삭제 프로세스 처리 시작", ActorsToDelete.size());
+	UE_LOG("Level: %zu개의 객체 지연 삭제 프로세스 처리 시작", ActorsToDelete.size());
 
 	// 대기 중인 액터들을 삭제
 	for (AActor* ActorToDelete : ActorsToDelete)

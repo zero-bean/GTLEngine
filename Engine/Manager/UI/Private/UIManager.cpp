@@ -67,7 +67,7 @@ void UUIManager::Shutdown()
 		return;
 	}
 
-	UE_LOG("UIManager: Shutting Down UI system...");
+	UE_LOG("UIManager: UI system 종료 중...");
 
 	// ImGui 정리
 	if (ImGuiHelper)
@@ -89,7 +89,7 @@ void UUIManager::Shutdown()
 	FocusedWindow = nullptr;
 	bIsInitialized = false;
 
-	UE_LOG("UIManager: UI System Shut Down Successfully.");
+	UE_LOG("UIManager: UI 시스템 종료 완료");
 }
 
 /**
@@ -169,7 +169,7 @@ bool UUIManager::RegisterUIWindow(UUIWindow* InWindow)
 	auto Iter = std::find(UIWindows.begin(), UIWindows.end(), InWindow);
 	if (Iter != UIWindows.end())
 	{
-		UE_LOG("UIManager: Warning: Window Already Registered: %d", InWindow->GetWindowID());
+		UE_LOG("UIManager: Warning: Window Already Registered: %u", InWindow->GetWindowID());
 		return false;
 	}
 
@@ -178,16 +178,16 @@ bool UUIManager::RegisterUIWindow(UUIWindow* InWindow)
 	{
 		InWindow->Initialize();
 	}
-	catch (const std::exception& e)
+	catch (const exception& Exception)
 	{
-		UE_LOG("UIManager: Error: Failed To Initialize Window %d: %s", InWindow->GetWindowID(), e.what());
+		UE_LOG("UIManager: Error: Window 생성에 실패했습니다 %u: %s", InWindow->GetWindowID(), Exception.what());
 		return false;
 	}
 
 	UIWindows.push_back(InWindow);
 
-	UE_LOG("UIManager: Registered UI Window: %d (%s)", InWindow->GetWindowID(), InWindow->GetWindowTitle().c_str());
-	UE_LOG("UIManager: Total Registered Windows: %zu", UIWindows.size());
+	UE_LOG("UIManager: UI Window 등록: %s", InWindow->GetWindowTitle().c_str());
+	UE_LOG("UIManager: 전체 등록된 Window 갯수: %zu", UIWindows.size());
 
 	return true;
 }
@@ -222,8 +222,8 @@ bool UUIManager::UnregisterUIWindow(UUIWindow* InWindow)
 
 	UIWindows.erase(It);
 
-	UE_LOG("UIManager: Unregistered UI Window: %d", InWindow->GetWindowID());
-	UE_LOG("UIManager: Total Registered Windows: %zu", UIWindows.size());
+	UE_LOG("UIManager: UI Window 등록 해제: %u", InWindow->GetWindowID());
+	UE_LOG("UIManager: 전체 등록된 Window 갯수: %zu", UIWindows.size());
 
 	return true;
 }

@@ -8,9 +8,9 @@ UOutlinerWindow::UOutlinerWindow()
 {
 	FUIWindowConfig Config;
 	Config.WindowTitle = "Outliner";
-	Config.DefaultSize = ImVec2(350, 340);
-	Config.DefaultPosition = ImVec2(1225, 10);
-	Config.MinSize = ImVec2(350, 340);
+	Config.DefaultSize = ImVec2(270, 340);
+	Config.DefaultPosition = ImVec2(1305, 10);
+	Config.MinSize = ImVec2(270, 50);
 	Config.bResizable = true;
 	Config.bMovable = true;
 	Config.bCollapsible = true;
@@ -25,5 +25,5 @@ UOutlinerWindow::UOutlinerWindow()
 
 void UOutlinerWindow::Initialize()
 {
-	UE_LOG("OutlinerWindow: Successfully Initialized");
+	UE_LOG("OutlinerWindow: Window가 성공적으로 생성되었습니다");
 }

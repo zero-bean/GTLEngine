@@ -1,18 +1,16 @@
 #pragma once
 #include "Global/CoreTypes.h"
 
-// 전방 선언
 class UObject;
 class UClass;
 
 /**
- * @brief 언리얼엔진의 UClass를 모방한 클래스 메타데이터 시스템
- *
- * 각 UObject 파생 클래스에 대한 런타임 타입 정보를 저장합니다.
- * - 클래스 이름
- * - 부모 클래스 정보
- * - 클래스 크기
- * - 생성자 함수 포인터
+ * @brief UClass Metadata System
+ * Runtime에 컴파일 시에 제거되는 다양한 클래스 정보를 제공하기 위해 만들어진 클래스
+ * @param ClassName 클래스 이름
+ * @param SuperClass 부모 클래스
+ * @param ClassSize 클래스 크기
+ * @param Constructor 생성자 함수 포인터
  */
 class UClass
 {
@@ -20,48 +18,39 @@ public:
 	// 생성자 함수 포인터 타입 정의
 	typedef UObject* (*ClassConstructorType)();
 
-public:
 	UClass(const FString& InName, UClass* InSuperClass, size_t InClassSize, ClassConstructorType InConstructor);
 
-	const FString& GetName() const { return ClassName; }
+	static UClass* FindClass(const FString& InClassName);
+	static void SignUpClass(UClass* InClass);
+	static void PrintAllClasses();
+
+	bool IsChildOf(const UClass* InClass) const;
+	UObject* CreateDefaultObject() const;
+
+ 	// Getter
+	const FString& GetClass() const { return ClassName; }
 	UClass* GetSuperClass() const { return SuperClass; }
 	size_t GetClassSize() const { return ClassSize; }
 
-
-	bool IsChildOf(const UClass* OtherClass) const;
-
-
-	UObject* CreateDefaultObject() const;
-
-
-	static UClass* FindClass(const FString& InClassName);
-
-
-	static void SignUpClass(UClass* InClass);
-
-
-	static void PrintAllClasses();
-
 private:
-	FString ClassName; // 클래스 이름
-	UClass* SuperClass; // 부모 클래스
-	size_t ClassSize; // 클래스 크기
-	ClassConstructorType Constructor; // 생성자 함수 포인터
+	FString ClassName;
+	UClass* SuperClass;
+	size_t ClassSize;
+	ClassConstructorType Constructor;
 
-	// 전역 클래스 레지스트리
+	// Class Registry
 	static TArray<UClass*> AllClasses;
 };
 
 /**
  * @brief RTTI 매크로 시스템
  *
- * 언리얼엔진의 UCLASS(), DECLARE_CLASS, IMPLEMENT_CLASS와 유사한 매크로들
+ * 언리얼엔진의 UCLASS(), DECLARE_CLASS, IMPLEMENT_CLASS와 유사한 매크로들 정의
  */
-
-// 언리얼 스타일: 클래스 선언 바로 위에서 사용하는 매크로 (여기서는 표시용, 실동작은 GENERATED_BODY에서 처리)
+// UCLASS 매크로, 기능은 존재하지 않으며 외관 상의 유사성을 목표로 세팅
 #define UCLASS()
 
-// 클래스 본문 내부에서 사용하는 매크로 (friend 등 내부 선언 처리)
+// Friend Class 처리를 위한 Generated Body 매크로
 #define GENERATED_BODY() \
 public: \
     friend class UClass; \
@@ -104,7 +93,7 @@ private: \
         return new ClassName(); \
     }
 
-// UObject의 기본 매크로 (다른 클래스들의 베이스)
+// UObject의 기본 매크로 (Base Class)
 #define IMPLEMENT_CLASS_BASE(ClassName) \
     UClass* ClassName::ClassPrivate = nullptr; \
     UClass* ClassName::StaticClass() \
