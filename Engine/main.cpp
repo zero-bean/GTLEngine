@@ -1,6 +1,4 @@
-﻿#define _CRTDBG_MAP_ALLOC
-// #define new new(_NORMAL_BLOCK, __FILE__, __LINE__)
-#include <crtdbg.h>
+﻿#include <crtdbg.h>
 #include "stdafx.h"
 #include "UApplication.h"
 #include "EditorApplication.h"
