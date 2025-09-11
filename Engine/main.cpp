@@ -1,12 +1,11 @@
-﻿#include <crtdbg.h>
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "UApplication.h"
 #include "EditorApplication.h"
 
 #ifdef _DEBUG
 
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
+#include <cstdlib>
 #include <crtdbg.h>
 
 #ifndef DBG_NEW 
