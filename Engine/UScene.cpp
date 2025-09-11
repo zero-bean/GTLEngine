@@ -32,8 +32,8 @@ bool UScene::Initialize(URenderer* r, UMeshManager* mm, UInputManager* im)
 	meshManager = mm;
 	inputManager = im;
 
-	backBufferWidth = 0.0f;
-	backBufferHeight = 0.0f;
+	backBufferWidth = 0;
+	backBufferHeight = 0;
 
 	// 모든 Primitive 컴포넌트 초기화
 	for (UObject* obj : objects)

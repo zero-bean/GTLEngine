@@ -3,10 +3,10 @@
 
 #include "Vector4.h"
 
-const float cylRadius = 0.035;        // 원기둥 반지름
-const float cylHeight = 0.8;        // 원기둥 높이
-const float coneHeight = 0.25;       // 원뿔 높이
-const float coneRadius = 0.125;		// 원뿔 반지름
+const float cylRadius = 0.035f;        // 원기둥 반지름
+const float cylHeight = 0.8f;        // 원기둥 높이
+const float coneHeight = 0.25f;       // 원뿔 높이
+const float coneRadius = 0.125f;		// 원뿔 반지름
 
 const TArray<FVertexPosColor> gizmo_arrow_vertices =
 {

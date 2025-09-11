@@ -11,7 +11,7 @@ UMesh* UMeshManager::CreateMeshInternal(const TArray<FVertexPosColor>& vertices,
 	D3D_PRIMITIVE_TOPOLOGY primitiveType)
 {
 	// vector의 데이터 포인터와 크기를 ConvertVertexData에 전달
-	auto convertedVertices = FVertexPosColor4::ConvertVertexData(vertices.data(), vertices.size());
+	auto convertedVertices = FVertexPosColor4::ConvertVertexData(vertices.data(), static_cast<int32>(vertices.size()));
 	UMesh* mesh = new UMesh(convertedVertices, primitiveType);
 	return mesh;
 }
