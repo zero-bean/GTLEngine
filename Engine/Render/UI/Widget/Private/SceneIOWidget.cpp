@@ -1,10 +1,12 @@
 #include "pch.h"
 #include "Render/UI/Widget/Public/SceneIOWidget.h"
 
+#include <shobjidl.h>
+
 #include "Manager/Level/Public/LevelManager.h"
 
 USceneIOWidget::USceneIOWidget()
-	:UWidget("Scene IO Widget")
+	: UWidget("Scene IO Widget")
 {
 }
 
@@ -168,7 +170,7 @@ void USceneIOWidget::LoadLevel(const FString& InFilePath)
 	{
 		StatusMessage = FString("Load Error: ") + Exception.what();
 		StatusMessageTimer = STATUS_MESSAGE_DURATION;
-		UE_LOG("SceneIO: Load Error: %s",Exception.what());
+		UE_LOG("SceneIO: Load Error: %s", Exception.what());
 	}
 }
 
@@ -214,75 +216,171 @@ void USceneIOWidget::CreateNewLevel()
 
 /**
  * @brief Windows API를 활용한 파일 저장 Dialog Modal을 생성하는 UI Window 기능
+ * PWSTR: WideStringPointer 클래스
  * @return 선택된 파일 경로 (취소 시 빈 문자열)
  */
 path USceneIOWidget::OpenSaveFileDialog()
 {
-    OPENFILENAMEW ofn;
-    wchar_t szFile[260] = {};
+	path ResultPath = L"";
 
-    // 기본 파일명 설정
-    wcscpy_s(szFile, L"");
+	// COM 라이브러리 초기화
+	HRESULT ResultHandle = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
-    // Initialize OPENFILENAME
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = GetActiveWindow();  // 현재 활성 윈도우를 부모로 설정
-    ofn.lpstrFile = szFile;
-    ofn.nMaxFile = sizeof(szFile) / sizeof(wchar_t);
-    ofn.lpstrFilter = L"JSON Files\0*.json\0All Files\0*.*\0";
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFileTitle = nullptr;
-    ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = nullptr;
-    ofn.lpstrTitle = L"Save Level File";
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_EXPLORER | OFN_HIDEREADONLY;
-    ofn.lpstrDefExt = L"json";
+	if (SUCCEEDED(ResultHandle))
+	{
+		IFileSaveDialog* FileSaveDialogPtr = nullptr;
 
-    // Modal 다이얼로그 표시 - 이 함수가 리턴될 때까지 다른 입력 차단
-    UE_LOG("SceneIO: Opening Save Dialog (Modal)...");
+		// 2. FileSaveDialog 인스턴스 생성
+		ResultHandle = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_ALL,
+		                                IID_IFileSaveDialog, reinterpret_cast<void**>(&FileSaveDialogPtr));
 
-    if (GetSaveFileNameW(&ofn) == TRUE)
-    {
-        UE_LOG("SceneIO: Save Dialog Closed - 파일 선택됨");
-        return path(szFile);
-    }
+		if (SUCCEEDED(ResultHandle))
+		{
+			// 3. 대화상자 옵션 설정
+			// 파일 타입 필터 설정
+			COMDLG_FILTERSPEC SpecificationRange[] = {
+				{L"JSON Files (*.json)", L"*.json"},
+				{L"All Files (*.*)", L"*.*"}
+			};
+			FileSaveDialogPtr->SetFileTypes(ARRAYSIZE(SpecificationRange), SpecificationRange);
 
-   UE_LOG("SceneIO: Save Dialog Closed - 취소됨");
-    return L"";
+			// 기본 필터를 "JSON Files" 로 설정
+			FileSaveDialogPtr->SetFileTypeIndex(1);
+
+			// 기본 확장자 설정
+			FileSaveDialogPtr->SetDefaultExtension(L"json");
+
+			// 대화상자 제목 설정
+			FileSaveDialogPtr->SetTitle(L"Save Level File");
+
+			// Set Flag
+			DWORD DoubleWordFlags;
+			FileSaveDialogPtr->GetOptions(&DoubleWordFlags);
+			FileSaveDialogPtr->SetOptions(DoubleWordFlags | FOS_OVERWRITEPROMPT | FOS_PATHMUSTEXIST);
+
+			// Show Modal
+			// 현재 활성 창을 부모로 가짐
+			UE_LOG("SceneIO: Save Dialog Modal Opening...");
+			ResultHandle = FileSaveDialogPtr->Show(GetActiveWindow());
+
+			// 결과 처리
+			// 사용자가 '저장' 을 눌렀을 경우
+			if (SUCCEEDED(ResultHandle))
+			{
+				UE_LOG("SceneIO: Save Dialog Modal Closed - 파일 선택됨");
+				IShellItem* ShellItemResult;
+				ResultHandle = FileSaveDialogPtr->GetResult(&ShellItemResult);
+				if (SUCCEEDED(ResultHandle))
+				{
+					// Get File Path from IShellItem
+					PWSTR FilePath = nullptr;
+					ResultHandle = ShellItemResult->GetDisplayName(SIGDN_FILESYSPATH, &FilePath);
+
+					if (SUCCEEDED(ResultHandle))
+					{
+						ResultPath = path(FilePath);
+						CoTaskMemFree(FilePath);
+					}
+
+					ShellItemResult->Release();
+				}
+			}
+			// 사용자가 '취소'를 눌렀거나 오류 발생
+			else
+			{
+				UE_LOG("SceneIO: Save Dialog Modal Closed - 취소됨");
+			}
+
+			// Release FileSaveDialog
+			FileSaveDialogPtr->Release();
+		}
+
+		// COM 라이브러리 해제
+		CoUninitialize();
+	}
+
+	return ResultPath;
 }
 
 /**
- * @brief Windows API를 사용하여 파일 열기 다이얼로그를 엽니다
+ * @brief Windows API를 활용한 파일 로드 Dialog Modal을 생성하는 UI Window 기능
  * @return 선택된 파일 경로 (취소 시 빈 문자열)
  */
 path USceneIOWidget::OpenLoadFileDialog()
 {
-    OPENFILENAMEW ofn;
-    wchar_t szFile[260] = {};
+	path ResultPath = L"";
 
-    // Initialize OPENFILENAME
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = GetActiveWindow();  // 현재 활성 윈도우를 부모로 설정
-    ofn.lpstrFile = szFile;
-    ofn.nMaxFile = sizeof(szFile) / sizeof(wchar_t);
-    ofn.lpstrFilter = L"JSON Files\0*.json\0All Files\0*.*\0";
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFileTitle = nullptr;
-    ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = nullptr;
-    ofn.lpstrTitle = L"Load Level File";
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER | OFN_HIDEREADONLY;
+	// COM 라이브러리 초기화
+	HRESULT ResultHandle = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
-    UE_LOG("SceneIO: Opening Load Dialog (Modal)...");
+	if (SUCCEEDED(ResultHandle))
+	{
+		IFileOpenDialog* FileOpenDialog = nullptr;
 
-    if (GetOpenFileNameW(&ofn) == TRUE)
-    {
-        UE_LOG("SceneIO: Load Dialog Closed - 파일 선택됨");
-        return path(szFile);
-    }
+		// FileOpenDialog 인스턴스 생성
+		ResultHandle = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL,
+		                                IID_IFileOpenDialog, reinterpret_cast<void**>(&FileOpenDialog));
 
-    UE_LOG("SceneIO: Load Dialog Closed - 취소됨");
-    return L"";
+		if (SUCCEEDED(ResultHandle))
+		{
+			// 파일 타입 필터 설정
+			COMDLG_FILTERSPEC SpecificationRange[] = {
+				{L"JSON Files (*.json)", L"*.json"},
+				{L"All Files (*.*)", L"*.*"}
+			};
+
+			FileOpenDialog->SetFileTypes(ARRAYSIZE(SpecificationRange), SpecificationRange);
+
+			// 기본 필터를 "JSON Files" 로 설정
+			FileOpenDialog->SetFileTypeIndex(1);
+
+			// 대화상자 제목 설정
+			FileOpenDialog->SetTitle(L"Load Level File");
+
+			// Flag Setting
+			DWORD DoubleWordFlags;
+			FileOpenDialog->GetOptions(&DoubleWordFlags);
+			FileOpenDialog->SetOptions(DoubleWordFlags | FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST);
+
+			// Open Modal
+			UE_LOG("SceneIO: Load Dialog Modal Opening...");
+			ResultHandle = FileOpenDialog->Show(GetActiveWindow()); // 현재 활성 창을 부모로
+
+			// 결과 처리
+			// 사용자가 '열기' 를 눌렀을 경우
+			if (SUCCEEDED(ResultHandle))
+			{
+				UE_LOG("SceneIO: Load Dialog Modal Closed - 파일 선택됨");
+				IShellItem* ShellItemResult;
+				ResultHandle = FileOpenDialog->GetResult(&ShellItemResult);
+
+				if (SUCCEEDED(ResultHandle))
+				{
+					// Get File Path from IShellItem
+					PWSTR ReturnFilePath = nullptr;
+					ResultHandle = ShellItemResult->GetDisplayName(SIGDN_FILESYSPATH, &ReturnFilePath);
+
+					if (SUCCEEDED(ResultHandle))
+					{
+						ResultPath = path(ReturnFilePath);
+						CoTaskMemFree(ReturnFilePath);
+					}
+
+					ShellItemResult->Release();
+				}
+			}
+			// 사용자가 '취소' 를 눌렀거나 오류 발생
+			else
+			{
+				UE_LOG("SceneIO: Load Dialog Modal Closed - 취소됨");
+			}
+
+			FileOpenDialog->Release();
+		}
+
+		// COM 라이브러리 해제
+		CoUninitialize();
+	}
+
+	return ResultPath;
 }
