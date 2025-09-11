@@ -67,7 +67,7 @@ void UUIManager::Shutdown()
 		return;
 	}
 
-	UE_LOG("UIManager: Shutting Down UI system...");
+	UE_LOG("UIManager: UI system 종료 중...");
 
 	// ImGui 정리
 	if (ImGuiHelper)
@@ -89,7 +89,7 @@ void UUIManager::Shutdown()
 	FocusedWindow = nullptr;
 	bIsInitialized = false;
 
-	UE_LOG("UIManager: UI System Shut Down Successfully.");
+	UE_LOG("UIManager: UI 시스템 종료 완료");
 }
 
 /**

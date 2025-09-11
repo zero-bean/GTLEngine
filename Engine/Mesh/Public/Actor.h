@@ -6,8 +6,12 @@
  * @brief Level에서 렌더링되는 UObject 클래스
  * UWorld로부터 업데이트 함수가 호출되면 component들을 순회하며 위치, 애니메이션, 상태 처리
  */
+UCLASS()
 class AActor : public UObject
 {
+	GENERATED_BODY()
+	DECLARE_CLASS(AActor, UObject)
+
 public:
 	AActor();
 	AActor(UObject* InOuter);

@@ -19,6 +19,10 @@ void* operator new(size_t InSize)
 	++TotalAllocationCount;
 	TotalAllocationBytes += static_cast<uint32>(InSize);
 
+	// Debug Print
+	// printf("New: Size=%zu, TotalBytes=%u, TotalCount=%u\n",
+	//        InSize, TotalAllocationBytes, TotalAllocationCount);
+
 	AllocHeader* MemoryHeader = static_cast<AllocHeader*>(malloc(sizeof(AllocHeader) + InSize));
 	MemoryHeader->size = InSize;
 
@@ -39,6 +43,10 @@ void operator delete(void* InMemory) noexcept
 	AllocHeader* MemoryHeader = static_cast<AllocHeader*>(InMemory) - 1;
 	size_t MemoryAllocSize = MemoryHeader->size;
 
+	// Debug Print
+	// printf("Delete: Size=%zu, TotalBytes=%u, TotalCount=%u\n",
+	//        MemoryAllocSize, TotalAllocationBytes, TotalAllocationCount);
+
 	if (TotalAllocationCount > 0)
 	{
 		--TotalAllocationCount;
@@ -48,7 +56,7 @@ void operator delete(void* InMemory) noexcept
 		assert(!u8"allocation 처리한 객체보다 더 많은 수를 해제할 수 없음");
 	}
 
-	if (TotalAllocationBytes > MemoryAllocSize)
+	if (TotalAllocationBytes >= MemoryAllocSize)
 	{
 		TotalAllocationBytes -= static_cast<uint32>(MemoryAllocSize);
 	}

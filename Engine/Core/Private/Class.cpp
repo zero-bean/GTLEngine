@@ -23,18 +23,18 @@ UClass::UClass(const FString& InName, UClass* InSuperClass, size_t InClassSize, 
 
 /**
  * @brief 이 클래스가 지정된 클래스의 하위 클래스인지 확인
- * @param OtherClass 확인할 클래스
+ * @param InClass 확인할 클래스
  * @return 하위 클래스이거나 같은 클래스면 true
  */
-bool UClass::IsChildOf(const UClass* OtherClass) const
+bool UClass::IsChildOf(const UClass* InClass) const
 {
-	if (!OtherClass)
+	if (!InClass)
 	{
 		return false;
 	}
 
 	// 자기 자신과 같은 클래스인 경우
-	if (this == OtherClass)
+	if (this == InClass)
 	{
 		return true;
 	}
@@ -43,7 +43,7 @@ bool UClass::IsChildOf(const UClass* OtherClass) const
 	const UClass* CurrentClass = this;
 	while (CurrentClass)
 	{
-		if (CurrentClass == OtherClass)
+		if (CurrentClass == InClass)
 		{
 			return true;
 		}
@@ -77,7 +77,7 @@ UClass* UClass::FindClass(const FString& InClassName)
 {
 	for (UClass* Class : AllClasses)
 	{
-		if (Class && Class->GetName() == InClassName)
+		if (Class && Class->GetClass() == InClassName)
 		{
 			return Class;
 		}
@@ -95,7 +95,7 @@ void UClass::SignUpClass(UClass* InClass)
 	if (InClass)
 	{
 		AllClasses.push_back(InClass);
-		UE_LOG("UClass: Class registered: %s (Total: %llu)", InClass->GetName().c_str(), AllClasses.size());
+		UE_LOG("UClass: Class registered: %s (Total: %llu)", InClass->GetClass().c_str(), AllClasses.size());
 	}
 }
 
@@ -112,16 +112,16 @@ void UClass::PrintAllClasses()
 		UClass* Class = AllClasses[i];
 
 		stringstream ss;
-		ss << Class->GetName();
+		ss << Class->GetClass();
 
 		if (Class)
 		{
-			ss << "[" << i << "] " << Class->GetName()
+			ss << "[" << i << "] " << Class->GetClass()
 				<< " (Size: " << Class->GetClassSize() << " bytes)";
 
 			if (Class->GetSuperClass())
 			{
-				ss << " -> " << Class->GetSuperClass()->GetName();
+				ss << " -> " << Class->GetSuperClass()->GetClass();
 			}
 			else
 			{

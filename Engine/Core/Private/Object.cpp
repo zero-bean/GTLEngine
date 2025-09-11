@@ -76,6 +76,12 @@ void UObject::RemoveMemoryUsage(uint64 InBytes, uint32 InCount)
 	}
 }
 
+/**
+ * 해당 클래스가 현재 내 클래스의 조상 클래스인지 판단하는 함수
+ * Recursive하게 처리함
+ * @param InClass 판정할 Class
+ * @return 판정 결과
+ */
 bool UObject::IsA(const UClass* InClass) const
 {
 	if (!InClass)

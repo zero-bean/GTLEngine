@@ -2,6 +2,8 @@
 #include "Mesh/Public/Actor.h"
 #include "Mesh/Public/SceneComponent.h"
 
+IMPLEMENT_CLASS(AActor, UObject)
+
 AActor::AActor() = default;
 
 AActor::AActor(UObject* InOuter)
@@ -18,19 +20,6 @@ AActor::~AActor()
 	SetOuter(nullptr);
 	OwnedComponents.clear();
 }
-
-//테스트용 렌더링 코드
-//void AActor::Render(const URenderer& Renderer)
-//{
-//	if (RootComponent)
-//	{
-//		Renderer.UpdateConstant(RootComponent->GetRelativeLocation(), RootComponent->GetRelativeRotation(), RootComponent->GetRelativeScale3D());
-//		for (auto& Components : OwnedComponents)
-//		{
-//			Components->Render(Renderer);
-//		}
-//	}
-//}
 
 void AActor::SetActorLocation(const FVector& InLocation) const
 {
