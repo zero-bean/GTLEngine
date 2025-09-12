@@ -31,15 +31,15 @@ bool USceneComponent::Deserialize(const json::JSON& data)
 
     auto loc = data.at("Location");
     if (loc.size() != 3) return false;
-    RelativeLocation = FVector(loc[0].ToFloat(), loc[1].ToFloat(), loc[2].ToFloat());
+    RelativeLocation = FVector(static_cast<float>(loc[0].ToFloat()), static_cast<float>(loc[1].ToFloat()), static_cast<float>(loc[2].ToFloat()));
 
     auto rot = data.at("Rotation");
     if (rot.size() != 3) return false;
-    RelativeQuaternion = FQuaternion::FromEulerXYZ(rot[0].ToFloat(), rot[1].ToFloat(), rot[2].ToFloat());
+    RelativeQuaternion = FQuaternion::FromEulerXYZ(static_cast<float>(rot[0].ToFloat()), static_cast<float>(rot[1].ToFloat()), static_cast<float>(rot[2].ToFloat()));
 
     auto scale = data.at("Scale");
     if (scale.size() != 3) return false;
-    RelativeScale3D = FVector(scale[0].ToFloat(), scale[1].ToFloat(), scale[2].ToFloat());
+    RelativeScale3D = FVector(static_cast<float>(scale[0].ToFloat()), static_cast<float>(scale[1].ToFloat()), static_cast<float>(scale[2].ToFloat()));
 
     return true;
 }

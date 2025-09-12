@@ -17,7 +17,7 @@ UMesh::UMesh()
 }
 
 UMesh::UMesh(const TArray<FVertexPosColor4>& vertices, D3D_PRIMITIVE_TOPOLOGY primitiveType)
-	: Vertices(vertices), PrimitiveType(primitiveType), NumVertices(vertices.size()), Stride(sizeof(FVertexPosColor4))
+	: Vertices(vertices), PrimitiveType(primitiveType), NumVertices(static_cast<int32>(vertices.size())), Stride(sizeof(FVertexPosColor4))
 {
 
 }
