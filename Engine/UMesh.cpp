@@ -23,7 +23,7 @@ UMesh::UMesh(const TArray<FVertexPosColor4>& vertices, D3D_PRIMITIVE_TOPOLOGY pr
 }
 
 UMesh::UMesh(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices, D3D_PRIMITIVE_TOPOLOGY primitiveType)
-	: Vertices(vertices), Indices(indices), PrimitiveType(primitiveType), NumVertices(vertices.size()), NumIndices(indices.size()), Stride(sizeof(FVertexPosColor4))
+    : Vertices(vertices), Indices(indices), PrimitiveType(primitiveType), NumVertices(static_cast<int32>(vertices.size())), NumIndices(static_cast<int32>(indices.size())), Stride(sizeof(FVertexPosColor4))
 {
 
 }
