@@ -139,7 +139,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="GizmoVertices.cpp" />
     <ClCompile Include="ImGuiWindowWrapper.cpp" />
     <ClCompile Include="ImguiConsole.cpp" />
     <ClCompile Include="ImGui\imgui.cpp">
@@ -230,17 +229,15 @@
     <ClCompile Include="URenderer.cpp" />
     <ClCompile Include="UPlaneComp.cpp" />
     <ClCompile Include="Vector4.h" />
+    <ClCompile Include="VerticesInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CubeVertices.h" />
     <ClInclude Include="FDynamicBitset.h" />
     <ClInclude Include="ImGuiWindowWrapper.h" />
-    <ClInclude Include="PlaneVertices.h" />
+    <ClInclude Include="TArray.h" />
     <ClInclude Include="UCamera.h" />
     <ClInclude Include="FVertexPosColor.h" />
-    <ClInclude Include="GizmoVertices.h" />
     <ClInclude Include="ImguiConsole.h" />
-    <ClInclude Include="TArray.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />
     <ClInclude Include="ImGui\imgui_impl_dx11.h" />
@@ -269,7 +266,6 @@
     <ClInclude Include="USceneManager.h" />
     <ClInclude Include="URaycastManager.h" />
     <ClInclude Include="EditorApplication.h" />
-    <ClInclude Include="Sphere.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="UApplication.h" />
     <ClInclude Include="UEngineStatics.h" />
@@ -286,6 +282,7 @@
     <ClInclude Include="URenderer.h" />
     <ClInclude Include="UPlaneComp.h" />
     <ClInclude Include="Vector.h" />
+    <ClInclude Include="VerticesInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ShaderW0.ps">

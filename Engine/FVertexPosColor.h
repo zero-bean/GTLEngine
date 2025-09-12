@@ -1,6 +1,6 @@
 ﻿#pragma once
+#include "stdafx.h"
 #include "Vector.h"
-#include "TArray.h"
 #include "UEngineStatics.h"
 
 struct FVertexPosColor

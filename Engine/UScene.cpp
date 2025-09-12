@@ -211,6 +211,10 @@ void UScene::Update(float deltaTime)
 	float len = sqrtf(dx * dx + dy * dy + dz * dz);
 	if (len > 0.f) { dx /= len; dy /= len; dz /= len; }
 	camera->MoveLocal(dx, dy, dz, deltaTime, boost);
+
+	////// TODO(PYB) ///////////////////
+	// 아마도.. 여기에 물체 피지컬 검사?
+	////////////////////////////////////
 }
 
 bool UScene::OnInitialize()

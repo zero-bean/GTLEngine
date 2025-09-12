@@ -7,9 +7,6 @@
     <Filter Include="Shader">
       <UniqueIdentifier>{b5ee73bf-5ed7-4ad4-8513-4f2f46dd7a41}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Math">
-      <UniqueIdentifier>{dede8fab-ea4f-4fe8-a08b-7f6cdbc0b95e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine">
       <UniqueIdentifier>{c35182b9-6331-4580-b811-36b815326b28}</UniqueIdentifier>
     </Filter>
@@ -34,14 +31,20 @@
     <Filter Include="Runtime">
       <UniqueIdentifier>{98c1323d-f205-475a-8aec-27c28bdf3809}</UniqueIdentifier>
     </Filter>
-    <Filter Include="PCH">
-      <UniqueIdentifier>{48e8ced0-0377-42e8-bc6f-fd2d07d3474f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="External">
       <UniqueIdentifier>{e719ba2a-a73e-446c-aa43-416adf6bea31}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\UI">
       <UniqueIdentifier>{3a65dfd5-299b-4436-96c7-b669986cfa16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{abe8db75-43b9-4a39-84f0-85d09c0669cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils\Math">
+      <UniqueIdentifier>{dede8fab-ea4f-4fe8-a08b-7f6cdbc0b95e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils\PCH">
+      <UniqueIdentifier>{48e8ced0-0377-42e8-bc6f-fd2d07d3474f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -79,13 +82,10 @@
       <Filter>Engine\Core\Component</Filter>
     </ClCompile>
     <ClCompile Include="Math.cpp">
-      <Filter>Math</Filter>
+      <Filter>Utils\Math</Filter>
     </ClCompile>
     <ClCompile Include="Matrix.cpp">
-      <Filter>Math</Filter>
-    </ClCompile>
-    <ClCompile Include="GizmoVertices.cpp">
-      <Filter>Engine\Core\Mesh</Filter>
+      <Filter>Utils\Math</Filter>
     </ClCompile>
     <ClCompile Include="UGizmoComponent.cpp">
       <Filter>Engine\Core\Component</Filter>
@@ -136,7 +136,7 @@
       <Filter>Application</Filter>
     </ClCompile>
     <ClCompile Include="Vector4.h">
-      <Filter>Math</Filter>
+      <Filter>Utils\Math</Filter>
     </ClCompile>
     <ClCompile Include="UEngineSubsystem.cpp">
       <Filter>Engine\Subsystem</Filter>
@@ -173,7 +173,10 @@
       <Filter>Engine\Core\Component</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
-      <Filter>PCH</Filter>
+      <Filter>Utils\PCH</Filter>
+    </ClCompile>
+    <ClCompile Include="VerticesInfo.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -210,23 +213,14 @@
     <ClInclude Include="UDefaultScene.h">
       <Filter>Runtime</Filter>
     </ClInclude>
-    <ClInclude Include="FVertexPosColor.h">
-      <Filter>Engine\Core\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="GizmoVertices.h">
-      <Filter>Engine\Core\Mesh</Filter>
-    </ClInclude>
     <ClInclude Include="ISerializable.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Matrix.h">
-      <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Sphere.h">
-      <Filter>Engine\Core\Mesh</Filter>
+      <Filter>Utils\Math</Filter>
     </ClInclude>
     <ClInclude Include="Quaternion.h">
-      <Filter>Math</Filter>
+      <Filter>Utils\Math</Filter>
     </ClInclude>
     <ClInclude Include="UApplication.h">
       <Filter>Engine\Application</Filter>
@@ -271,7 +265,7 @@
       <Filter>Engine\Subsystem</Filter>
     </ClInclude>
     <ClInclude Include="Vector.h">
-      <Filter>Math</Filter>
+      <Filter>Utils\Math</Filter>
     </ClInclude>
     <ClInclude Include="USphereComp.h">
       <Filter>Engine\Core\Component</Filter>
@@ -292,7 +286,7 @@
       <Filter>Engine\Core\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>PCH</Filter>
+      <Filter>Utils\PCH</Filter>
     </ClInclude>
     <ClInclude Include="json.hpp">
       <Filter>External</Filter>
@@ -302,9 +296,6 @@
     </ClInclude>
     <ClInclude Include="UEngineSubsystem.h">
       <Filter>Engine\Subsystem</Filter>
-    </ClInclude>
-    <ClInclude Include="TArray.h">
-      <Filter>Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="ImGuiWindowWrapper.h">
       <Filter>Engine\UI</Filter>
@@ -319,8 +310,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="UPlaneComp.h" />
-    <ClInclude Include="CubeVertices.h" />
-    <ClInclude Include="PlaneVertices.h" />
     <ClInclude Include="UCubeComp.h" />
     <ClInclude Include="UGizmoScaleHandleComp.h">
       <Filter>Engine\Core\Component</Filter>
@@ -331,6 +320,15 @@
     </ClInclude>
     <ClInclude Include="UGizmoRotationHandleComp.h">
       <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="VerticesInfo.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="FVertexPosColor.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="TArray.h">
+      <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

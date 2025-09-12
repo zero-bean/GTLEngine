@@ -1,9 +1,5 @@
 ﻿#include "stdafx.h"
 #include "UMeshManager.h"
-#include "GizmoVertices.h"
-#include "Sphere.h"
-#include "PlaneVertices.h"
-#include "CubeVertices.h"
 #include "UClass.h"
 
 IMPLEMENT_UCLASS(UMeshManager, UEngineSubsystem)
@@ -16,12 +12,20 @@ UMesh* UMeshManager::CreateMeshInternal(const TArray<FVertexPosColor>& vertices,
 	return mesh;
 }
 
+UMesh* UMeshManager::CreateMeshInternal(const TArray<FVertexPosColor>& vertices, const TArray<uint32>& indices, D3D_PRIMITIVE_TOPOLOGY primitiveType)
+{
+	// vector의 데이터 포인터와 크기를 ConvertVertexData에 전달
+	TArray<FVertexPosColor4> convertedVertices = FVertexPosColor4::ConvertVertexData(vertices.data(), vertices.size());
+	UMesh* mesh = new UMesh(convertedVertices, indices, primitiveType);
+	return mesh;
+}
+
 // 생성자
 UMeshManager::UMeshManager()
 {
-	meshes["Sphere"] = CreateMeshInternal(sphere_vertices);
-	meshes["Plane"] = CreateMeshInternal(plane_vertices);
-	meshes["Cube"] = CreateMeshInternal(cube_vertices);
+	meshes["Sphere"] = CreateMeshInternal(sphere_vertices, sphere_indices);
+	meshes["Plane"] = CreateMeshInternal(plane_vertices, plane_indices);
+	meshes["Cube"] = CreateMeshInternal(cube_vertices, cube_indices);
 	meshes["GizmoGrid"] = CreateMeshInternal(GridGenerator::CreateGridVertices(1, 100), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	meshes["GizmoArrow"] = CreateMeshInternal(gizmo_arrow_vertices);
 	meshes["GizmoRotationHandle"] = CreateMeshInternal(GridGenerator::CreateRotationHandleVertices());

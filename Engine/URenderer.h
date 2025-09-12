@@ -48,8 +48,6 @@ private:
 	FMatrix mVP;                 // 프레임 캐시
 	CBTransform   mCBData;
 
-
-
 public:
 	URenderer();
 	~URenderer();
@@ -130,7 +128,7 @@ private:
 	}
 public:
 	void SetViewProj(const FMatrix& V, const FMatrix& P); // 내부에 VP 캐시
-	void SetModel(const FMatrix& M, const FVector4& color, bool IsSelected);                      // M*VP → b0 업로드
+	void SetModel(const FMatrix& M, const FVector4& color, bool IsSelected); // M*VP → b0 업로드
 	void SetTargetAspect(float a) { if (a > 0.f) targetAspect = a; }
 	// targetAspect를 내부에서 사용 (카메라에 의존 X)
 	D3D11_VIEWPORT MakeAspectFitViewport(int32 winW, int32 winH) const;

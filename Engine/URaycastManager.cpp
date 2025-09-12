@@ -77,12 +77,6 @@ bool URaycastManager::RayIntersectsMeshes(UCamera* camera, TArray<T*>& component
 	RayOrigin = ray.Origin;
 	RayDirection = ray.Direction;
 
-	// std::cout << "Ray Origin: (" 
-	// 	  << RayOrigin.X << ", " << RayOrigin.Y << ", " << RayOrigin.Z 
-	// 	  << ") | Ray Dir: (" 
-	// 	  << RayDirection.X << ", " << RayDirection.Y << ", " << RayDirection.Z 
-	// 	  << ")\n";
-
 	bool hit = false;
 	float closestHit = FLT_MAX;
 	T* closestComponent = nullptr;
@@ -90,36 +84,68 @@ bool URaycastManager::RayIntersectsMeshes(UCamera* camera, TArray<T*>& component
 	for (T* component : components)
 	{
 		UMesh* mesh = component->GetMesh();
-		FMatrix worldTransform = component->GetWorldTransform();
+		FMatrix world = component->GetWorldTransform();
 
-		if (mesh->NumVertices < 3) continue;
+		if (mesh->NumVertices < 3) { continue; }
 
-		for (int32 i = 0; i + 2 < mesh->NumVertices; i += 3)
+		// 인덱스 버퍼를 가진 Mesh라면 아래 방식으로 순회 검사
+		if (mesh->NumIndices >= 3)
 		{
-			FVector triangleVertices[3] = {
-				TransformVertexToWorld(mesh->Vertices[i], worldTransform),
-				TransformVertexToWorld(mesh->Vertices[i + 1], worldTransform),
-				TransformVertexToWorld(mesh->Vertices[i + 2], worldTransform)
-			};
-
-			// std::cout << "Triangle: V0(" 
-		 //  << triangleVertices[0].X << ", " << triangleVertices[0].Y << ", " << triangleVertices[0].Z 
-		 //  << ") V1(" 
-		 //  << triangleVertices[1].X << ", " << triangleVertices[1].Y << ", " << triangleVertices[1].Z 
-		 //  << ") V2(" 
-		 //  << triangleVertices[2].X << ", " << triangleVertices[2].Y << ", " << triangleVertices[2].Z 
-		 //  << ")\n";
-
-			auto result = RayIntersectsTriangle(triangleVertices);
-			if (result.has_value())
+			for (int32 i = 0; i + 2 < mesh->NumIndices; i += 3)
 			{
-				float t = (*result - RayOrigin).Length(); // distance along ray
-				if (t < closestHit)
+				const uint32 i0 = mesh->Indices[i + 0];
+				const uint32 i1 = mesh->Indices[i + 1];
+				const uint32 i2 = mesh->Indices[i + 2];
+
+				// 방어 코드: 인덱스 범위 체크
+				if (i0 >= static_cast<uint32>(mesh->NumVertices) ||
+					i1 >= static_cast<uint32>(mesh->NumVertices) ||
+					i2 >= static_cast<uint32>(mesh->NumVertices))
 				{
-					closestHit = t;
-					hit = true;
-					closestComponent = component;
-					outImpactPoint = *result;
+					continue;
+				}
+
+				const FVector tri[3] = {
+					TransformVertexToWorld(mesh->Vertices[i0], world),
+					TransformVertexToWorld(mesh->Vertices[i1], world),
+					TransformVertexToWorld(mesh->Vertices[i2], world),
+				};
+
+				float t = 0.f; FVector p;
+				if (RayIntersectsTriangle(tri, t, p))
+				{
+					if (t < closestHit)
+					{
+						closestHit = t;
+						hit = true;
+						closestComponent = component;
+						outImpactPoint = p;
+					}
+				}
+
+			}
+		}
+		// 인덱스 버퍼가 없는 Mesh라면 아래 방식으로 순회 검사
+		else
+		{
+			for (int32 i = 0; i + 2 < mesh->NumVertices; i += 3)
+			{
+				const FVector tri[3] = {
+					TransformVertexToWorld(mesh->Vertices[i + 0], world),
+					TransformVertexToWorld(mesh->Vertices[i + 1], world),
+					TransformVertexToWorld(mesh->Vertices[i + 2], world),
+				};
+
+				float t = 0.f; FVector p;
+				if (RayIntersectsTriangle(tri, t, p))
+				{
+					if (t < closestHit)
+					{
+						closestHit = t;
+						hit = true;
+						closestComponent = component;
+						outImpactPoint = p;
+					}
 				}
 			}
 		}
@@ -170,6 +196,36 @@ TOptional<FVector> URaycastManager::RayIntersectsTriangle(FVector triangleVertic
 	}
 	else // This means that there is a line intersection but not a ray intersection.
 		return {};
+}
+
+bool URaycastManager::RayIntersectsTriangle(const FVector tri[3], float& outT, FVector& outP) const
+{
+	constexpr float eps = 1e-6f;
+
+	const FVector edge1 = tri[1] - tri[0];
+	const FVector edge2 = tri[2] - tri[0];
+
+	const FVector pvec = RayDirection.Cross(edge2);
+	const float det = edge1.Dot(pvec);
+
+	if (fabsf(det) < eps) return false; // 평행
+
+	const float invDet = 1.0f / det;
+
+	const FVector tvec = RayOrigin - tri[0];
+	const float u = tvec.Dot(pvec) * invDet;
+	if (u < -eps || u > 1.0f + eps) return false;
+
+	const FVector qvec = tvec.Cross(edge1);
+	const float v = RayDirection.Dot(qvec) * invDet;
+	if (v < -eps || (u + v) > 1.0f + eps) return false;
+
+	const float t = edge2.Dot(qvec) * invDet;
+	if (t < eps) return false; // 원점 뒤쪽/거의 0
+
+	outT = t;
+	outP = RayOrigin + RayDirection * t;
+	return true;
 }
 
 FVector URaycastManager::TransformVertexToWorld(const FVertexPosColor4& vertex, const FMatrix& world)
