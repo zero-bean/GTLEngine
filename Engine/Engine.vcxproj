@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -198,6 +198,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="UBoundingBoxManager.hs" />
+    <ClCompile Include="UBoundingBoxComponent.cpp" />
     <ClCompile Include="UCamera.cpp" />
     <ClCompile Include="UClass.cpp" />
     <ClCompile Include="UControlPanel.cpp" />
@@ -235,6 +237,9 @@
     <ClInclude Include="FDynamicBitset.h" />
     <ClInclude Include="ImGuiWindowWrapper.h" />
     <ClInclude Include="TArray.h" />
+    <ClInclude Include="UBoundingBoxComponent.h" />
+    <ClInclude Include="UBoundingBoxManager.cpp" />
+    <ClInclude Include="UBoundingBoxManager.h" />
     <ClInclude Include="UCamera.h" />
     <ClInclude Include="FVertexPosColor.h" />
     <ClInclude Include="ImguiConsole.h" />
