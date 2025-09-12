@@ -2,6 +2,10 @@
 #include "URenderer.h"
 #include "UClass.h"
 
+/* *
+* IASetIndexBuffer https://learn.microsoft.com/ko-kr/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-iasetindexbuffer
+*/
+
 IMPLEMENT_UCLASS(URenderer, UEngineSubsystem)
 
 URenderer::URenderer()
@@ -511,12 +515,23 @@ void URenderer::DrawMesh(UMesh* mesh)
 	if (!mesh || !mesh->IsInitialized())
 		return;
 
-	UINT offset = 0;
-
-	deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
-	deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
-
-	deviceContext->Draw(mesh->NumVertices, 0);
+	// 인덱스 버퍼도 가지고 있으면 아래 방식으로 Draw
+	if (mesh->NumIndices > 0)
+	{
+		UINT offset = 0;
+		deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
+		deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, offset);
+		deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
+		deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
+	}
+	// 정점 버퍼만 가지고 있으면 아래 방식으로 Draw
+	else if (mesh->NumIndices == 0)
+	{
+		UINT offset = 0;
+		deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
+		deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
+		deviceContext->Draw(mesh->NumVertices, 0);
+	}
 }
 
 void URenderer::DrawMeshOnTop(UMesh* mesh)

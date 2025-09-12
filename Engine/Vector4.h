@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "stdafx.h"
-#include "Vector.h"
 #include "UEngineStatics.h"
+#include "Vector.h"
 
 struct FVector4
 {

@@ -64,3 +64,8 @@ namespace Engine
 {
 	// Common engine types and utilities can go here
 }
+
+// Utils
+#include "TArray.h"
+#include "FVertexPosColor.h"
+#include "VerticesInfo.h"

@@ -39,6 +39,7 @@ public:
 	bool RayIntersectsMeshes(UCamera* camera, TArray<T*>& components, T*& hitComponent, FVector& outImpactPoint);
 
 	TOptional<FVector> RayIntersectsTriangle(FVector triangleVertices[3]);
+	bool RayIntersectsTriangle(const FVector tri[3], float& outT, FVector& outP) const;
 
 	FRay CreateRayFromScreenPosition(UCamera* camera);
 
