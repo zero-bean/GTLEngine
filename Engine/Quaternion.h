@@ -263,21 +263,41 @@ struct FQuaternion
 	{
 		const FQuaternion q = Normalized();
 
-		// 단위축을 회전시켜 축벡터를 직접 만든다
-		const FVector F = q.Rotate(FVector(1, 0, 0)); // X axis → Forward
-		const FVector R = q.Rotate(FVector(0, 1, 0)); // Y axis → Right
-		const FVector U = q.Rotate(FVector(0, 0, 1)); // Z axis → Up
+		float x = q.X, y = q.Y, z = q.Z, w = q.W;
+		float xx = x * x, yy = y * y, zz = z * z;
+		float xy = x * y, xz = x * z, yz = y * z;
+		float wx = w * x, wy = w * y, wz = w * z;
 
-		FMatrix M = FMatrix::IdentityMatrix();
-		M.M[0][0] = F.X; M.M[0][1] = F.Y; M.M[0][2] = F.Z; // row0=F
-		M.M[1][0] = R.X; M.M[1][1] = R.Y; M.M[1][2] = R.Z; // row1=R
-		M.M[2][0] = U.X; M.M[2][1] = U.Y; M.M[2][2] = U.Z; // row2=U
-		return M;
+		FMatrix R = FMatrix::IdentityMatrix();
+		// === columns are axes (col0=+X, col1=+Y, col2=+Z) ===
+		R.M[0][0] = 1.0f - 2.0f * (yy + zz);
+		R.M[1][0] = 2.0f * (xy + wz);
+		R.M[2][0] = 2.0f * (xz - wy);
+
+		R.M[0][1] = 2.0f * (xy - wz);
+		R.M[1][1] = 1.0f - 2.0f * (xx + zz);
+		R.M[2][1] = 2.0f * (yz + wx);
+
+		R.M[0][2] = 2.0f * (xz + wy);
+		R.M[1][2] = 2.0f * (yz - wx);
+		R.M[2][2] = 1.0f - 2.0f * (xx + yy);
+		return R;
+		// 단위축을 회전시켜 축벡터를 직접 만든다
+		//const FVector F = q.Rotate(FVector(1, 0, 0)); // X axis → Forward
+		//const FVector R = q.Rotate(FVector(0, 1, 0)); // Y axis → Right
+		//const FVector U = q.Rotate(FVector(0, 0, 1)); // Z axis → Up
+
+		//FMatrix M = FMatrix::IdentityMatrix();
+		//M.M[0][0] = F.X; M.M[0][1] = F.Y; M.M[0][2] = F.Z; // row0=F
+		//M.M[1][0] = R.X; M.M[1][1] = R.Y; M.M[1][2] = R.Z; // row1=R
+		//M.M[2][0] = U.X; M.M[2][1] = U.Y; M.M[2][2] = U.Z; // row2=U
+		//return M;
 	}
 
 	// 회전행렬(행벡터 규약, 상단3x3) → 쿼터니언
 	static FQuaternion FromMatrixRow(const FMatrix& R)
 	{
+		// 행축 기준
 		//float m00 = R.M[0][0], m01 = R.M[0][1], m02 = R.M[0][2];
 		//float m10 = R.M[1][0], m11 = R.M[1][1], m12 = R.M[1][2];
 		//float m20 = R.M[2][0], m21 = R.M[2][1], m22 = R.M[2][2];
@@ -287,63 +307,67 @@ struct FQuaternion
 		//if (tr > 0.0f) {
 		//	float s = sqrtf(tr + 1.0f) * 2.0f;
 		//	q.W = 0.25f * s;
-		//	q.X = (m21 - m12) / s;
-		//	q.Y = (m02 - m20) / s;
-		//	q.Z = (m10 - m01) / s;
+		//	q.X = (m12 - m21) / s; // ★ 전치 반영
+		//	q.Y = (m20 - m02) / s; // ★
+		//	q.Z = (m01 - m10) / s; // ★
 		//}
 		//else if (m00 > m11 && m00 > m22) {
 		//	float s = sqrtf(1.0f + m00 - m11 - m22) * 2.0f;
-		//	q.W = (m21 - m12) / s;
+		//	q.W = (m12 - m21) / s;  // ★
 		//	q.X = 0.25f * s;
 		//	q.Y = (m01 + m10) / s;
 		//	q.Z = (m02 + m20) / s;
 		//}
 		//else if (m11 > m22) {
 		//	float s = sqrtf(1.0f + m11 - m00 - m22) * 2.0f;
-		//	q.W = (m02 - m20) / s;
+		//	q.W = (m20 - m02) / s;  // ★
 		//	q.X = (m01 + m10) / s;
 		//	q.Y = 0.25f * s;
 		//	q.Z = (m12 + m21) / s;
 		//}
 		//else {
 		//	float s = sqrtf(1.0f + m22 - m00 - m11) * 2.0f;
-		//	q.W = (m10 - m01) / s;
+		//	q.W = (m01 - m10) / s;  // ★
 		//	q.X = (m02 + m20) / s;
 		//	q.Y = (m12 + m21) / s;
 		//	q.Z = 0.25f * s;
 		//}
 		//return q.Normalized();
-		// 행축 기준
 		float m00 = R.M[0][0], m01 = R.M[0][1], m02 = R.M[0][2];
 		float m10 = R.M[1][0], m11 = R.M[1][1], m12 = R.M[1][2];
 		float m20 = R.M[2][0], m21 = R.M[2][1], m22 = R.M[2][2];
 
 		float tr = m00 + m11 + m22;
 		FQuaternion q;
-		if (tr > 0.0f) {
+		if (tr > 0.0f)
+		{
 			float s = sqrtf(tr + 1.0f) * 2.0f;
 			q.W = 0.25f * s;
-			q.X = (m12 - m21) / s; // ★ 전치 반영
-			q.Y = (m20 - m02) / s; // ★
-			q.Z = (m01 - m10) / s; // ★
+			q.X = (m21 - m12) / s;
+			q.Y = (m02 - m20) / s;
+			q.Z = (m10 - m01) / s;
 		}
-		else if (m00 > m11 && m00 > m22) {
+		else if (m00 > m11 && m00 > m22)
+		{
 			float s = sqrtf(1.0f + m00 - m11 - m22) * 2.0f;
-			q.W = (m12 - m21) / s;  // ★
+			q.W = (m21 - m12) / s;
 			q.X = 0.25f * s;
 			q.Y = (m01 + m10) / s;
 			q.Z = (m02 + m20) / s;
 		}
-		else if (m11 > m22) {
+
+		else if (m11 > m22)
+		{
 			float s = sqrtf(1.0f + m11 - m00 - m22) * 2.0f;
-			q.W = (m20 - m02) / s;  // ★
+			q.W = (m02 - m20) / s;
 			q.X = (m01 + m10) / s;
 			q.Y = 0.25f * s;
 			q.Z = (m12 + m21) / s;
 		}
-		else {
+		else
+		{
 			float s = sqrtf(1.0f + m22 - m00 - m11) * 2.0f;
-			q.W = (m01 - m10) / s;  // ★
+			q.W = (m10 - m01) / s;
 			q.X = (m02 + m20) / s;
 			q.Y = (m12 + m21) / s;
 			q.Z = 0.25f * s;
@@ -397,10 +421,8 @@ struct FQuaternion
 	// 주어진 축(로컬 축) 기준으로 회전
 	FQuaternion RotatedLocalAxisAngle(const FVector& LocalAxis, float radians) const
 	{
-		// 로컬축 → 월드축으로 변환
-		FVector worldAxis = this->Rotate(LocalAxis).Normalized();
-		FQuaternion qL = FromAxisAngle(worldAxis, radians);
-		return (qL * *this).Normalized(); // 먼저 로컬 회전, 그 다음 기존 회전
+		FQuaternion qL = FromAxisAngle(LocalAxis, radians);
+		return  (qL *  * this).Normalized();
 	}
 	// In-place 버전
 	void RotateWorldAxisAngle(const FVector& worldAxis, float radians)
