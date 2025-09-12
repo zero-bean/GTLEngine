@@ -32,12 +32,18 @@ struct FVector
         );
     }
 
-    float LengthSquared() const { return X * X + Y * Y + Z * Z; }
-    float Length() const { return sqrtf(LengthSquared()); }
+    float LengthSquared() const 
+    { 
+        return this->X * this->X + this->Y * this->Y + this->Z * this->Z;
+    }
+    float Length() const 
+    {
+        return sqrtf(LengthSquared());
+    }
 
     void Normalize() {
         float ls = LengthSquared();
-        if (ls > 0.0f) {
+        if (ls > 1e-8f) {
             float inv = 1.0f / sqrtf(ls);
             X *= inv; Y *= inv; Z *= inv;
         }
@@ -46,7 +52,7 @@ struct FVector
 
     FVector Normalized() const {
         float ls = LengthSquared();
-        if (ls > 0.0f) {
+        if (ls > 1e-8f) {
             float inv = 1.0f / sqrtf(ls);
             return FVector(X * inv, Y * inv, Z * inv);
         }

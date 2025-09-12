@@ -181,7 +181,7 @@ bool URenderer::CreateRasterizerState()
 	D3D11_RASTERIZER_DESC rasterizerDesc = {};
 	rasterizerDesc.FillMode = D3D11_FILL_SOLID;
 	rasterizerDesc.CullMode = D3D11_CULL_BACK;           // 뒷면 제거
-	rasterizerDesc.FrontCounterClockwise = FALSE;
+	rasterizerDesc.FrontCounterClockwise = TRUE;
 	rasterizerDesc.DepthBias = 0;
 	rasterizerDesc.DepthBiasClamp = 0.0f;
 	rasterizerDesc.SlopeScaledDepthBias = 0.0f;

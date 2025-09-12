@@ -139,7 +139,8 @@ void UControlPanel::CameraManagementSection()
 	float cameraLocation[3] = { pos.X, pos.Y, pos.Z };
 	FVector eulDeg = camera->GetEulerXYZDeg();
 	float eulerXYZ[3] = { eulDeg.X, eulDeg.Y, eulDeg.Z };
-
+	FVector axis = camera->GetBasis();
+	float axisXYZ[3] = {axis.X, axis.Y, axis.Z};
 	// --- 테이블 UI ---
 	bool locCommitted = false;
 	bool rotCommitted = false;
@@ -149,7 +150,7 @@ void UControlPanel::CameraManagementSection()
 	if (isOrthogonal)
 	{
 		// 원하는 직교 크기로 (예시: 월드 단위 10x10)
-		camera->SetOrtho(10.0f, 10.0f, camera->GetNearZ(), camera->GetFarZ(), /*leftHanded=*/false);
+		camera->SetOrtho(10.0f, 10.0f, camera->GetNearZ(), camera->GetFarZ());
 	}
 	else
 	{
@@ -236,6 +237,29 @@ void UControlPanel::CameraManagementSection()
 				&eulerXYZ[i], 0.0f, 0.0f, "%.3f");
 			if (ImGui::IsItemDeactivatedAfterEdit())
 				rotCommitted = true;
+		}
+		// ImGui::TableSetColumnIndex(3);
+
+		ImGui::EndTable();
+	}
+	ImGui::Text("Camera Axis");
+	if (ImGui::BeginTable("CameraAxisTable", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingStretchProp))
+	{
+		ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+		ImGui::TableSetColumnIndex(0); ImGui::Text("Right");
+		ImGui::TableSetColumnIndex(1); ImGui::Text("Forward");
+		ImGui::TableSetColumnIndex(2); ImGui::Text("Up");
+
+		// Camera Rotation 행
+		ImGui::TableNextRow();
+		for (int32 i = 0; i < 3; i++)
+		{
+			ImGui::TableSetColumnIndex(i);
+			ImGui::SetNextItemWidth(-1);
+			ImGui::InputFloat(("##axis" + std::to_string(i)).c_str(),
+				&axisXYZ[i], 0.0f, 0.0f, "%.3f");
+			//if (ImGui::IsItemDeactivatedAfterEdit())
+			//	rotCommitted = true;
 		}
 		// ImGui::TableSetColumnIndex(3);
 

@@ -20,7 +20,7 @@ FMatrix UGizmoComponent::GetWorldTransform()
 {
 	return FMatrix::SRTRowQuaternion(RelativeLocation, (OriginQuaternion * RelativeQuaternion).ToMatrixRow(), RelativeScale3D);
 }
-
+ 
 void UGizmoComponent::UpdateConstantBuffer(URenderer& renderer)
 {
 	FMatrix M = GetWorldTransform();

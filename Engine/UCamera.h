@@ -23,7 +23,7 @@ public:
         , bLockRoll(false)
         , mPitch(0.0f)
     {
-        RecalcAxesFromQuat();
+
         UpdateView();
         UpdateProj();
     }
@@ -53,19 +53,19 @@ public:
     float GetFOV() const { return mFovY * (180.0f / PI); }
     void  SetFOV(float deg) { SetPerspectiveDegrees(deg, mAspect, mNearZ, mFarZ); }
     // w,h는 뷰 공간 가로/세로 범위(직교 박스 크기)
-    void SetOrtho(float w, float h, float zn, float zf, bool leftHanded = false);
+    void SetOrtho(float w, float h, float zn, float zf);
     void SetAspect(float aspect) { mAspect = (aspect > 0.0f) ? aspect : 1.0f; UpdateProj(); }
 
 
 	// ===== 위치/자세 Get =====
 
-    const FVector& GetLocation() const { return mEye; }
-    const FQuaternion& GetRotation()   const { return mRot; }
-    const FVector& GetRight()   const { return mRight; }
-    const FVector& GetUp()      const { return mUp; }
-    const FVector& GetForward() const { return mForward; }
+    const FVector& GetLocation()        const { return mEye; }
+    const FQuaternion& GetRotation()    const { return mRot; }
+    const FVector& GetRight()   const { return mRot.Rotate(FVector(0, 1, 0)).Normalized();}
+    const FVector& GetUp()      const { return mRot.Rotate(FVector(0, 0, 1)).Normalized();}
+    const FVector& GetForward() const { return mRot.Rotate(FVector(1, 0, 0)).Normalized();}
     void GetBasis(FVector& outRight, FVector& outForward, FVector& outUp) const;
-
+    FVector GetBasis() const;
 
     // ===== 위치/자세 Set =====
 
@@ -124,10 +124,7 @@ private:
 	// 롤 잠금
     bool  bLockRoll;
 
-    // 카메라 정보 갱신
 
-    // mRot로부터 mRight, mUp, mForward 갱신
-    void RecalcAxesFromQuat();
-    void UpdateProj(bool leftHanded = false);
+    void UpdateProj();
     void UpdateView();
 };
