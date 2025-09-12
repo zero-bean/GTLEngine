@@ -46,7 +46,7 @@ bool UScene::Initialize(URenderer* r, UMeshManager* mm, UInputManager* im)
 
 	camera = new UCamera();
 	camera->SetPerspectiveDegrees(60.0f, (backBufferHeight > 0) ? (float)backBufferWidth / (float)backBufferHeight : 1.0f, 0.1f, 1000.0f);
-	camera->LookAt({ 0,5,0 }, { 0,0,0 }, { 0,0,1 });
+	camera->LookAt({ 0,0,-5 }, { 0,0,0 }, { 0,0,1 });
 
 	return OnInitialize();
 }
@@ -179,7 +179,7 @@ void UScene::Update(float deltaTime)
 		inputManager->ConsumeMouseDelta(mdx, mdy);
 
 		const float sens = 0.005f; // 일단 크게 해서 동작 확인
-		camera->AddYawPitch(-mdx * sens, -mdy * sens);
+		camera->AddYawPitch(mdx * sens, mdy * sens);
 	}
 	if (inputManager->IsKeyDown('W'))
 	{

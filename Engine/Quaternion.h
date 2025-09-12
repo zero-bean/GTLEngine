@@ -258,8 +258,7 @@ struct FQuaternion
 		return v - t * w + u.Cross(t);
 	}
 
-	// === COLUMNS are axes (row-vector) ===
-	// col0 = q·(+X) = Right
+
 	FMatrix ToMatrixRow() const
 	{
 		const FQuaternion q = Normalized();

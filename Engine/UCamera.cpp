@@ -37,10 +37,6 @@ void UCamera::GetBasis(FVector& outRight, FVector& outForward, FVector& outUp) c
 	outForward = GetForward();
 	outUp = GetUp();
 }
-FVector UCamera::GetBasis() const
-{
-	return GetRight(), GetForward(), GetUp();
-}
 
 
 

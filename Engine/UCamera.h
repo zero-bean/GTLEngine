@@ -65,7 +65,6 @@ public:
     const FVector& GetUp()      const { return mRot.Rotate(FVector(0, 0, 1)).Normalized();}
     const FVector& GetForward() const { return mRot.Rotate(FVector(1, 0, 0)).Normalized();}
     void GetBasis(FVector& outRight, FVector& outForward, FVector& outUp) const;
-    FVector GetBasis() const;
 
     // ===== 위치/자세 Set =====
 

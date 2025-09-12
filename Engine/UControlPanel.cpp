@@ -139,8 +139,13 @@ void UControlPanel::CameraManagementSection()
 	float cameraLocation[3] = { pos.X, pos.Y, pos.Z };
 	FVector eulDeg = camera->GetEulerXYZDeg();
 	float eulerXYZ[3] = { eulDeg.X, eulDeg.Y, eulDeg.Z };
-	FVector axis = camera->GetBasis();
-	float axisXYZ[3] = {axis.X, axis.Y, axis.Z};
+	FVector right, forward, up;
+	camera->GetBasis(right, forward, up);
+
+	// 보기용 버퍼 (Drag로 편집 못 하게 Read-only/Disabled 처리)
+	float vRight[3] = { right.X,   right.Y,   right.Z };
+	float vForward[3] = { forward.X, forward.Y, forward.Z };
+	float vUp[3] = { up.X,      up.Y,      up.Z };
 	// --- 테이블 UI ---
 	bool locCommitted = false;
 	bool rotCommitted = false;
@@ -242,29 +247,12 @@ void UControlPanel::CameraManagementSection()
 
 		ImGui::EndTable();
 	}
-	ImGui::Text("Camera Axis");
-	if (ImGui::BeginTable("CameraAxisTable", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingStretchProp))
-	{
-		ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
-		ImGui::TableSetColumnIndex(0); ImGui::Text("Right");
-		ImGui::TableSetColumnIndex(1); ImGui::Text("Forward");
-		ImGui::TableSetColumnIndex(2); ImGui::Text("Up");
+	// --- Camera Basis 출력 ---
+	ImGui::SeparatorText("Camera Basis");
 
-		// Camera Rotation 행
-		ImGui::TableNextRow();
-		for (int32 i = 0; i < 3; i++)
-		{
-			ImGui::TableSetColumnIndex(i);
-			ImGui::SetNextItemWidth(-1);
-			ImGui::InputFloat(("##axis" + std::to_string(i)).c_str(),
-				&axisXYZ[i], 0.0f, 0.0f, "%.3f");
-			//if (ImGui::IsItemDeactivatedAfterEdit())
-			//	rotCommitted = true;
-		}
-		// ImGui::TableSetColumnIndex(3);
-
-		ImGui::EndTable();
-	}
+	ImGui::Text("Right:   %.3f, %.3f, %.3f", right.X, right.Y, right.Z);
+	ImGui::Text("Forward: %.3f, %.3f, %.3f", forward.X, forward.Y, forward.Z);
+	ImGui::Text("Up:      %.3f, %.3f, %.3f", up.X, up.Y, up.Z);
 	// World / Local 선택 (체크박스 대신, 버튼처럼 보이는 상호배타 토글)
 
 	if (ModeButton("World", GizmoManager->GetIsWorldSpace()))
