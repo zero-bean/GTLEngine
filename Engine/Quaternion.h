@@ -143,6 +143,7 @@ struct FQuaternion
 		return FromEulerXYZDeg(v.X, v.Y, v.Z);
 	}
 	// forward 방향으로 물체가 돌아갑니다.
+	// TODO - 카메라 회전 기준이므로 물체에 대해서는 새로 구현해야할 수도 있습니다.
 	static FQuaternion LookRotation(const FVector& forward, const FVector& up)
 	{
 		FVector F = forward; F.Normalize();
@@ -155,14 +156,13 @@ struct FQuaternion
 			Uref = fabsf(F.Z) < 0.9f ? FVector(0, 0, 1) : FVector(0, 1, 0);
 		}
 		Uref.Normalize();
-		// R = F × U, U = R × F
 		FVector R = Uref.Cross(F).Normalized();
 		FVector U = F.Cross(R).Normalized(); // 재직교(수치안정)
 
 		FMatrix M = FMatrix::IdentityMatrix();
-		M.M[0][0] = F.X; M.M[0][1] = F.Y; M.M[0][2] = F.Z;
-		M.M[1][0] = R.X; M.M[1][1] = R.Y; M.M[1][2] = R.Z;
-		M.M[2][0] = U.X; M.M[2][1] = U.Y; M.M[2][2] = U.Z;
+		M.M[0][0] = F.X; M.M[0][1] = R.X; M.M[0][2] = U.X;
+		M.M[1][0] = F.Y; M.M[1][1] = R.Y; M.M[1][2] = U.Y;
+		M.M[2][0] = F.Z; M.M[2][1] = R.Z; M.M[2][2] = U.Z;
 		return FQuaternion::FromMatrixRow(M);
 	}
 
@@ -258,7 +258,7 @@ struct FQuaternion
 		return v - t * w + u.Cross(t);
 	}
 
-
+	// TODO - 열축 기준이므로 유의해서 사용
 	FMatrix ToMatrixRow() const
 	{
 		const FQuaternion q = Normalized();
@@ -295,6 +295,7 @@ struct FQuaternion
 	}
 
 	// 회전행렬(행벡터 규약, 상단3x3) → 쿼터니언
+	// TODO - 열축 기준이므로 유의해서 사용
 	static FQuaternion FromMatrixRow(const FMatrix& R)
 	{
 		// 행축 기준
