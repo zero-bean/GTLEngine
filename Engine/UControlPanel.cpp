@@ -137,8 +137,8 @@ void UControlPanel::CameraManagementSection()
 	// 카메라 정보
 	FVector pos = camera->GetLocation();
 	float cameraLocation[3] = { pos.X, pos.Y, pos.Z };
-	FVector eulDeg = camera->GetEulerXYZDeg();
-	float eulerXYZ[3] = { eulDeg.X, eulDeg.Y, eulDeg.Z };
+	float pitchYawRoll[3] = { 0 };
+	camera->GetPitchYawDegrees(pitchYawRoll[0], pitchYawRoll[1]);
 	FVector right, forward, up;
 	camera->GetBasis(right, forward, up);
 
@@ -183,11 +183,6 @@ void UControlPanel::CameraManagementSection()
 	changed |= ImGui::DragFloat("##fov_drag", &fovDeg, dragSpeed, minFov, maxFov, "%.1f",
 		ImGuiSliderFlags_AlwaysClamp);
 
-	// 직접 입력 박스(원하면 유지, 아니면 생략 가능)
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(avail * 0.30f);
-	changed |= ImGui::InputFloat("##fov_input", &fovDeg, 0.0f, 0.0f, "%.3f");
-
 	// 리셋 버튼(옵션)
 	ImGui::SameLine();
 	if (ImGui::Button("Reset")) { fovDeg = 60.0f; changed = true; }
@@ -223,29 +218,40 @@ void UControlPanel::CameraManagementSection()
 		}
 		ImGui::EndTable();
 	}
-
 	ImGui::Text("Camera Rotation");
-	if (ImGui::BeginTable("CameraRotTable", 3, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingStretchProp))
+	if (ImGui::BeginTable("EditableCameraTable", 3, ImGuiTableFlags_None))
 	{
-		ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
-		ImGui::TableSetColumnIndex(0); ImGui::Text("Pitch");
-		ImGui::TableSetColumnIndex(1); ImGui::Text("Yaw");
-		ImGui::TableSetColumnIndex(2); ImGui::Text("Roll");
-
-		// Camera Rotation 행
 		ImGui::TableNextRow();
 		for (int32 i = 0; i < 3; i++)
 		{
 			ImGui::TableSetColumnIndex(i);
 			ImGui::SetNextItemWidth(-1);
-			ImGui::InputFloat(("##rot" + std::to_string(i)).c_str(),
-				&eulerXYZ[i], 0.0f, 0.0f, "%.3f");
-			if (ImGui::IsItemDeactivatedAfterEdit())
-				rotCommitted = true;
-		}
-		// ImGui::TableSetColumnIndex(3);
 
+			// DragFloat로 교체
+			if (ImGui::DragFloat(("##loc" + std::to_string(i)).c_str(),
+				&pitchYawRoll[i], 0.1f, -FLT_MAX, FLT_MAX, "%.3f"))
+			{
+				rotCommitted = true; // 값이 바뀐 순간 바로 commit
+			}
+			// 만약 "편집 종료 후만" commit 원하면 IsItemDeactivatedAfterEdit() 체크로 바꾸기
+		}
 		ImGui::EndTable();
+	}
+
+
+	const float minSpeed = 0.1f;
+	const float maxSpeed = 100.0f;
+	float cameraSpeed = camera->GetMoveSpeed();
+
+	ImGui::Text("Camera Speed");
+	// 드래그 박스 (좌우 드래그로 값 변경)
+	ImGui::SetNextItemWidth(avail * 0.55f);
+	changed |= ImGui::DragFloat("##fov_drag", &cameraSpeed, dragSpeed, minSpeed, maxSpeed, "%.001f",
+		ImGuiSliderFlags_AlwaysClamp);
+
+	if (changed) {
+		cameraSpeed = std::clamp(cameraSpeed, minSpeed, maxSpeed);
+		camera->SetMoveSpeed(cameraSpeed); // 내부에서 proj 재빌드
 	}
 	// --- Camera Basis 출력 ---
 	ImGui::SeparatorText("Camera Basis");
@@ -290,6 +296,6 @@ void UControlPanel::CameraManagementSection()
 
 	if (rotCommitted)
 	{
-		camera->SetEulerXYZDeg(eulerXYZ[0], eulerXYZ[1], eulerXYZ[2]);
+		camera->SetPitchYawDegrees(pitchYawRoll[0], pitchYawRoll[1]);
 	}
 }

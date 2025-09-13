@@ -73,19 +73,16 @@ public:
     void SetLockRoll(bool on) { bLockRoll = on; UpdateView(); }
 	// 카메라가 특정 지점을 바라보도록 설정 (RH, Z-up)
     void LookAt(const FVector& eye, const FVector& target, const FVector& up = FVector(0, 0, 1));
-    // 로컬축 기준 이동 (dx=right, dy=forward, dz=up)
-    void MoveLocal(float dx, float dy, float dz, float deltaTime, bool boost = false,
-        float baseSpeed = 3.0f, float boostMul = 3.0f);
 
 
 	// ==== Yaw/Pitch 제어 ====
 
     // 무제한 마우스룩(쿼터니언): yaw=world Z, pitch=야우 적용 후의 Right
     void AddYawPitch(float yawZ, float pitch);
-    void GetYawPitch(float& yawZ, float& pitch) const;
-    void SetYawPitch(float yawZ, float pitch);
-
-
+    void GetPitchYaw(float& pitch, float& yawZ) const;
+    void SetPitchYaw(float pitch, float yawZ);
+    void GetPitchYawDegrees(float& pitchDeg, float& yawDeg) const;
+    void SetPitchYawDegrees(float pitchDeg, float yawDeg);
 	// ==== 카메라 Rotation 기반 오일러 얻기/설정 (XYZ 순서, 월드 기준) ====
 
 	// 절대값 얻기: 월드 기준 Euler(X→Y→Z)로 '얻기'
@@ -97,6 +94,12 @@ public:
     void SetEulerXYZRad(float rx, float ry, float rz);
     void SetEulerXYZDeg(float rxDeg, float ryDeg, float rzDeg);
 
+    // ==== 카메라 움직임 ====
+    float GetMoveSpeed() { return moveSpeed; }
+    void SetMoveSpeed(float speed) { moveSpeed = speed; }
+    // 로컬축 기준 이동 (dx=right, dy=forward, dz=up)
+    void MoveLocal(float dx, float dy, float dz, float deltaTime, bool boost = false,
+        float baseSpeed = 3.0f, float boostMul = 3.0f);
 private:
     // ---- 내부 상태 ----
     FVector mEye;      // 월드 위치
@@ -123,6 +126,7 @@ private:
 	// 롤 잠금
     bool  bLockRoll;
 
+    float moveSpeed = 5.0f;
 
     void UpdateProj();
     void UpdateView();

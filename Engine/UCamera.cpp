@@ -86,7 +86,7 @@ void UCamera::AddYawPitch(float yawZ, float pitch)
 	UpdateView();
 }
 
-void UCamera::GetYawPitch(float& yawZ, float& pitch) const
+void UCamera::GetPitchYaw(float& pitch, float& yawZ) const
 {
 	const FVector f = GetForward(); // Z-up
 	pitch = asinf(std::clamp(f.Z, -1.0f, 1.0f));
@@ -94,8 +94,23 @@ void UCamera::GetYawPitch(float& yawZ, float& pitch) const
 	if (yawZ > PI) yawZ -= 2.f * PI;
 	if (yawZ < -PI) yawZ += 2.f * PI;
 }
+void UCamera::GetPitchYawDegrees(float& pitchDeg, float& yawDeg) const
+{
+	const FVector f = GetForward(); // Z-up
+
+	float pitchRad = asinf(std::clamp(f.Z, -1.0f, 1.0f));
+	float yawRad = atan2f(f.Y, f.X);
+
+	// 라디안을 도로 변환
+	pitchDeg = ToDeg(pitchRad);
+	yawDeg = ToDeg(yawRad);
+
+	// -180도 ~ +180도 정규화
+	if (yawDeg > 180.0f) yawDeg -= 360.0f;
+	if (yawDeg < -180.0f) yawDeg += 360.0f;
+}
 // TODO : 정확히 잘 작동하는지 모름. 사용할 때 확인 요망
-void UCamera::SetYawPitch(float yawZ, float pitch)
+void UCamera::SetPitchYaw(float pitch, float yawZ)
 {
 	// 1) Yaw (월드 Z)
 	if (yawZ != 0.0f)
@@ -121,6 +136,30 @@ void UCamera::SetYawPitch(float yawZ, float pitch)
 			mRot = (qPitch * mRot).Normalized();
 		}
 	}
+
+	UpdateView();
+}
+
+void UCamera::SetPitchYawDegrees(float pitchDeg, float yawDeg)
+{
+	const float kMaxPitch = 89.0f; // 도 단위 제한
+	pitchDeg = std::clamp(pitchDeg, -kMaxPitch, kMaxPitch);
+
+	const float pitchRad = ToRad(pitchDeg);
+	const float yawRad = ToRad(yawDeg);
+
+	// 회전 순서: Yaw(Z축) → Pitch(Right축) = X축
+	const FQuaternion qYaw = FQuaternion::FromAxisAngle(FVector(0, 0, 1), yawRad);
+	// 2) Pitch: Yaw 적용 후의 로컬 Right 축 기준 회전
+// 즉, qYaw 적용 후 얻은 Right 벡터로 회전
+	const FVector rightAfterYaw = qYaw.Rotate(FVector(0, 1, 0));  // Local X축
+	const FQuaternion qPitch = FQuaternion::FromAxisAngle(rightAfterYaw, -pitchRad);
+
+	// 순서 주의: Pitch 먼저 적용하고 → Yaw 적용 (월드 기준)
+	mRot = (qPitch * qYaw).Normalized();
+
+	// Pitch 캐시
+	mPitch = pitchRad;
 
 	UpdateView();
 }

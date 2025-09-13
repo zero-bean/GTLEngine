@@ -210,7 +210,8 @@ void UScene::Update(float deltaTime)
 	// 대각선 이동 속도 보정(선택): 벡터 정규화
 	float len = sqrtf(dx * dx + dy * dy + dz * dz);
 	if (len > 0.f) { dx /= len; dy /= len; dz /= len; }
-	camera->MoveLocal(dx, dy, dz, deltaTime, boost);
+	float moveSpeed = camera->GetMoveSpeed();
+	camera->MoveLocal(dx, dy, dz, deltaTime, boost, moveSpeed);
 
 	////// TODO(PYB) ///////////////////
 	// 아마도.. 여기에 물체 피지컬 검사?
