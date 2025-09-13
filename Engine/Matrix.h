@@ -221,10 +221,22 @@ struct FMatrix
 		T.M[3][0] = tx; T.M[3][1] = ty; T.M[3][2] = tz; // row 규약
 		return T;
 	}
+	static FMatrix TranslationRow(FVector v)
+	{
+		FMatrix T = IdentityMatrix();
+		T.M[3][0] = v.X; T.M[3][1] = v.Y; T.M[3][2] = v.Z; // row 규약
+		return T;
+	}
 	static FMatrix Scale(float sx, float sy, float sz)
 	{
 		FMatrix S(0.0f);
 		S.M[0][0] = sx; S.M[1][1] = sy; S.M[2][2] = sz; S.M[3][3] = 1.0f;
+		return S;
+	}
+	static FMatrix Scale(FVector scale)
+	{
+		FMatrix S(0.0f);
+		S.M[0][0] = scale.X; S.M[1][1] = scale.Y; S.M[2][2] = scale.Z; S.M[3][3] = 1.0f;
 		return S;
 	}
 	static FMatrix RotationX(float rad)

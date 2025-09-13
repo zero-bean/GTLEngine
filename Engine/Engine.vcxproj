@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -139,7 +139,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="UNamePool.cpp" />
     <ClCompile Include="ImGuiWindowWrapper.cpp" />
     <ClCompile Include="ImguiConsole.cpp" />
     <ClCompile Include="ImGui\imgui.cpp">
@@ -199,6 +198,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="UBoundingBoxComponent.cpp" />
+    <ClCompile Include="UBoundingBoxManager.cpp" />
     <ClCompile Include="UCamera.cpp" />
     <ClCompile Include="UClass.cpp" />
     <ClCompile Include="UControlPanel.cpp" />
@@ -237,6 +238,8 @@
     <ClInclude Include="UNamePool.h" />
     <ClInclude Include="ImGuiWindowWrapper.h" />
     <ClInclude Include="TArray.h" />
+    <ClInclude Include="UBoundingBoxComponent.h" />
+    <ClInclude Include="UBoundingBoxManager.h" />
     <ClInclude Include="UCamera.h" />
     <ClInclude Include="FVertexPosColor.h" />
     <ClInclude Include="ImguiConsole.h" />

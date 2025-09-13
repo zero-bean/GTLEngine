@@ -63,7 +63,7 @@ struct FVertexPosColor4
 		return newVertices;
 	}
 
-	FVector GetPosition()
+	FVector GetPosition() const
 	{
 		return {x, y, z};
 	}

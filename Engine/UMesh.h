@@ -4,7 +4,7 @@
 #include "FVertexPosColor.h"
 #include "UObject.h"
 #include "Vector4.h"
-
+#include "FBoundingBox.h"
 struct FVertexPosColor4; // 전방 선언
 
 class UMesh : public UObject
@@ -12,6 +12,10 @@ class UMesh : public UObject
 	DECLARE_UCLASS(UMesh, UObject)
 private:
 	bool isInitialized = false;
+	// FBounding Box 관련
+	FBoundingBox PrecomputedLocalBox = FBoundingBox::Empty();
+	bool bHasPrecomputedAABB = false;
+	void ComputeLocalAABBFromVertices();
 public:
 	ID3D11Buffer* VertexBuffer = nullptr;
 	ID3D11Buffer* IndexBuffer = nullptr;
@@ -35,5 +39,8 @@ public:
 	void Init(ID3D11Device* device);
 
 	bool IsInitialized() const { return isInitialized; }
+	// 로컬 AABB 접근자
+	bool HasPrecomputedAABB() const { return bHasPrecomputedAABB; }
+	const FBoundingBox& GetPrecomputedLocalBox() const { return PrecomputedLocalBox; }
 
 };

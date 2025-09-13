@@ -9,7 +9,12 @@ class UClass;
 
 typedef int int32;
 typedef unsigned int uint32;
-
+/*
+    루트 클래스용
+    StaticClass() 정적 접근자, GetClass() 가상 함수
+    s_StaticClass 정적 포인터에 UClass::RegisterToFactory(...) 결과를 담아둠
+    UClass는 “클래스명 문자열 → 생성자 함수” 매핑을 갖게 되어, 문자열로도 인스턴스 생성 가능(팩토리 패턴).
+*/
 #define DECLARE_ROOT_UCLASS(ClassName) \
 public: \
     virtual UClass* GetClass() const; \
@@ -25,6 +30,15 @@ UClass* ClassName::s_StaticClass = UClass::RegisterToFactory( \
 UClass* ClassName::StaticClass() { return s_StaticClass; } \
 UClass* ClassName::GetClass() const { return StaticClass(); }
 
+/*
+    파생 클래스용
+    using Super = ParentClass;로 상위 타입 별칭을 제공해 언리얼 스타일 사용성 부여.
+    UClass::RegisterToFactory(#ClassName, &CreateInstance, #ParentClass) 호출로
+    - 클래스명,
+    - 생성 함수,
+    - 부모 클래스명
+    을 UClass에 등록 → 상속 트리 구축/검증에 이용 가능.
+*/
 #define DECLARE_UCLASS(ClassName, ParentClass) \
 public: \
     using Super = ParentClass; \
@@ -41,6 +55,11 @@ UClass* ClassName::s_StaticClass = UClass::RegisterToFactory( \
 UClass* ClassName::StaticClass() { return s_StaticClass; } \
 UClass* ClassName::GetClass() const { return StaticClass(); }
 
+/*
+    정적 객체의 생성자를 이용해 프로그램 시작 시점에 ClassName::StaticClass()->SetMeta(#Key, Value) 호출
+    즉, 소스에 한 줄 넣어두면 런타임 전에 자동으로 메타가 박힙니다.
+    Ex) UCLASS_META(UMeshComponent, MeshName, "Gizmo_Mesh")
+*/
 #define UCLASS_META(ClassName, Key, Value) \
 struct _MetaRegister_##ClassName##_##Key { \
     _MetaRegister_##ClassName##_##Key() { ClassName::StaticClass()->SetMeta(#Key, Value); } \
@@ -50,12 +69,12 @@ class UObject : public ISerializable
 {
     DECLARE_ROOT_UCLASS(UObject)
 private:
-    static inline TArray<uint32> FreeIndices;
+    static inline TArray<uint32> FreeIndices;     // 비어있는 슬롯 스택
     static inline uint32 NextFreshIndex = 0;
 public:
-    static inline TArray<UObject*> GUObjectArray;
-    uint32 UUID;
-    uint32 InternalIndex;
+    static inline TArray<UObject*> GUObjectArray; // 전역 객체 테이블
+    uint32 UUID;                                  // 엔진 전역 고유 ID(UEngineStatics::GenUUID())
+    uint32 InternalIndex;                         // GUObjectArray 내 인덱스
 
     UObject()
     {
@@ -71,7 +90,7 @@ public:
         }
         else
         {
-            // 새 슬롯 할당 (O(1) amortized)
+            // 없으면 새 슬롯 할당 (O(1) amortized)
             InternalIndex = NextFreshIndex++;
             GUObjectArray.push_back(this);
         }
@@ -86,11 +105,11 @@ public:
             FreeIndices.push_back(InternalIndex);    // O(1)
         }
     }
-
+    // 에디터/인스펙터 노출 여부 플래그
     virtual bool CountOnInspector() {
         return false;
     }
-
+    // 런타임 타입 검사/캐스팅
     template<typename T>
     bool IsA() const {
         return GetClass()->IsChildOrSelfOf(T::StaticClass());
@@ -143,7 +162,7 @@ public:
     {
         UUID = uuid;
     }
-
+    // 재사용 큐만 비움(특정 상황에서 인덱스 정책 리셋 시)
     static void ClearFreeIndices()
     {
         FreeIndices.clear();

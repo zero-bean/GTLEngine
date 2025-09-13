@@ -1,6 +1,70 @@
 ﻿#include "stdafx.h"
 #include "UMeshManager.h"
 #include "UClass.h"
+// 임시
+namespace {
+	static void BuildWireCubeUnit(
+		TArray<FVertexPosColor>& outVerts,
+		TArray<uint32>& outIdx)
+	{
+		auto V = [](float x, float y, float z)->FVertexPosColor {
+			FVertexPosColor v{};
+			v.x = x; v.y = y; v.z = z;
+			v.r = 1; v.g = 1; v.b = 0; v.a = 1; // ★ 전부 노랑
+			return v;
+			};
+
+		// [-1,+1]^3
+		outVerts = {
+			V(-1,-1,-1), //0
+			V(1,-1,-1), //1
+			V(1, 1,-1), //2
+			V(-1, 1,-1), //3
+			V(-1,-1, 1), //4
+			V(1,-1, 1), //5
+			V(1, 1, 1), //6
+			V(-1, 1, 1)  //7
+		};
+
+		// 12 edges → 24 indices (LINELIST)
+		outIdx = {
+			// bottom (-Y)
+			0,1, 1,2, 2,3, 3,0,
+			// top (+Y)
+			4,5, 5,6, 6,7, 7,4,
+			// vertical
+			0,4, 1,5, 2,6, 3,7
+		};
+	}
+	// [-1,+1]^3, 전부 노랑, 인덱스 없이 24정점으로 12개 선분
+	static void BuildWireCubeUnit_NoIndex(TArray<FVertexPosColor>& outVerts)
+	{
+		auto V = [](float x, float y, float z)->FVertexPosColor {
+			FVertexPosColor v{};
+			v.x = x; v.y = y; v.z = z;
+			v.r = 1; v.g = 1; v.b = 0; v.a = 1;
+			return v;
+			};
+
+		const FVector p[8] = {
+			{-1,-1,-1}, { 1,-1,-1}, { 1, 1,-1}, {-1, 1,-1},
+			{-1,-1, 1}, { 1,-1, 1}, { 1, 1, 1}, {-1, 1, 1}
+		};
+
+		auto addEdge = [&](int a, int b) {
+			outVerts.push_back(V(p[a].X, p[a].Y, p[a].Z));
+			outVerts.push_back(V(p[b].X, p[b].Y, p[b].Z));
+			};
+
+		outVerts.clear(); outVerts.reserve(24);
+		// bottom
+		addEdge(0, 1); addEdge(1, 2); addEdge(2, 3); addEdge(3, 0);
+		// top
+		addEdge(4, 5); addEdge(5, 6); addEdge(6, 7); addEdge(7, 4);
+		// vertical
+		addEdge(0, 4); addEdge(1, 5); addEdge(2, 6); addEdge(3, 7);
+	}
+}
 
 IMPLEMENT_UCLASS(UMeshManager, UEngineSubsystem)
 UMesh* UMeshManager::CreateMeshInternal(const TArray<FVertexPosColor>& vertices,
@@ -30,6 +94,14 @@ UMeshManager::UMeshManager()
 	meshes["GizmoArrow"] = CreateMeshInternal(gizmo_arrow_vertices);
 	meshes["GizmoRotationHandle"] = CreateMeshInternal(GridGenerator::CreateRotationHandleVertices());
 	meshes["GizmoScaleHandle"] = CreateMeshInternal(gizmo_scale_handle_vertices);
+	// 인덱스 있는 오버로드 사용!
+	{
+		TArray<FVertexPosColor> verts; TArray<uint32> idx;
+		BuildWireCubeUnit(verts, idx);
+		meshes["UnitCube_Wire"] = CreateMeshInternal(
+			verts, idx, D3D11_PRIMITIVE_TOPOLOGY_LINELIST
+		); 
+	}
 }
 
 // 소멸자 (메모리 해제)

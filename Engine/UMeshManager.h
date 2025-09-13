@@ -4,7 +4,7 @@
 #include "URenderer.h"
 #include "UEngineSubsystem.h"
 
-class UMeshManager : UEngineSubsystem
+class UMeshManager : public UEngineSubsystem
 {
 	DECLARE_UCLASS(UMeshManager, UEngineSubsystem)
 private:
@@ -26,4 +26,10 @@ public:
 
 	bool Initialize(URenderer* renderer);
 	UMesh* RetrieveMesh(FString meshName);
+	bool RegisterMesh(const FString& name, UMesh* mesh) 
+	{
+		if (!mesh) return false;
+		meshes[name] = mesh;
+		return true;
+	}
 };
