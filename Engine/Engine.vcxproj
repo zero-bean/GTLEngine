@@ -139,6 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="UNamePool.cpp" />
     <ClCompile Include="ImGuiWindowWrapper.cpp" />
     <ClCompile Include="ImguiConsole.cpp" />
     <ClCompile Include="ImGui\imgui.cpp">
