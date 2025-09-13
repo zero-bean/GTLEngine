@@ -46,6 +46,12 @@
     <Filter Include="Utils\PCH">
       <UniqueIdentifier>{48e8ced0-0377-42e8-bc6f-fd2d07d3474f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Core\Component\Shape">
+      <UniqueIdentifier>{0cd49162-e850-435d-9a62-dcae0a778ea1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Core\Component\Collider">
+      <UniqueIdentifier>{3971ae68-a1bf-4633-9760-d1f1839c548b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImGui\imgui.cpp">
@@ -151,8 +157,6 @@
       <Filter>Engine\UI</Filter>
     </ClCompile>
     <ClCompile Include="ImguiConsole.cpp" />
-    <ClCompile Include="UPlaneComp.cpp" />
-    <ClCompile Include="UCubeComp.cpp" />
     <ClCompile Include="UCamera.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
@@ -169,14 +173,29 @@
     <ClCompile Include="UGizmoArrowComp.cpp">
       <Filter>Engine\Core\Component</Filter>
     </ClCompile>
-    <ClCompile Include="USphereComp.cpp">
-      <Filter>Engine\Core\Component</Filter>
-    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Utils\PCH</Filter>
     </ClCompile>
     <ClCompile Include="VerticesInfo.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="UCubeComp.cpp">
+      <Filter>Engine\Core\Component\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="UNamePool.cpp">
+      <Filter>Engine\Core\Component\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="UPlaneComp.cpp">
+      <Filter>Engine\Core\Component\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="USphereComp.cpp">
+      <Filter>Engine\Core\Component\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="UBoundingBoxComponent.cpp">
+      <Filter>Engine\Core\Component\Collider</Filter>
+    </ClCompile>
+    <ClCompile Include="UBoundingBoxManager.cpp">
+      <Filter>Engine\Subsystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -267,9 +286,6 @@
     <ClInclude Include="Vector.h">
       <Filter>Utils\Math</Filter>
     </ClInclude>
-    <ClInclude Include="USphereComp.h">
-      <Filter>Engine\Core\Component</Filter>
-    </ClInclude>
     <ClInclude Include="USceneComponent.h">
       <Filter>Engine\Core\Component</Filter>
     </ClInclude>
@@ -309,8 +325,6 @@
     <ClInclude Include="Quaternion.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UPlaneComp.h" />
-    <ClInclude Include="UCubeComp.h" />
     <ClInclude Include="UGizmoScaleHandleComp.h">
       <Filter>Engine\Core\Component</Filter>
     </ClInclude>
@@ -329,6 +343,24 @@
     </ClInclude>
     <ClInclude Include="TArray.h">
       <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="UPlaneComp.h">
+      <Filter>Engine\Core\Component\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="UCubeComp.h">
+      <Filter>Engine\Core\Component\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="UNamePool.h">
+      <Filter>Engine\Core\Component\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="USphereComp.h">
+      <Filter>Engine\Core\Component\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="UBoundingBoxComponent.h">
+      <Filter>Engine\Core\Component\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="UBoundingBoxManager.h">
+      <Filter>Engine\Subsystem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
