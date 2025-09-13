@@ -29,8 +29,12 @@ void UPrimitiveComponent::Draw(URenderer& renderer)
 
 	if (mesh->PrimitiveType == D3D11_PRIMITIVE_TOPOLOGY_LINELIST)
 	{
-		UpdateConstantBuffer(renderer);
+		/*UpdateConstantBuffer(renderer);
 		renderer.SubmitLineList(mesh);
+		return;*/
+		// per-object 상수버퍼 업로드 금지!
+		const FMatrix M = GetWorldTransform();
+		renderer.SubmitLineList(mesh->Vertices, mesh->Indices, M);
 		return;
 	}
 

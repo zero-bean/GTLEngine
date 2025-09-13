@@ -200,8 +200,8 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
 void UBoundingBoxComponent::Draw(URenderer& renderer)
 {
     if (!meshWire || !meshWire->VertexBuffer) return;
-    UpdateConstantBuffer(renderer);
-    renderer.SubmitLineList(meshWire);
+    // UpdateConstantBuffer(renderer);
+    renderer.SubmitLineList(meshWire->Vertices, meshWire->Indices, WBox);
 }
 
 void UBoundingBoxComponent::DrawOnTop(URenderer& renderer)

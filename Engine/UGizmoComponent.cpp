@@ -38,13 +38,19 @@ void UGizmoComponent::Draw(URenderer& renderer)
 		return;
 	}
 
-	//if (mesh->PrimitiveType == D3D11_PRIMITIVE_TOPOLOGY_LINELIST)
+	//if (mesh->PrimitiveType == D3D11_PRIMITIVE_TOPOLOGY_LINELIST)d
 	//{
 	//	TArray<FVertexPosColor> Vertices{};
 	//	TArray<uint32> Indices{};
 
 	//	return;
 	//}
+	if (mesh->PrimitiveType == D3D10_PRIMITIVE_TOPOLOGY_LINELIST)
+	{
+		const FMatrix M = GetWorldTransform();
+		renderer.SubmitLineList(mesh->Vertices, mesh->Indices, M);
+		return;
+	}
 
 	UpdateConstantBuffer(renderer);
 	if (mesh->PrimitiveType == D3D10_PRIMITIVE_TOPOLOGY_LINELIST)

@@ -307,7 +307,9 @@ void URenderer::FlushBatchLineList()
 
 	if (vCount == 0 && iCount == 0)
 		return;
-	
+
+	// 단위행렬(또는 VP만)로 업로드: 라인은 이미 월드로 변환해둠
+	SetModel(FMatrix::IdentityMatrix(), FVector4(1, 1, 1, 1), false);
 	// 1) GPU 버퍼 확보/확장
 	EnsureBatchCapacity(batchLineList, vCount, iCount);
 
@@ -952,4 +954,37 @@ D3D11_VIEWPORT URenderer::MakeAspectFitViewport(int32 winW, int32 winH) const
 		vp.TopLeftY = 0.5f * (winH - vp.Height);
 	}
 	return vp;
+}
+// URenderer.cpp
+void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices,
+	const TArray<uint32>& indices,
+	const FMatrix& model)
+{
+	if (vertices.empty()) return;
+
+	// 1) 월드로 미리 변환해서 버퍼에 누적
+	const size_t base = batchLineList.Vertices.size();
+	batchLineList.Vertices.reserve(base + vertices.size());
+
+	for (auto v : vertices) {
+		// 위치만 변환(색은 그대로)
+		TransformPosRow(v.x, v.y, v.z, model);
+		batchLineList.Vertices.push_back(v);
+	}
+
+	// 2) 인덱스 오프셋 적용해서 누적
+	if (!indices.empty()) {
+		batchLineList.Indices.reserve(batchLineList.Indices.size() + indices.size());
+		for (uint32 idx : indices) batchLineList.Indices.push_back((uint32)(base + idx));
+	}
+	else {
+		// (0,1),(2,3)...
+		const size_t n = vertices.size();
+		const size_t pairs = n >> 1;
+		batchLineList.Indices.reserve(batchLineList.Indices.size() + pairs * 2);
+		for (size_t p = 0; p < pairs; ++p) {
+			batchLineList.Indices.push_back((uint32)(base + p * 2 + 0));
+			batchLineList.Indices.push_back((uint32)(base + p * 2 + 1));
+		}
+	}
 }

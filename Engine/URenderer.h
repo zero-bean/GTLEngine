@@ -14,6 +14,13 @@ struct CBTransform
 	float padding[3];
 };
 
+// 행벡터 규약: p' = p * M
+static inline void TransformPosRow(float& x, float& y, float& z, const FMatrix& M) {
+	const float X = x, Y = y, Z = z;
+	x = X * M.M[0][0] + Y * M.M[1][0] + Z * M.M[2][0] + M.M[3][0];
+	y = X * M.M[0][1] + Y * M.M[1][1] + Z * M.M[2][1] + M.M[3][1];
+	z = X * M.M[0][2] + Y * M.M[1][2] + Z * M.M[2][2] + M.M[3][2];
+}
 struct FBatchLineList
 {
 	TArray<FVertexPosColor4> Vertices{};
@@ -35,9 +42,14 @@ struct FBatchLineList
 class URenderer : UEngineSubsystem
 {
 	DECLARE_UCLASS(URenderer, UEngineSubsystem)
+public:
+	void SubmitLineList(const TArray<FVertexPosColor4>& vertices,
+		const TArray<uint32>& indices,
+		const FMatrix& model); // NEW
 private:
 	// Batch Rendering
 	FBatchLineList batchLineList;
+	// URenderer.h (선언부)
 
 	// Core D3D11 objects
 	ID3D11Device* device;
