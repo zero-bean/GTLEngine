@@ -91,7 +91,7 @@ bool URaycastManager::RayIntersectsMeshes(UCamera* camera, TArray<T*>& component
 		// 인덱스 버퍼를 가진 Mesh라면 아래 방식으로 순회 검사
 		if (mesh->NumIndices >= 3)
 		{
-			for (int32 i = 0; i + 2 < mesh->NumIndices; i += 3)
+			for (uint32 i = 0; i + 2 < mesh->NumIndices; i += 3)
 			{
 				const uint32 i0 = mesh->Indices[i + 0];
 				const uint32 i1 = mesh->Indices[i + 1];
