@@ -7,20 +7,14 @@ IMPLEMENT_ROOT_UCLASS(UObject)
 // 유니크 이름 생성
 FString UObject::GenerateUniqueName(const FString& base)
 {
-    // base 미사용이면 그대로 사용
-    if (LiveNameSet.find(base) == LiveNameSet.end())
-    {
-        return base;
-    }
-
-    // 이미 있으면 Base_0, Base_1, ... 식으로
-    uint32& next = NameSuffixCounters[base]; // 처음 접근 시 0으로 디폴트 생성
+    // base 자체를 그대로 쓰지 않고, 항상 접미사 0부터 시작
+    uint32& next = NameSuffixCounters[base]; // 미존재 시 0으로 초기화됨
     for (;;)
     {
         FString candidate = base + "_" + std::to_string(next++);
         if (LiveNameSet.find(candidate) == LiveNameSet.end())
         {
-            return candidate;
+            return candidate; // 예: "UCubeComp_0", "", -> "_0"
         }
     }
 }
