@@ -185,9 +185,6 @@
     <ClCompile Include="UCubeComp.cpp">
       <Filter>Engine\Core\Component\Shape</Filter>
     </ClCompile>
-    <ClCompile Include="UNamePool.cpp">
-      <Filter>Engine\Core\Component\Shape</Filter>
-    </ClCompile>
     <ClCompile Include="UPlaneComp.cpp">
       <Filter>Engine\Core\Component\Shape</Filter>
     </ClCompile>
@@ -199,6 +196,9 @@
     </ClCompile>
     <ClCompile Include="UBoundingBoxManager.cpp">
       <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="UNamePool.cpp">
+      <Filter>Engine\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -353,9 +353,6 @@
     <ClInclude Include="UCubeComp.h">
       <Filter>Engine\Core\Component\Shape</Filter>
     </ClInclude>
-    <ClInclude Include="UNamePool.h">
-      <Filter>Engine\Core\Component\Shape</Filter>
-    </ClInclude>
     <ClInclude Include="USphereComp.h">
       <Filter>Engine\Core\Component\Shape</Filter>
     </ClInclude>
@@ -370,6 +367,9 @@
     </ClInclude>
     <ClInclude Include="EditorIni.h">
       <Filter>Utils\INI</Filter>
+    </ClInclude>
+    <ClInclude Include="UNamePool.h">
+      <Filter>Engine\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

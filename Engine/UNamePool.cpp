@@ -85,6 +85,14 @@ void UNamePool::LogDebugState() const
     }
 }
 
+static FString ToLowerCopy(const FString& s)
+{
+    FString out = s;
+    std::transform(out.begin(), out.end(), out.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return out;
+}
+
 // =============================
 // FName
 // =============================
@@ -123,5 +131,10 @@ bool FName::operator!=(const FName& Other) const
 const FString& FName::ToString() const
 {
     return UNamePool::GetInstance().GetString(DisplayIndex);
+}
+
+FName FName::GetNone() const
+{
+	return FName("None");
 }
 

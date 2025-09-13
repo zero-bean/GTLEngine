@@ -7,92 +7,99 @@
 
 class UClass : public UObject
 {
-	DECLARE_UCLASS(UClass, UObject)
+    DECLARE_UCLASS(UClass, UObject)
 private:
-	static inline TArray<TUniquePtr<UClass>> classList;
-	static inline TMap<FString, uint32> nameToId;
-	static inline TMap<FString, uint32> displayNameToId;
-	static inline uint32 registeredCount = 0;
+    static inline TArray<TUniquePtr<UClass>> classList;
+    static inline TMap<FString, uint32> nameToId;
+    static inline TMap<FString, uint32> displayNameToId;
+    static inline uint32 registeredCount = 0;
 
-	TMap<FString, FString> metadata;
-	uint32 typeId;
-	FDynamicBitset typeBitset;
-	FString className, superClassTypeName;
-	UClass* superClass;
-	TFunction<UObject*()> createFunction;
-	bool processed = false;
+    TMap<FString, FString> metadata;
+    uint32 typeId;
+    FDynamicBitset typeBitset;
+    FString className, superClassTypeName;
+    UClass* superClass;
+    TFunction<UObject*()> createFunction;
+    bool processed = false;
 public:
-	static UClass* RegisterToFactory(const FString& typeName, 
-		const TFunction<UObject* ()>& createFunction, const FString& superClassTypeName);
+    static UClass* RegisterToFactory(const FString& typeName,
+        const TFunction<UObject* ()>& createFunction, const FString& superClassTypeName);
 
-	static void ResolveTypeBitsets();
-	void ResolveTypeBitset(UClass* classPtr);
+    static void ResolveTypeBitsets();
+    void ResolveTypeBitset(UClass* classPtr);
 
-	static UClass* GetClass(uint32 typeId) {
-		return (typeId < classList.size()) ? classList[typeId].get() : nullptr;
-	}
+    static UClass* GetClass(uint32 typeId) {
+        return (typeId < classList.size()) ? classList[typeId].get() : nullptr;
+    }
 
-	static UClass* FindClass(const FString& name) {
-		auto it = nameToId.find(name);
-		return (it != nameToId.end()) ? GetClass(it->second) : nullptr;
-	}
+    static UClass* FindClass(const FString& name) {
+        auto it = nameToId.find(name);
+        return (it != nameToId.end()) ? GetClass(it->second) : nullptr;
+    }
 
-	static UClass* FindClassWithDisplayName(const FString& name)
-	{
-		// 1) DisplayName lookup
-		auto it = displayNameToId.find(name);
-		if (it != displayNameToId.end())
-			return GetClass(it->second);
+    static UClass* FindClassWithDisplayName(const FString& name)
+    {
+        // 1) DisplayName lookup
+        auto it = displayNameToId.find(name);
+        if (it != displayNameToId.end())
+            return GetClass(it->second);
 
-		// 2) className fallback
-		it = nameToId.find(name);
-		return (it != nameToId.end()) ? GetClass(it->second) : nullptr;
-	}
+        // 2) className fallback
+        it = nameToId.find(name);
+        return (it != nameToId.end()) ? GetClass(it->second) : nullptr;
+    }
 
+    static const TArray<TUniquePtr<UClass>>& GetClassList()
+    {
+        return classList;
+    }
 
-	static const TArray<TUniquePtr<UClass>>& GetClassList()
-	{
-		return classList;
-	}
+    bool IsChildOrSelfOf(UClass* baseClass) const {
+        return baseClass && typeBitset.Test(baseClass->typeId);
+    }
 
-	bool IsChildOrSelfOf(UClass* baseClass) const {
-		return baseClass && typeBitset.Test(baseClass->typeId);
-	}
+    const FString& GetUClassName() const { return className; }
 
-	const FString& GetUClassName() const { return className; }
+    const FString& GetDisplayName() const
+    {
+        auto itr = metadata.find("DisplayName");
+        if (itr != metadata.end())
+        {
+            return itr->second;
+        }
 
-	const FString& GetDisplayName() const
-	{
-		auto itr = metadata.find("DisplayName");
-		if (itr != metadata.end())
-		{
-			return itr->second;
-		}
+        return GetUClassName();
+    }
 
-		return GetUClassName();
-	}
+    void SetMeta(const FString& key, const FString& value)
+    {
+        metadata[key] = value;
 
-	void SetMeta(const FString& key, const FString& value)
-	{
-		metadata[key] = value;
+        if (key == "DisplayName")
+        {
+            displayNameToId[value] = typeId;  // typeId는 인스턴스 멤버
+        }
+    }
 
-		if (key == "DisplayName")
-		{
-			displayNameToId[value] = typeId;  // typeId는 인스턴스 멤버
-		}
-	}
+    const FString& GetMeta(const FString& key) const {
+        static FString empty;
+        auto it = metadata.find(key);
+        return (it != metadata.end()) ? it->second : empty;
+    }
 
+    // 팩토리 경로로 생성 시 자동으로 이름 부여
+    UObject* CreateDefaultObject() const {
+        if (!createFunction) 
+        {
+            return nullptr;
+        }
 
-	const FString& GetMeta(const FString& key) const {
-		static FString empty;
-		auto it = metadata.find(key);
-		return (it != metadata.end()) ? it->second : empty;
-	}
+        UObject* obj = createFunction();
+        if (obj) 
+        {
+            obj->AssignDefaultNameFromClass(this);
+        }
 
-	UObject* CreateDefaultObject() const {
-		return createFunction ? createFunction() : nullptr;
-	}
-
+        return obj;
+    }
 };
-
-

@@ -5,6 +5,8 @@ typedef long long int64;
 typedef unsigned long long uint64;
 typedef std::string FString;
 
+#include <unordered_set>
+
 // Unreal Engine 스타일 스마트 포인터 별칭 정의
 // TSharedPtr - shared_ptr 래핑
 template<typename T>
@@ -34,6 +36,9 @@ TUniquePtr<T> MakeUnique(Args&&... args)
 
 template<typename T, typename U>
 using TMap = std::unordered_map<T, U>;
+
+template<typename T>
+using TSet = std::unordered_set<T>;
 
 template<typename T>
 using TFunction = std::function<T>;
