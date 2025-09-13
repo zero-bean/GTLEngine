@@ -60,5 +60,5 @@ void UBoundingBoxManager::Draw(URenderer& renderer)
 {
     if (!bEnabled || !AABBComp || !Target) return;
     // 다른 기즈모처럼 항상 OnTop로 그리려면 DrawOnTop 사용
-    AABBComp->DrawOnTop(renderer);
+    AABBComp->Draw(renderer);
 }

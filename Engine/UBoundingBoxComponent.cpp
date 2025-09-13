@@ -201,11 +201,7 @@ void UBoundingBoxComponent::Draw(URenderer& renderer)
 {
     if (!meshWire || !meshWire->VertexBuffer) return;
     UpdateConstantBuffer(renderer);
-
-    if (bDrawOnTop)
-        renderer.DrawMeshOnTop(meshWire); // 깊이 무시(혹은 offset)로 표시
-    else
-        renderer.DrawMesh(meshWire);
+    renderer.SubmitLineList(meshWire);
 }
 
 void UBoundingBoxComponent::DrawOnTop(URenderer& renderer)

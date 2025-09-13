@@ -27,6 +27,13 @@ void UPrimitiveComponent::Draw(URenderer& renderer)
 		return;
 	}
 
+	if (mesh->PrimitiveType == D3D11_PRIMITIVE_TOPOLOGY_LINELIST)
+	{
+		UpdateConstantBuffer(renderer);
+		renderer.SubmitLineList(mesh);
+		return;
+	}
+
 	UpdateConstantBuffer(renderer);
 	renderer.DrawMesh(mesh);
 }

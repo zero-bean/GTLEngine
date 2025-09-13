@@ -76,26 +76,30 @@ void UControlPanel::SpawnPrimitiveSection()
 	int32 objectCount = SceneManager->GetScene()->GetObjectCount();
 	if (ImGui::Button("Spawn"))
 	{
-		USceneComponent* sceneComponent = CreateSceneComponentFromChoice(primitiveChoiceIndex);
-		if (sceneComponent != nullptr)
+		for (int i = 0; i < 10000; ++i)
 		{
-			sceneComponent->SetPosition(FVector(
-				-5.0f + static_cast<float>(rand()) / RAND_MAX * 10.0f,
-				-5.0f + static_cast<float>(rand()) / RAND_MAX * 10.0f,
-				-5.0f + static_cast<float>(rand()) / RAND_MAX * 10.0f
-			));
-			sceneComponent->SetScale(FVector(
-				0.1f + static_cast<float>(rand()) / RAND_MAX * 0.7f,
-				0.1f + static_cast<float>(rand()) / RAND_MAX * 0.7f,
-				0.1f + static_cast<float>(rand()) / RAND_MAX * 0.7f
-			));
-			sceneComponent->SetRotation(FVector(
-				-90.0f + static_cast<float>(rand()) / RAND_MAX * 180.0f,
-				-90.0f + static_cast<float>(rand()) / RAND_MAX * 180.0f,
-				-90.0f + static_cast<float>(rand()) / RAND_MAX * 180.0f
-			));
-			SceneManager->GetScene()->AddObject(sceneComponent);
+			USceneComponent* sceneComponent = CreateSceneComponentFromChoice(primitiveChoiceIndex);
+			if (sceneComponent != nullptr)
+			{
+				sceneComponent->SetPosition(FVector(
+					-5.0f + static_cast<float>(rand()) / RAND_MAX * 1000.0f,
+					-5.0f + static_cast<float>(rand()) / RAND_MAX * 1000.0f,
+					-5.0f + static_cast<float>(rand()) / RAND_MAX * 1000.0f
+				));
+				sceneComponent->SetScale(FVector(
+					0.1f + static_cast<float>(rand()) / RAND_MAX * 0.7f,
+					0.1f + static_cast<float>(rand()) / RAND_MAX * 0.7f,
+					0.1f + static_cast<float>(rand()) / RAND_MAX * 0.7f
+				));
+				sceneComponent->SetRotation(FVector(
+					-90.0f + static_cast<float>(rand()) / RAND_MAX * 180.0f,
+					-90.0f + static_cast<float>(rand()) / RAND_MAX * 180.0f,
+					-90.0f + static_cast<float>(rand()) / RAND_MAX * 180.0f
+				));
+				SceneManager->GetScene()->AddObject(sceneComponent);
+			}
 		}
+
 	}
 	ImGui::SameLine();
 	ImGui::BeginDisabled();
