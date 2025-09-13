@@ -112,8 +112,6 @@ void UApplication::Run()
 	if (!bIsInitialized)
 		return;
 
-	UNamePool::GetInstance().LogDebugState();
-
 	while (bIsRunning)
 	{
 		timeManager.BeginFrame();

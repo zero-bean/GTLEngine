@@ -73,13 +73,19 @@ private:
     static inline TArray<uint32> FreeIndices;     // 비어있는 슬롯 스택
     static inline uint32 NextFreshIndex = 0;
 
-    // 현재 살아있는 객체의 이름을 추적하여 유니크 보장
-    static inline TMap<FString, uint32> NameSuffixCounters; // base -> 다음 붙일 숫자
-    static inline TMap<FString, uint32>  LiveNameSet;        // set 역할: name -> 1
+    // 이름 생성용: "기본 이름(FName) -> 다음 붙일 숫자"
+    static inline TMap<FName, uint32> NameSuffixCounters;
 
-    static FString GenerateUniqueName(const FString& base);
-    static void RegisterLiveName(const FString& name);
-    static void UnregisterLiveName(const FString& name);
+    // 라이브 오브젝트 이름 집합 (FName 비교는 ComparisonIndex 기반)
+    static inline TSet<FName> GAllObjectNames;
+
+    // 유니크 이름을 생성(Base_0부터). Base는 클래스명.
+    static FName GenerateUniqueName(const FString& base);
+
+    // 전역 이름 집합 등록/해제
+    static bool IsNameInUse(const FName& name);
+    static void RegisterName(const FName& name);
+    static void UnregisterName(const FName& name);
 
 public:
     static inline TArray<UObject*> GUObjectArray; // 전역 객체 테이블
@@ -111,11 +117,10 @@ public:
 
     virtual ~UObject()
     {
-        // 라이브 이름 해제
-        const FString& nameStr = Name.ToString();
-        if (!nameStr.empty() && nameStr != "None")
+        // 전역 이름 집합에서 제거
+        if (Name.ToString() != "None")
         {
-            UnregisterLiveName(nameStr);
+            UnregisterName(Name);
         }
 
         // 방법 1: 빠른 삭제 - nullptr 마킹 + 인덱스 재사용 큐에 추가

@@ -1,62 +1,74 @@
 ﻿#include "stdafx.h"
 #include "UObject.h"
 #include "UClass.h"
+#include "UNamePool.h"
 
 IMPLEMENT_ROOT_UCLASS(UObject)
 
-// 유니크 이름 생성
-FString UObject::GenerateUniqueName(const FString& base)
+bool UObject::IsNameInUse(const FName& name)
 {
-    // base 자체를 그대로 쓰지 않고, 항상 접미사 0부터 시작
-    uint32& next = NameSuffixCounters[base]; // 미존재 시 0으로 초기화됨
-    for (;;)
+    return GAllObjectNames.find(name) != GAllObjectNames.end();
+}
+
+void UObject::RegisterName(const FName& name)
+{
+    if (name.ToString() == "None") return;
+    GAllObjectNames.insert(name);
+}
+
+void UObject::UnregisterName(const FName& name)
+{
+    auto it = GAllObjectNames.find(name);
+    if (it != GAllObjectNames.end())
     {
-        FString candidate = base + "_" + std::to_string(next++);
-        if (LiveNameSet.find(candidate) == LiveNameSet.end())
-        {
-            return candidate; // 예: "UCubeComp_0", "", -> "_0"
-        }
+        GAllObjectNames.erase(it);
     }
 }
 
-void UObject::RegisterLiveName(const FString& name)
+// 유니크 이름 생성: 항상 Base_0부터, FName 기반 검사(ComparisonIndex 기준)
+FName UObject::GenerateUniqueName(const FString& base)
 {
-    LiveNameSet[name] = 1;
-}
+    // 카운터의 키도 FName(ComparisonIndex 기준). 대소문자 다른 Base는 동일 키로 취급.
+    FName baseKey(base);
 
-void UObject::UnregisterLiveName(const FString& name)
-{
-    auto it = LiveNameSet.find(name);
-    if (it != LiveNameSet.end())
+    uint32& next = NameSuffixCounters[baseKey]; // 없으면 0으로 초기화
+    for (;;)
     {
-        LiveNameSet.erase(it);
+        FString candidateStr = base + "_" + std::to_string(next++);
+        FName candidate(candidateStr); // UNamePool에 인터닝됨
+        if (!IsNameInUse(candidate))
+        {
+            return candidate;
+        }
+        // 이미 사용 중이면 다음 번호로
     }
 }
 
 void UObject::AssignDefaultNameFromClass(const UClass* cls)
 {
-    if (!cls) 
+    if (!cls) return;
+
+    const FString& currentStr = Name.ToString();
+    const bool hasCustom = (!currentStr.empty() && currentStr != "None");
+
+    if (hasCustom)
     {
-        return;
+        // 커스텀 이름이 이미 집합에 없다면 등록만 수행. 있으면 클래스명을 기준으로 재생성.
+        if (!IsNameInUse(Name))
+        {
+            RegisterName(Name);
+            return;
+        }
+        // 충돌 → 아래에서 재네이밍
     }
 
-    // 기본은 클래스명. 필요하면 GetDisplayName()로 교체 가능.
     const FString& base = cls->GetUClassName();
-
-    // 이미 커스텀 이름이 있으면 덮어쓰지 않음
-    const FString& current = Name.ToString();
-    if (!current.empty() && current != "None")
-    {
-        return;
-    }
-
-    FString unique = GenerateUniqueName(base);
-    Name = FName(unique);       // UNamePool 등록
-    RegisterLiveName(unique);   // 라이브 네임 트래킹
+    FName unique = GenerateUniqueName(base);
+    Name = unique;
+    RegisterName(Name);
 }
 
 void UObject::AssignDefaultName()
 {
-    // 객체가 완전히 생성된 이후에만 사용
     AssignDefaultNameFromClass(GetClass());
 }
