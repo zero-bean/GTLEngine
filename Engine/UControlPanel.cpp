@@ -5,6 +5,7 @@
 #include "USceneManager.h"
 #include "UScene.h"
 #include "UDefaultScene.h"
+#include "UNamePool.h"
 
 // 활성화(선택) 상태면 버튼색을 Active 계열로 바꿔서 '눌린 버튼'처럼 보이게 하는 헬퍼
 static bool ModeButton(const char* label, bool active, const ImVec2& size = ImVec2(0, 0))
@@ -96,6 +97,8 @@ void UControlPanel::SpawnPrimitiveSection()
 			));
 			SceneManager->GetScene()->AddObject(sceneComponent);
 		}
+
+		UNamePool::GetInstance().LogDebugState();
 	}
 	ImGui::SameLine();
 	ImGui::BeginDisabled();

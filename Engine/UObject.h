@@ -2,6 +2,7 @@
 #include "UEngineStatics.h"
 #include "TArray.h"
 #include "ISerializable.h"
+#include "UNamePool.h"
 #include <type_traits>
 
 // Forward declaration으로 순환 종속성 해결
@@ -71,12 +72,23 @@ class UObject : public ISerializable
 private:
     static inline TArray<uint32> FreeIndices;     // 비어있는 슬롯 스택
     static inline uint32 NextFreshIndex = 0;
+
+    // 현재 살아있는 객체의 이름을 추적하여 유니크 보장
+    static inline TMap<FString, uint32> NameSuffixCounters; // base -> 다음 붙일 숫자
+    static inline TMap<FString, uint32>  LiveNameSet;        // set 역할: name -> 1
+
+    static FString GenerateUniqueName(const FString& base);
+    static void RegisterLiveName(const FString& name);
+    static void UnregisterLiveName(const FString& name);
+
 public:
     static inline TArray<UObject*> GUObjectArray; // 전역 객체 테이블
     uint32 UUID;                                  // 엔진 전역 고유 ID(UEngineStatics::GenUUID())
     uint32 InternalIndex;                         // GUObjectArray 내 인덱스
+    FName Name;                                   // 이름 (UNamePool 관리)
 
     UObject()
+        : Name("None")
     {
         UUID = UEngineStatics::GenUUID();
 
@@ -94,10 +106,18 @@ public:
             InternalIndex = NextFreshIndex++;
             GUObjectArray.push_back(this);
         }
+        // 주의: 여기서 GetClass() 사용 금지(베이스 생성자 단계에서 가상 디스패치 불안정)
     }
 
     virtual ~UObject()
     {
+        // 라이브 이름 해제
+        const FString& nameStr = Name.ToString();
+        if (!nameStr.empty() && nameStr != "None")
+        {
+            UnregisterLiveName(nameStr);
+        }
+
         // 방법 1: 빠른 삭제 - nullptr 마킹 + 인덱스 재사용 큐에 추가
         if (InternalIndex < GUObjectArray.size() && GUObjectArray[InternalIndex] == this)
         {
@@ -162,9 +182,25 @@ public:
     {
         UUID = uuid;
     }
+
+    // 클래스 정보로 기본 이름을 부여(완전 생성된 뒤 호출)
+    void AssignDefaultNameFromClass(const UClass* cls);
+    // 편의 함수: 가상 GetClass() 사용(완전 생성 이후에만 호출)
+    void AssignDefaultName();
+
     // 재사용 큐만 비움(특정 상황에서 인덱스 정책 리셋 시)
     static void ClearFreeIndices()
     {
         FreeIndices.clear();
     }
 };
+
+// 편의 생성기: 직접 new 대신 사용하면 자동 네이밍
+template<typename T, typename... Args>
+inline T* NewObject(Args&&... args)
+{
+    static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
+    T* obj = new T(std::forward<Args>(args)...);
+    obj->AssignDefaultNameFromClass(T::StaticClass());
+    return obj;
+}

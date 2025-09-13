@@ -125,3 +125,8 @@ const FString& FName::ToString() const
     return UNamePool::GetInstance().GetString(DisplayIndex);
 }
 
+FName FName::GetNone() const
+{
+	return FName("None");
+}
+

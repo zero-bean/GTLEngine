@@ -12,6 +12,8 @@ struct FName
 	
 	const FString& ToString() const;
 
+    FName GetNone() const;
+
     int32 DisplayIndex; // 비교 시엔 ComparisonIndex 사용
     int32 ComparisonIndex; // 실제 문자열이 필요할 때만 DisplayIndex 사용
 };
