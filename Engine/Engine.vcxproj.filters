@@ -362,6 +362,9 @@
     <ClInclude Include="UBoundingBoxManager.h">
       <Filter>Engine\Subsystem</Filter>
     </ClInclude>
+    <ClInclude Include="FBoundingBox.h">
+      <Filter>Utils\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShaderW0.ps">
