@@ -5,6 +5,7 @@
 #include "URaycastManager.h"
 #include "UControlPanel.h"
 #include "USceneComponentPropertyWindow.h"
+#include "UBoundingBoxManager.h"
 
 // Simple application that inherits from UApplication
 class EditorApplication : public UApplication
@@ -17,6 +18,8 @@ private:
 
 	UControlPanel* controlPanel;
 	USceneComponentPropertyWindow* propertyWindow;
+
+	UBoundingBoxManager AABBManager;
 
 public:
 	EditorApplication() = default;

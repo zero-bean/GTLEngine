@@ -15,7 +15,10 @@ void EditorApplication::Update(float deltaTime)
 	// Basic update logic
 	UApplication::Update(deltaTime);
 	gizmoManager.Update(deltaTime);
-
+	// ★ AABB 표시 토글
+	if (GetInputManager().IsKeyPressed('C')) {
+		AABBManager.SetEnabled(!AABBManager.IsEnabled());
+	}
 	if (GetInputManager().IsKeyDown(VK_ESCAPE))
 	{
 		RequestExit();
@@ -57,10 +60,16 @@ void EditorApplication::Update(float deltaTime)
 	{
 		FRay ray = GetRaycastManager().CreateRayFromScreenPosition(GetSceneManager().GetScene()->GetCamera());
 		gizmoManager.UpdateDrag(ray);
+		// ★ AABB도 업데이트
+		AABBManager.Update(deltaTime);
 		return;
 	}
 
-	if (ImGui::GetIO().WantCaptureMouse) return;
+	if (ImGui::GetIO().WantCaptureMouse) 
+	{
+		AABBManager.Update(deltaTime);
+		return;
+	}
 
 	if (GetInputManager().IsMouseButtonPressed(0))
 	{
@@ -117,6 +126,11 @@ void EditorApplication::Update(float deltaTime)
 
 				if (target->IsManageable())
 					propertyWindow->SetTarget(target);
+				// ★ 기즈모만 클릭한 경우에도 AABB는 타겟 기준 유지
+				if (auto prim = target->Cast<UPrimitiveComponent>()) {
+					AABBManager.SetTarget(prim);
+					if (prim->GetMesh()) AABBManager.UseMeshLocalAABB(prim->GetMesh());
+				}
 			}
 		}
 		else if (GetRaycastManager().RayIntersectsMeshes(GetSceneManager().GetScene()->GetCamera(), primitives, hitPrimitive, outImpactPoint))
@@ -125,19 +139,30 @@ void EditorApplication::Update(float deltaTime)
 			hitPrimitive->bIsSelected = true;
 			if (hitPrimitive->IsManageable())
 				propertyWindow->SetTarget(hitPrimitive);
+			AABBManager.SetTarget(hitPrimitive);
+			if (hitPrimitive->GetMesh())
+				AABBManager.UseMeshLocalAABB(hitPrimitive->GetMesh());
+			else
+				AABBManager.UseExplicitLocalAABB(FBoundingBox{ FVector(-0.5f,-0.5f,-0.5f), FVector(+0.5f,+0.5f,+0.5f) });
 		}
 		else
 		{
 			gizmoManager.SetTarget(nullptr);
 			propertyWindow->SetTarget(nullptr);
+			AABBManager.SetTarget(nullptr);
 		}
 	}
+
+	// ★ 매 프레임 AABB 업데이트
+	AABBManager.Update(deltaTime);
 }
 
 void EditorApplication::Render()
 {
 	UApplication::Render();
 	gizmoManager.Draw(GetRenderer());
+	// ★ AABB 그리기 (항상 OnTop)
+	AABBManager.Draw(GetRenderer());
 }
 
 void EditorApplication::RenderGUI()
@@ -176,7 +201,13 @@ bool EditorApplication::OnInitialize()
 		return false;
 	}
 	gizmoManager.SetCamera(GetSceneManager().GetScene()->GetCamera());
-
+	// ★ AABB 매니저 초기화
+	if (!AABBManager.Initialize(&GetMeshManager()))
+	{
+		MessageBox(GetWindowHandle(), L"Failed to initialize AABB manager", L"Engine Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+	AABBManager.SetEnabled(true);
 	return true;
 }
 
@@ -206,4 +237,7 @@ void EditorApplication::OnSceneChange()
 	propertyWindow->SetTarget(nullptr);
 	gizmoManager.SetCamera(GetSceneManager().GetScene()->GetCamera());
 	gizmoManager.SetTarget(nullptr);
+
+	// ★ 씬 변경 시 AABB 타겟 해제
+	AABBManager.SetTarget(nullptr);
 }

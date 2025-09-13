@@ -2,6 +2,7 @@
 #include "stdafx.h"
 #include "UEngineSubsystem.h"
 #include "UClass.h"
+#include "FBoundingBox.h"
 #include "UBoundingBoxComponent.h"
 
 class UMeshManager;
@@ -20,7 +21,6 @@ public:
     void SetTarget(UPrimitiveComponent* target);
     UPrimitiveComponent* GetTarget() const { return Target; }
 
-    void SetColor(const FVector4& rgba) { if (AABBComp) AABBComp->SetColor(rgba); }
     void SetEnabled(bool b) { bEnabled = b; }
     bool IsEnabled() const { return bEnabled; }
 

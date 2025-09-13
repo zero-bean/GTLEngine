@@ -1,5 +1,7 @@
 ﻿#pragma once
+#include "stdafx.h"
 #include "UBoundingBoxManager.h"
+#include "UBoundingBoxComponent.h"
 #include "UMeshManager.h"
 #include "URenderer.h"
 #include "UPrimitiveComponent.h"

@@ -19,13 +19,13 @@ UMesh::UMesh()
 UMesh::UMesh(const TArray<FVertexPosColor4>& vertices, D3D_PRIMITIVE_TOPOLOGY primitiveType)
 	: Vertices(vertices), PrimitiveType(primitiveType), NumVertices(static_cast<int32>(vertices.size())), Stride(sizeof(FVertexPosColor4))
 {
-
+    ComputeLocalAABBFromVertices();
 }
 
 UMesh::UMesh(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices, D3D_PRIMITIVE_TOPOLOGY primitiveType)
 	: Vertices(vertices), Indices(indices), PrimitiveType(primitiveType), NumVertices(vertices.size()), NumIndices(indices.size()), Stride(sizeof(FVertexPosColor4))
 {
-
+    ComputeLocalAABBFromVertices();
 }
 
 UMesh::~UMesh()
@@ -75,4 +75,20 @@ void UMesh::Init(ID3D11Device* device)
     }
 
 	isInitialized = true;
+}
+// 정점으로부터 AABB미리 계산
+void UMesh::ComputeLocalAABBFromVertices()
+{
+    if (Vertices.empty()) { bHasPrecomputedAABB = false; return; }
+
+    FBoundingBox box = FBoundingBox::Empty();
+    for (const FVertexPosColor4& v : Vertices)
+    {
+        const FVector p = v.GetPosition();
+        if (!std::isfinite(p.X) || !std::isfinite(p.Y) || !std::isfinite(p.Z))
+            continue;
+        box.Expand(p);
+    }
+    PrecomputedLocalBox = box;
+    bHasPrecomputedAABB = true;
 }

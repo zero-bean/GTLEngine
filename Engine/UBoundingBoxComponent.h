@@ -1,26 +1,12 @@
 ﻿#pragma once
-#pragma once
 #include "stdafx.h"
 #include "USceneComponent.h"
 #include "UMesh.h"
 #include "UMeshManager.h"
 #include "URenderer.h"
 #include "UClass.h"
+#include "FBoundingBox.h"
 
-struct FBoundingBox
-{
-    FVector Min;
-    FVector Max;
-
-    static FBoundingBox Empty() {
-        return { FVector(FLT_MAX,  FLT_MAX,  FLT_MAX),
-                 FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX) };
-    }
-    void Expand(const FVector& p) {
-        Min.X = min(Min.X, p.X); Min.Y = min(Min.Y, p.Y); Min.Z = min(Min.Z, p.Z);
-        Max.X = max(Max.X, p.X); Max.Y = max(Max.Y, p.Y); Max.Z = max(Max.Z, p.Z);
-    }
-};
 
 enum class EAABBSource : uint8_t
 {
@@ -74,6 +60,7 @@ private:
         C = (b.Min + b.Max) * 0.5f;
         E = (b.Max - b.Min) * 0.5f;
     }
+    static FBoundingBox TransformSphereToWorldAABB(const FVector& localCenter, float r, const FMatrix& M_world);
 
 private:
     UMesh* meshWire = nullptr;     // [-1,1]^3 단위 큐브(WIRE)

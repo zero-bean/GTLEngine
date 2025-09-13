@@ -1,9 +1,36 @@
 ﻿#include "stdafx.h"
 #include "UBoundingBoxComponent.h"
+#include "UPrimitiveComponent.h"
 #include "UClass.h"
-
+#include "FBoundingBox.h"
 // 메타 등록
 IMPLEMENT_UCLASS(UBoundingBoxComponent, USceneComponent)
+
+
+// ★ 스케일 추출/균등판정/동일성 헬퍼
+static inline void ExtractScale_RowMajor(const FMatrix& M, float& sx, float& sy, float& sz) {
+    auto len = [](float x, float y, float z) { return sqrtf(x * x + y * y + z * z); };
+    sx = len(M.M[0][0], M.M[0][1], M.M[0][2]);
+    sy = len(M.M[1][0], M.M[1][1], M.M[1][2]);
+    sz = len(M.M[2][0], M.M[2][1], M.M[2][2]);
+}
+// 균등 스케일 인지?
+static inline bool IsUniform(float sx, float sy, float sz, float eps = 1e-4f) {
+    return fabsf(sx - sy) < eps && fabsf(sy - sz) < eps;
+}
+// 문자열 s에서 실수를 파싱해서 반환
+static inline float ParseFloatOr(const FString& s, float defv) {
+    try { return s.empty() ? defv : std::stof(s); }
+    catch (...) { return defv; }
+}
+// 각 컬럼의 L2 길이(행벡터 규약: 열 기준)
+static inline void ColumnL2_RowMajor(const FMatrix& M, float& cx, float& cy, float& cz)
+{
+    auto l2 = [](float a, float b, float c) { return sqrtf(a * a + b * b + c * c); };
+    cx = l2(M.M[0][0], M.M[1][0], M.M[2][0]); // col 0
+    cy = l2(M.M[0][1], M.M[1][1], M.M[2][1]); // col 1
+    cz = l2(M.M[0][2], M.M[1][2], M.M[2][2]); // col 2
+}
 
 UBoundingBoxComponent::UBoundingBoxComponent()
 {
@@ -18,9 +45,12 @@ bool UBoundingBoxComponent::Init(UMeshManager* meshManager)
 
     // 메타에서 메시 이름을 받아오되 기본값은 "UnitCube_Wire"
     FString meshName = GetClass()->GetMeta("MeshName");
-    if (meshName.empty() || meshName[0] == '\0') meshName = "UnitCube_Wire";
+    if (!meshName.empty() || meshName[0] == '\0') meshName = "UnitCube_Wire";
 
     meshWire = meshManager->RetrieveMesh(meshName);
+    if (!meshWire) {
+        UE_LOG("[AABB] '%s' mesh not found. Building fallback wire cube.\n", meshName.c_str());
+    }
     return meshWire != nullptr;
 }
 
@@ -34,38 +64,58 @@ static inline void Abs3x3_RowMajor(const FMatrix& M, float A[3][3])
 
 // row-vector, LH 가정.
 // M_world = [ R | T ]
-// Cw = Cl * R + T
-// Ew = (|R|)^T * El   (row-vector 기준으로 구현하면 결국 각 축 절댓값을 요소곱으로 더하는 것과 동일)
+// centerWorld = centerLocal * R + T
+// Ew = (|R|)^T * halfSize   (row-vector 기준으로 구현하면 결국 각 축 절댓값을 요소곱으로 더하는 것과 동일)
 FBoundingBox UBoundingBoxComponent::TransformAABB_Arvo(const FBoundingBox& local, const FMatrix& M_world)
 {
-    FVector Cl = (local.Min + local.Max) * 0.5f;
-    FVector El = (local.Max - local.Min) * 0.5f;
+    FVector centerLocal = (local.Min + local.Max) * 0.5f;
+    FVector halfSize = (local.Max - local.Min) * 0.5f;
 
     // 회전부(R)와 이동(T)
     FMatrix R = M_world; // 상단 3x3 사용
     FVector T = FVector(M_world.M[3][0], M_world.M[3][1], M_world.M[3][2]);
 
-    // Cw = Cl * R + T
-    FVector Cw;
-    Cw.X = Cl.X * R.M[0][0] + Cl.Y * R.M[1][0] + Cl.Z * R.M[2][0] + T.X;
-    Cw.Y = Cl.X * R.M[0][1] + Cl.Y * R.M[1][1] + Cl.Z * R.M[2][1] + T.Y;
-    Cw.Z = Cl.X * R.M[0][2] + Cl.Y * R.M[1][2] + Cl.Z * R.M[2][2] + T.Z;
+    // centerWorld = centerLocal * R + T
+    FVector centerWorld;
+    centerWorld.X = centerLocal.X * R.M[0][0] + centerLocal.Y * R.M[1][0] + centerLocal.Z * R.M[2][0] + T.X;
+    centerWorld.Y = centerLocal.X * R.M[0][1] + centerLocal.Y * R.M[1][1] + centerLocal.Z * R.M[2][1] + T.Y;
+    centerWorld.Z = centerLocal.X * R.M[0][2] + centerLocal.Y * R.M[1][2] + centerLocal.Z * R.M[2][2] + T.Z;
 
     // |R|
     float A[3][3]; Abs3x3_RowMajor(R, A);
 
-    // Ew = (|R|)^T * El  ==> 각 성분: sum_i (A[i][axis] * El_i)
-    FVector Ew;
-    Ew.X = El.X * A[0][0] + El.Y * A[1][0] + El.Z * A[2][0];
-    Ew.Y = El.X * A[0][1] + El.Y * A[1][1] + El.Z * A[2][1];
-    Ew.Z = El.X * A[0][2] + El.Y * A[1][2] + El.Z * A[2][2];
+    // lengthWorld = (|R|)^T * halfSize  ==> 각 성분: sum_i (A[i][axis] * halfSize_i)
+    FVector lengthWorld;
+    lengthWorld.X = halfSize.X * A[0][0] + halfSize.Y * A[1][0] + halfSize.Z * A[2][0];
+    lengthWorld.Y = halfSize.X * A[0][1] + halfSize.Y * A[1][1] + halfSize.Z * A[2][1];
+    lengthWorld.Z = halfSize.X * A[0][2] + halfSize.Y * A[1][2] + halfSize.Z * A[2][2];
 
     FBoundingBox out;
-    out.Min = Cw - Ew;
-    out.Max = Cw + Ew;
+    out.Min = centerWorld - lengthWorld;
+    out.Max = centerWorld + lengthWorld;
     return out;
 }
+FBoundingBox UBoundingBoxComponent::TransformSphereToWorldAABB(const FVector& centerLocal, float r, const FMatrix& M_world)
+{
+    // 월드 중심: Cw = centerLocal * R + T  (행벡터 규약)
+    const FMatrix& L = M_world; // 상단 3x3 선형부
+    const FVector  T(M_world.M[3][0], M_world.M[3][1], M_world.M[3][2]);
 
+    FVector centerWorld;
+    centerWorld.X = centerLocal.X * L.M[0][0] + centerLocal.Y * L.M[1][0] + centerLocal.Z * L.M[2][0] + T.X;
+    centerWorld.Y = centerLocal.X * L.M[0][1] + centerLocal.Y * L.M[1][1] + centerLocal.Z * L.M[2][1] + T.Y;
+    centerWorld.Z = centerLocal.X * L.M[0][2] + centerLocal.Y * L.M[1][2] + centerLocal.Z * L.M[2][2] + T.Z;
+
+    // ★ 핵심: 타원체의 각 축 반경 = r * ||col_j(L)||_2
+    float lengthX, lengthY, lengthZ;
+    ColumnL2_RowMajor(L, lengthX, lengthY, lengthZ);
+    const FVector lengthWorld(r * lengthX, r * lengthY, r * lengthZ);
+
+    FBoundingBox out;
+    out.Min = centerWorld - lengthWorld;
+    out.Max = centerWorld + lengthWorld;
+    return out;
+}
 FMatrix UBoundingBoxComponent::GetWorldTransform()
 {
     // 이 컴포넌트는 계층 회전/스케일을 "상속"하지 않고,
@@ -84,26 +134,66 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
 {
     if (!Target) return;
 
-    // 대상의 월드 행렬
-    // (USceneComponent에 유사한 GetWorldTransform()이 있다고 가정)
-    FMatrix M_target = Target->GetWorldTransform();
+    const FMatrix M_target = Target->GetWorldTransform();
 
-    // 사용할 로컬 AABB 선택
+    // 기본값(박스)
     FBoundingBox srcLocal = LocalBox;
-    //if (Source == EAABBSource::FromMesh && TargetMesh && TargetMesh->HasPrecomputedAABB) {
-    //    srcLocal = TargetMesh->PrecomputedLocalBox; // 엔진 사양에 맞게 멤버명 조정
-    //}
+    bool  bUseSphere = false;
+    float sphereR = 0.0f;
+    FVector sphereCenterLocal(0, 0, 0);
 
-    // 월드 AABB 계산
-    WorldBox = TransformAABB_Arvo(srcLocal, M_target);
+    // 1) 컴포넌트 클래스 메타 읽기
+    const FString boundsType = Target->GetClass()->GetMeta("BoundsType");
+    const bool metaSaysSphere = (!boundsType.empty() && (boundsType == "Sphere" || boundsType == "sphere"));
 
-    // 월드 AABB → Center/Extents
-    FVector C, E; AABB_CenterExtents(WorldBox, C, E);
+    // 2) FromMesh 소스일 때 메시 참조
+    UMesh* mesh = TargetMesh;
+    if (Source == EAABBSource::FromMesh && !mesh) {
+        if (auto prim = Target->Cast<UPrimitiveComponent>()) mesh = prim->GetMesh();
+    }
 
-    // [-1,1]^3 단위 큐브 기준: Scale = Extents, Translate = Center
-    // (행벡터 규약: 점 * S * T * V * P 로 쓰므로 S→T 순서)
-    FMatrix S = FMatrix::Scale(E);
-    FMatrix T = FMatrix::TranslationRow(C);
+    if (metaSaysSphere)
+    {
+        // === Sphere 경로 ===
+        bUseSphere = true;
+
+        // 반지름: 메타 우선
+        sphereR = ParseFloatOr(Target->GetClass()->GetMeta("BoundsRadius"), 0.0f);
+
+        if (mesh && mesh->HasPrecomputedAABB()) {
+            FVector C, H; FBoundingBox::CenterExtents(mesh->GetPrecomputedLocalBox(), C, H);
+            sphereCenterLocal = C;
+            if (sphereR <= 0.0f) sphereR = max(H.X, max(H.Y, H.Z)); // 보수적
+        }
+        else {
+            // 메시 AABB가 없으면 LocalBox에서 추정(Explicit 모드 포함)
+            FVector C, H; FBoundingBox::CenterExtents(LocalBox, C, H);
+            sphereCenterLocal = C;
+            if (sphereR <= 0.0f) sphereR = max(H.X, max(H.Y, H.Z));
+            if (sphereR <= 0.0f) { sphereCenterLocal = FVector(0, 0, 0); sphereR = 1.0f; } // 최후 fallback
+        }
+
+        WorldBox = TransformSphereToWorldAABB(sphereCenterLocal, sphereR, M_target);
+    }
+    else
+    {
+        // === Box(Arvo) 경로 ===
+        if (Source == EAABBSource::FromMesh && mesh && mesh->HasPrecomputedAABB())
+            srcLocal = mesh->GetPrecomputedLocalBox();
+        else if (Source == EAABBSource::FromMesh && (!mesh || !mesh->HasPrecomputedAABB())) {
+            // 안전망
+            srcLocal.Min = FVector(-0.5f, -0.5f, -0.5f);
+            srcLocal.Max = FVector(+0.5f, +0.5f, +0.5f);
+        }
+        // Explicit일 땐 위에서 기본값으로 LocalBox가 이미 들어가 있음
+
+        WorldBox = TransformAABB_Arvo(srcLocal, M_target);
+    }
+
+    // 3) 월드 AABB → 박스 행렬
+    FVector C, H; FBoundingBox::CenterExtents(WorldBox, C, H);
+    const FMatrix S = FMatrix::Scale(H);
+    const FMatrix T = FMatrix::TranslationRow(C);
     WBox = S * T;
 }
 

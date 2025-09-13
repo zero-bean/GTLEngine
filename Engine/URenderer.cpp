@@ -538,7 +538,8 @@ void URenderer::DrawMeshOnTop(UMesh* mesh)
 {
 	if (!mesh || !mesh->IsInitialized())
 		return;
-	
+
+	// 1) depth test off 상태 준비
 	// Create a depth-stencil state with depth testing disabled
 	D3D11_DEPTH_STENCIL_DESC dsDesc = {};
 	dsDesc.DepthEnable = FALSE;  // disable depth testing
@@ -553,20 +554,34 @@ void URenderer::DrawMeshOnTop(UMesh* mesh)
 		return;
 	}
 
+	// 백업
 	// Backup current depth-stencil state
 	ID3D11DepthStencilState* pOldState = nullptr;
 	UINT stencilRef = 0;
 	deviceContext->OMGetDepthStencilState(&pOldState, &stencilRef);
 
+	// 적용
 	// Set new state (no depth test)
 	deviceContext->OMSetDepthStencilState(pDSState, 0);
 
+	// 2) 공통 셋업
 	// Draw mesh
 	UINT offset = 0;
 	deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
 	deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
-	deviceContext->Draw(mesh->NumVertices, 0);
 
+	// 3) 인덱스 있으면 DrawIndexed, 없으면 Draw
+	if (mesh->IndexBuffer && mesh->NumIndices > 0)
+	{
+		deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, /*OffsetBytes=*/0);
+		deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
+	}
+	else
+	{
+		deviceContext->Draw(mesh->NumVertices, 0);
+	}
+
+	// 4) 복원 & 해제
 	// Restore previous depth state
 	deviceContext->OMSetDepthStencilState(pOldState, stencilRef);
 
