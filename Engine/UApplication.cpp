@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "UApplication.h"
 #include "UScene.h"
-
+#include "EditorIni.h"
 // Static member definitions
 WCHAR UApplication::WindowClass[] = L"EngineWindowClass";
 WCHAR UApplication::DefaultTitle[] = L"Engine Application";
@@ -147,6 +147,18 @@ void UApplication::Shutdown()
 	renderer.Release();
 
 	bIsInitialized = false;
+	// 세션 중 변경된 값 저장
+	UCamera* cam = sceneManager.GetScene()->GetCamera();
+	if (cam)
+	{
+		CEditorIni::Get().SetFloat("Camera", "FOV", cam->GetFOV());
+		CEditorIni::Get().SetFloat("Camera", "MoveSpeed", cam->GetMoveSpeed());
+		CEditorIni::Get().SetBool("Camera", "Ortho", cam->IsOrtho());
+		// 필요하면 위치/직교폭 등도 추가로 저장
+		// EditorIni::Get().SetFloat("Camera", "OrthoWidth",  ... );
+		// EditorIni::Get().SetFloat("Camera", "OrthoHeight", ... );
+	}
+	CEditorIni::Get().Save();
 }
 
 void UApplication::Update(float deltaTime)

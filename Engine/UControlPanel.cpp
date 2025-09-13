@@ -155,7 +155,7 @@ void UControlPanel::CameraManagementSection()
 	if (isOrthogonal)
 	{
 		// 원하는 직교 크기로 (예시: 월드 단위 10x10)
-		camera->SetOrtho(10.0f, 10.0f, camera->GetNearZ(), camera->GetFarZ());
+		camera->SetOrtho(camera->GetOrthoW(), camera->GetOrthoH(), camera->GetNearZ(), camera->GetFarZ());
 	}
 	else
 	{
@@ -167,7 +167,6 @@ void UControlPanel::CameraManagementSection()
 	ImGui::TextUnformatted("FOV");
 
 	float fovDeg = camera->GetFOV();
-	bool changed = false;
 
 	const float minFov = 10.0f;
 	const float maxFov = 120.0f;
@@ -180,16 +179,19 @@ void UControlPanel::CameraManagementSection()
 
 	// 드래그 박스 (좌우 드래그로 값 변경)
 	ImGui::SetNextItemWidth(avail * 0.55f);
-	changed |= ImGui::DragFloat("##fov_drag", &fovDeg, dragSpeed, minFov, maxFov, "%.1f",
+	bool fovChanged = ImGui::DragFloat("##fov_value", &fovDeg, dragSpeed, minFov, maxFov, "%.1f",
 		ImGuiSliderFlags_AlwaysClamp);
 
 	// 리셋 버튼(옵션)
 	ImGui::SameLine();
-	if (ImGui::Button("Reset")) { fovDeg = 60.0f; changed = true; }
+	if (ImGui::Button("Reset")) { fovDeg = 60.0f; fovChanged = true; }
 
-	if (changed) {
+	if (fovChanged) {
 		fovDeg = std::clamp(fovDeg, minFov, maxFov);
 		camera->SetFOV(fovDeg); // 내부에서 proj 재빌드
+		// (2) 즉시 저장
+		CEditorIni::Get().SetFloat("Camera", "FOV", fovDeg);
+		CEditorIni::Get().Save();
 	}
 
 	ImGui::PopID();
@@ -239,19 +241,22 @@ void UControlPanel::CameraManagementSection()
 	}
 
 
+	float cameraSpeed = camera->GetMoveSpeed();
 	const float minSpeed = 0.1f;
 	const float maxSpeed = 100.0f;
-	float cameraSpeed = camera->GetMoveSpeed();
 
 	ImGui::Text("Camera Speed");
 	// 드래그 박스 (좌우 드래그로 값 변경)
 	ImGui::SetNextItemWidth(avail * 0.55f);
-	changed |= ImGui::DragFloat("##fov_drag", &cameraSpeed, dragSpeed, minSpeed, maxSpeed, "%.001f",
+	bool speedChanged = ImGui::DragFloat("##cam_speed", &cameraSpeed, dragSpeed, minSpeed, maxSpeed, "%.001f",
 		ImGuiSliderFlags_AlwaysClamp);
 
-	if (changed) {
+	if (speedChanged) {
 		cameraSpeed = std::clamp(cameraSpeed, minSpeed, maxSpeed);
 		camera->SetMoveSpeed(cameraSpeed); // 내부에서 proj 재빌드
+		// (4) 즉시 저장
+		CEditorIni::Get().SetFloat("Camera", "MoveSpeed", cameraSpeed);
+		CEditorIni::Get().Save();
 	}
 	// --- Camera Basis 출력 ---
 	ImGui::SeparatorText("Camera Basis");

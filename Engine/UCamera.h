@@ -3,6 +3,7 @@
 #include "Vector.h"
 #include "Matrix.h"
 #include "Quaternion.h"
+#include "EditorIni.h"
 // =====================
 // UCamera (RH, row-vector, Z-up)
 // =====================
@@ -23,9 +24,17 @@ public:
         , bLockRoll(false)
         , mPitch(0.0f)
     {
-
+        // --- 복원: Camera 섹션 ---
+        // TODO - 현재는 UScene에서 로딩 하고있다.
+        float iniFovDeg = CEditorIni::Get().GetFloat("Camera", "FOV", 60.0f);
+        float iniSpeed = CEditorIni::Get().GetFloat("Camera", "MoveSpeed", 5.0f);
+        bool  ortho = CEditorIni::Get().GetBool("Camera", "Ortho", false);
+        moveSpeed = iniSpeed;
+        mFovY = iniFovDeg;
+        SetPerspectiveDegrees(mFovY, mAspect, mNearZ, mFarZ);
+        if (ortho)
+            SetOrtho(mOrthoWidth, mOrthoHeight, mNearZ, mFarZ);
         UpdateView();
-        UpdateProj();
     }
     // ===== 행렬 Get =====
 
@@ -44,7 +53,8 @@ public:
     // ===== 직교 투영 여부 Get =====
 
     bool  IsOrtho()  const { return mUseOrtho; }
-
+    float GetOrthoW() const { return mOrthoWidth; }
+    float GetOrthoH() const { return mOrthoHeight; }
 
     // ===== 투영 Set =====
 
@@ -126,7 +136,7 @@ private:
 	// 롤 잠금
     bool  bLockRoll;
 
-    float moveSpeed = 5.0f;
+    float moveSpeed;
 
     void UpdateProj();
     void UpdateView();

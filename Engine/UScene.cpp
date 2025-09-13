@@ -43,11 +43,14 @@ bool UScene::Initialize(URenderer* r, UMeshManager* mm, UInputManager* im)
 			primitive->Init(meshManager);
 		}
 	}
-
+	// TODO - UApplication에서 하면 가장 마지막에 처리되므로 
+	// 카메라가 생성되기 전에 값이 로드되지않음.
+	// 따라서 위치를 카메라 생성되기 직전에 둔다.
+	// 필요하면 경로 커스터마이즈
+	CEditorIni::Get().SetPath(std::filesystem::path("./config/editor.ini"));
+	CEditorIni::Get().Load(); // 없으면 걍 실패하고 넘어감(기본값 사용)
 	camera = new UCamera();
-	camera->SetPerspectiveDegrees(60.0f, (backBufferHeight > 0) ? (float)backBufferWidth / (float)backBufferHeight : 1.0f, 0.1f, 1000.0f);
 	camera->LookAt({ 5,0,0 }, { 0,0,0 }, { 0,0,1 });
-
 	return OnInitialize();
 }
 

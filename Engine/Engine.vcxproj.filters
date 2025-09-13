@@ -52,6 +52,9 @@
     <Filter Include="Engine\Core\Component\Collider">
       <UniqueIdentifier>{3971ae68-a1bf-4633-9760-d1f1839c548b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Utils\INI">
+      <UniqueIdentifier>{bf97ad30-a244-4f48-b481-fe9fd13b6014}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImGui\imgui.cpp">
@@ -364,6 +367,9 @@
     </ClInclude>
     <ClInclude Include="FBoundingBox.h">
       <Filter>Utils\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorIni.h">
+      <Filter>Utils\INI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

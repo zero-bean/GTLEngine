@@ -220,11 +220,18 @@ void EditorApplication::OnResize(int32 width, int32 height)
 	UCamera* camera = scene->GetCamera();
 	if (camera == nullptr) return;
 
-	camera->SetPerspectiveDegrees(
-		camera->GetFOV(),
-		(height > 0) ? (float)width / (float)height : 1.0f,
-		camera->GetNearZ(),
-		camera->GetFarZ());
+	if (camera->IsOrtho())
+	{
+		camera->SetOrtho(camera->GetOrthoW(), camera->GetOrthoH(), camera->GetNearZ(), camera->GetFarZ());
+	}
+	else
+	{
+		camera->SetPerspectiveDegrees(
+			camera->GetFOV(),
+			(height > 0) ? (float)width / (float)height : 1.0f,
+			camera->GetNearZ(),
+			camera->GetFarZ());
+	}
 }
 
 UScene* EditorApplication::CreateDefaultScene()

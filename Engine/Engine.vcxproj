@@ -235,6 +235,7 @@
     <ClCompile Include="VerticesInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="EditorIni.h" />
     <ClInclude Include="FBoundingBox.h" />
     <ClInclude Include="FDynamicBitset.h" />
     <ClInclude Include="UNamePool.h" />
