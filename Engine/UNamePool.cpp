@@ -93,17 +93,6 @@ static FString ToLowerCopy(const FString& s)
     return out;
 }
 
-bool UNamePool::ContainsDisplay(const FString& Name) const
-{
-    return DisplayMap.find(Name) != DisplayMap.end();
-}
-
-bool UNamePool::ContainsComparison(const FString& Name) const
-{
-    const FString lower = ToLowerCopy(Name);
-    return ComparisonMap.find(lower) != ComparisonMap.end();
-}
-
 // =============================
 // FName
 // =============================

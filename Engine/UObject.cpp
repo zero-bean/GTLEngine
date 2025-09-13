@@ -25,22 +25,43 @@ void UObject::UnregisterName(const FName& name)
     }
 }
 
-// 유니크 이름 생성: 항상 Base_0부터, FName 기반 검사(ComparisonIndex 기준)
+// 유니크 이름 생성: 첫 객체는 Base, 이후 Base_1부터 시작
 FName UObject::GenerateUniqueName(const FString& base)
 {
-    // 카운터의 키도 FName(ComparisonIndex 기준). 대소문자 다른 Base는 동일 키로 취급.
     FName baseKey(base);
 
-    uint32& next = NameSuffixCounters[baseKey]; // 없으면 0으로 초기화
+    // 1) 접미사 없는 기본 이름 먼저 시도
+    FName plain(base);
+    if (!IsNameInUse(plain))
+    {
+        // 다음부터는 1부터 붙이도록 카운터 최소값 보장
+        uint32& nextInit = NameSuffixCounters[baseKey];
+        if (nextInit < 1)
+        {
+            nextInit = 1;
+        }
+
+        return plain;
+    }
+
+    // 2) 이미 사용 중이면 1부터 붙여가며 탐색
+    uint32& next = NameSuffixCounters[baseKey];
+    if (next < 1) 
+    {
+        next = 1;
+    }
+
     for (;;)
     {
-        FString candidateStr = base + "_" + std::to_string(next++);
+        FString candidateStr = base + "_" + std::to_string(next);
         FName candidate(candidateStr); // UNamePool에 인터닝됨
         if (!IsNameInUse(candidate))
         {
+            ++next; // 다음 호출을 위해 증가
             return candidate;
         }
-        // 이미 사용 중이면 다음 번호로
+        
+        ++next; // 충돌이면 계속 증가
     }
 }
 

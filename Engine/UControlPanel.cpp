@@ -98,7 +98,7 @@ void UControlPanel::SpawnPrimitiveSection()
 			SceneManager->GetScene()->AddObject(sceneComponent);
 		}
 
-		UNamePool::GetInstance().LogDebugState();
+		UE_LOG("Spawned new object: %s", sceneComponent->Name.ToString().c_str());
 	}
 	ImGui::SameLine();
 	ImGui::BeginDisabled();

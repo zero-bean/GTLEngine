@@ -52,10 +52,6 @@ public:
     // 디버그 목적 로깅
     void LogDebugState() const;
 
-    // 추가: 존재 여부 조회 (중복 방지용)
-    bool ContainsDisplay(const FString& Name) const;
-    bool ContainsComparison(const FString& Name) const; // 내부에서 소문자로 변환
-
 private:
     UNamePool() = default;
 
