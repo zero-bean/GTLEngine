@@ -1,7 +1,6 @@
 cbuffer Constants : register(b0)
 {
     float4x4 MVP;
-    float4 LineColor;
 }
 struct VSInput
 {
@@ -22,7 +21,7 @@ struct PSInput
 {
     float4 position : SV_Position;
 };
-float4 main(PSInput input) : SV_TARGET
+float4 PS_Main(PSInput input) : SV_TARGET
 {
-    return LineColor;
+    return float4(1.0f, 1.0f, 1.0f, 1.0f);
 }

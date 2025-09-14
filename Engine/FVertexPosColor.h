@@ -68,6 +68,8 @@ struct FVertexPosColor4
 		return {x, y, z};
 	}
 
+
+
 };
 
 // 텍스처용
@@ -80,5 +82,6 @@ struct FVertexPosTexCoord
 struct FVertexPos
 {
 	float x, y, z;
+
 };
 
