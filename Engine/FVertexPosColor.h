@@ -70,5 +70,15 @@ struct FVertexPosColor4
 
 };
 
-
+// 텍스처용
+struct FVertexPosTexCoord
+{
+	float x, y, z;
+	float u, v;
+};
+// 라인용
+struct FVertexPos
+{
+	float x, y, z;
+};
 
