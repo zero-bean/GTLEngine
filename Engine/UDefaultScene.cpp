@@ -15,7 +15,11 @@ bool UDefaultScene::OnInitialize()
     if (IsFirstTime)
     {
         // 컴포넌트 생성
-        USphereComp* sphere = new USphereComp({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f });
+        USphereComp* sphere = NewObject<USphereComp>(
+            FVector{ 0.0f, 0.0f, 0.0f }, 
+            FVector{ 0.0f, 0.0f, 0.0f }, 
+            FVector{ 1.0f, 1.0f, 1.0f }
+        );
 
         AddObject(sphere);
         IsFirstTime = false;
