@@ -1,24 +1,27 @@
-
-struct VS_INPUT
+cbuffer Constants : register(b0)
 {
-    float3 Position : POSITION;
-};
-
-struct VS_OUTPUT
-{
-    float3 Position : SV_POSITION;
-};
-
-float4 main( float4 pos : POSITION ) : SV_POSITION
-{
-	return pos;
+    float4x4 MVP;
+    float4 LineColor;
 }
-
-VS_OUTPUT main(VS_INPUT input)
+struct VSInput
 {
-    VS_OUTPUT output;
-
-    output.Position = input.Position;
-
+    float3 position : POSITION; // Vertex position (x, y, z)
+};
+struct VSOutput
+{
+    float4 position : SV_POSITION; // Vertex position (x, y, z, w)
+};
+VSOutput VS_Main(VSInput input)
+{
+    VSOutput output = mul(float4(input.position, 1.0f), MVP);
+   
     return output;
+}
+struct PSInput
+{
+    float4 position : SV_Position;
+};
+float4 main(PSInput input) : SV_TARGET
+{
+    return LineColor;
 }

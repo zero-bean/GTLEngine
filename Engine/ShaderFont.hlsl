@@ -26,3 +26,17 @@ VSOutput VS_Main(VSInput input)
    
     return output;
 }
+
+struct PSInput
+{
+	float4 position : SV_Position;
+	float2 TexCoord : TEXCOORD;
+};
+float4 main(PSInput input) : SV_TARGET
+{
+    // Get pixel color from texture using UV 
+	float4 textureColor = Texture.Sample(Sampler, input.TexCoord);
+	float4 output = textureColor;
+    
+	return output;
+}
