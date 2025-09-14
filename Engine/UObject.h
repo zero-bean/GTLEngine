@@ -27,7 +27,7 @@ private: \
 #define IMPLEMENT_ROOT_UCLASS(ClassName) \
 UObject* ClassName::CreateInstance() { return new ClassName(); } \
 UClass* ClassName::s_StaticClass = UClass::RegisterToFactory( \
-    #ClassName, &ClassName::CreateInstance, ""); \
+    FName(#ClassName), &ClassName::CreateInstance, FName::GetNone()); \
 UClass* ClassName::StaticClass() { return s_StaticClass; } \
 UClass* ClassName::GetClass() const { return StaticClass(); }
 
@@ -52,7 +52,7 @@ private: \
 #define IMPLEMENT_UCLASS(ClassName, ParentClass) \
 UObject* ClassName::CreateInstance() { return new ClassName(); } \
 UClass* ClassName::s_StaticClass = UClass::RegisterToFactory( \
-    #ClassName, &ClassName::CreateInstance, #ParentClass); \
+    FName(#ClassName), &ClassName::CreateInstance, FName(#ParentClass)); \
 UClass* ClassName::StaticClass() { return s_StaticClass; } \
 UClass* ClassName::GetClass() const { return StaticClass(); }
 
@@ -79,8 +79,8 @@ private:
     // 라이브 오브젝트 이름 집합 (FName 비교는 ComparisonIndex 기반)
     static inline TSet<FName> GAllObjectNames;
 
-    // 유니크 이름을 생성(Base_0부터). Base는 클래스명.
-    static FName GenerateUniqueName(const FString& base);
+    // 유니크 이름을 생성(Base_0부터). Base는 클래스명(FName).
+    static FName GenerateUniqueName(const FName& base);
 
     // 전역 이름 집합 등록/해제
     static bool IsNameInUse(const FName& name);
@@ -98,17 +98,14 @@ public:
     {
         UUID = UEngineStatics::GenUUID();
 
-        // 방법 1: 빠른 추가 - 재사용 인덱스 우선 사용
         if (!FreeIndices.empty())
         {
-            // 삭제된 슬롯 재사용 (O(1))
             InternalIndex = FreeIndices.back();
             FreeIndices.pop_back();
             GUObjectArray[InternalIndex] = this;
         }
         else
         {
-            // 없으면 새 슬롯 할당 (O(1) amortized)
             InternalIndex = NextFreshIndex++;
             GUObjectArray.push_back(this);
         }
@@ -117,24 +114,20 @@ public:
 
     virtual ~UObject()
     {
-        // 전역 이름 집합에서 제거
         if (Name.ToString() != "None")
         {
             UnregisterName(Name);
         }
 
-        // 방법 1: 빠른 삭제 - nullptr 마킹 + 인덱스 재사용 큐에 추가
         if (InternalIndex < GUObjectArray.size() && GUObjectArray[InternalIndex] == this)
         {
-            GUObjectArray[InternalIndex] = nullptr;  // O(1)
-            FreeIndices.push_back(InternalIndex);    // O(1)
+            GUObjectArray[InternalIndex] = nullptr;
+            FreeIndices.push_back(InternalIndex);
         }
     }
-    // 에디터/인스펙터 노출 여부 플래그
-    virtual bool CountOnInspector() {
-        return false;
-    }
-    // 런타임 타입 검사/캐스팅
+
+    virtual bool CountOnInspector() { return false; }
+
     template<typename T>
     bool IsA() const {
         return GetClass()->IsChildOrSelfOf(T::StaticClass());
@@ -149,7 +142,7 @@ public:
     const T* Cast() const {
         return IsA<T>() ? static_cast<const T*>(this) : nullptr;
     }
-    // Override new/delete for tracking
+
     void* operator new(size_t size)
     {
         UEngineStatics::AddAllocation(size);
@@ -162,7 +155,6 @@ public:
         ::operator delete(ptr);
     }
 
-    // 배치 new/delete도 오버라이드 (필요한 경우)
     void* operator new(size_t size, void* ptr)
     {
         return ptr;  // placement new는 메모리 추적 안함
@@ -196,25 +188,20 @@ public:
     // 임의 문자열(base)로 고유 이름 생성/등록
     void AssignNameFromString(const FString& base);
 
-    // 재사용 큐만 비움(특정 상황에서 인덱스 정책 리셋 시)
     static void ClearFreeIndices()
     {
         FreeIndices.clear();
     }
 
-    // 디버그/에디터용: 현재 라이브 오브젝트 이름 스냅샷을 수집
     static void CollectLiveObjectNames(TArray<FString>& OutNames);
 };
 
-// UObject 상속받는 객체 생성 시 new 사용 금지
-// NewObject<T>(...) 템플릿 UObject 팩토리 함수 사용
+// 편의 생성기: 직접 new 대신 사용하면 자동 네이밍
 template<typename T, typename... Args>
-inline T* NewObject(Args&&... Params)
+inline T* NewObject(Args&&... args)
 {
     static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
-    T* Object = new T(std::forward<Args>(Params)...);
-
-    // 생성 완료 후, 정확한 타입의 클래스 정보로 고유 이름 부여/등록
-    Object->AssignDefaultNameFromClass(T::StaticClass());
-    return Object;
+    T* obj = new T(std::forward<Args>(args)...);
+    obj->AssignDefaultNameFromClass(T::StaticClass());
+    return obj;
 }

@@ -3,39 +3,40 @@
 #include "UObject.h"
 
 IMPLEMENT_UCLASS(UClass, UObject)
-UClass* UClass::RegisterToFactory(const FString& typeName, const TFunction<UObject* ()>& createFunction, const FString& superClassTypeName)
+
+UClass* UClass::RegisterToFactory(const FName& typeName, const TFunction<UObject* ()>& createFunction, const FName& superClassTypeName)
 {
-	TUniquePtr<UClass> classType = MakeUnique<UClass>();
+    TUniquePtr<UClass> classType = MakeUnique<UClass>();
 
-	classType->typeId = registeredCount++;
-	classType->className = typeName;
-	classType->superClassTypeName = superClassTypeName;
-	classType->createFunction = createFunction;
+    classType->typeId = registeredCount++;
+    classType->className = typeName;
+    classType->superClassTypeName = superClassTypeName;
+    classType->createFunction = createFunction;
 
-	nameToId[typeName] = classType->typeId;
+    nameToId[typeName] = classType->typeId;
 
     // 메타 오브젝트(UClass 인스턴스)도 고유 이름 등록
     // "Class:<TypeName>", 중복 시 _1, _2 ... 부여
-    classType->AssignNameFromString(FString("Class:") + typeName);
+    classType->AssignNameFromString(FString("Class:") + typeName.ToString());
 
-	UClass* rawPtr = classType.get();
-	classList.push_back(std::move(classType));
-	return rawPtr;
+    UClass* rawPtr = classType.get();
+    classList.push_back(std::move(classType));
+    return rawPtr;
 }
 
 void UClass::ResolveTypeBitsets()
 {
-	for (const TUniquePtr<UClass>& _class : classList)
-	{
-        if (!_class->superClassTypeName.empty()) {
+    for (const TUniquePtr<UClass>& _class : classList)
+    {
+        // superClassTypeName이 비어있지 않으면 부모 결합
+        if (!_class->superClassTypeName.ToString().empty()) {
             auto it = nameToId.find(_class->superClassTypeName);
             _class->superClass = (it != nameToId.end()) ? classList[it->second].get() : nullptr;
         }
-	}
+    }
     for (const TUniquePtr<UClass>& _class : classList)
     {
         if (_class->processed) continue;
-
         _class->ResolveTypeBitset(_class.get());
     }
 }

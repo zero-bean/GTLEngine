@@ -133,7 +133,7 @@ const FString& FName::ToString() const
     return UNamePool::GetInstance().GetString(DisplayIndex);
 }
 
-FName FName::GetNone() const
+FName FName::GetNone()
 {
 	return FName("None");
 }
