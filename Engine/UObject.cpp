@@ -5,102 +5,101 @@
 
 IMPLEMENT_ROOT_UCLASS(UObject)
 
-bool UObject::IsNameInUse(const FName& name)
+// 전역 이름 집합 조회
+bool UObject::IsNameInUse(const FName& Name)
 {
-    return GAllObjectNames.find(name) != GAllObjectNames.end();
+    return GAllObjectNames.find(Name) != GAllObjectNames.end();
 }
 
-void UObject::RegisterName(const FName& name)
+// 전역 이름 집합 등록(유효 이름만)
+void UObject::RegisterName(const FName& Name)
 {
-    if (name == "None") 
+    if (Name.ToString() == "None") return;
+    GAllObjectNames.insert(Name);
+}
+
+// 전역 이름 집합 해제
+void UObject::UnregisterName(const FName& Name)
+{
+    auto It = GAllObjectNames.find(Name);
+    if (It != GAllObjectNames.end())
     {
-        return;
-    }
-
-    GAllObjectNames.insert(name);
-}
-
-void UObject::UnregisterName(const FName& name)
-{
-    auto it = GAllObjectNames.find(name);
-    if (it != GAllObjectNames.end())
-    {
-        GAllObjectNames.erase(it);
+        GAllObjectNames.erase(It);
     }
 }
 
-// 유니크 이름 생성: 첫 객체는 Base, 이후 Base_1부터 시작 (Base는 FName)
-FName UObject::GenerateUniqueName(const FName& base)
+// 유니크 이름 생성: 첫 객체는 Base, 이후 Base_1부터 증가
+FName UObject::GenerateUniqueName(const FName& Base)
 {
     // 1) 접미사 없는 기본 이름 먼저 시도
-    if (!IsNameInUse(base))
+    if (!IsNameInUse(Base))
     {
-        // 다음부터는 1부터 붙이도록 카운터 최소값 보장
-        uint32& nextInit = NameSuffixCounters[base];
-        if (nextInit < 1)
+        uint32& NextInit = NameSuffixCounters[Base];
+        if (NextInit < 1)
         {
-            nextInit = 1;
+            NextInit = 1;
         }
-
-        return base;
+        return Base;
     }
 
     // 2) 이미 사용 중이면 1부터 붙여가며 탐색
-    uint32& next = NameSuffixCounters[base];
-    if (next < 1)
+    uint32& Next = NameSuffixCounters[Base];
+    if (Next < 1)
     {
-        next = 1;
+        Next = 1;
     }
 
-    const FString baseStr = base.ToString();
+    const FString BaseStr = Base.ToString();
     for (;;)
     {
-        FString candidateStr = baseStr + "_" + std::to_string(next);
-        FName candidate(candidateStr); // UNamePool에 인터닝됨
-        if (!IsNameInUse(candidate))
+        FString CandidateStr = BaseStr + "_" + std::to_string(Next);
+        FName Candidate(CandidateStr); // UNamePool에 인터닝
+        if (!IsNameInUse(Candidate))
         {
-            ++next; // 다음 호출을 위해 증가
-            return candidate;
+            ++Next; // 다음 호출을 위해 증가
+            return Candidate;
         }
 
-        ++next; // 충돌이면 계속 증가
+        ++Next; // 충돌이면 계속 증가
     }
 }
 
-void UObject::AssignDefaultNameFromClass(const UClass* cls)
+// 완전 생성 이후 클래스명(FName) 기반으로 고유 이름 부여/등록
+void UObject::AssignDefaultNameFromClass(const UClass* Cls)
 {
-    if (!cls) return;
+    if (!Cls) return;
 
-    const FString& currentStr = Name.ToString();
-    const bool hasCustom = (!currentStr.empty() && currentStr != "None");
+    const FString& CurrentStr = Name.ToString();
+    const bool bHasCustom = (!CurrentStr.empty() && CurrentStr != "None");
 
-    if (hasCustom)
+    if (bHasCustom)
     {
-        // 커스텀 이름이 이미 집합에 없다면 등록만 수행. 있으면 클래스명을 기준으로 재생성.
         if (!IsNameInUse(Name))
         {
             RegisterName(Name);
             return;
         }
-        // 충돌 → 아래에서 재네이밍
+        // 충돌 시 아래에서 재생성
     }
 
-    const FName& base = cls->GetUClassName();
-    FName unique = GenerateUniqueName(base);
-    Name = unique;
+    const FName& Base = Cls->GetUClassName();
+    FName Unique = GenerateUniqueName(Base);
+    Name = Unique;
     RegisterName(Name);
 }
 
+// 편의 함수(완전 생성 이후 가상 호출 사용)
 void UObject::AssignDefaultName()
 {
     AssignDefaultNameFromClass(GetClass());
 }
 
-void UObject::AssignNameFromString(const FString& base)
+// 문자열 베이스를 FName으로 변환하여 이름 생성/등록
+void UObject::AssignNameFromString(const FString& Base)
 {
-    const FString& currentStr = Name.ToString();
-    const bool hasCustom = (!currentStr.empty() && currentStr != "None");
-    if (hasCustom)
+    const FString& CurrentStr = Name.ToString();
+    const bool bHasCustom = (!CurrentStr.empty() && CurrentStr != "None");
+    if (bHasCustom)
     {
         if (!IsNameInUse(Name))
         {
@@ -109,16 +108,17 @@ void UObject::AssignNameFromString(const FString& base)
         }
     }
 
-    FName unique = GenerateUniqueName(FName(base));
-    Name = unique;
+    FName Unique = GenerateUniqueName(FName(Base));
+    Name = Unique;
     RegisterName(Name);
 }
 
-void UObject::CollectLiveObjectNames(TArray<FString>& outNames)
+// 디버그/에디터: 현재 라이브 이름을 문자열로 스냅샷
+void UObject::CollectLiveObjectNames(TArray<FString>& OutNames)
 {
-    outNames.clear();
-    for (const FName& n : GAllObjectNames)
+    OutNames.clear();
+    for (const FName& N : GAllObjectNames)
     {
-        outNames.push_back(n.ToString());
+        OutNames.push_back(N.ToString());
     }
 }

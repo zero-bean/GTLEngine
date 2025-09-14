@@ -5,109 +5,134 @@
 #include "UObject.h"
 #include <memory>
 
+/*
+    UClass:
+    - 런타임 타입 정보(RTTI)와 팩토리 역할
+    - ClassName/SuperClassTypeName은 FName으로 저장(빠른 비교/조회)
+    - NameToId로 FName → TypeId 매핑 유지
+    - DisplayNameToId는 UI용 표시 문자열(FString) 인덱싱
+    - TypeBitset은 상속 계층(자기/조상 타입) 포함 비트셋
+*/
 class UClass : public UObject
 {
     DECLARE_UCLASS(UClass, UObject)
 private:
-    static inline TArray<TUniquePtr<UClass>> classList;
-    // 클래스 이름 키를 FName으로 변경
-    static inline TMap<FName, uint32> nameToId;
-    static inline TMap<FString, uint32> displayNameToId;
-    static inline uint32 registeredCount = 0;
+    static inline TArray<TUniquePtr<UClass>> ClassList;
+    // 타입명(FName) → TypeId
+    static inline TMap<FName, uint32> NameToId;
+    // 표시 이름(FString) → TypeId (UI/검색용)
+    static inline TMap<FString, uint32> DisplayNameToId;
+    static inline uint32 RegisteredCount = 0;
 
-    TMap<FString, FString> metadata;
-    uint32 typeId;
-    FDynamicBitset typeBitset;
-    // 클래스명과 부모 클래스명도 FName으로 보관
-	FName className = FName::GetNone();
-	FName superClassTypeName = FName::GetNone();
-    UClass* superClass = nullptr;
-    TFunction<UObject* ()> createFunction;
-    bool processed = false;
+    // 메타데이터(임의 키/값, 주로 표시 이름 등)
+    TMap<FString, FString> Metadata;
+
+    // 타입 고유 ID 및 상속 비트셋
+    uint32 TypeId;
+    FDynamicBitset TypeBitset;
+
+    // 타입 이름 및 부모 타입 이름(FName)
+    FName ClassName = FName::GetNone();
+    FName SuperClassTypeName = FName::GetNone();
+
+    // 부모 타입(UClass*)
+    UClass* SuperClass = nullptr;
+
+    // 인스턴스 생성 함수 포인터(무인자 기본 생성)
+    TFunction<UObject* ()> CreateFunction;
+
+    // 타입 비트셋 처리 여부
+    bool bProcessed = false;
 
 public:
-    // FName 기반 등록
-    static UClass* RegisterToFactory(const FName& typeName,
-        const TFunction<UObject* ()>& createFunction, const FName& superClassTypeName);
+    // 타입 등록: 타입명/생성 함수/부모 타입명(FName) 등록 후 UClass* 반환
+    static UClass* RegisterToFactory(const FName& TypeName,
+        const TFunction<UObject* ()>& CreateFunction, const FName& SuperClassTypeName);
 
+    // 상속 비트셋(자기/조상 타입 비트) 해석/구축
     static void ResolveTypeBitsets();
-    void ResolveTypeBitset(UClass* classPtr);
+    void ResolveTypeBitset(UClass* ClassPtr);
 
-    static UClass* GetClass(uint32 typeId) {
-        return (typeId < classList.size()) ? classList[typeId].get() : nullptr;
+    // TypeId로 UClass 조회
+    static UClass* GetClass(uint32 TypeId) {
+        return (TypeId < ClassList.size()) ? ClassList[TypeId].get() : nullptr;
     }
 
-    // FName 기반 조회
-    static UClass* FindClass(const FName& name) {
-        auto it = nameToId.find(name);
-        return (it != nameToId.end()) ? GetClass(it->second) : nullptr;
+    // 타입명(FName/FString)으로 UClass 조회
+    static UClass* FindClass(const FName& Name) {
+        auto It = NameToId.find(Name);
+        return (It != NameToId.end()) ? GetClass(It->second) : nullptr;
     }
-    // 호환용: 문자열로 들어오면 FName으로 변환하여 조회
-    static UClass* FindClass(const FString& name) {
-        return FindClass(FName(name));
+    static UClass* FindClass(const FString& Name) {
+        return FindClass(FName(Name));
     }
 
-    static UClass* FindClassWithDisplayName(const FString& name)
+    // 표시 이름(FString) → 검색, 실패 시 타입명(FName)으로 폴백
+    static UClass* FindClassWithDisplayName(const FString& Name)
     {
-        // 1) DisplayName lookup (표시용 문자열은 FString 유지)
-        auto it = displayNameToId.find(name);
-        if (it != displayNameToId.end())
-            return GetClass(it->second);
+        auto It = DisplayNameToId.find(Name);
+        if (It != DisplayNameToId.end())
+            return GetClass(It->second);
 
-        // 2) className fallback (FName으로 변환)
-        return FindClass(FName(name));
+        return FindClass(FName(Name));
     }
 
+    // 등록된 전체 타입 리스트
     static const TArray<TUniquePtr<UClass>>& GetClassList()
     {
-        return classList;
+        return ClassList;
     }
 
-    bool IsChildOrSelfOf(UClass* baseClass) const {
-        return baseClass && typeBitset.Test(baseClass->typeId);
+    // BaseClass의 자식/자기 자신 여부 검사 (비트셋 기반)
+    bool IsChildOrSelfOf(UClass* BaseClass) const {
+        return BaseClass && TypeBitset.Test(BaseClass->TypeId);
     }
 
-    // FName 반환
-    const FName& GetUClassName() const { return className; }
+    // 타입명(FName)
+    const FName& GetUClassName() const { return ClassName; }
 
+    // 표시용 이름(FString). 없으면 ClassName을 문자열로 반환
     const FString& GetDisplayName() const
     {
-        auto itr = metadata.find("DisplayName");
-        if (itr != metadata.end())
+        auto It = Metadata.find("DisplayName");
+        if (It != Metadata.end())
         {
-            return itr->second;
+            return It->second;
         }
-        // 필요 시 호출자가 ToString()을 통해 문자열로 사용
-        static thread_local FString tmp;
-        tmp = className.ToString();
-        return tmp;
+        static thread_local FString Tmp;
+        Tmp = ClassName.ToString();
+        return Tmp;
     }
 
-    void SetMeta(const FString& key, const FString& value)
+    // 메타데이터 설정(표시 이름 등록 시 DisplayNameToId 동기화)
+    void SetMeta(const FString& Key, const FString& Value)
     {
-        metadata[key] = value;
+        Metadata[Key] = Value;
 
-        if (key == "DisplayName")
+        if (Key == "DisplayName")
         {
-            displayNameToId[value] = typeId;  // typeId는 인스턴스 멤버
+            DisplayNameToId[Value] = TypeId;
         }
     }
 
-    const FString& GetMeta(const FString& key) const {
-        static FString empty;
-        auto it = metadata.find(key);
-        return (it != metadata.end()) ? it->second : empty;
+    // 메타데이터 조회(없으면 빈 문자열)
+    const FString& GetMeta(const FString& Key) const {
+        static FString Empty;
+        auto It = Metadata.find(Key);
+        return (It != Metadata.end()) ? It->second : Empty;
     }
 
-    // 팩토리 경로로 생성 시 자동으로 이름 부여
+    // 팩토리 생성:
+    // - 등록된 CreateFunction으로 인스턴스 생성
+    // - 생성 완료 후 이 클래스 정보로 고유 이름 부여
     UObject* CreateDefaultObject() const
     {
-        if (!createFunction)
+        if (!CreateFunction)
         {
             return nullptr;
         }
 
-        UObject* Object = createFunction();
+        UObject* Object = CreateFunction();
         if (Object)
         {
             Object->AssignDefaultNameFromClass(this);
