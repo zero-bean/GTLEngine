@@ -23,10 +23,11 @@ static inline void TransformPosRow(float& x, float& y, float& z, const FMatrix& 
 }
 struct FBatchLineList
 {
-	TArray<FVertexPosColor4> Vertices{};
+	TArray<FVector> Vertices{};
 	TArray<uint32> Indices{};
-	//ID3D11VertexShader* vertexShader = nullptr;
-	//ID3D11PixelShader* pixelShader = nullptr;
+	ID3D11VertexShader* vertexShader = nullptr;
+	ID3D11PixelShader* pixelShader = nullptr;
+	ID3D11InputLayout* inputLayout = nullptr;
 	ID3D11Buffer* VertexBuffer = nullptr;
 	ID3D11Buffer* IndexBuffer = nullptr;   
 	size_t MaxVertex = 0;
@@ -60,9 +61,16 @@ private:
 	ID3D11RasterizerState* rasterizerState;
 
 	// Shader objects
+	/* Comment: 이제 TMap으로 관리합니다. 
 	ID3D11VertexShader* vertexShader;
 	ID3D11PixelShader* pixelShader;
 	ID3D11InputLayout* inputLayout;
+	*/
+
+	// TMap으로 관리
+	TMap<FString, ID3D11InputLayout*> InputLayouts;
+	TMap<FString, ID3D11PixelShader*> PixelShaders;
+	TMap<FString, ID3D11VertexShader*> VertexShaders;
 
 	// Constant buffer
 	ID3D11Buffer* constantBuffer;
@@ -142,6 +150,11 @@ public:
 	ID3D11DeviceContext* GetDeviceContext() const { return deviceContext; }
 	IDXGISwapChain* GetSwapChain() const { return swapChain; }
 	bool IsInitialized() const { return bIsInitialized; }
+
+	ID3D11InputLayout* GetInputLayout(const FString& name) { return InputLayouts[name]; }
+	ID3D11VertexShader* GetVertexShader(const FString& name) { return VertexShaders[name]; }
+	ID3D11PixelShader* GetPixelShader(const FString& name) { return PixelShaders[name]; }
+
 
 	// Utility functions
 	bool CheckDeviceState();

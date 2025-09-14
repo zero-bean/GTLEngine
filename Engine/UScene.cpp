@@ -152,6 +152,10 @@ void UScene::Render()
 	renderer->SetTargetAspect(camera->GetAspect());
 	renderer->SetViewProj(camera->GetView(), camera->GetProj());
 
+	ID3D11DeviceContext* context = renderer->GetDeviceContext();
+	context->IASetInputLayout(renderer->GetInputLayout("Default"));
+	context->VSSetShader(renderer->GetVertexShader("Default"), nullptr, 0);
+	context->PSSetShader(renderer->GetPixelShader("Default"), nullptr, 0);
 	for (UObject* obj : objects)
 	{
 		if (UPrimitiveComponent* primitive = obj->Cast<UPrimitiveComponent>())

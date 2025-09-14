@@ -379,5 +379,9 @@
     <None Include="ShaderW0.vs">
       <Filter>Shader</Filter>
     </None>
+    <None Include="ShaderFont.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="ShaderLine.hlsl" />
   </ItemGroup>
 </Project>
