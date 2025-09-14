@@ -104,12 +104,27 @@ bool URaycastManager::RayIntersectsMeshes(UCamera* camera, TArray<T*>& component
 				{
 					continue;
 				}
+			
+				FVector v0, v1, v2; // 임시 변수 선언
 
-				const FVector tri[3] = {
-					TransformVertexToWorld(mesh->Vertices[i0], world),
-					TransformVertexToWorld(mesh->Vertices[i1], world),
-					TransformVertexToWorld(mesh->Vertices[i2], world),
-				};
+				if (mesh->Type == EVertexType::VERTEX_POS_COLOR)
+				{
+					v0 = TransformVertexToWorld(mesh->Vertices[i0], world);
+					v1 = TransformVertexToWorld(mesh->Vertices[i1], world);
+					v2 = TransformVertexToWorld(mesh->Vertices[i2], world);
+				}
+				else if (mesh->Type == EVertexType::VERTEX_POS_UV)
+				{
+					FVertexPosColor4 vert1 = mesh->VerticesPosTexCoord[i0].ConvertToFVPC4();
+					FVertexPosColor4 vert2 = mesh->VerticesPosTexCoord[i1].ConvertToFVPC4();
+					FVertexPosColor4 vert3 = mesh->VerticesPosTexCoord[i2].ConvertToFVPC4();
+
+					v0 = TransformVertexToWorld(vert1, world);
+					v1 = TransformVertexToWorld(vert2, world);
+					v2 = TransformVertexToWorld(vert3, world);
+				}
+
+				const FVector tri[3] = { v0, v1, v2 };
 
 				float t = 0.f; FVector p;
 				if (RayIntersectsTriangle(tri, t, p))
