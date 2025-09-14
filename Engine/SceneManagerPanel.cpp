@@ -6,7 +6,7 @@
 #include "UPrimitiveComponent.h"
 
 USceneManagerPanel::USceneManagerPanel(USceneManager* InSceneManager, TFunction<void(UPrimitiveComponent*)> InOnPrimitiveSelected)
-	: ImGuiWindowWrapper("Scene Manager", ImVec2(300, 0), ImVec2(400, 300)), SceneManager(InSceneManager), OnPrimitiveSelected(InOnPrimitiveSelected)
+	: ImGuiWindowWrapper("Scene Manager", ImVec2(276, 0), ImVec2(200, 300)), SceneManager(InSceneManager), OnPrimitiveSelected(InOnPrimitiveSelected)
 {
 }
 

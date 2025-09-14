@@ -54,8 +54,6 @@ void UControlPanel::RenderContent()
 	SceneManagementSection();
 	ImGui::Separator();
 	CameraManagementSection();
-	ImGui::Separator();
-	NameStateSection();
 }
 
 void UControlPanel::PrimaryInformationSection()
@@ -308,30 +306,4 @@ void UControlPanel::CameraManagementSection()
 	{
 		camera->SetPitchYawDegrees(pitchYawRoll[0], pitchYawRoll[1]);
 	}
-}
-
-void UControlPanel::NameStateSection()
-{
-	// 버튼 클릭 시 UNamePool 상태 로그
-	if (ImGui::Button("Log NamePool State"))
-	{
-		UNamePool::GetInstance().LogDebugState();
-	}
-
-	ImGui::SeparatorText("Live Object Names (GAllObjectNames)");
-
-	// 스냅샷 수집
-	TArray<FString> Names;
-	UObject::CollectLiveObjectNames(Names);
-
-	ImGui::Text("Count: %d", static_cast<int32>(Names.size()));
-
-	// 스크롤 가능한 리스트로 표시
-	ImGui::BeginChild("LiveObjectNamesList", ImVec2(0, 150), true);
-	for (size_t i = 0; i < Names.size(); ++i)
-	{
-		const FString& s = Names[i];
-		ImGui::TextUnformatted(s.c_str());
-	}
-	ImGui::EndChild();
 }
