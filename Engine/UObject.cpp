@@ -31,18 +31,21 @@ void UObject::UnregisterName(const FName& Name)
 // 유니크 이름 생성: 첫 객체는 Base, 이후 Base_1부터 증가
 FName UObject::GenerateUniqueName(const FName& Base)
 {
-    // 1) 접미사 없는 기본 이름 먼저 시도
-    if (!IsNameInUse(Base))
+    // Base를 한 번이라도 본 적이 있는지 확인
+    auto It = NameSuffixCounters.find(Base);
+    if (It == NameSuffixCounters.end())
     {
-        uint32& NextInit = NameSuffixCounters[Base];
-        if (NextInit < 1)
+        // 처음 보는 Base면 평문을 한 번만 허용
+        if (!IsNameInUse(Base))
         {
-            NextInit = 1;
+            NameSuffixCounters[Base] = 1; // 다음은 _1부터
+            return Base;
         }
-        return Base;
+        // 이미 사용 중이면 접미사 로직으로 진입
+        NameSuffixCounters[Base] = 1;
     }
 
-    // 2) 이미 사용 중이면 1부터 붙여가며 탐색
+    // 한 번이라도 본 Base면 평문을 건너뛰고 접미사부터 시작
     uint32& Next = NameSuffixCounters[Base];
     if (Next < 1)
     {
@@ -56,11 +59,10 @@ FName UObject::GenerateUniqueName(const FName& Base)
         FName Candidate(CandidateStr); // UNamePool에 인터닝
         if (!IsNameInUse(Candidate))
         {
-            ++Next; // 다음 호출을 위해 증가
+            ++Next; // 다음 호출 준비
             return Candidate;
         }
-
-        ++Next; // 충돌이면 계속 증가
+        ++Next;
     }
 }
 
