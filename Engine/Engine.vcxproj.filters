@@ -203,6 +203,10 @@
     <ClCompile Include="UGizmoAxisComp.cpp">
       <Filter>Engine\Core\Component</Filter>
     </ClCompile>
+    <ClCompile Include="UQuadComponent.cpp" />
+    <ClCompile Include="SceneManagerPanel.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\imconfig.h">
@@ -376,6 +380,10 @@
     </ClInclude>
     <ClInclude Include="UGizmoAxisComp.h">
       <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="UQuadComponent.h" />
+    <ClInclude Include="SceneManagerPanel.h">
+      <Filter>Engine\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

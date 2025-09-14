@@ -142,6 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="SceneManagerPanel.cpp" />
     <ClCompile Include="UGizmoAxisComp.cpp" />
     <ClCompile Include="UNamePool.cpp" />
     <ClCompile Include="ImGuiWindowWrapper.cpp" />
@@ -243,6 +244,7 @@
     <ClInclude Include="EditorIni.h" />
     <ClInclude Include="FBoundingBox.h" />
     <ClInclude Include="FDynamicBitset.h" />
+    <ClInclude Include="SceneManagerPanel.h" />
     <ClInclude Include="UGizmoAxisComp.h" />
     <ClInclude Include="UNamePool.h" />
     <ClInclude Include="ImGuiWindowWrapper.h" />

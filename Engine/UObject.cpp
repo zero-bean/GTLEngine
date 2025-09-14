@@ -90,12 +90,6 @@ void UObject::AssignDefaultNameFromClass(const UClass* Cls)
     RegisterName(Name);
 }
 
-// 편의 함수(완전 생성 이후 가상 호출 사용)
-void UObject::AssignDefaultName()
-{
-    AssignDefaultNameFromClass(GetClass());
-}
-
 // 문자열 베이스를 FName으로 변환하여 이름 생성/등록
 void UObject::AssignNameFromString(const FString& Base)
 {

@@ -135,7 +135,9 @@ void EditorApplication::Update(float deltaTime)
 		}
 		else if (GetRaycastManager().RayIntersectsMeshes(GetSceneManager().GetScene()->GetCamera(), primitives, hitPrimitive, outImpactPoint))
 		{
-			gizmoManager.SetTarget(hitPrimitive);
+			OnPrimitiveSelected(hitPrimitive);
+
+			/*gizmoManager.SetTarget(hitPrimitive);
 			hitPrimitive->bIsSelected = true;
 			if (hitPrimitive->IsManageable())
 				propertyWindow->SetTarget(hitPrimitive);
@@ -143,7 +145,7 @@ void EditorApplication::Update(float deltaTime)
 			if (hitPrimitive->GetMesh())
 				AABBManager.UseMeshLocalAABB(hitPrimitive->GetMesh());
 			else
-				AABBManager.UseExplicitLocalAABB(FBoundingBox{ FVector(-0.5f,-0.5f,-0.5f), FVector(+0.5f,+0.5f,+0.5f) });
+				AABBManager.UseExplicitLocalAABB(FBoundingBox{ FVector(-0.5f,-0.5f,-0.5f), FVector(+0.5f,+0.5f,+0.5f) });*/
 		}
 		else
 		{
@@ -168,6 +170,7 @@ void EditorApplication::Render()
 void EditorApplication::RenderGUI()
 {
 	controlPanel->Render();
+	SceneManagerPanel->Render();
 	propertyWindow->Render();
 
 	ImGui::SetNextWindowPos(ImVec2(0, 500));         // Fixed position (x=20, y=20)
@@ -193,6 +196,7 @@ bool EditorApplication::OnInitialize()
 	// 리사이즈/초기화
 
 	controlPanel = NewObject<UControlPanel>(&GetSceneManager(), &gizmoManager);
+	SceneManagerPanel = NewObject<USceneManagerPanel>(&GetSceneManager(), [this](UPrimitiveComponent* Prim) { OnPrimitiveSelected(Prim); });
 	propertyWindow = NewObject<USceneComponentPropertyWindow>();
 
 	if (!gizmoManager.Initialize(&GetMeshManager()))
@@ -231,6 +235,26 @@ void EditorApplication::OnResize(int32 width, int32 height)
 			(height > 0) ? (float)width / (float)height : 1.0f,
 			camera->GetNearZ(),
 			camera->GetFarZ());
+	}
+}
+
+void EditorApplication::OnPrimitiveSelected(UPrimitiveComponent* Primitive)
+{
+	gizmoManager.SetTarget(Primitive);
+	Primitive->bIsSelected = true;
+	if (Primitive->IsManageable())
+	{
+		propertyWindow->SetTarget(Primitive);
+	}
+
+	AABBManager.SetTarget(Primitive);
+	if (Primitive->GetMesh())
+	{
+		AABBManager.UseMeshLocalAABB(Primitive->GetMesh());
+	}
+	else
+	{
+		AABBManager.UseExplicitLocalAABB(FBoundingBox{ FVector(-0.5f,-0.5f,-0.5f), FVector(+0.5f,+0.5f,+0.5f) });
 	}
 }
 
