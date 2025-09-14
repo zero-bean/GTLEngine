@@ -3,9 +3,10 @@
 #include "UPrimitiveComponent.h"
 #include "UClass.h"
 #include "BoundingBox.h"
+// IsA를 통한 구별법을 위해 헤더 추가
+#include "UQuadComponent.h"
 // 메타 등록
 IMPLEMENT_UCLASS(UBoundingBoxComponent, USceneComponent)
-
 
 // ★ 스케일 추출/균등판정/동일성 헬퍼
 static inline void ExtractScaleRowMajor(const FMatrix& Matrix, float& ScaleX, float& ScaleY, float& ScaleZ) {
@@ -31,7 +32,6 @@ static inline void ComputeColumnScales(const FMatrix& Matrix, float& ScaleX, flo
     ScaleY = l2(Matrix.M[0][1], Matrix.M[1][1], Matrix.M[2][1]); // col 1
     ScaleZ = l2(Matrix.M[0][2], Matrix.M[1][2], Matrix.M[2][2]); // col 2
 }
-
 UBoundingBoxComponent::UBoundingBoxComponent()
 {
     // 기본 로컬 AABB는 단위 큐브 정도로 초기화해도 무방(외부에서 세팅 가정)
@@ -56,7 +56,7 @@ bool UBoundingBoxComponent::Init(UMeshManager* MeshManager)
 }
 
 // 행벡터 규약: R의 "행"이 축 벡터
-static inline void Abs3x3_RowMajor(const FMatrix& M, float A[3][3])
+static inline void Abs3x3RowMajor(const FMatrix& M, float A[3][3])
 {
     A[0][0] = fabsf(M.M[0][0]); A[0][1] = fabsf(M.M[0][1]); A[0][2] = fabsf(M.M[0][2]);
     A[1][0] = fabsf(M.M[1][0]); A[1][1] = fabsf(M.M[1][1]); A[1][2] = fabsf(M.M[1][2]);
@@ -83,7 +83,7 @@ FBoundingBox UBoundingBoxComponent::TransformArvoAABB(const FBoundingBox& Local,
     CenterWorld.Z = CenterLocal.X * R.M[0][2] + CenterLocal.Y * R.M[1][2] + CenterLocal.Z * R.M[2][2] + T.Z;
 
     // |R|
-    float A[3][3]; Abs3x3_RowMajor(R, A);
+    float A[3][3]; Abs3x3RowMajor(R, A);
 
     // ExtentWorld = (|R|)^T * halfSize  ==> 각 성분: sum_i (A[i][axis] * halfSize_i)
     FVector ExtentWorld;
@@ -133,6 +133,26 @@ void UBoundingBoxComponent::UpdateConstantBuffer(URenderer& Renderer)
 void UBoundingBoxComponent::Update(float /*deltaTime*/)
 {
     if (!Target) return;
+    // 숨김 플래그 초기화
+    bHideAABB = false;
+    /*
+        USceneComponent 중 AABB를 보이지 않게 처리하는 두 가지 방법
+        TODO - 추후에 IsA로 변경 시 헤더 추가
+    */
+    // 1. 타입으로 필터(가장 견고)
+    if (Target->IsA<UQuadComponent>())
+    {
+        bHideAABB = true;
+        return; // 그릴 필요 없으므로 추가 계산 생략
+    }
+    // 2. 타깃 컴포넌트의 클래스 메타로 판정(유연함)
+    const std::string TargetClassMeshName = Target->GetClass()->GetMeta("MeshName");
+    if (TargetClassMeshName == "Quad")
+    {
+        bHideAABB = true;
+        return; // 그릴 필요 없으니 추가 계산 생략
+    }
+
 
     const FMatrix MeshTarget = Target->GetWorldTransform();
 
@@ -199,6 +219,8 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
 
 void UBoundingBoxComponent::Draw(URenderer& Renderer)
 {
+    // AABB를 숨긴다면
+    if (bHideAABB) return;
     if (!MeshWire || !MeshWire->VertexBuffer) return;
     // UpdateConstantBuffer(Renderer);
     Renderer.SubmitLineList(MeshWire->Vertices, MeshWire->Indices, WorldBoxMatrix);
@@ -206,6 +228,8 @@ void UBoundingBoxComponent::Draw(URenderer& Renderer)
 
 void UBoundingBoxComponent::DrawOnTop(URenderer& Renderer)
 {
+    // AABB를 숨긴다면
+    if (bHideAABB) return;
     if (!MeshWire || !MeshWire->VertexBuffer) return;
     UpdateConstantBuffer(Renderer);
     Renderer.DrawMeshOnTop(MeshWire);

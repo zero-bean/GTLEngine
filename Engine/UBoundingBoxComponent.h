@@ -76,4 +76,6 @@ private:
 
     FVector4 Color = FVector4(1, 1, 0, 1); // 노랑 기본
     bool bDrawOnTop = true;
+
+    bool bHideAABB = false;
 };
