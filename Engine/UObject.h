@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "UEngineStatics.h"
-#include "TArray.h"
+#include "Array.h"
 #include "ISerializable.h"
 #include "UNamePool.h"
 #include <type_traits>

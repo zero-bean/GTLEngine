@@ -5,7 +5,7 @@
 #include "UMeshManager.h"
 #include "URenderer.h"
 #include "UClass.h"
-#include "FBoundingBox.h"
+#include "BoundingBox.h"
 
 
 enum class EAABBSource : uint8_t

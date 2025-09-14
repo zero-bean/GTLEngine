@@ -2,7 +2,7 @@
 #include "stdafx.h"
 #include "URenderer.h"
 #include "UPrimitiveComponent.h"
-#include "FVertexPosColor.h"
+#include "VertexPosColor.h"
 #include "Vector.h"
 class UQuadComponent : public UPrimitiveComponent
 {

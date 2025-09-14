@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "UEngineStatics.h"
-#include "FDynamicBitset.h"
+#include "DynamicBitset.h"
 #include "json.hpp"
 #include "UObject.h"
 #include <memory>

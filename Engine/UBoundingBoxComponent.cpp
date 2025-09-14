@@ -2,7 +2,7 @@
 #include "UBoundingBoxComponent.h"
 #include "UPrimitiveComponent.h"
 #include "UClass.h"
-#include "FBoundingBox.h"
+#include "BoundingBox.h"
 // 메타 등록
 IMPLEMENT_UCLASS(UBoundingBoxComponent, USceneComponent)
 

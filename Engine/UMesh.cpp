@@ -1,6 +1,6 @@
 ﻿#include "stdafx.h"
 #include "UMesh.h"
-#include "FVertexPosColor.h"
+#include "VertexPosColor.h"
 #include "UObject.h"
 #include "UClass.h"
 

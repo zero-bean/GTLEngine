@@ -203,6 +203,7 @@
     <ClCompile Include="UGizmoAxisComp.cpp">
       <Filter>Engine\Core\Component</Filter>
     </ClCompile>
+    <ClCompile Include="UQuadComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\imconfig.h">
@@ -335,7 +336,7 @@
       <Filter>Engine\Core\Component</Filter>
     </ClInclude>
     <ClInclude Include="UClass.h" />
-    <ClInclude Include="FDynamicBitset.h">
+    <ClInclude Include="DynamicBitset.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="UGizmoRotationHandleComp.h">
@@ -344,10 +345,10 @@
     <ClInclude Include="VerticesInfo.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="FVertexPosColor.h">
+    <ClInclude Include="VertexPosColor.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="TArray.h">
+    <ClInclude Include="Array.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="UPlaneComp.h">
@@ -365,7 +366,7 @@
     <ClInclude Include="UBoundingBoxManager.h">
       <Filter>Engine\Subsystem</Filter>
     </ClInclude>
-    <ClInclude Include="FBoundingBox.h">
+    <ClInclude Include="BoundingBox.h">
       <Filter>Utils\Math</Filter>
     </ClInclude>
     <ClInclude Include="EditorIni.h">
@@ -377,6 +378,7 @@
     <ClInclude Include="UGizmoAxisComp.h">
       <Filter>Engine\Core\Component</Filter>
     </ClInclude>
+    <ClInclude Include="UQuadComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ShaderW0.ps">

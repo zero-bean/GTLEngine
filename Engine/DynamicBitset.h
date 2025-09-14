@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <algorithm>
-#include "TArray.h"
+#include "Array.h"
 #include "UEngineStatics.h"
 
 struct FDynamicBitset
