@@ -16,21 +16,21 @@ public:
     UBoundingBoxManager();
     ~UBoundingBoxManager();
 
-    bool Initialize(UMeshManager* meshManager);
+    bool Initialize(UMeshManager* InMeshManager);
 
-    void SetTarget(UPrimitiveComponent* target);
+    void SetTarget(UPrimitiveComponent* InTarget);
     UPrimitiveComponent* GetTarget() const { return Target; }
 
     void SetEnabled(bool b) { bEnabled = b; }
     bool IsEnabled() const { return bEnabled; }
 
     // 로컬 AABB 소스 제어
-    void UseExplicitLocalAABB(const FBoundingBox& b);
-    void UseMeshLocalAABB(UMesh* meshWithAABB);
+    void UseExplicitLocalAABB(const FBoundingBox& Box);
+    void UseMeshLocalAABB(UMesh* MeshWithAABB);
 
     // 프레임 루프
-    void Update(float deltaTime);
-    void Draw(URenderer& renderer);
+    void Update(float DeltaTime);
+    void Draw(URenderer& Renderer);
 
 private:
     UMeshManager* MeshManager = nullptr;

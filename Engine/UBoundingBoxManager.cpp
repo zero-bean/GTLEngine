@@ -16,11 +16,11 @@ UBoundingBoxManager::~UBoundingBoxManager()
     Target = nullptr;
 }
 
-bool UBoundingBoxManager::Initialize(UMeshManager* meshManager)
+bool UBoundingBoxManager::Initialize(UMeshManager* InMeshManager)
 {
-    MeshManager = meshManager;
+    MeshManager = InMeshManager;
     AABBComp = NewObject<UBoundingBoxComponent>();
-    if (!AABBComp->Init(meshManager)) {
+    if (!AABBComp->Init(InMeshManager)) {
         delete AABBComp; AABBComp = nullptr;
         return false;
     }
@@ -30,35 +30,35 @@ bool UBoundingBoxManager::Initialize(UMeshManager* meshManager)
     return true;
 }
 
-void UBoundingBoxManager::SetTarget(UPrimitiveComponent* target)
+void UBoundingBoxManager::SetTarget(UPrimitiveComponent* InTarget)
 {
-    Target = target;
+    Target = InTarget;
     if (AABBComp) AABBComp->SetTarget(Target);
 }
 
-void UBoundingBoxManager::UseExplicitLocalAABB(const FBoundingBox& b)
+void UBoundingBoxManager::UseExplicitLocalAABB(const FBoundingBox& Box)
 {
     if (!AABBComp) return;
     AABBComp->SetSource(EAABBSource::Explicit);
-    AABBComp->SetLocalBox(b);
+    AABBComp->SetLocalBox(Box);
 }
 
-void UBoundingBoxManager::UseMeshLocalAABB(UMesh* meshWithAABB)
+void UBoundingBoxManager::UseMeshLocalAABB(UMesh* MeshWithAABB)
 {
     if (!AABBComp) return;
     AABBComp->SetSource(EAABBSource::FromMesh);
-    AABBComp->SetTargetMesh(meshWithAABB);
+    AABBComp->SetTargetMesh(MeshWithAABB);
 }
 
-void UBoundingBoxManager::Update(float deltaTime)
+void UBoundingBoxManager::Update(float DeltaTime)
 {
     if (!bEnabled || !AABBComp || !Target) return;
-    AABBComp->Update(deltaTime);
+    AABBComp->Update(DeltaTime);
 }
 
-void UBoundingBoxManager::Draw(URenderer& renderer)
+void UBoundingBoxManager::Draw(URenderer& Renderer)
 {
     if (!bEnabled || !AABBComp || !Target) return;
     // 다른 기즈모처럼 항상 OnTop로 그리려면 DrawOnTop 사용
-    AABBComp->Draw(renderer);
+    AABBComp->Draw(Renderer);
 }
