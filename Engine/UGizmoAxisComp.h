@@ -15,7 +15,5 @@ public:
 	}
 
 	UGizmoAxisComp();
-
-	virtual void Draw(URenderer& renderer) override;
 };
 

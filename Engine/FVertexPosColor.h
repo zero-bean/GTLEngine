@@ -3,6 +3,8 @@
 #include "Vector.h"
 #include "UEngineStatics.h"
 
+struct FVertexPosColor4;
+
 struct FVertexPosColor
 {
 	float x, y, z;       // Position (3개)
@@ -67,8 +69,6 @@ struct FVertexPosColor4
 	{
 		return {x, y, z};
 	}
-
-
 
 };
 
