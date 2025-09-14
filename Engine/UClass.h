@@ -25,7 +25,7 @@ private:
     static inline uint32 RegisteredCount = 0;
 
     // 메타데이터(임의 키/값, 주로 표시 이름 등)
-    TMap<FString, FString> Metadata;
+    TMap<FName, FString> Metadata;
 
     // 타입 고유 ID 및 상속 비트셋
     uint32 TypeId;
@@ -94,7 +94,8 @@ public:
     // 표시용 이름(FString). 없으면 ClassName을 문자열로 반환
     const FString& GetDisplayName() const
     {
-        auto It = Metadata.find("DisplayName");
+        static const FName DisplayNameKey("DisplayName");
+        auto It = Metadata.find(DisplayNameKey);
         if (It != Metadata.end())
         {
             return It->second;
@@ -105,18 +106,20 @@ public:
     }
 
     // 메타데이터 설정(표시 이름 등록 시 DisplayNameToId 동기화)
-    void SetMeta(const FString& Key, const FString& Value)
+    void SetMeta(const FName& Key, const FString& Value)
     {
         Metadata[Key] = Value;
 
-        if (Key == "DisplayName")
+        static const FName DisplayNameKey("DisplayName");
+        if (Key == DisplayNameKey)
         {
             DisplayNameToId[Value] = TypeId;
         }
     }
 
     // 메타데이터 조회(없으면 빈 문자열)
-    const FString& GetMeta(const FString& Key) const {
+    const FString& GetMeta(const FName& Key) const 
+    {
         static FString Empty;
         auto It = Metadata.find(Key);
         return (It != Metadata.end()) ? It->second : Empty;
