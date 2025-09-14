@@ -13,7 +13,8 @@ struct VSOutput
 };
 VSOutput VS_Main(VSInput input)
 {
-    VSOutput output = mul(float4(input.position, 1.0f), MVP);
+    VSOutput output;
+    output.position = mul(float4(input.position, 1.0f), MVP);
    
     return output;
 }

@@ -295,10 +295,7 @@
     <ClInclude Include="VerticesInfo.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ShaderFont.ps" />
-    <None Include="ShaderFont.vs" />
-    <None Include="ShaderLine.ps" />
-    <None Include="ShaderLine.vs" />
+    <None Include="ShaderFont.hlsl" />
     <None Include="ShaderW0.ps">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -311,6 +308,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="ShaderLine.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
