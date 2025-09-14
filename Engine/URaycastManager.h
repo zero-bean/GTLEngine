@@ -4,7 +4,7 @@
 #include "UInputManager.h"
 #include "UPrimitiveComponent.h"
 #include "UPlaneComp.h"
-#include "FVertexPosColor.h"
+#include "VertexPosColor.h"
 #include "UEngineSubsystem.h"
 
 struct FVector;

@@ -71,6 +71,6 @@ namespace Engine
 }
 
 // Utils
-#include "TArray.h"
-#include "FVertexPosColor.h"
+#include "Array.h"
+#include "VertexPosColor.h"
 #include "VerticesInfo.h"

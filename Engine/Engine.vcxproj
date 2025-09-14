@@ -242,17 +242,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EditorIni.h" />
-    <ClInclude Include="FBoundingBox.h" />
-    <ClInclude Include="FDynamicBitset.h" />
+    <ClInclude Include="BoundingBox.h" />
+    <ClInclude Include="DynamicBitset.h" />
     <ClInclude Include="SceneManagerPanel.h" />
     <ClInclude Include="UGizmoAxisComp.h" />
     <ClInclude Include="UNamePool.h" />
     <ClInclude Include="ImGuiWindowWrapper.h" />
-    <ClInclude Include="TArray.h" />
+    <ClInclude Include="Array.h" />
     <ClInclude Include="UBoundingBoxComponent.h" />
     <ClInclude Include="UBoundingBoxManager.h" />
     <ClInclude Include="UCamera.h" />
-    <ClInclude Include="FVertexPosColor.h" />
+    <ClInclude Include="VertexPosColor.h" />
     <ClInclude Include="ImguiConsole.h" />
     <ClInclude Include="ImGui\imconfig.h" />
     <ClInclude Include="ImGui\imgui.h" />

@@ -1,10 +1,10 @@
 ﻿// UMesh.h
 #pragma once
 #include "stdafx.h"
-#include "FVertexPosColor.h"
+#include "VertexPosColor.h"
 #include "UObject.h"
 #include "Vector4.h"
-#include "FBoundingBox.h"
+#include "BoundingBox.h"
 struct FVertexPosColor4; // 전방 선언
 //struct FVertexPosTexCoord;
 

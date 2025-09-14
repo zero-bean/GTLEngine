@@ -77,6 +77,14 @@ struct FVertexPosTexCoord
 {
 	float x, y, z;
 	float u, v;
+
+	FVertexPosColor4 ConvertToFVPC4() const
+	{
+		FVertexPosColor4 tmp;
+		tmp.x = x; tmp.y = y; tmp.z = z; tmp.w = 1;
+		tmp.r = 1; tmp.g = 1; tmp.b = 1; tmp.a = 1;
+		return tmp;
+	}
 };
 // 라인용
 struct FVertexPos

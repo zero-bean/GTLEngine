@@ -2,7 +2,7 @@
 #include "stdafx.h"
 #include "UEngineSubsystem.h"
 #include "UClass.h"
-#include "FBoundingBox.h"
+#include "BoundingBox.h"
 #include "UBoundingBoxComponent.h"
 
 class UMeshManager;
