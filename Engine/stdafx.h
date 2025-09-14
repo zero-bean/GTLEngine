@@ -28,6 +28,7 @@
 // DirectX 관련
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include "DirectXTK\Include\DDSTextureLoader.h"
 
 //#include <DirectXMath.h>
 
@@ -41,7 +42,11 @@
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
-
+#ifdef _DEBUG
+#pragma comment(lib, "DirectXTK.lib")
+#elif
+#pragma comment(lib, "DirectXTK.lib")
+#endif // DEBUG_
 // Engine forward declarations
 class UApplication;
 class URenderer;
