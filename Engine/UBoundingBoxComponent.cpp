@@ -8,7 +8,7 @@ IMPLEMENT_UCLASS(UBoundingBoxComponent, USceneComponent)
 
 
 // ★ 스케일 추출/균등판정/동일성 헬퍼
-static inline void ExtractScale_RowMajor(const FMatrix& Matrix, float& ScaleX, float& ScaleY, float& ScaleZ) {
+static inline void ExtractScaleRowMajor(const FMatrix& Matrix, float& ScaleX, float& ScaleY, float& ScaleZ) {
     auto len = [](float X, float Y, float Z) { return sqrtf(X * X + Y * Y + Z * Z); };
     ScaleX = len(Matrix.M[0][0], Matrix.M[0][1], Matrix.M[0][2]);
     ScaleY = len(Matrix.M[1][0], Matrix.M[1][1], Matrix.M[1][2]);
