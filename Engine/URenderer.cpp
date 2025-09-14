@@ -894,6 +894,9 @@ void URenderer::DrawMeshOnTop(UMesh* mesh)
 	// 적용
 	// Set new state (no depth test)
 	deviceContext->OMSetDepthStencilState(pDSState, 0);
+	deviceContext->IASetInputLayout(GetInputLayout("Default"));
+	deviceContext->VSSetShader(GetVertexShader("Default"), nullptr, 0);
+	deviceContext->PSSetShader(GetPixelShader("Default"), nullptr, 0);
 
 	// 2) 공통 셋업
 	// Draw mesh
