@@ -6,7 +6,7 @@
 #include "Vector4.h"
 #include "FBoundingBox.h"
 struct FVertexPosColor4; // 전방 선언
-struct FVertexPosTexCoord;
+//struct FVertexPosTexCoord;
 
 enum class EVertexType {
 	VERTEX_POS_COLOR,

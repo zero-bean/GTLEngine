@@ -28,7 +28,7 @@ UMesh::UMesh(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& ind
     ComputeLocalAABBFromVertices();
 }
 UMesh::UMesh(const TArray<FVertexPosTexCoord>& vertices, const TArray<uint32>& indices,
-    D3D_PRIMITIVE_TOPOLOGY primitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)
+    D3D_PRIMITIVE_TOPOLOGY primitiveType)
     : VerticesPosTexCoord(vertices),
       Indices(indices),
       PrimitiveType(primitiveType),
