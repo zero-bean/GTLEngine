@@ -201,9 +201,6 @@ public:
     // 완전 생성 이후 클래스 정보 기반 기본 이름 부여
     void AssignDefaultNameFromClass(const UClass* Cls);
 
-    // 편의 함수: 가상 GetClass() 사용(완전 생성 이후)
-    void AssignDefaultName();
-
     // 문자열 베이스로 이름 생성/등록(특수 경로 용도)
     void AssignNameFromString(const FString& Base);
 

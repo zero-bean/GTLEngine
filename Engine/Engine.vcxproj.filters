@@ -204,6 +204,9 @@
       <Filter>Engine\Core\Component</Filter>
     </ClCompile>
     <ClCompile Include="UQuadComponent.cpp" />
+    <ClCompile Include="SceneManagerPanel.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\imconfig.h">
@@ -379,6 +382,9 @@
       <Filter>Engine\Core\Component</Filter>
     </ClInclude>
     <ClInclude Include="UQuadComponent.h" />
+    <ClInclude Include="SceneManagerPanel.h">
+      <Filter>Engine\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShaderW0.ps">

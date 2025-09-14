@@ -4,6 +4,7 @@
 #include "USphereComp.h"
 #include "URaycastManager.h"
 #include "UControlPanel.h"
+#include "SceneManagerPanel.h"
 #include "USceneComponentPropertyWindow.h"
 #include "UBoundingBoxManager.h"
 
@@ -17,6 +18,7 @@ private:
 	USceneComponent* selectedSceneComponent;
 
 	UControlPanel* controlPanel;
+	USceneManagerPanel* SceneManagerPanel;
 	USceneComponentPropertyWindow* propertyWindow;
 
 	UBoundingBoxManager AABBManager;
@@ -40,4 +42,6 @@ protected:
 	void RenderGUI() override;
 	bool OnInitialize() override;
 	void OnResize(int32 width, int32 height) override;
+
+	void OnPrimitiveSelected(UPrimitiveComponent* Primitive);
 };
