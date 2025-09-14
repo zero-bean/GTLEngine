@@ -21,6 +21,7 @@ class GridGenerator
 {
 public:
 	static TArray<FVertexPosColor> CreateGridVertices(float gridSize, int32 gridCount);
+	static TArray<FVertexPosColor> CreateAxisVertices(float gridSize, int32 gridCount);
 	static TArray<FVertexPosColor> CreateRotationHandleVertices();
 };
 ////////////////////////////////////////////////////////////////////////////////////////

@@ -91,6 +91,7 @@ UMeshManager::UMeshManager()
 	meshes["Plane"] = CreateMeshInternal(plane_vertices, plane_indices);
 	meshes["Cube"] = CreateMeshInternal(cube_vertices, cube_indices, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	meshes["GizmoGrid"] = CreateMeshInternal(GridGenerator::CreateGridVertices(1, 1000), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	meshes["GizmoAxis"] = CreateMeshInternal(GridGenerator::CreateAxisVertices(1, 1000), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	meshes["GizmoArrow"] = CreateMeshInternal(gizmo_arrow_vertices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	meshes["GizmoRotationHandle"] = CreateMeshInternal(GridGenerator::CreateRotationHandleVertices(), D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	meshes["GizmoScaleHandle"] = CreateMeshInternal(gizmo_scale_handle_vertices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

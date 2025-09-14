@@ -845,6 +845,10 @@ void URenderer::DrawMesh(UMesh* mesh)
 	if (!mesh || !mesh->IsInitialized())
 		return;
 
+	deviceContext->IASetInputLayout(GetInputLayout("Default"));
+	deviceContext->VSSetShader(GetVertexShader("Default"), nullptr, 0);
+	deviceContext->PSSetShader(GetPixelShader("Default"), nullptr, 0);
+
 	// 인덱스 버퍼도 가지고 있으면 아래 방식으로 Draw
 	if (mesh->NumIndices > 0)
 	{

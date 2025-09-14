@@ -200,6 +200,9 @@
     <ClCompile Include="UNamePool.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="UGizmoAxisComp.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\imconfig.h">
@@ -370,6 +373,9 @@
     </ClInclude>
     <ClInclude Include="UNamePool.h">
       <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="UGizmoAxisComp.h">
+      <Filter>Engine\Core\Component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
