@@ -681,7 +681,7 @@ TArray<FVertexPosColor> GridGenerator::CreateGridVertices(float gridSize, int32 
     // TArray 컨테이너 생성
     TArray<FVertexPosColor> vertices;
 
-    FVector4 normalColor(0.5f, 0.5f, 0.5f, 1.0f);  // grey
+    FVector4 normalColor(0.85f, 0.85f, 0.85f, 1.0f);  // grey
     FVector4 highlightColor(0.85f, 0.85f, 0.85f, 1.0f); // whiter
 
     // Z축에 평행한 세로 선들을 생성하는 로직

@@ -23,7 +23,7 @@ static inline void TransformPosRow(float& x, float& y, float& z, const FMatrix& 
 }
 struct FBatchLineList
 {
-	TArray<FVector> Vertices{};
+	TArray<FVertexPosColor4> Vertices{};
 	TArray<uint32> Indices{};
 	ID3D11VertexShader* vertexShader = nullptr;
 	ID3D11PixelShader* pixelShader = nullptr;

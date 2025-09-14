@@ -251,6 +251,7 @@ bool URenderer::CreateShader()
 		// 라인 입력 레이아웃 생성 및 TMap에 저장
 		D3D11_INPUT_ELEMENT_DESC lineLayoutDesc[] = {
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 		};
 		ID3D11InputLayout* layout = nullptr;
 		hr = device->CreateInputLayout(lineLayoutDesc, ARRAYSIZE(lineLayoutDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &layout);
@@ -474,16 +475,9 @@ void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices, const T
 {
 	if (vertices.empty()) { return; }
 
-	size_t base = batchLineList.Vertices.size();
+	const size_t base = batchLineList.Vertices.size();
 
-	const uint32 inputSize = static_cast<uint32>(vertices.size());
-	TArray<FVector> convertedVertices(inputSize);
-	for (uint32 i = 0; i < inputSize; ++i)
-	{
-		convertedVertices[i] = vertices[i].GetPosition();
-	}
-
-	batchLineList.Vertices.insert(batchLineList.Vertices.end(), convertedVertices.begin(), convertedVertices.end());
+	batchLineList.Vertices.insert(batchLineList.Vertices.end(), vertices.begin(), vertices.end());
 
 	if (!indices.empty())
 	{
@@ -496,7 +490,7 @@ void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices, const T
 	else
 	{
 		// 인덱스 없음 → (0,1),(2,3)... 페어링해서 생성
-		const size_t n = convertedVertices.size();
+		const size_t n = vertices.size();
 		const bool hasOdd = (n & 1) != 0;
 		const size_t pairs = n >> 1; // n/2
 
@@ -533,7 +527,7 @@ void URenderer::FlushBatchLineList()
 	HRESULT hr = deviceContext->Map(batchLineList.VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
 	if (SUCCEEDED(hr))
 	{
-		memcpy(map.pData, batchLineList.Vertices.data(), vCount * sizeof(FVector));
+		memcpy(map.pData, batchLineList.Vertices.data(), vCount * sizeof(FVertexPosColor4));
 		deviceContext->Unmap(batchLineList.VertexBuffer, 0);
 	}
 
@@ -545,7 +539,7 @@ void URenderer::FlushBatchLineList()
 	}
 
 	// 4) IA 바인딩 & 드로우 (1콜)
-	UINT stride = sizeof(FVector), offset = 0;
+	UINT stride = sizeof(FVertexPosColor4), offset = 0;
 	ID3D11Buffer* vb = batchLineList.VertexBuffer;
 	deviceContext->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
 	deviceContext->IASetIndexBuffer(batchLineList.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
@@ -1138,7 +1132,7 @@ void URenderer::EnsureBatchCapacity(FBatchLineList& B, size_t vNeed, size_t iNee
 		bd.Usage = D3D11_USAGE_DYNAMIC;
 		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		bd.ByteWidth = static_cast<UINT>(B.MaxVertex * sizeof(FVector));
+		bd.ByteWidth = static_cast<UINT>(B.MaxVertex * sizeof(FVertexPosColor4));
 		HRESULT hr = device->CreateBuffer(&bd, nullptr, &B.VertexBuffer);
 		CheckResult(hr, "EnsureBatchCapacity.Create VB");
 	}
@@ -1217,8 +1211,7 @@ void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices,
 	for (auto v : vertices) {
 		// 위치만 변환(색은 그대로)
 		TransformPosRow(v.x, v.y, v.z, model);
-		FVector converted = { v.x, v.y, v.z };
-		batchLineList.Vertices.push_back(converted);
+		batchLineList.Vertices.push_back(v);
 	}
 
 	// 2) 인덱스 오프셋 적용해서 누적
