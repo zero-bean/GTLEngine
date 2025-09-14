@@ -6,6 +6,7 @@
 #include "UGizmoComponent.h"
 #include "UGizmoGridComp.h"
 #include "URaycastManager.h"
+#include "UGizmoAxisComp.h"
 #include "UGizmoArrowComp.h"
 #include "UGizmoRotationHandleComp.h"
 #include "UGizmoScaleHandleComp.h"
@@ -21,6 +22,7 @@ UGizmoManager::UGizmoManager()
 UGizmoManager::~UGizmoManager()
 {
 	gridPrimitive = nullptr;
+	axisPrimitive = nullptr;
 
 	for (auto gizmo : locationGizmos)
 	{
@@ -44,6 +46,8 @@ bool UGizmoManager::Initialize(UMeshManager* meshManager)
 	// --- 1. 그리드 생성 ---
 	// 그리드는 항상 원점에 고정
 	gridPrimitive = new UGizmoGridComp();
+	// axis
+	axisPrimitive = new UGizmoAxisComp();
 
 	// =================================================
 
@@ -110,11 +114,12 @@ bool UGizmoManager::Initialize(UMeshManager* meshManager)
 
 	// =================================================
 
-	if (!gridPrimitive->Init(meshManager) || !arrowX->Init(meshManager) || !arrowY->Init(meshManager) || !arrowZ->Init(meshManager)
+	if (!gridPrimitive->Init(meshManager) || !axisPrimitive->Init(meshManager) || !arrowX->Init(meshManager) || !arrowY->Init(meshManager) || !arrowZ->Init(meshManager)
 		|| !rotationX->Init(meshManager) || !rotationY->Init(meshManager) || !rotationZ->Init(meshManager)
 		|| !scaleX->Init(meshManager) || !scaleY->Init(meshManager) || !scaleZ->Init(meshManager))
 	{
 		delete gridPrimitive;
+		delete axisPrimitive;
 
 		delete arrowX;
 		delete arrowY;
@@ -204,6 +209,11 @@ void UGizmoManager::Update(float deltaTime)
 	{
 		gridPrimitive->Update(deltaTime);
 	}
+
+	if (axisPrimitive)
+	{
+		axisPrimitive->Update(deltaTime);
+	}
 }
 
 void UGizmoManager::Draw(URenderer& renderer)
@@ -212,6 +222,11 @@ void UGizmoManager::Draw(URenderer& renderer)
 	if (gridPrimitive)
 	{
 		gridPrimitive->Draw(renderer);
+	}
+
+	if (axisPrimitive)
+	{
+		axisPrimitive->Draw(renderer);
 	}
 
 	// --- 파트 2: 타겟이 있을 때만 그리는 요소 ---
@@ -458,6 +473,10 @@ void UGizmoManager::EndDrag()
 	if (gridPrimitive)
 	{
 		gridPrimitive->bIsSelected = false;
+	}
+	if (axisPrimitive)
+	{
+		axisPrimitive->bIsSelected = false;
 	}
 }
 
