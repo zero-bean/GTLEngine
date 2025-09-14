@@ -21,13 +21,13 @@ struct FBoundingBox
         결국 그 모든 점을 감싸는 축정렬 경계박스(AABB)가 됩니다.
     */
     // 메시의 정점 위치 
-    void Expand(const FVector& pos) {
-        Min.X = min(Min.X, pos.X); Min.Y = min(Min.Y, pos.Y); Min.Z = min(Min.Z, pos.Z);
-        Max.X = max(Max.X, pos.X); Max.Y = max(Max.Y, pos.Y); Max.Z = max(Max.Z, pos.Z);
+    void Expand(const FVector& Pos) {
+        Min.X = min(Min.X, Pos.X); Min.Y = min(Min.Y, Pos.Y); Min.Z = min(Min.Z, Pos.Z);
+        Max.X = max(Max.X, Pos.X); Max.Y = max(Max.Y, Pos.Y); Max.Z = max(Max.Z, Pos.Z);
     }
     // 렌더용 단위 큐브(−1...1)를 스케일/이동할 때 쓰는 유틸용
-    static inline void CenterExtents(const FBoundingBox& box, FVector& center, FVector& half) {
-        center = (box.Min + box.Max) * 0.5f;
-        half = (box.Max - box.Min) * 0.5f;
+    static inline void CenterExtents(const FBoundingBox& Box, FVector& Center, FVector& Half) {
+        Center = (Box.Min + Box.Max) * 0.5f;
+        Half = (Box.Max - Box.Min) * 0.5f;
     }
 };

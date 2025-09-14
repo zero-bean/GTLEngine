@@ -8,6 +8,7 @@
 
 struct FMatrix
 {
+	// M = Matrix
 	float M[4][4];
 	// ===== 생성/기본 =====
 	FMatrix() { SetIdentity(); }
