@@ -69,4 +69,3 @@ namespace Engine
 #include "TArray.h"
 #include "FVertexPosColor.h"
 #include "VerticesInfo.h"
-#include "FObjectFactory.h"

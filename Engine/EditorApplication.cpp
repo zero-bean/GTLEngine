@@ -192,8 +192,8 @@ bool EditorApplication::OnInitialize()
 	UApplication::OnInitialize();
 	// 리사이즈/초기화
 
-	controlPanel = FObjectFactory::ConstructObject<UControlPanel>(&GetSceneManager(), &gizmoManager);
-	propertyWindow = FObjectFactory::ConstructObject<USceneComponentPropertyWindow>();
+	controlPanel = NewObject<UControlPanel>(&GetSceneManager(), &gizmoManager);
+	propertyWindow = NewObject<USceneComponentPropertyWindow>();
 
 	if (!gizmoManager.Initialize(&GetMeshManager()))
 	{
@@ -236,7 +236,7 @@ void EditorApplication::OnResize(int32 width, int32 height)
 
 UScene* EditorApplication::CreateDefaultScene()
 {
-	return FObjectFactory::ConstructObject<UDefaultScene>();
+	return NewObject<UDefaultScene>();
 }
 
 void EditorApplication::OnSceneChange()

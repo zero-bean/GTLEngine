@@ -206,15 +206,15 @@ public:
     static void CollectLiveObjectNames(TArray<FString>& OutNames);
 };
 
-//// UObject 상속받는 객체 생성 시 new 사용 금지
-//// NewObject<T>(...) 템플릿 UObject 팩토리 함수 사용
-//template<typename T, typename... Args>
-//inline T* NewObject(Args&&... args)
-//{
-//    static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
-//    T* obj = new T(std::forward<Args>(args)...);
-//
-//    // 생성 완료 후, 정확한 타입의 클래스 정보로 고유 이름 부여/등록
-//    obj->AssignDefaultNameFromClass(T::StaticClass());
-//    return obj;
-//}
+// UObject 상속받는 객체 생성 시 new 사용 금지
+// NewObject<T>(...) 템플릿 UObject 팩토리 함수 사용
+template<typename T, typename... Args>
+inline T* NewObject(Args&&... Params)
+{
+    static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
+    T* Object = new T(std::forward<Args>(Params)...);
+
+    // 생성 완료 후, 정확한 타입의 클래스 정보로 고유 이름 부여/등록
+    Object->AssignDefaultNameFromClass(T::StaticClass());
+    return Object;
+}

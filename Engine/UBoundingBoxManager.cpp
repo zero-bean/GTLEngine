@@ -19,7 +19,7 @@ UBoundingBoxManager::~UBoundingBoxManager()
 bool UBoundingBoxManager::Initialize(UMeshManager* meshManager)
 {
     MeshManager = meshManager;
-    AABBComp = FObjectFactory::ConstructObject<UBoundingBoxComponent>();
+    AABBComp = NewObject<UBoundingBoxComponent>();
     if (!AABBComp->Init(meshManager)) {
         delete AABBComp; AABBComp = nullptr;
         return false;

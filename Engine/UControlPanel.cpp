@@ -119,7 +119,7 @@ void UControlPanel::SceneManagementSection()
 	if (ImGui::Button("New scene"))
 	{
 		// TODO : Make New Scene
-		SceneManager->SetScene(FObjectFactory::ConstructObject<UDefaultScene>());
+		SceneManager->SetScene(NewObject<UDefaultScene>());
 
 	}
 	ImGui::SameLine();

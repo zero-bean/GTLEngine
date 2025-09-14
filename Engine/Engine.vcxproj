@@ -238,7 +238,6 @@
     <ClInclude Include="EditorIni.h" />
     <ClInclude Include="FBoundingBox.h" />
     <ClInclude Include="FDynamicBitset.h" />
-    <ClInclude Include="FObjectFactory.h" />
     <ClInclude Include="UNamePool.h" />
     <ClInclude Include="ImGuiWindowWrapper.h" />
     <ClInclude Include="TArray.h" />

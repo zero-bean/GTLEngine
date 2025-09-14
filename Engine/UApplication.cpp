@@ -342,5 +342,5 @@ bool UApplication::OnInitialize()
 
 UScene* UApplication::CreateDefaultScene()
 {
-	return FObjectFactory::ConstructObject<UScene>();
+	return NewObject<UScene>();
 }
