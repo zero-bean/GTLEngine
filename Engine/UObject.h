@@ -190,6 +190,36 @@ public:
 
     bool Deserialize(const json::JSON& Data) override
     {
+        // JSON에 Name 키가 있으면 안전하게 적용
+        if (Data.hasKey("Name"))
+        {
+            bool bOk = false;
+            const FString InName = Data.at("Name").ToString(bOk);
+
+            if (bOk && !InName.empty() && InName != "None")
+            {
+                // 기존 이름이 유효하게 등록되어 있으면 해제
+                if (Name != FName::GetNone())
+                {
+                    UnregisterName(Name);
+                }
+
+                const FName BaseName(InName);
+                const FName FinalName = IsNameInUse(BaseName) ? GenerateUniqueName(BaseName) : BaseName;
+
+                RegisterName(FinalName);
+                Name = FinalName;
+
+                return true;
+            }
+        }
+
+        // Name이 없거나 유효하지 않으면 기본 규칙으로 유니크 이름 부여
+        if (Name.ToString() == "None")
+        {
+            AssignDefaultNameFromClass(GetClass());
+        }
+
         return true;
     }
 

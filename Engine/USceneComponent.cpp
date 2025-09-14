@@ -18,6 +18,7 @@ json::JSON USceneComponent::Serialize() const
     result["Rotation"] = json::Array( tmpRot.X, tmpRot.Y, tmpRot.Z);
     result["Scale"] = json::Array(RelativeScale3D.X, RelativeScale3D.Y, RelativeScale3D.Z);
     result["Type"] = GetClass()->GetDisplayName();
+	result["Name"] = Name.ToString();
     return result;
 }
 
@@ -26,6 +27,8 @@ json::JSON USceneComponent::Serialize() const
 // -------------------------
 bool USceneComponent::Deserialize(const json::JSON& data)
 {
+    UObject::Deserialize(data);
+
     if (!data.hasKey("Location") || !data.hasKey("Rotation") || !data.hasKey("Scale"))
         return false;
 
