@@ -476,9 +476,9 @@ void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices, const T
 
 	size_t base = batchLineList.Vertices.size();
 
-	const int inputSize = vertices.size();
+	const uint32 inputSize = static_cast<uint32>(vertices.size());
 	TArray<FVector> convertedVertices(inputSize);
-	for (int i = 0; i < inputSize; ++i)
+	for (uint32 i = 0; i < inputSize; ++i)
 	{
 		convertedVertices[i] = vertices[i].GetPosition();
 	}
