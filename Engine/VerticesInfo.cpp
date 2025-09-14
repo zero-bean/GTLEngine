@@ -702,9 +702,13 @@ TArray<FVertexPosColor> GridGenerator::CreateGridVertices(float gridSize, int32 
         vertices.push_back({ i * gridSize, 0.0f, gridSize * gridCount, color.X, color.Y, color.Z, color.W });
     }
 
-    // --------------------------
-    // Main axis lines (X, Y, Z)
-    // --------------------------
+    FVertexPosColor::ChangeAxis(vertices.data(), (int32)vertices.size(), 1, 2);
+
+    return vertices;
+}
+TArray<FVertexPosColor> GridGenerator::CreateAxisVertices(float gridSize, int32 gridCount)
+{
+    TArray<FVertexPosColor> vertices;
 
     float axisLength = gridSize * gridCount * 1.2f; // make them extend a bit beyond the grid
 
