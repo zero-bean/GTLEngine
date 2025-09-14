@@ -150,7 +150,6 @@ void UScene::Render()
 {
 	// 카메라가 바뀌면 원하는 타이밍(매 프레임도 OK)에 알려주면 됨
 	renderer->SetTargetAspect(camera->GetAspect());
-
 	renderer->SetViewProj(camera->GetView(), camera->GetProj());
 
 	for (UObject* obj : objects)
@@ -160,6 +159,9 @@ void UScene::Render()
 			primitive->Draw(*renderer);
 		}
 	}
+
+	renderer->FlushBatchLineList();
+	renderer->BeginBatchLineList();
 }
 
 void UScene::Update(float deltaTime)

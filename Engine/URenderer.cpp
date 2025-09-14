@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "URenderer.h"
 #include "UClass.h"
-
+int cnt = 0;
 /* *
 * IASetIndexBuffer https://learn.microsoft.com/ko-kr/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-iasetindexbuffer
 */
@@ -249,6 +249,95 @@ bool URenderer::UpdateConstantBuffer(const void* data, size_t sizeInBytes)
 	deviceContext->Unmap(constantBuffer, 0);
 
 	return true;
+}
+
+void URenderer::BeginBatchLineList()
+{
+	batchLineList.Clear();
+}
+
+void URenderer::SubmitLineList(const UMesh* mesh)
+{
+	if (mesh == nullptr || mesh->PrimitiveType != D3D11_PRIMITIVE_TOPOLOGY_LINELIST) { return; }
+
+	SubmitLineList(mesh->Vertices, mesh->Indices);
+}
+
+void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices)
+{
+	if (vertices.empty()) { return; }
+
+	size_t base = batchLineList.Vertices.size();
+	batchLineList.Vertices.insert(batchLineList.Vertices.end(), vertices.begin(), vertices.end());
+
+	if (!indices.empty())
+	{
+		batchLineList.Indices.reserve(batchLineList.Indices.size() + indices.size());
+		for (uint32 idx : indices)
+		{
+			batchLineList.Indices.push_back(static_cast<uint32>(base + idx));
+		}
+	}
+	else
+	{
+		// 인덱스 없음 → (0,1),(2,3)... 페어링해서 생성
+		const size_t n = vertices.size();
+		const bool hasOdd = (n & 1) != 0;
+		const size_t pairs = n >> 1; // n/2
+
+		if (hasOdd)
+		{
+			// 마지막 남는 1개는 버림 (라인 페어 불가). 필요하면 여기서 디버그 로그만 찍자.
+			OutputDebugStringA("[Batch] LineList mesh has odd vertex count; dropping last vertex.\n");
+		}
+
+		batchLineList.Indices.reserve(batchLineList.Indices.size() + pairs * 2);
+		for (size_t p = 0; p < pairs; ++p)
+		{
+			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 0)));
+			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 1)));
+		}
+	}
+}
+
+void URenderer::FlushBatchLineList()
+{
+	const size_t vCount = batchLineList.Vertices.size();
+	const size_t iCount = batchLineList.Indices.size();
+
+	if (vCount == 0 && iCount == 0)
+		return;
+
+	// 단위행렬(또는 VP만)로 업로드: 라인은 이미 월드로 변환해둠
+	SetModel(FMatrix::IdentityMatrix(), FVector4(1, 1, 1, 1), false);
+	// 1) GPU 버퍼 확보/확장
+	EnsureBatchCapacity(batchLineList, vCount, iCount);
+
+	// 2) Map & copy
+	D3D11_MAPPED_SUBRESOURCE map{};
+	HRESULT hr = deviceContext->Map(batchLineList.VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
+	if (SUCCEEDED(hr))
+	{
+		memcpy(map.pData, batchLineList.Vertices.data(), vCount * sizeof(FVertexPosColor4));
+		deviceContext->Unmap(batchLineList.VertexBuffer, 0);
+	}
+
+	hr = deviceContext->Map(batchLineList.IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
+	if (SUCCEEDED(hr))
+	{
+		memcpy(map.pData, batchLineList.Indices.data(), iCount * sizeof(uint32));
+		deviceContext->Unmap(batchLineList.IndexBuffer, 0);
+	}
+
+	// 4) IA 바인딩 & 드로우 (1콜)
+	UINT stride = sizeof(FVertexPosColor4), offset = 0;
+	ID3D11Buffer* vb = batchLineList.VertexBuffer;
+	deviceContext->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
+	deviceContext->IASetIndexBuffer(batchLineList.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+	deviceContext->DrawIndexed(static_cast<UINT>(iCount), 0, 0);
+	UE_LOG("[Batch] LineList DrawIndexed iCount=%u (draw #%d)\n", (UINT)iCount, cnt++);
 }
 
 void URenderer::LogError(const char* function, HRESULT hr)
@@ -531,6 +620,7 @@ void URenderer::DrawMesh(UMesh* mesh)
 		deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
 		deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
 		deviceContext->Draw(mesh->NumVertices, 0);
+		UE_LOG("Draw Call %d \n", cnt++);
 	}
 }
 
@@ -785,6 +875,46 @@ bool URenderer::SetupViewport(int32 width, int32 height)
 	return true;
 }
 
+void URenderer::EnsureBatchCapacity(FBatchLineList& B, size_t vNeed, size_t iNeed)
+{
+	if (vNeed > B.MaxVertex)
+	{
+		if (B.VertexBuffer)
+		{
+			B.VertexBuffer->Release();
+		}
+
+		B.MaxVertex = max(vNeed, B.MaxVertex * 2 + size_t(1024));
+
+		D3D11_BUFFER_DESC bd{};
+		bd.Usage = D3D11_USAGE_DYNAMIC;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		bd.ByteWidth = static_cast<UINT>(B.MaxVertex * sizeof(FVertexPosColor4));
+		HRESULT hr = device->CreateBuffer(&bd, nullptr, &B.VertexBuffer);
+		CheckResult(hr, "EnsureBatchCapacity.Create VB");
+	}
+
+	// Index buffer
+	if (iNeed > B.MaxIndex)
+	{
+		if (B.IndexBuffer)
+		{
+			B.IndexBuffer->Release();
+		}
+
+		B.MaxIndex = max(iNeed, B.MaxIndex * 2 + size_t(2048));
+
+		D3D11_BUFFER_DESC bd{};
+		bd.Usage = D3D11_USAGE_DYNAMIC;
+		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		bd.ByteWidth = static_cast<UINT>(B.MaxIndex * sizeof(uint32));
+		HRESULT hr = device->CreateBuffer(&bd, nullptr, &B.IndexBuffer);
+		CheckResult(hr, "EnsureBatchCapacity.Create IB");
+	}
+}
+
 void URenderer::SetViewProj(const FMatrix& V, const FMatrix& P)
 {
 	// row-vector 규약이면 곱셈 순서는 V*P가 아니라, 최종적으로 v*M*V*P가 되도록
@@ -824,4 +954,37 @@ D3D11_VIEWPORT URenderer::MakeAspectFitViewport(int32 winW, int32 winH) const
 		vp.TopLeftY = 0.5f * (winH - vp.Height);
 	}
 	return vp;
+}
+// URenderer.cpp
+void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices,
+	const TArray<uint32>& indices,
+	const FMatrix& model)
+{
+	if (vertices.empty()) return;
+
+	// 1) 월드로 미리 변환해서 버퍼에 누적
+	const size_t base = batchLineList.Vertices.size();
+	batchLineList.Vertices.reserve(base + vertices.size());
+
+	for (auto v : vertices) {
+		// 위치만 변환(색은 그대로)
+		TransformPosRow(v.x, v.y, v.z, model);
+		batchLineList.Vertices.push_back(v);
+	}
+
+	// 2) 인덱스 오프셋 적용해서 누적
+	if (!indices.empty()) {
+		batchLineList.Indices.reserve(batchLineList.Indices.size() + indices.size());
+		for (uint32 idx : indices) batchLineList.Indices.push_back((uint32)(base + idx));
+	}
+	else {
+		// (0,1),(2,3)...
+		const size_t n = vertices.size();
+		const size_t pairs = n >> 1;
+		batchLineList.Indices.reserve(batchLineList.Indices.size() + pairs * 2);
+		for (size_t p = 0; p < pairs; ++p) {
+			batchLineList.Indices.push_back((uint32)(base + p * 2 + 0));
+			batchLineList.Indices.push_back((uint32)(base + p * 2 + 1));
+		}
+	}
 }

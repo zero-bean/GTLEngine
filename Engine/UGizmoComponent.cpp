@@ -38,8 +38,25 @@ void UGizmoComponent::Draw(URenderer& renderer)
 		return;
 	}
 
+	//if (mesh->PrimitiveType == D3D11_PRIMITIVE_TOPOLOGY_LINELIST)d
+	//{
+	//	TArray<FVertexPosColor> Vertices{};
+	//	TArray<uint32> Indices{};
+
+	//	return;
+	//}
+	if (mesh->PrimitiveType == D3D10_PRIMITIVE_TOPOLOGY_LINELIST)
+	{
+		const FMatrix M = GetWorldTransform();
+		renderer.SubmitLineList(mesh->Vertices, mesh->Indices, M);
+		return;
+	}
+
 	UpdateConstantBuffer(renderer);
-	renderer.DrawMesh(mesh);
+	if (mesh->PrimitiveType == D3D10_PRIMITIVE_TOPOLOGY_LINELIST)
+		renderer.SubmitLineList(mesh);
+	else
+		renderer.DrawMesh(mesh);
 }
 
 void UGizmoComponent::DrawOnTop(URenderer& renderer)
