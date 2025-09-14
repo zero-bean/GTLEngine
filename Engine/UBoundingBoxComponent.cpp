@@ -137,7 +137,10 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
     bHideAABB = false;
     /*
         USceneComponent 중 AABB를 보이지 않게 처리하는 두 가지 방법
-        TODO - 추후에 IsA로 변경 시 헤더 추가
+        TODO - 추후에 IsA로 변경 시 해당 컴포넌트 헤더 추가
+        매니저에서 처리하도록 하는 것도 해봤는데
+        도형을 눌렀다가 Quad를 누르면 이전 도형에서 AABB 보이는 문제 발생
+        따라서 우선은 컴포넌트에서 처리하기로
     */
     // 1. 타입으로 필터(가장 견고)
     if (Target->IsA<UQuadComponent>())
