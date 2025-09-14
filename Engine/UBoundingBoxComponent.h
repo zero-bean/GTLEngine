@@ -72,7 +72,7 @@ private:
 
     // 캐시: 매 프레임 계산한 월드 AABB와 그에 대응하는 박스 월드행렬
     FBoundingBox WorldBox;
-    FMatrix WBox = FMatrix::IdentityMatrix();
+    FMatrix WorldBoxMatrix = FMatrix::IdentityMatrix();
 
     FVector4 Color = FVector4(1, 1, 0, 1); // 노랑 기본
     bool bDrawOnTop = true;

@@ -119,15 +119,15 @@ FBoundingBox UBoundingBoxComponent::TransformSphereToWorldAABB(const FVector& Ce
 FMatrix UBoundingBoxComponent::GetWorldTransform()
 {
     // 이 컴포넌트는 계층 회전/스케일을 "상속"하지 않고,
-    // 계산된 월드 AABB에 맞춘 박스 월드행렬 WBox를 그대로 반환
-    return WBox;
+    // 계산된 월드 AABB에 맞춘 박스 월드행렬 WorldBoxMatrix를 그대로 반환
+    return WorldBoxMatrix;
 }
 
 void UBoundingBoxComponent::UpdateConstantBuffer(URenderer& Renderer)
 {
     // Gizmo와 동일 API 사용: 모델행렬 + 색상 + 선택여부
     // 선택여부는 필요 없으니 false
-    Renderer.SetModel(WBox, Color, /*bIsSelected=*/false);
+    Renderer.SetModel(WorldBoxMatrix, Color, /*bIsSelected=*/false);
 }
 
 void UBoundingBoxComponent::Update(float /*deltaTime*/)
@@ -194,14 +194,14 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
     FVector Center, Half; FBoundingBox::CenterExtents(WorldBox, Center, Half);
     const FMatrix S = FMatrix::Scale(Half);
     const FMatrix T = FMatrix::TranslationRow(Center);
-    WBox = S * T;
+    WorldBoxMatrix = S * T;
 }
 
 void UBoundingBoxComponent::Draw(URenderer& Renderer)
 {
     if (!MeshWire || !MeshWire->VertexBuffer) return;
     // UpdateConstantBuffer(Renderer);
-    Renderer.SubmitLineList(MeshWire->Vertices, MeshWire->Indices, WBox);
+    Renderer.SubmitLineList(MeshWire->Vertices, MeshWire->Indices, WorldBoxMatrix);
 }
 
 void UBoundingBoxComponent::DrawOnTop(URenderer& Renderer)
