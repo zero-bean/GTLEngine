@@ -27,6 +27,17 @@ UMesh::UMesh(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& ind
 {
     ComputeLocalAABBFromVertices();
 }
+UMesh::UMesh(const TArray<FVertexPosTexCoord>& vertices, const TArray<uint32>& indices,
+    D3D_PRIMITIVE_TOPOLOGY primitiveType)
+    : VerticesPosTexCoord(vertices),
+      Indices(indices),
+      PrimitiveType(primitiveType),
+      NumVertices(static_cast<int32>(vertices.size())), 
+      NumIndices(static_cast<int32>(indices.size())),
+      Stride(sizeof(FVertexPosTexCoord)),
+      Type(EVertexType::VERTEX_POS_UV)
+{
+}
 
 UMesh::~UMesh()
 {
@@ -48,8 +59,11 @@ void UMesh::Init(ID3D11Device* device)
 
         // 버퍼에 넣을 데이터를 정의합니다.
         D3D11_SUBRESOURCE_DATA BufferData = {};
-        BufferData.pSysMem = Vertices.data();
-
+        
+        if (Type == EVertexType::VERTEX_POS_COLOR)
+            BufferData.pSysMem = Vertices.data();
+        else if (Type == EVertexType::VERTEX_POS_UV)
+            BufferData.pSysMem = VerticesPosTexCoord.data();
         HRESULT hr = device->CreateBuffer(&BufferDesc, &BufferData, &VertexBuffer);
         // DEBUG 
         //assert(SUCCEEDED(hr), "UMESH-Init(): 버퍼 생성 실패");

@@ -218,6 +218,7 @@
     <ClCompile Include="UGizmoRotationHandleComp.cpp" />
     <ClCompile Include="UGizmoScaleHandleComp.cpp" />
     <ClCompile Include="UPrimitiveComponent.cpp" />
+    <ClCompile Include="UQuadComponent.cpp" />
     <ClCompile Include="USceneComponentPropertyWindow.cpp" />
     <ClCompile Include="USceneManager.cpp" />
     <ClCompile Include="URaycastManager.cpp" />
@@ -275,6 +276,7 @@
     <ClInclude Include="UGizmoManager.h" />
     <ClInclude Include="UGizmoRotationHandleComp.h" />
     <ClInclude Include="UGizmoScaleHandleComp.h" />
+    <ClInclude Include="UQuadComponent.h" />
     <ClInclude Include="USceneComponentPropertyWindow.h" />
     <ClInclude Include="USceneManager.h" />
     <ClInclude Include="URaycastManager.h" />

@@ -1,6 +1,6 @@
 cbuffer Constants: register(b0)
 {
-    float4x4 MVP;
+    row_major float4x4 MVP;
 }
 
 // t0 레지스터 바인딩: PS에서 사용할 2D Texture Resource

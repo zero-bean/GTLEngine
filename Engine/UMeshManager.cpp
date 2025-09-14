@@ -84,12 +84,21 @@ UMesh* UMeshManager::CreateMeshInternal(const TArray<FVertexPosColor>& vertices,
 	return mesh;
 }
 
+UMesh* UMeshManager::CreateMeshInternal(const TArray<FVertexPosTexCoord>& vertices, const TArray<uint32>& indices,
+	D3D_PRIMITIVE_TOPOLOGY primitiveType)
+{
+	UMesh* mesh = NewObject<UMesh>(vertices, indices, primitiveType);
+	return mesh;
+}
+
 // 생성자
 UMeshManager::UMeshManager()
 {
 	meshes["Sphere"] = CreateMeshInternal(sphere_vertices, sphere_indices);
 	meshes["Plane"] = CreateMeshInternal(plane_vertices, plane_indices);
-	meshes["Cube"] = CreateMeshInternal(cube_vertices, cube_indices, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	meshes["Cube"] = CreateMeshInternal(cube_vertices, cube_indices);
+	meshes["Quad"] = CreateMeshInternal(quad_vertices, quad_indices);
+
 	meshes["GizmoGrid"] = CreateMeshInternal(GridGenerator::CreateGridVertices(1, 1000), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	meshes["GizmoAxis"] = CreateMeshInternal(GridGenerator::CreateAxisVertices(1, 1000), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	meshes["GizmoArrow"] = CreateMeshInternal(gizmo_arrow_vertices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
