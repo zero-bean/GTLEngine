@@ -85,9 +85,9 @@ UMesh* UMeshManager::CreateMeshInternal(const TArray<FVertexPosColor>& vertices,
 }
 
 UMesh* UMeshManager::CreateMeshInternal(const TArray<FVertexPosTexCoord>& vertices, const TArray<uint32>& indices,
-	D3D_PRIMITIVE_TOPOLOGY primitiveTypeda)
+	D3D_PRIMITIVE_TOPOLOGY primitiveType)
 {
-	UMesh* mesh = new UMesh(vertices, indices, primitiveType);
+	UMesh* mesh = NewObject<UMesh>(vertices, indices, primitiveType);
 	return mesh;
 }
 
