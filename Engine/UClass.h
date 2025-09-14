@@ -88,18 +88,19 @@ public:
     }
 
     // 팩토리 경로로 생성 시 자동으로 이름 부여
-    UObject* CreateDefaultObject() const {
+    UObject* CreateDefaultObject() const 
+    {
         if (!createFunction) 
         {
             return nullptr;
         }
 
-        UObject* obj = createFunction();
-        if (obj) 
+        UObject* Object = createFunction();
+        if (Object) 
         {
-            obj->AssignDefaultNameFromClass(this);
+            Object->AssignDefaultNameFromClass(this);
         }
 
-        return obj;
+        return Object;
     }
 };

@@ -93,3 +93,33 @@ void UObject::AssignDefaultName()
 {
     AssignDefaultNameFromClass(GetClass());
 }
+
+void UObject::AssignNameFromString(const FString& base)
+{
+    const FString& currentStr = Name.ToString();
+    const bool hasCustom = (!currentStr.empty() && currentStr != "None");
+
+    if (hasCustom)
+    {
+        if (!IsNameInUse(Name))
+        {
+            RegisterName(Name);
+            return;
+        }
+        // 충돌 → 재생성
+    }
+
+    FName unique = GenerateUniqueName(base);
+    Name = unique;
+    RegisterName(Name);
+}
+
+void UObject::CollectLiveObjectNames(TArray<FString>& OutNames)
+{
+    OutNames.clear();
+    // 스냅샷 수집(읽기 전용). 필요시 정렬은 UI 쪽에서 수행 가능.
+    for (const FName& n : GAllObjectNames)
+    {
+        OutNames.push_back(n.ToString());
+    }
+}

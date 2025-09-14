@@ -371,6 +371,9 @@
     <ClInclude Include="UNamePool.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="FObjectFactory.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShaderW0.ps">

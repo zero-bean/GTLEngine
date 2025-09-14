@@ -43,15 +43,15 @@ bool UGizmoManager::Initialize(UMeshManager* meshManager)
 {
 	// --- 1. 그리드 생성 ---
 	// 그리드는 항상 원점에 고정
-	gridPrimitive = new UGizmoGridComp();
+	gridPrimitive = FObjectFactory::ConstructObject<UGizmoGridComp>();
 
 	// =================================================
 
-	UGizmoArrowComp* arrowX = new UGizmoArrowComp();
+	UGizmoArrowComp* arrowX = FObjectFactory::ConstructObject<UGizmoArrowComp>();
 	arrowX->Axis = EAxis::X;
-	UGizmoArrowComp* arrowY = new UGizmoArrowComp();
+	UGizmoArrowComp* arrowY = FObjectFactory::ConstructObject<UGizmoArrowComp>();
 	arrowY->Axis = EAxis::Y;
-	UGizmoArrowComp* arrowZ = new UGizmoArrowComp();
+	UGizmoArrowComp* arrowZ = FObjectFactory::ConstructObject<UGizmoArrowComp>();
 	arrowZ->Axis = EAxis::Z;
 
 	arrowX->SetColor({ 1, 0, 0, 1 });
@@ -68,11 +68,11 @@ bool UGizmoManager::Initialize(UMeshManager* meshManager)
 
 	// =================================================
 
-	UGizmoRotationHandleComp* rotationX = new UGizmoRotationHandleComp();
+	UGizmoRotationHandleComp* rotationX = FObjectFactory::ConstructObject<UGizmoRotationHandleComp>();
 	rotationX->Axis = EAxis::X;
-	UGizmoRotationHandleComp* rotationY = new UGizmoRotationHandleComp();
+	UGizmoRotationHandleComp* rotationY = FObjectFactory::ConstructObject<UGizmoRotationHandleComp>();
 	rotationY->Axis = EAxis::Y;
-	UGizmoRotationHandleComp* rotationZ = new UGizmoRotationHandleComp();
+	UGizmoRotationHandleComp* rotationZ = FObjectFactory::ConstructObject<UGizmoRotationHandleComp>();
 	rotationZ->Axis = EAxis::Z;
 
 	rotationX->SetColor({ 1, 0, 0, 1 });
@@ -89,11 +89,11 @@ bool UGizmoManager::Initialize(UMeshManager* meshManager)
 
 	// =================================================
 
-	UGizmoScaleHandleComp* scaleX = new UGizmoScaleHandleComp();
+	UGizmoScaleHandleComp* scaleX = FObjectFactory::ConstructObject<UGizmoScaleHandleComp>();
 	scaleX->Axis = EAxis::X;
-	UGizmoScaleHandleComp* scaleY = new UGizmoScaleHandleComp();
+	UGizmoScaleHandleComp* scaleY = FObjectFactory::ConstructObject<UGizmoScaleHandleComp>();
 	scaleY->Axis = EAxis::Y;
-	UGizmoScaleHandleComp* scaleZ = new UGizmoScaleHandleComp();
+	UGizmoScaleHandleComp* scaleZ = FObjectFactory::ConstructObject<UGizmoScaleHandleComp>();
 	scaleZ->Axis = EAxis::Z;
 
 	scaleX->SetColor({ 1, 0, 0, 1 });

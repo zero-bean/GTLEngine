@@ -2,6 +2,7 @@
 #include "UApplication.h"
 #include "UScene.h"
 #include "EditorIni.h"
+#include "FObjectFactory.h"
 // Static member definitions
 WCHAR UApplication::WindowClass[] = L"EngineWindowClass";
 WCHAR UApplication::DefaultTitle[] = L"Engine Application";
@@ -341,5 +342,5 @@ bool UApplication::OnInitialize()
 
 UScene* UApplication::CreateDefaultScene()
 {
-	return new UScene();
+	return FObjectFactory::ConstructObject<UScene>();
 }

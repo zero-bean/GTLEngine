@@ -193,19 +193,28 @@ public:
     // 편의 함수: 가상 GetClass() 사용(완전 생성 이후에만 호출)
     void AssignDefaultName();
 
+    // 임의 문자열(base)로 고유 이름 생성/등록
+    void AssignNameFromString(const FString& base);
+
     // 재사용 큐만 비움(특정 상황에서 인덱스 정책 리셋 시)
     static void ClearFreeIndices()
     {
         FreeIndices.clear();
     }
+
+    // 디버그/에디터용: 현재 라이브 오브젝트 이름 스냅샷을 수집
+    static void CollectLiveObjectNames(TArray<FString>& OutNames);
 };
 
-// 편의 생성기: 직접 new 대신 사용하면 자동 네이밍
-template<typename T, typename... Args>
-inline T* NewObject(Args&&... args)
-{
-    static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
-    T* obj = new T(std::forward<Args>(args)...);
-    obj->AssignDefaultNameFromClass(T::StaticClass());
-    return obj;
-}
+//// UObject 상속받는 객체 생성 시 new 사용 금지
+//// NewObject<T>(...) 템플릿 UObject 팩토리 함수 사용
+//template<typename T, typename... Args>
+//inline T* NewObject(Args&&... args)
+//{
+//    static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
+//    T* obj = new T(std::forward<Args>(args)...);
+//
+//    // 생성 완료 후, 정확한 타입의 클래스 정보로 고유 이름 부여/등록
+//    obj->AssignDefaultNameFromClass(T::StaticClass());
+//    return obj;
+//}

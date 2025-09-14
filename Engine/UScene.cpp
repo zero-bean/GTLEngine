@@ -56,7 +56,7 @@ bool UScene::Initialize(URenderer* r, UMeshManager* mm, UInputManager* im)
 
 UScene* UScene::Create(json::JSON data)
 {
-	UScene* scene = new UScene();
+	UScene* scene = FObjectFactory::ConstructObject<UScene>();
 	scene->Deserialize(data);
 	return scene;
 }
@@ -131,10 +131,10 @@ bool UScene::Deserialize(const json::JSON& data)
 			++primitiveCount;
 	}
 
-	USceneComponent* gizmoGrid = new UGizmoGridComp(
-		{ 0.3f, 0.3f, 0.3f },
-		{ 0.0f, 0.0f, 0.0f },
-		{ 0.2f, 0.2f, 0.2f }
+	USceneComponent* gizmoGrid = FObjectFactory::ConstructObject<UGizmoGridComp>(
+		FVector{ 0.3f, 0.3f, 0.3f },
+		FVector{ 0.0f, 0.0f, 0.0f },
+		FVector{ 0.2f, 0.2f, 0.2f }
 	);
 	objects.push_back(gizmoGrid);
 

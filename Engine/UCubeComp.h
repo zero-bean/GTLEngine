@@ -13,7 +13,7 @@ private:
 
 	static USceneComponent* Create()
 	{
-		USceneComponent* newInstance = new UCubeComp();
+		USceneComponent* newInstance = FObjectFactory::ConstructObject<UCubeComp>();
 
 		return newInstance;
 	}

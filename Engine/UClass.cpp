@@ -14,6 +14,10 @@ UClass* UClass::RegisterToFactory(const FString& typeName, const TFunction<UObje
 
 	nameToId[typeName] = classType->typeId;
 
+    // 메타 오브젝트(UClass 인스턴스)도 고유 이름 등록
+    // "Class:<TypeName>", 중복 시 _1, _2 ... 부여
+    classType->AssignNameFromString(FString("Class:") + typeName);
+
 	UClass* rawPtr = classType.get();
 	classList.push_back(std::move(classType));
 	return rawPtr;

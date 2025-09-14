@@ -72,7 +72,7 @@ UMesh* UMeshManager::CreateMeshInternal(const TArray<FVertexPosColor>& vertices,
 {
 	// vector의 데이터 포인터와 크기를 ConvertVertexData에 전달
 	auto convertedVertices = FVertexPosColor4::ConvertVertexData(vertices.data(), static_cast<int32>(vertices.size()));
-	UMesh* mesh = new UMesh(convertedVertices, primitiveType);
+	UMesh* mesh = FObjectFactory::ConstructObject<UMesh>(convertedVertices, primitiveType);
 	return mesh;
 }
 
@@ -80,7 +80,7 @@ UMesh* UMeshManager::CreateMeshInternal(const TArray<FVertexPosColor>& vertices,
 {
 	// vector의 데이터 포인터와 크기를 ConvertVertexData에 전달
 	TArray<FVertexPosColor4> convertedVertices = FVertexPosColor4::ConvertVertexData(vertices.data(), static_cast<int32>(vertices.size()));
-	UMesh* mesh = new UMesh(convertedVertices, indices, primitiveType);
+	UMesh* mesh = FObjectFactory::ConstructObject<UMesh>(convertedVertices, indices, primitiveType);
 	return mesh;
 }
 
