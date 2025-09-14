@@ -200,6 +200,9 @@
     <ClCompile Include="UNamePool.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="UGizmoAxisComp.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\imconfig.h">
@@ -371,8 +374,8 @@
     <ClInclude Include="UNamePool.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="FObjectFactory.h">
-      <Filter>Engine\Core</Filter>
+    <ClInclude Include="UGizmoAxisComp.h">
+      <Filter>Engine\Core\Component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -382,5 +385,9 @@
     <None Include="ShaderW0.vs">
       <Filter>Shader</Filter>
     </None>
+    <None Include="ShaderFont.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="ShaderLine.hlsl" />
   </ItemGroup>
 </Project>

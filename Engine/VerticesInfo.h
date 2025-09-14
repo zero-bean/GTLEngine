@@ -9,6 +9,9 @@ extern TArray<uint32> plane_indices;
 extern TArray<FVertexPosColor> sphere_vertices;
 extern TArray<uint32> sphere_indices;
 
+extern TArray<FVertexPosTexCoord> quad_vertices;
+extern TArray<uint32> quad_indices;
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // 기즈모 (Vertex 있음, Index 없음), 필요하다면 알아서 수정할 것 - PYB -
 extern const TArray<FVertexPosColor> gizmo_arrow_vertices;
@@ -18,6 +21,7 @@ class GridGenerator
 {
 public:
 	static TArray<FVertexPosColor> CreateGridVertices(float gridSize, int32 gridCount);
+	static TArray<FVertexPosColor> CreateAxisVertices(float gridSize, int32 gridCount);
 	static TArray<FVertexPosColor> CreateRotationHandleVertices();
 };
 ////////////////////////////////////////////////////////////////////////////////////////

@@ -38,6 +38,13 @@ void UGizmoComponent::Draw(URenderer& renderer)
 		return;
 	}
 
+	if (mesh->PrimitiveType == D3D10_PRIMITIVE_TOPOLOGY_LINELIST)
+	{
+		const FMatrix M = GetWorldTransform();
+		renderer.SubmitLineList(mesh->Vertices, mesh->Indices, M);
+		return;
+	}
+
 	UpdateConstantBuffer(renderer);
 	renderer.DrawMesh(mesh);
 }

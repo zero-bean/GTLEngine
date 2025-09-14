@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "URenderer.h"
 #include "UClass.h"
-
+int cnt = 0;
 /* *
 * IASetIndexBuffer https://learn.microsoft.com/ko-kr/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-iasetindexbuffer
 */
@@ -14,9 +14,9 @@ URenderer::URenderer()
 	, swapChain(nullptr)
 	, renderTargetView(nullptr)
 	, depthStencilView(nullptr)
-	, vertexShader(nullptr)
+	/*, vertexShader(nullptr)
 	, pixelShader(nullptr)
-	, inputLayout(nullptr)
+	, inputLayout(nullptr)*/
 	, constantBuffer(nullptr)
 	, rasterizerState(nullptr)
 	, hWnd(nullptr)
@@ -83,6 +83,213 @@ bool URenderer::Initialize(HWND windowHandle)
 bool URenderer::CreateShader()
 {
 	// Load vertex shader from file
+	ID3DBlob* vsBlob = nullptr;
+	ID3DBlob* psBlob = nullptr;
+	ID3DBlob* errorBlob = nullptr;
+	HRESULT hr;
+
+	// --- 1. 기본(Default) 셰이더 및 레이아웃 생성 ---
+	{
+		// 1-1. 버텍스 셰이더 컴파일
+		// 파일 경로
+		// 매크로 정의
+		// Include 핸들러
+		// 진입점 함수명
+		// 셰이더 모델
+		// 컴파일 플래그
+		// 효과 플래그
+		// 컴파일된 셰이더
+		// 에러 메시지
+		hr = D3DCompileFromFile(L"ShaderW0.vs", nullptr, nullptr, "main", "vs_5_0", 0, 0, &vsBlob, &errorBlob);
+		if (FAILED(hr))
+		{
+			if (errorBlob)
+			{
+				OutputDebugStringA("Default Vertex Shader Compile Error:\n");
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				SAFE_RELEASE(errorBlob);
+			}
+			else { OutputDebugStringA("Failed to find ShaderW0.vs\n"); }
+			return false;
+		}
+
+		// 버텍스 셰이더 객체 생성 및 TMap에 저장
+		ID3D11VertexShader* vs = nullptr;
+		hr = device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &vs);
+		if (!CheckResult(hr, "CreateVertexShader"))
+		{
+			SAFE_RELEASE(vsBlob);
+			return false;
+		}
+		VertexShaders["Default"] = vs;
+
+		// 입력 레이아웃 생성 및 TMap에 저장
+		D3D11_INPUT_ELEMENT_DESC defaultLayoutDesc[] = {
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+		ID3D11InputLayout* layout = nullptr;
+		hr = device->CreateInputLayout(defaultLayoutDesc, ARRAYSIZE(defaultLayoutDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &layout);
+		if (!CheckResult(hr, "CreateInputLayout (Default)"))
+		{
+			SAFE_RELEASE(vsBlob);
+			return false;
+		}
+		InputLayouts["Default"] = layout;
+		SAFE_RELEASE(vsBlob); // VS와 Layout 생성을 마쳤으므로 Blob 해제
+
+		// 정점 색상용 픽셀 셰이더 컴파일 및 TMap에 저장
+		hr = D3DCompileFromFile(L"ShaderW0.ps", nullptr, nullptr, "main", "ps_5_0", 0, 0, &psBlob, &errorBlob);
+		if (FAILED(hr))
+		{
+			if (errorBlob) {
+				OutputDebugStringA("Default Pixel Shader Compile Error:\n");
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				SAFE_RELEASE(errorBlob);
+			}
+			else { OutputDebugStringA("Failed to find ShaderW0.ps\n"); }
+			return false;
+		}
+		ID3D11PixelShader* ps = nullptr;
+		hr = device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &ps);
+		if (!CheckResult(hr, "CreatePixelShader"))
+		{
+			SAFE_RELEASE(psBlob);
+			return false;
+		}
+		PixelShaders["Default"] = ps;
+		SAFE_RELEASE(psBlob);
+	}
+	// 2. 폰트(Font) 셰이더 및 레이아웃 생성
+	{
+		// Font 버텍스 셰이더 컴파일 및 TMap에 저장
+		hr = D3DCompileFromFile(L"ShaderFont.hlsl", nullptr, nullptr, "VS_Main", "vs_5_0", 0, 0, &vsBlob, &errorBlob);
+		if (FAILED(hr))
+		{
+			if (errorBlob)
+			{
+				OutputDebugStringA("Font Vertex Shader Compile Error:\n");
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				SAFE_RELEASE(errorBlob);
+			}
+			else { OutputDebugStringA("Failed to find ShaderFont.vs\n"); }
+			return false;
+		}
+
+		ID3D11VertexShader* vs = nullptr;
+		hr = device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &vs);
+		if (!CheckResult(hr, "CreateVertexShader (Font)"))
+		{
+			SAFE_RELEASE(vsBlob);
+			return false;
+		}
+		VertexShaders["Font"] = vs;
+
+		// Font 입력 레이아웃 생성 및 TMap에 저장
+		D3D11_INPUT_ELEMENT_DESC fontLayoutDesc[] = {
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+		ID3D11InputLayout* layout = nullptr;
+		hr = device->CreateInputLayout(fontLayoutDesc, ARRAYSIZE(fontLayoutDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &layout);
+		if (!CheckResult(hr, "CreateInputLayout (Font)"))
+		{
+			SAFE_RELEASE(vsBlob);
+			return false;
+		}
+		InputLayouts["Font"] = layout;
+		SAFE_RELEASE(vsBlob); // Blob 해제
+
+		// 폰트 픽셀 셰이더 컴파일 및 TMap에 저장
+		hr = D3DCompileFromFile(L"ShaderFont.hlsl", nullptr, nullptr, "PS_Main", "ps_5_0", 0, 0, &psBlob, &errorBlob);
+		if (FAILED(hr))
+		{
+			if (errorBlob) {
+				OutputDebugStringA("Font Pixel Shader Compile Error:\n");
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				SAFE_RELEASE(errorBlob);
+			}
+			else { OutputDebugStringA("Failed to find ShaderFont.ps\n"); }
+			return false;
+		}
+		ID3D11PixelShader* ps = nullptr;
+		hr = device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &ps);
+		if (!CheckResult(hr, "CreatePixelShader (Font)"))
+		{
+			SAFE_RELEASE(psBlob);
+			return false;
+		}
+		PixelShaders["Font"] = ps;
+		SAFE_RELEASE(psBlob);
+	}
+	// 3. 라인(Line) 셰이더 및 레이아웃 생성 ---
+	{
+		// 라인 버텍스 셰이더 컴파일 및 TMap에 저장
+		hr = D3DCompileFromFile(L"ShaderLine.hlsl", nullptr, nullptr, "VS_Main", "vs_5_0", 0, 0, &vsBlob, &errorBlob);
+		if (FAILED(hr))
+		{
+			if (errorBlob)
+			{
+				OutputDebugStringA("Line Vertex Shader Compile Error:\n");
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				SAFE_RELEASE(errorBlob);
+			}
+			else { OutputDebugStringA("Failed to find ShaderLine.vs\n"); }
+			return false;
+		}
+
+		// 라인 버텍스 셰이더 객체 생성 및 TMap에 저장
+		ID3D11VertexShader* vs = nullptr;
+		hr = device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &vs);
+		if (!CheckResult(hr, "CreateVertexShader (Line)"))
+		{
+			SAFE_RELEASE(vsBlob);
+			return false;
+		}
+		VertexShaders["Line"] = vs;
+
+		// 라인 입력 레이아웃 생성 및 TMap에 저장
+		D3D11_INPUT_ELEMENT_DESC lineLayoutDesc[] = {
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+		ID3D11InputLayout* layout = nullptr;
+		hr = device->CreateInputLayout(lineLayoutDesc, ARRAYSIZE(lineLayoutDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &layout);
+		if (!CheckResult(hr, "CreateInputLayout (Line)"))
+		{
+			SAFE_RELEASE(vsBlob);
+			return false;
+		}
+		InputLayouts["Line"] = layout;
+		SAFE_RELEASE(vsBlob); // Blob 해제
+
+		// 라인 픽셀 셰이더 컴파일 및 TMap에 저장
+		hr = D3DCompileFromFile(L"ShaderLine.hlsl", nullptr, nullptr, "PS_Main", "ps_5_0", 0, 0, &psBlob, &errorBlob);
+		if (FAILED(hr))
+		{
+			if (errorBlob) {
+				OutputDebugStringA("Line Pixel Shader Compile Error:\n");
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				SAFE_RELEASE(errorBlob);
+			}
+			else { OutputDebugStringA("Failed to find ShaderLine.ps\n"); }
+			return false;
+		}
+		ID3D11PixelShader* ps = nullptr;
+		hr = device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &ps);
+		if (!CheckResult(hr, "CreatePixelShader (Line)"))
+		{
+			SAFE_RELEASE(psBlob);
+			return false;
+		}
+		PixelShaders["Line"] = ps;
+		SAFE_RELEASE(psBlob);
+		batchLineList.vertexShader = VertexShaders["Line"];
+		batchLineList.pixelShader = PixelShaders["Line"];
+		batchLineList.inputLayout = InputLayouts["Line"];
+	}
+	return true;
+
+	/*// Load vertex shader from file
 	ID3DBlob* vsBlob = nullptr;
 	ID3DBlob* errorBlob = nullptr;
 
@@ -173,7 +380,7 @@ bool URenderer::CreateShader()
 		nullptr, &pixelShader);
 	SAFE_RELEASE(psBlob);
 
-	return CheckResult(hr, "CreatePixelShader");
+	return CheckResult(hr, "CreatePixelShader");*/
 }
 
 bool URenderer::CreateRasterizerState()
@@ -251,6 +458,106 @@ bool URenderer::UpdateConstantBuffer(const void* data, size_t sizeInBytes)
 	return true;
 }
 
+void URenderer::BeginBatchLineList()
+{
+	batchLineList.Clear();
+}
+
+void URenderer::SubmitLineList(const UMesh* mesh)
+{
+	if (mesh == nullptr || mesh->PrimitiveType != D3D11_PRIMITIVE_TOPOLOGY_LINELIST) { return; }
+
+	SubmitLineList(mesh->Vertices, mesh->Indices);
+}
+
+void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices)
+{
+	if (vertices.empty()) { return; }
+
+	size_t base = batchLineList.Vertices.size();
+
+	const uint32 inputSize = static_cast<uint32>(vertices.size());
+	TArray<FVector> convertedVertices(inputSize);
+	for (uint32 i = 0; i < inputSize; ++i)
+	{
+		convertedVertices[i] = vertices[i].GetPosition();
+	}
+
+	batchLineList.Vertices.insert(batchLineList.Vertices.end(), convertedVertices.begin(), convertedVertices.end());
+
+	if (!indices.empty())
+	{
+		batchLineList.Indices.reserve(batchLineList.Indices.size() + indices.size());
+		for (uint32 idx : indices)
+		{
+			batchLineList.Indices.push_back(static_cast<uint32>(base + idx));
+		}
+	}
+	else
+	{
+		// 인덱스 없음 → (0,1),(2,3)... 페어링해서 생성
+		const size_t n = convertedVertices.size();
+		const bool hasOdd = (n & 1) != 0;
+		const size_t pairs = n >> 1; // n/2
+
+		if (hasOdd)
+		{
+			// 마지막 남는 1개는 버림 (라인 페어 불가). 필요하면 여기서 디버그 로그만 찍자.
+			OutputDebugStringA("[Batch] LineList mesh has odd vertex count; dropping last vertex.\n");
+		}
+
+		batchLineList.Indices.reserve(batchLineList.Indices.size() + pairs * 2);
+		for (size_t p = 0; p < pairs; ++p)
+		{
+			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 0)));
+			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 1)));
+		}
+	}
+}
+
+void URenderer::FlushBatchLineList()
+{
+	const size_t vCount = batchLineList.Vertices.size();
+	const size_t iCount = batchLineList.Indices.size();
+
+	if (vCount == 0 && iCount == 0)
+		return;
+
+	// 단위행렬(또는 VP만)로 업로드: 라인은 이미 월드로 변환해둠
+	SetModel(FMatrix::IdentityMatrix(), FVector4(1, 1, 1, 1), false);
+	// 1) GPU 버퍼 확보/확장
+	EnsureBatchCapacity(batchLineList, vCount, iCount);
+
+	// 2) Map & copy
+	D3D11_MAPPED_SUBRESOURCE map{};
+	HRESULT hr = deviceContext->Map(batchLineList.VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
+	if (SUCCEEDED(hr))
+	{
+		memcpy(map.pData, batchLineList.Vertices.data(), vCount * sizeof(FVector));
+		deviceContext->Unmap(batchLineList.VertexBuffer, 0);
+	}
+
+	hr = deviceContext->Map(batchLineList.IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
+	if (SUCCEEDED(hr))
+	{
+		memcpy(map.pData, batchLineList.Indices.data(), iCount * sizeof(uint32));
+		deviceContext->Unmap(batchLineList.IndexBuffer, 0);
+	}
+
+	// 4) IA 바인딩 & 드로우 (1콜)
+	UINT stride = sizeof(FVector), offset = 0;
+	ID3D11Buffer* vb = batchLineList.VertexBuffer;
+	deviceContext->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
+	deviceContext->IASetIndexBuffer(batchLineList.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	deviceContext->IASetInputLayout(batchLineList.inputLayout);
+	deviceContext->VSSetShader(batchLineList.vertexShader, nullptr, 0);
+	deviceContext->PSSetShader(batchLineList.pixelShader, nullptr, 0);
+
+	deviceContext->DrawIndexed(static_cast<UINT>(iCount), 0, 0);
+	UE_LOG("[Batch] LineList DrawIndexed iCount=%u (draw #%d)\n", (UINT)iCount, cnt++);
+}
+
 void URenderer::LogError(const char* function, HRESULT hr)
 {
 	char errorMsg[512];
@@ -291,9 +598,29 @@ void URenderer::Release()
 
 void URenderer::ReleaseShader()
 {
+	/* Comment: 이제 TMap에 보관한 걸 해제하도록 변경합니다.
 	SAFE_RELEASE(inputLayout);
 	SAFE_RELEASE(pixelShader);
 	SAFE_RELEASE(vertexShader);
+	*/
+	for (auto& pair : PixelShaders)
+	{
+		SAFE_RELEASE(pair.second);
+	}
+	PixelShaders.clear();
+
+	for (auto& pair : VertexShaders)
+	{
+		SAFE_RELEASE(pair.second);
+	}
+	VertexShaders.clear();
+
+	for (auto& pair : InputLayouts)
+	{
+		SAFE_RELEASE(pair.second);
+	}
+	InputLayouts.clear();
+	
 }
 
 void URenderer::ReleaseConstantBuffer()
@@ -445,12 +772,15 @@ void URenderer::PrepareShader()
 	if (!deviceContext)
 		return;
 
+	/*  Comment: 원래 렌더러에서 하나의 Shader를 Set해주었는데,
+	//          개수가 늘었으므로 TMap에 보관한 IL, VS, PS를 변경하도록 해야합니다.
 	// Set shaders
 	deviceContext->VSSetShader(vertexShader, nullptr, 0);
 	deviceContext->PSSetShader(pixelShader, nullptr, 0);
 
 	// Set input layout
 	deviceContext->IASetInputLayout(inputLayout);
+	*/
 
 	// Set primitive topology (default to triangle list)
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -515,6 +845,10 @@ void URenderer::DrawMesh(UMesh* mesh)
 	if (!mesh || !mesh->IsInitialized())
 		return;
 
+	deviceContext->IASetInputLayout(GetInputLayout("Default"));
+	deviceContext->VSSetShader(GetVertexShader("Default"), nullptr, 0);
+	deviceContext->PSSetShader(GetPixelShader("Default"), nullptr, 0);
+
 	// 인덱스 버퍼도 가지고 있으면 아래 방식으로 Draw
 	if (mesh->NumIndices > 0)
 	{
@@ -531,6 +865,7 @@ void URenderer::DrawMesh(UMesh* mesh)
 		deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
 		deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
 		deviceContext->Draw(mesh->NumVertices, 0);
+		UE_LOG("Draw Call %d \n", cnt++);
 	}
 }
 
@@ -563,6 +898,9 @@ void URenderer::DrawMeshOnTop(UMesh* mesh)
 	// 적용
 	// Set new state (no depth test)
 	deviceContext->OMSetDepthStencilState(pDSState, 0);
+	deviceContext->IASetInputLayout(GetInputLayout("Default"));
+	deviceContext->VSSetShader(GetVertexShader("Default"), nullptr, 0);
+	deviceContext->PSSetShader(GetPixelShader("Default"), nullptr, 0);
 
 	// 2) 공통 셋업
 	// Draw mesh
@@ -785,6 +1123,46 @@ bool URenderer::SetupViewport(int32 width, int32 height)
 	return true;
 }
 
+void URenderer::EnsureBatchCapacity(FBatchLineList& B, size_t vNeed, size_t iNeed)
+{
+	if (vNeed > B.MaxVertex)
+	{
+		if (B.VertexBuffer)
+		{
+			B.VertexBuffer->Release();
+		}
+
+		B.MaxVertex = max(vNeed, B.MaxVertex * 2 + size_t(1024));
+
+		D3D11_BUFFER_DESC bd{};
+		bd.Usage = D3D11_USAGE_DYNAMIC;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		bd.ByteWidth = static_cast<UINT>(B.MaxVertex * sizeof(FVector));
+		HRESULT hr = device->CreateBuffer(&bd, nullptr, &B.VertexBuffer);
+		CheckResult(hr, "EnsureBatchCapacity.Create VB");
+	}
+
+	// Index buffer
+	if (iNeed > B.MaxIndex)
+	{
+		if (B.IndexBuffer)
+		{
+			B.IndexBuffer->Release();
+		}
+
+		B.MaxIndex = max(iNeed, B.MaxIndex * 2 + size_t(2048));
+
+		D3D11_BUFFER_DESC bd{};
+		bd.Usage = D3D11_USAGE_DYNAMIC;
+		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		bd.ByteWidth = static_cast<UINT>(B.MaxIndex * sizeof(uint32));
+		HRESULT hr = device->CreateBuffer(&bd, nullptr, &B.IndexBuffer);
+		CheckResult(hr, "EnsureBatchCapacity.Create IB");
+	}
+}
+
 void URenderer::SetViewProj(const FMatrix& V, const FMatrix& P)
 {
 	// row-vector 규약이면 곱셈 순서는 V*P가 아니라, 최종적으로 v*M*V*P가 되도록
@@ -824,4 +1202,38 @@ D3D11_VIEWPORT URenderer::MakeAspectFitViewport(int32 winW, int32 winH) const
 		vp.TopLeftY = 0.5f * (winH - vp.Height);
 	}
 	return vp;
+}
+// URenderer.cpp
+void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices,
+	const TArray<uint32>& indices,
+	const FMatrix& model)
+{
+	if (vertices.empty()) return;
+
+	// 1) 월드로 미리 변환해서 버퍼에 누적
+	const size_t base = batchLineList.Vertices.size();
+	batchLineList.Vertices.reserve(base + vertices.size());
+
+	for (auto v : vertices) {
+		// 위치만 변환(색은 그대로)
+		TransformPosRow(v.x, v.y, v.z, model);
+		FVector converted = { v.x, v.y, v.z };
+		batchLineList.Vertices.push_back(converted);
+	}
+
+	// 2) 인덱스 오프셋 적용해서 누적
+	if (!indices.empty()) {
+		batchLineList.Indices.reserve(batchLineList.Indices.size() + indices.size());
+		for (uint32 idx : indices) batchLineList.Indices.push_back((uint32)(base + idx));
+	}
+	else {
+		// (0,1),(2,3)...
+		const size_t n = vertices.size();
+		const size_t pairs = n >> 1;
+		batchLineList.Indices.reserve(batchLineList.Indices.size() + pairs * 2);
+		for (size_t p = 0; p < pairs; ++p) {
+			batchLineList.Indices.push_back((uint32)(base + p * 2 + 0));
+			batchLineList.Indices.push_back((uint32)(base + p * 2 + 1));
+		}
+	}
 }

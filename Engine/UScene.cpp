@@ -150,9 +150,12 @@ void UScene::Render()
 {
 	// 카메라가 바뀌면 원하는 타이밍(매 프레임도 OK)에 알려주면 됨
 	renderer->SetTargetAspect(camera->GetAspect());
-
 	renderer->SetViewProj(camera->GetView(), camera->GetProj());
 
+	ID3D11DeviceContext* context = renderer->GetDeviceContext();
+	context->IASetInputLayout(renderer->GetInputLayout("Default"));
+	context->VSSetShader(renderer->GetVertexShader("Default"), nullptr, 0);
+	context->PSSetShader(renderer->GetPixelShader("Default"), nullptr, 0);
 	for (UObject* obj : objects)
 	{
 		if (UPrimitiveComponent* primitive = obj->Cast<UPrimitiveComponent>())
@@ -160,6 +163,9 @@ void UScene::Render()
 			primitive->Draw(*renderer);
 		}
 	}
+
+	renderer->FlushBatchLineList();
+	renderer->BeginBatchLineList();
 }
 
 void UScene::Update(float deltaTime)

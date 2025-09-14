@@ -200,12 +200,8 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
 void UBoundingBoxComponent::Draw(URenderer& renderer)
 {
     if (!meshWire || !meshWire->VertexBuffer) return;
-    UpdateConstantBuffer(renderer);
-
-    if (bDrawOnTop)
-        renderer.DrawMeshOnTop(meshWire); // 깊이 무시(혹은 offset)로 표시
-    else
-        renderer.DrawMesh(meshWire);
+    // UpdateConstantBuffer(renderer);
+    renderer.SubmitLineList(meshWire->Vertices, meshWire->Indices, WBox);
 }
 
 void UBoundingBoxComponent::DrawOnTop(URenderer& renderer)

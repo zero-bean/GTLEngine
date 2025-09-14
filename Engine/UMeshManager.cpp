@@ -89,11 +89,12 @@ UMeshManager::UMeshManager()
 {
 	meshes["Sphere"] = CreateMeshInternal(sphere_vertices, sphere_indices);
 	meshes["Plane"] = CreateMeshInternal(plane_vertices, plane_indices);
-	meshes["Cube"] = CreateMeshInternal(cube_vertices, cube_indices);
-	meshes["GizmoGrid"] = CreateMeshInternal(GridGenerator::CreateGridVertices(1, 100), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	meshes["GizmoArrow"] = CreateMeshInternal(gizmo_arrow_vertices);
-	meshes["GizmoRotationHandle"] = CreateMeshInternal(GridGenerator::CreateRotationHandleVertices());
-	meshes["GizmoScaleHandle"] = CreateMeshInternal(gizmo_scale_handle_vertices);
+	meshes["Cube"] = CreateMeshInternal(cube_vertices, cube_indices, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	meshes["GizmoGrid"] = CreateMeshInternal(GridGenerator::CreateGridVertices(1, 1000), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	meshes["GizmoAxis"] = CreateMeshInternal(GridGenerator::CreateAxisVertices(1, 1000), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	meshes["GizmoArrow"] = CreateMeshInternal(gizmo_arrow_vertices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	meshes["GizmoRotationHandle"] = CreateMeshInternal(GridGenerator::CreateRotationHandleVertices(), D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	meshes["GizmoScaleHandle"] = CreateMeshInternal(gizmo_scale_handle_vertices, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	// 인덱스 있는 오버로드 사용!
 	{
 		TArray<FVertexPosColor> verts; TArray<uint32> idx;
