@@ -196,8 +196,8 @@ public:
 	void UpdateFontConstantBuffer(const FConstantFont& r);
 
 	// Batch Mode only for LineList
-	void SubmitLineList(const UMesh* mesh); 
-	void SubmitLineList(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices);
+	/*void SubmitLineList(const UMesh* mesh); 
+	void SubmitLineList(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices);*/
 	void FlushBatchLineList();  // Draw Call 1회 처리
 	// Batch Mode only for Sprite
 	void SubmitSprite(const FMatrix& M,
