@@ -88,6 +88,13 @@ bool UApplication::Initialize(HINSTANCE hInstance, const std::wstring& title, in
 		MessageBox(hWnd, L"Failed to initialize scene manager", L"Engine Error", MB_OK | MB_ICONERROR);
 		return false;
 	}
+
+	if (!ShowFlagManager.Initialize())
+	{
+		MessageBox(hWnd, L"Failed to initialize show flag manager", L"Engine Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
 	if (!raycastManager.Initialize(&renderer, &inputManager))
 	{
 		MessageBox(hWnd, L"Failed to initialize raycast manager", L"Engine Error", MB_OK | MB_ICONERROR);
@@ -142,6 +149,8 @@ void UApplication::Shutdown()
 
 	// Allow derived classes to cleanup
 	OnShutdown();
+
+	ShowFlagManager.Shutdown();
 
 	// Shutdown core systems
 	gui.Shutdown();
