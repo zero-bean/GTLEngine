@@ -16,6 +16,7 @@ public:
 
     UScene* GetScene();
     void SetScene(UScene* scene);
+    void ReleaseCurrentScene();
 
     void RequestExit();
     void LoadScene(const FString& path = "");
