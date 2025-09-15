@@ -22,7 +22,7 @@ void UObject::RegisterName(const FName& Name)
     GAllObjectNames.insert(Name);
 }
 
-// 전역 이름 집합 해제 + 접미사 카운터 조정
+// 전역 이름 집합 해제 + 접미사 카운터 조정 (가장 큰 Suffix 뒤에 붙이기)
 void UObject::UnregisterName(const FName& Name)
 {
     auto It = GAllObjectNames.find(Name);
@@ -31,82 +31,21 @@ void UObject::UnregisterName(const FName& Name)
         GAllObjectNames.erase(It);
     }
 
-    // 이름에서 Base와 숫자 접미사를 파싱
     const FString S = Name.ToString();
-    if (S.empty()) 
+    if (S.empty())
     {
         return;
     }
 
-    auto ParseBaseAndSuffix = [](const FString& In, FString& OutBase, uint32& OutNum, bool& bHasNumSuffix)
-        {
-            OutBase.clear(); OutNum = 0; bHasNumSuffix = false;
-            const size_t Us = In.find_last_of('_');
-            if (Us != FString::npos && Us + 1 < In.size())
-            {
-                const FString SuffixStr = In.substr(Us + 1);
-                bool bAllDigits = !SuffixStr.empty();
-                for (char Ch : SuffixStr)
-                {
-                    if (Ch < '0' || Ch > '9') { bAllDigits = false; break; }
-                }
-                if (bAllDigits)
-                {
-                    try 
-                    { 
-                        OutNum = static_cast<uint32>(std::stoul(SuffixStr)); 
-                    }
-                    catch (...) 
-                    { 
-                        OutNum = 0; 
-                    }
-                    
-                    OutBase = In.substr(0, Us);
-                    bHasNumSuffix = (OutNum > 0);
-                    
-                    return;
-                }
-            }
-            // 접미사 숫자가 없으면 전체가 Base
-            OutBase = In;
-            bHasNumSuffix = false;
-        };
-
+    // Base 추출 (Base 또는 Base_N)
     FString BaseStr;
-    uint32 FreedSuffix = 0;
-    bool bHasNumSuffix = false;
-    ParseBaseAndSuffix(S, BaseStr, FreedSuffix, bHasNumSuffix);
-
-    // 숫자 접미사가 있는 경우: 방금 해제된 번호를 우선 재사용하도록 카운터를 낮춤
-    if (bHasNumSuffix && FreedSuffix > 0)
     {
-        const FName Base(BaseStr);
-        auto CIt = NameSuffixCounters.find(Base);
-        if (CIt == NameSuffixCounters.end())
+        const size_t Us = S.find_last_of('_');
+        if (Us != FString::npos && Us + 1 < S.size())
         {
-            NameSuffixCounters[Base] = FreedSuffix;
-        }
-        else if (CIt->second > FreedSuffix)
-        {
-            CIt->second = FreedSuffix;
-        }
-    }
-
-    // Base 계열 이름이 더 남아있는지 검사: Base 또는 Base_숫자
-    bool bAnyLeft = false;
-    const FString Prefix = BaseStr + "_";
-    for (const FName& N : GAllObjectNames)
-    {
-        const FString T = N.ToString();
-        if (T == BaseStr)
-        {
-            bAnyLeft = true; break;
-        }
-        if (T.size() > Prefix.size() && T.rfind(Prefix, 0) == 0) // starts_with
-        {
-            // 엄밀히 숫자만인지 확인
-            bool bAllDigits = true;
-            for (char Ch : T.substr(Prefix.size()))
+            const FString SuffixStr = S.substr(Us + 1);
+            bool bAllDigits = !SuffixStr.empty();
+            for (char Ch : SuffixStr)
             {
                 if (Ch < '0' || Ch > '9') 
                 { 
@@ -114,15 +53,68 @@ void UObject::UnregisterName(const FName& Name)
                     break; 
                 }
             }
-            if (bAllDigits) { bAnyLeft = true; break; }
+            BaseStr = bAllDigits ? S.substr(0, Us) : S;
+        }
+        else
+        {
+            BaseStr = S;
         }
     }
 
-    // 더 이상 Base 계열이 없으면 카운터 리셋 → 다음 생성에서 평문(Base)부터 시작
-    if (!bAnyLeft)
+    // 잔존 이름들 중 Base 계열의 최대 접미사와 평문 존재 여부를 스캔
+    bool bPlainLeft = false;
+    uint32 MaxSuffix = 0;
+    const FString Prefix = BaseStr + "_";
+    for (const FName& N : GAllObjectNames)
+    {
+        const FString T = N.ToString();
+        if (T == BaseStr)
+        {
+            bPlainLeft = true;
+            continue;
+        }
+        if (T.size() > Prefix.size() && T.rfind(Prefix, 0) == 0) // starts_with
+        {
+            const FString R = T.substr(Prefix.size());
+            bool bDigits = !R.empty();
+            for (char Ch : R)
+            {
+                if (Ch < '0' || Ch > '9') 
+                { 
+                    bDigits = false; 
+                    break; 
+                }
+            }
+            if (bDigits)
+            {
+                uint32 V = 0;
+                try 
+                { 
+                    V = static_cast<uint32>(std::stoul(R)); 
+                }
+                catch (...) 
+                { 
+                    V = 0; 
+                }
+                
+                if (V > MaxSuffix) 
+                {
+                    MaxSuffix = V;
+                }
+            }
+        }
+    }
+
+    // 아무 것도 안 남았으면 카운터 제거 → 다음 생성은 평문부터
+    if (!bPlainLeft && MaxSuffix == 0)
     {
         NameSuffixCounters.erase(FName(BaseStr));
+        return;
     }
+
+    // 남아있다면 다음 시도 값은 (현재 최대 접미사 + 1)
+    // (가장 큰 번호를 지운 경우엔 자연스럽게 그 번호가 다시 시도됨)
+    NameSuffixCounters[FName(BaseStr)] = (MaxSuffix > 0 ? MaxSuffix + 1 : 1);
 }
 
 // 유니크 이름 생성: 첫 객체는 Base, 이후 Base_1부터 증가
