@@ -2,7 +2,8 @@
 #include "UApplication.h"
 #include "UScene.h"
 #include "EditorIni.h"
-
+#include "UGizmoManager.h"
+#include "EditorApplication.h"
 // Static member definitions
 WCHAR UApplication::WindowClass[] = L"EngineWindowClass";
 WCHAR UApplication::DefaultTitle[] = L"Engine Application";
@@ -87,6 +88,13 @@ bool UApplication::Initialize(HINSTANCE hInstance, const std::wstring& title, in
 		MessageBox(hWnd, L"Failed to initialize scene manager", L"Engine Error", MB_OK | MB_ICONERROR);
 		return false;
 	}
+
+	if (!ShowFlagManager.Initialize())
+	{
+		MessageBox(hWnd, L"Failed to initialize show flag manager", L"Engine Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
 	if (!raycastManager.Initialize(&renderer, &inputManager))
 	{
 		MessageBox(hWnd, L"Failed to initialize raycast manager", L"Engine Error", MB_OK | MB_ICONERROR);
@@ -142,6 +150,8 @@ void UApplication::Shutdown()
 	// Allow derived classes to cleanup
 	OnShutdown();
 
+	ShowFlagManager.Shutdown();
+
 	// Shutdown core systems
 	gui.Shutdown();
 	renderer.ReleaseConstantBuffer();
@@ -159,6 +169,10 @@ void UApplication::Shutdown()
 		// 필요하면 위치/직교폭 등도 추가로 저장
 		// EditorIni::Get().SetFloat("Camera", "OrthoWidth",  ... );
 		// EditorIni::Get().SetFloat("Camera", "OrthoHeight", ... );
+	}
+	// 어쩔 수 없는 금단의 기술입니다...
+	if (auto* editorApp = dynamic_cast<EditorApplication*>(this)) {
+		CEditorIni::Get().SetFloat("Grid", "Spacing", editorApp->GetGizmoManager().GetGridSpacing());
 	}
 	CEditorIni::Get().Save();
 }

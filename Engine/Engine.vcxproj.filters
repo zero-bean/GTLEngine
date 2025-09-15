@@ -215,6 +215,9 @@
     </ClCompile>
     <ClCompile Include="UBillboardComponent.cpp">
       <Filter>Engine\Core\Component</Filter>
+	</ClCompile>
+    <ClCompile Include="ShowFlagManager.cpp">
+      <Filter>Engine\Subsystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -403,6 +406,9 @@
     </ClInclude>
     <ClInclude Include="UBillboardComponent.h">
       <Filter>Engine\Core\Component</Filter>
+	</ClInclude>
+    <ClInclude Include="ShowFlagManager.h">
+      <Filter>Engine\Subsystem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -4,10 +4,13 @@
 #include "USceneComponent.h"
 #include "UGizmoManager.h"
 
+class UShowFlagManager;
+
 class UControlPanel : public ImGuiWindowWrapper
 {
 	USceneManager* SceneManager;
 	UGizmoManager* GizmoManager;
+	UShowFlagManager* ShowFlagManager;
 
 	// Spawn Primitive Section
 	TArray<UClass*> registeredTypes;
@@ -18,17 +21,24 @@ class UControlPanel : public ImGuiWindowWrapper
 	// Scene Management Section
 	char sceneName[256] = "Default";
 
-	// Camera Management Section
+	
 
+	// Grid Cache
+	bool bGridUIInited = false;
+	float GridSpacingEdit = 1.0f;
+	int   GridHalfLinesEdit = 1000;
+	int   GridBoldEveryEdit = 5;
 
 public:
-	UControlPanel(USceneManager* sceneManager, UGizmoManager* gizmoManager);
+	UControlPanel(USceneManager* sceneManager, UGizmoManager* gizmoManager, UShowFlagManager* InShowFlagManager);
 	void RenderContent() override;
 	void PrimaryInformationSection();
 	void SpawnPrimitiveSection();
 	void SceneManagementSection();
 	void CameraManagementSection();
 	void ViewModeSection();
+	void ShowFlagSection();
 	USceneComponent* CreateSceneComponentFromChoice(int index);
+	void GridAndAxisSection();
 };
 

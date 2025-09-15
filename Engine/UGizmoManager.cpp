@@ -13,10 +13,13 @@
 #include "UObject.h"
 #include "UScene.h"
 #include "UCamera.h"
+#include "EditorIni.h"
 
 IMPLEMENT_UCLASS(UGizmoManager, UEngineSubsystem)
 UGizmoManager::UGizmoManager()
 {
+	//GridSpacing = CEditorIni::Get().GetFloat("Grid", "Spacing", 1.0f);
+
 }
 
 UGizmoManager::~UGizmoManager()
@@ -43,6 +46,7 @@ UGizmoManager::~UGizmoManager()
 
 bool UGizmoManager::Initialize(UMeshManager* meshManager)
 {
+	GridSpacing = CEditorIni::Get().GetFloat("Grid", "Spacing", 1.0f);
 	// --- 1. 그리드 생성 ---
 	// 그리드는 항상 원점에 고정
 	gridPrimitive = NewObject<UGizmoGridComp>();
@@ -218,17 +222,44 @@ void UGizmoManager::Update(float deltaTime)
 
 void UGizmoManager::Draw(URenderer& renderer)
 {
-	// --- 파트 1: 타겟 유무와 상관없이 항상 그리는 요소 ---
-	if (gridPrimitive)
+	// --- 파트 1: 그리드 / 축 (타겟과 무관, 항상) ---
+	if (bShowGrid)
 	{
-		gridPrimitive->Draw(renderer);
+		// 1) 그리드 버텍스 생성 (gridSize=1.0 고정)
+		TArray<FVertexPosColor> V = GridGenerator::CreateGridVertices(/*gridSize=*/1.0f, /*gridCount=*/GridHalfLines);
+
+		// 2) 좌표에 간격(Spacing) 적용
+		//    ChangeAxis로 평면이 XZ인지 XY인지 네 코드에 맞춰 축 선택
+		//    (CreateGridVertices 결과에서 z==0이라 XY 평면)
+		for (auto& v : V) {
+			v.x *= GridSpacing;
+			v.y *= GridSpacing;   // XY 평면 기준
+		}
+
+		// 3) 변환: FVertexPosColor -> FVertexPosColor4
+		TArray<FVertexPosColor4> CV = FVertexPosColor4::ConvertVertexData(V.data(), (int32)V.size());
+
+		// 4) 인덱스 없이 페어로 그릴 수 있도록 Submit (배치에 누적)
+		renderer.SubmitLineList(CV, /*indices*/{});  // 배치는 UScene::Render()에서 Flush
 	}
 
-	if (axisPrimitive)
+	if (bShowAxis)
 	{
-		axisPrimitive->Draw(renderer);
-	}
+		// 1) 축 버텍스 생성 (gridSize=1.0 고정)
+		TArray<FVertexPosColor> VA = GridGenerator::CreateAxisVertices(/*gridSize=*/1.0f, /*gridCount=*/GridHalfLines);
 
+		// 2) 축 길이 = 간격 * 개수 * 1.2 (네 기존 로직)
+		const float AxisScale = GridSpacing * GridHalfLines * 1.2f;
+		for (auto& v : VA) {
+			v.x *= AxisScale;
+			v.y *= AxisScale;
+			v.z *= AxisScale;
+		}
+
+		// 3) 변환 후 제출
+		TArray<FVertexPosColor4> CVA = FVertexPosColor4::ConvertVertexData(VA.data(), (int32)VA.size());
+		renderer.SubmitLineList(CVA, /*indices*/{});
+	}
 	// --- 파트 2: 타겟이 있을 때만 그리는 요소 ---
 
 	if (targetObject == nullptr) return;

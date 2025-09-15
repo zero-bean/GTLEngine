@@ -8,9 +8,18 @@
 #include "UGizmoGridComp.h"
 #include "URaycastManager.h"
 #include "UCamera.h"
+#include "ShowFlagManager.h"
 
 IMPLEMENT_UCLASS(UScene, UObject)
 UScene::UScene()
+	: isInitialized(false)
+	, renderer(nullptr)
+	, meshManager(nullptr)
+	, inputManager(nullptr)
+	, camera(nullptr)
+	, ShowFlagManager(nullptr)
+	, backBufferWidth(0)
+	, backBufferHeight(0)
 {
 	version = 1;
 	primitiveCount = 0;
@@ -26,11 +35,12 @@ UScene::~UScene()
 	delete camera;
 }
 
-bool UScene::Initialize(URenderer* r, UMeshManager* mm, UInputManager* im)
+bool UScene::Initialize(URenderer* r, UMeshManager* mm, UShowFlagManager* InShowFlagManager, UInputManager* im)
 {
 	renderer = r;
 	meshManager = mm;
 	inputManager = im;
+	ShowFlagManager = InShowFlagManager;
 
 	backBufferWidth = 0;
 	backBufferHeight = 0;
@@ -197,7 +207,10 @@ void UScene::Render()
 	{
 		if (UPrimitiveComponent* primitive = obj->Cast<UPrimitiveComponent>())
 		{
-			primitive->Draw(*renderer);
+			if (ShowFlagManager->IsEnabled(EEngineShowFlags::SF_Primitives))
+			{
+				primitive->Draw(*renderer);
+			}
 		}
 	}
 

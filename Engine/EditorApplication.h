@@ -36,6 +36,8 @@ public:
 
 	void OnSceneChange() override;
 
+	UGizmoManager& GetGizmoManager() { return gizmoManager; }
+	const UGizmoManager& GetGizmoManager() const { return gizmoManager; }
 protected:
 	void Update(float deltaTime) override;
 	void Render() override;

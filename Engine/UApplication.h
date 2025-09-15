@@ -8,6 +8,7 @@
 #include "URaycastManager.h"
 #include "USceneManager.h"
 #include "UGizmoManager.h"
+#include "ShowFlagManager.h"
 
 class UApplication
 {
@@ -20,6 +21,7 @@ private:
 	UTimeManager timeManager;
 	UMeshManager meshManager;
 	USceneManager sceneManager;
+	UShowFlagManager ShowFlagManager;
 	URaycastManager raycastManager;
 
 	// Application state
@@ -56,6 +58,7 @@ public:
 	URenderer& GetRenderer() { return renderer; }
 	UMeshManager& GetMeshManager() { return meshManager; }
 	USceneManager& GetSceneManager() { return sceneManager; }
+	UShowFlagManager& GetShowFlagManager() { return ShowFlagManager; }
 	UInputManager& GetInputManager() { return inputManager; }
 	UGUI& GetGUI() { return gui; }
 	UTimeManager& GetTimeManager() { return timeManager; }

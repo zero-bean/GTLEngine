@@ -8,6 +8,7 @@
 
 class UCamera;
 class URaycastManager;
+class UShowFlagManager;
 
 class UScene : public UObject
 {
@@ -29,12 +30,14 @@ protected:
 	//UScene owns camera
 	UCamera* camera;
 
+	UShowFlagManager* ShowFlagManager;
+
 	virtual void RenderGUI() {}
 	virtual void OnShutdown() {}
 public:
 	UScene();
 	virtual ~UScene();
-	virtual bool Initialize(URenderer* r, UMeshManager* mm, UInputManager* im = nullptr);
+	virtual bool Initialize(URenderer* r, UMeshManager* mm, UShowFlagManager* InShowFlagManager, UInputManager* im = nullptr);
 
 	virtual void Render();
 	virtual void Update(float deltaTime);
