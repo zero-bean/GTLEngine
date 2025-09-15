@@ -31,62 +31,97 @@ void UObject::UnregisterName(const FName& Name)
         GAllObjectNames.erase(It);
     }
 
-    // 접미사가 있는 경우(Base_N) NameSuffixCounters를 낮춰서 재사용 가능하게 함
+    // 이름에서 Base와 숫자 접미사를 파싱
     const FString S = Name.ToString();
-    if (!S.empty())
+    if (S.empty()) 
     {
-        const size_t Us = S.find_last_of('_');
-        if (Us != FString::npos && Us + 1 < S.size())
+        return;
+    }
+
+    auto ParseBaseAndSuffix = [](const FString& In, FString& OutBase, uint32& OutNum, bool& bHasNumSuffix)
         {
-            const FString SuffixStr = S.substr(Us + 1);
-            bool bAllDigits = !SuffixStr.empty();
-            for (char c : SuffixStr)
+            OutBase.clear(); OutNum = 0; bHasNumSuffix = false;
+            const size_t Us = In.find_last_of('_');
+            if (Us != FString::npos && Us + 1 < In.size())
             {
-                if (c < '0' || c > '9') 
+                const FString SuffixStr = In.substr(Us + 1);
+                bool bAllDigits = !SuffixStr.empty();
+                for (char Ch : SuffixStr)
+                {
+                    if (Ch < '0' || Ch > '9') { bAllDigits = false; break; }
+                }
+                if (bAllDigits)
+                {
+                    try 
+                    { 
+                        OutNum = static_cast<uint32>(std::stoul(SuffixStr)); 
+                    }
+                    catch (...) 
+                    { 
+                        OutNum = 0; 
+                    }
+                    
+                    OutBase = In.substr(0, Us);
+                    bHasNumSuffix = (OutNum > 0);
+                    
+                    return;
+                }
+            }
+            // 접미사 숫자가 없으면 전체가 Base
+            OutBase = In;
+            bHasNumSuffix = false;
+        };
+
+    FString BaseStr;
+    uint32 FreedSuffix = 0;
+    bool bHasNumSuffix = false;
+    ParseBaseAndSuffix(S, BaseStr, FreedSuffix, bHasNumSuffix);
+
+    // 숫자 접미사가 있는 경우: 방금 해제된 번호를 우선 재사용하도록 카운터를 낮춤
+    if (bHasNumSuffix && FreedSuffix > 0)
+    {
+        const FName Base(BaseStr);
+        auto CIt = NameSuffixCounters.find(Base);
+        if (CIt == NameSuffixCounters.end())
+        {
+            NameSuffixCounters[Base] = FreedSuffix;
+        }
+        else if (CIt->second > FreedSuffix)
+        {
+            CIt->second = FreedSuffix;
+        }
+    }
+
+    // Base 계열 이름이 더 남아있는지 검사: Base 또는 Base_숫자
+    bool bAnyLeft = false;
+    const FString Prefix = BaseStr + "_";
+    for (const FName& N : GAllObjectNames)
+    {
+        const FString T = N.ToString();
+        if (T == BaseStr)
+        {
+            bAnyLeft = true; break;
+        }
+        if (T.size() > Prefix.size() && T.rfind(Prefix, 0) == 0) // starts_with
+        {
+            // 엄밀히 숫자만인지 확인
+            bool bAllDigits = true;
+            for (char Ch : T.substr(Prefix.size()))
+            {
+                if (Ch < '0' || Ch > '9') 
                 { 
                     bAllDigits = false; 
                     break; 
                 }
             }
-
-            if (bAllDigits)
-            {
-                uint32 FreedSuffix = 0;
-                try 
-                { 
-                    FreedSuffix = static_cast<uint32>(std::stoul(SuffixStr)); 
-                }
-                catch (...) 
-                { 
-                    FreedSuffix = 0; 
-                }
-
-                if (FreedSuffix > 0)
-                {
-                    const FName Base(S.substr(0, Us));
-                    auto CIt = NameSuffixCounters.find(Base);
-                    if (CIt == NameSuffixCounters.end())
-                    {
-                        // 카운터가 없다면 이번에 해제된 접미사부터 시도하도록 설정
-                        NameSuffixCounters[Base] = FreedSuffix;
-                    }
-                    else
-                    {
-                        // 다음 시도 값이 더 크면 낮춰서 방금 해제된 번호를 재사용
-                        if (CIt->second > FreedSuffix)
-                        {
-                            CIt->second = FreedSuffix;
-                        }
-                    }
-                }
-            }
-			// 평문 Base 해제 시 Base를 다시 사용 가능하게 카운터 제거
-            else 
-            {
-                const FName Base(S);
-                NameSuffixCounters.erase(Base);
-            }
+            if (bAllDigits) { bAnyLeft = true; break; }
         }
+    }
+
+    // 더 이상 Base 계열이 없으면 카운터 리셋 → 다음 생성에서 평문(Base)부터 시작
+    if (!bAnyLeft)
+    {
+        NameSuffixCounters.erase(FName(BaseStr));
     }
 }
 
