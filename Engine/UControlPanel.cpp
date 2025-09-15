@@ -322,13 +322,13 @@ void UControlPanel::ViewModeSection()
 	// 라디오 버튼 리스트로 현재 씬의 뷰모드 선택
 	EViewModeIndex Current = SceneManager->GetScene()->GetViewMode();
 	int32 Mode = static_cast<int32>(Current);
-	bool Changed = false;
+	bool bChanged = false;
 
-	Changed |= ImGui::RadioButton("Lit", &Mode, static_cast<int>(EViewModeIndex::VMI_Lit));
-	Changed |= ImGui::RadioButton("Unlit", &Mode, static_cast<int>(EViewModeIndex::VMI_Unlit));
-	Changed |= ImGui::RadioButton("Wireframe", &Mode, static_cast<int>(EViewModeIndex::VMI_Wireframe));
+	bChanged |= ImGui::RadioButton("Lit", &Mode, static_cast<int32>(EViewModeIndex::VMI_Lit));
+	bChanged |= ImGui::RadioButton("Unlit", &Mode, static_cast<int32>(EViewModeIndex::VMI_Unlit));
+	bChanged |= ImGui::RadioButton("Wireframe", &Mode, static_cast<int32>(EViewModeIndex::VMI_Wireframe));
 
-	if (Changed && Mode != static_cast<int>(Current))
+	if (bChanged && Mode != static_cast<int32>(Current))
 	{
 		SceneManager->GetScene()->SetViewMode(static_cast<EViewModeIndex>(Mode));
 	}
