@@ -7,7 +7,6 @@
 #include "UMeshManager.h"
 #include "URaycastManager.h"
 #include "USceneManager.h"
-#include "UGizmoManager.h"
 
 class UApplication
 {

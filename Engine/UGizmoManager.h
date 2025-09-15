@@ -55,7 +55,29 @@ public:
 
 	EAxis GetSelectedAxis() { return selectedAxis; }
 
+	bool  GetShowGrid() const { return bShowGrid; }
+	void  SetShowGrid(bool v) { bShowGrid = v; }
+	bool  GetShowAxis() const { return bShowAxis; }
+	void  SetShowAxis(bool v) { bShowAxis = v; }
+
+	float GetGridSpacing() { return GridSpacing; }
+	void  SetGridSpacing(float v) { GridSpacing = (v > 0.01f ? v : 0.01f); }
+
+	int   GetGridHalfLines() const { return GridHalfLines; }
+	void  SetGridHalfLines(int v) { GridHalfLines = std::clamp(v, 1, 200000); bGridDirty = true; }
+	
+	// TODO - 아직 굵기 안되긴 함.
+	//int   GetGridBoldEvery() const { return BoldEvery; }
+	//void  SetGridBoldEvery(int v) { BoldEvery = std::clamp(v, 1, 1000); bGridDirty = true; }
+
 private:
+	bool  bShowGrid = true;
+	bool  bShowAxis = true;
+	float GridSpacing = 1.0f;   // 칸 간격
+	int   GridHalfLines = 1000; // 절반 라인 수
+	int   BoldEvery = 5;        // N칸마다 하이라이트
+	bool  bGridDirty = true;    // (선택) 개수/하이라이트 바뀌면 true
+
 	ETranslationType translationType = ETranslationType::Location;
 
 	bool isWorldSpace = true;

@@ -9,25 +9,6 @@ struct FVertexPosColor
 {
 	float x, y, z;       // Position (3개)
 	float r, g, b, a;    // Color (4개)
-
-	// 정적 함수 ChangeAxis 구현
-	static void ChangeAxis(FVertexPosColor vertices[], int32 count, int32 axis1, int32 axis2)
-	{
-		// 유효성 검사
-		if (axis1 < 0 || 2 < axis1 || axis2 < 0 || 2 < axis2 || axis1 == axis2)
-		{
-			// 유효하지 않은 축 인덱스인 경우 함수 종료
-			return;
-		}
-
-		// 모든 버텍스를 순회하며 축 교환
-		for (int32 i = 0; i < count; ++i)
-		{
-			//std::swap(vertices[i].y, vertices[i].z);
-			float* pCoords = &vertices[i].x; // 첫 번째 좌표의 포인터
-			std::swap(pCoords[axis1], pCoords[axis2]);
-		}
-	}
 };
 
 //정점 구조체 선언, 삼각형 배열 정의
