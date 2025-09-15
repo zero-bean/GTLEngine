@@ -19,9 +19,9 @@ UScene::UScene()
 UScene::~UScene()
 {
 	OnShutdown();
-	for (UObject* object : objects)
+	for (UObject* Object : objects)
 	{
-		delete object;
+		delete Object;
 	}
 	delete camera;
 }
@@ -85,65 +85,101 @@ void UScene::AddObject(USceneComponent* obj)
 
 json::JSON UScene::Serialize() const
 {
-	json::JSON result;
+	json::JSON Result;
 	// UScene 특성에 맞는 JSON 구성
-	result["Version"] = version;
-	result["NextUUID"] = std::to_string(UEngineStatics::GetNextUUID());
-	int32 validCount = 0;
-	for (UObject* object : objects)
+	Result["Version"] = version;
+	Result["NextUUID"] = std::to_string(UEngineStatics::GetNextUUID());
+
+	// Primitives 키를 항상 Object로 생성해 빈 씬에서도 키가 존재하도록 보장
+	Result["Primitives"] = json::JSON::Make(json::JSON::Class::Object);
+
+	for (UObject* Object : objects)
 	{
-		if (object == nullptr) continue;
-		json::JSON _json = object->Serialize();
-		if (!_json.IsNull())
+		if (Object == nullptr) 
 		{
-			//result["Primitives"][std::to_string(validCount)] = _json;
-			result["Primitives"][std::to_string(object->UUID)] = _json;
-			++validCount;
+			continue;
+		}
+
+		json::JSON Json = Object->Serialize();
+		if (!Json.IsNull())
+		{
+			Result["Primitives"][std::to_string(Object->UUID)] = Json;
 		}
 	}
-	return result;
+	return Result;
 }
 
 bool UScene::Deserialize(const json::JSON& data)
 {
-	version = data.at("Version").ToInt();
-	// nextUUID = data.at("NextUUID").ToInt();
+	// Version 안전 접근 (없으면 기본값)
+	if (data.hasKey("Version")) {
+		version = data.at("Version").ToInt();
+	}
+	else {
+		version = 1;
+	}
 
 	objects.clear();
-	json::JSON primitivesJson = data.at("Primitives");
+	primitiveCount = 0;
+
+	// Primitives가 없으면 빈 Object로 대체하여 예외 방지
+	json::JSON PrimitivesJson = data.hasKey("Primitives")
+		? data.at("Primitives")
+		: json::JSON::Make(json::JSON::Class::Object);
 
 	UEngineStatics::SetUUIDGeneration(false);
 	UObject::ClearFreeIndices();
-	for (auto& primitiveJson : primitivesJson.ObjectRange())
+
+	if (PrimitivesJson.JSONType() == json::JSON::Class::Object)
 	{
-		uint32 uuid = stoi(primitiveJson.first);
-		json::JSON _data = primitiveJson.second;
+		for (auto& PrimJson : PrimitivesJson.ObjectRange())
+		{
+			uint32 Uuid = 0;
+			try {
+				Uuid = static_cast<uint32>(std::stoul(PrimJson.first));
+			}
+			catch (...) {
+				continue; // 잘못된 키는 스킵
+			}
 
-		UClass* _class = UClass::FindClassWithDisplayName(_data.at("Type").ToString());
-		USceneComponent* component = nullptr;
-			if(_class != nullptr) component = _class->CreateDefaultObject()->Cast<USceneComponent>();
+			const json::JSON& Data = PrimJson.second;
 
-		component->Deserialize(_data);
-		component->SetUUID(uuid);
+			// Type 누락/미지원 타입 방어
+			if (!Data.hasKey("Type")) 
+			{
+				continue;
+			}
+			UClass* Class = UClass::FindClassWithDisplayName(Data.at("Type").ToString());
+			if (Class == nullptr) 
+			{
+				continue;
+			}
 
-		objects.push_back(component);
-		if (component->CountOnInspector())
-			++primitiveCount;
+			USceneComponent* Component = Class->CreateDefaultObject()->Cast<USceneComponent>();
+			if (!Component) 
+			{
+				continue;
+			}
+
+			Component->Deserialize(Data);
+			Component->SetUUID(Uuid);
+
+			objects.push_back(Component);
+			if (Component->CountOnInspector())
+			{
+				++primitiveCount;
+			}
+		}
 	}
 
-	// 왜 있는 건지 모름!
-	/*USceneComponent* gizmoGrid = NewObject<UGizmoGridComp>(
-		FVector{ 0.3f, 0.3f, 0.3f },
-		FVector{ 0.0f, 0.0f, 0.0f },
-		FVector{ 0.2f, 0.2f, 0.2f }
-	);
-	objects.push_back(gizmoGrid);*/
+	// NextUUID가 있을 때만 설정
+	if (data.hasKey("NextUUID")) {
+		FString uuidStr = data.at("NextUUID").ToString();
+		try { UEngineStatics::SetNextUUID(static_cast<uint32>(std::stoul(uuidStr))); }
+		catch (...) {}
+	}
 
-	FString uuidStr = data.at("NextUUID").ToString();
-
-	UEngineStatics::SetNextUUID((uint32)stoi(uuidStr));
 	UEngineStatics::SetUUIDGeneration(true);
-
 	return true;
 }
 
