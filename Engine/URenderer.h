@@ -3,7 +3,7 @@
 #include "UMesh.h"
 #include "Matrix.h"
 #include "UEngineSubsystem.h"
-
+#include "CharacterInfo.h"
 // URenderer.h or cpp 상단
 struct CBTransform
 {
@@ -71,6 +71,7 @@ private:
 
 	// Constant buffer
 	ID3D11Buffer* constantBuffer;
+	ID3D11Buffer* FontConstantBuffer;
 
 	// Viewport
 	D3D11_VIEWPORT viewport;
@@ -86,6 +87,8 @@ private:
 	FMatrix mVP;                 // 프레임 캐시
 	CBTransform   mCBData;
 
+	TMap<char, CharacterInfo> CharacterInfos;
+
 public:
 	URenderer();
 	~URenderer();
@@ -99,6 +102,10 @@ public:
 	void Release();
 	void ReleaseShader();
 	void ReleaseConstantBuffer();
+
+	// texture 관련
+	bool InitializeCharacterMap(const FString& filePath);
+
 
 	// Buffer creation
 	ID3D11Buffer* CreateVertexBuffer(const void* data, size_t sizeInBytes);
