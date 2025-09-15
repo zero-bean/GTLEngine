@@ -14,20 +14,20 @@ void UQuadComponent::UpdateConstantBuffer(URenderer& renderer)
 
     // 2) 글리프 UVRect 계산 → 렌더러에 전달(b1)
     // 48 ~ 57 == 숫자
-    FSlicedUV s = GetFontUV(48);
-    renderer.UpdateFontConstantBuffer({ s.u0, s.v0, s.u1, s.v1 });
+   /* FSlicedUV s = GetFontUV(48);
+    renderer.UpdateFontConstantBuffer({ s.u0, s.v0, s.u1, s.v1 });*/
 }
 
 bool UQuadComponent::Init(UMeshManager* meshManager)
 {
-    UUID = 234234324324;
-    if (UUID == 0) { TextDigits = "0"; return true; }
+	int TempUUID = UUID;
+    if (TempUUID == 0) { TextDigits = "0"; return true; }
 
     std::string s;
-    while (UUID > 0) {
-        int d = int(UUID % 10);
+    while (TempUUID > 0) {
+        int d = int(TempUUID % 10);
         s.push_back(char('0' + d));
-        UUID /= 10;
+        TempUUID /= 10;
     }
     std::reverse(s.begin(), s.end());
     TextDigits = std::move(s);

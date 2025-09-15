@@ -9,14 +9,14 @@ class UCubeComp : public UPrimitiveComponent
 {
 	DECLARE_UCLASS(UCubeComp, UPrimitiveComponent)
 private:
-	static inline FString type = "Cube";
+	// static inline FString type = "Cube";
 
-	static USceneComponent* Create()
+	/*static USceneComponent* Create()
 	{
 		USceneComponent* newInstance = NewObject<UCubeComp>();
 
 		return newInstance;
-	}
+	}*/
 
 	bool IsManageable() override { return true; }
 
