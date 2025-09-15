@@ -131,12 +131,13 @@ bool UScene::Deserialize(const json::JSON& data)
 			++primitiveCount;
 	}
 
-	USceneComponent* gizmoGrid = NewObject<UGizmoGridComp>(
+	// 왜 있는 건지 모름!
+	/*USceneComponent* gizmoGrid = NewObject<UGizmoGridComp>(
 		FVector{ 0.3f, 0.3f, 0.3f },
 		FVector{ 0.0f, 0.0f, 0.0f },
 		FVector{ 0.2f, 0.2f, 0.2f }
 	);
-	objects.push_back(gizmoGrid);
+	objects.push_back(gizmoGrid);*/
 
 	FString uuidStr = data.at("NextUUID").ToString();
 
