@@ -44,7 +44,7 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #ifdef _DEBUG
 #pragma comment(lib, "DirectXTK.lib")
-#elif
+#else
 #pragma comment(lib, "DirectXTK.lib")
 #endif // DEBUG_
 // Engine forward declarations
