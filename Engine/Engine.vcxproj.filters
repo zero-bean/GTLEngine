@@ -213,6 +213,9 @@
     <ClCompile Include="ImguiConsole.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>
+    <ClCompile Include="UBillboardComponent.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\imconfig.h">
@@ -394,6 +397,12 @@
     </ClInclude>
     <ClInclude Include="UClass.h">
       <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="CharacterInfo.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="UBillboardComponent.h">
+      <Filter>Engine\Core\Component</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

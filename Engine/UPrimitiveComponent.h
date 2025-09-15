@@ -6,26 +6,26 @@
 #include "UClass.h"
 
 class UMeshManager; // 전방 선언
-
+class UBillboardComponent;
 
 class UPrimitiveComponent : public USceneComponent
 {
 	DECLARE_UCLASS(UPrimitiveComponent, USceneComponent)
 protected:
+	UBillboardComponent* billBoard;
 	UMesh* mesh;
 	FVector4 Color = { 1, 1, 1, 1 };
-	ID3D11ShaderResourceView* BillboardSRV = nullptr; // 텍스처가 있으면 바인딩
 public:
 	UPrimitiveComponent(FVector loc = { 0,0,0 }, FVector rot = { 0,0,0 }, FVector scl = { 1,1,1 })
 		: USceneComponent(loc, rot, scl), mesh(nullptr)
 	{
 	}
+	virtual ~UPrimitiveComponent();
 
 	bool bIsSelected = false;
 
 	virtual void Draw(URenderer& renderer);
 	virtual void UpdateConstantBuffer(URenderer& renderer);
-	virtual ~UPrimitiveComponent() {}
 
 	// 별도의 초기화 메서드
 	virtual bool Init(UMeshManager* meshManager);

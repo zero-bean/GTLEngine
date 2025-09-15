@@ -102,9 +102,6 @@ void UControlPanel::SpawnPrimitiveSection()
 			SceneManager->GetScene()->AddObject(sceneComponent);
 		}
 		UE_LOG("Spawned new object: %s", sceneComponent->Name.ToString().c_str());
-		// 쿼드 추가
-		USceneComponent* quad = NewObject<UQuadComponent>();
-		SceneManager->GetScene()->AddObject(quad);
 	}
 	ImGui::SameLine();
 	ImGui::BeginDisabled();
