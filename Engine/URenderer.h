@@ -13,7 +13,6 @@ struct CBTransform
 	float IsSelected;
 	float padding[3];
 };
-
 // 행벡터 규약: p' = p * M
 static inline void TransformPosRow(float& x, float& y, float& z, const FMatrix& M) {
 	const float X = x, Y = y, Z = z;
@@ -57,20 +56,18 @@ private:
 	ID3D11DeviceContext* deviceContext;
 	IDXGISwapChain* swapChain;
 	ID3D11RenderTargetView* renderTargetView;
+	ID3D11ShaderResourceView* shaderResourceView;
+	ID3D11SamplerState* samplerState;
 	ID3D11DepthStencilView* depthStencilView;
 	ID3D11RasterizerState* rasterizerState;
-
-	// Shader objects
-	/* Comment: 이제 TMap으로 관리합니다. 
-	ID3D11VertexShader* vertexShader;
-	ID3D11PixelShader* pixelShader;
-	ID3D11InputLayout* inputLayout;
-	*/
-
+	
 	// TMap으로 관리
 	TMap<FString, ID3D11InputLayout*> InputLayouts;
 	TMap<FString, ID3D11PixelShader*> PixelShaders;
 	TMap<FString, ID3D11VertexShader*> VertexShaders;
+
+	// Resources
+	ID3D11Resource* resource;
 
 	// Constant buffer
 	ID3D11Buffer* constantBuffer;
@@ -97,6 +94,7 @@ public:
 	bool Initialize(HWND windowHandle);
 	bool CreateShader();
 	bool CreateRasterizerState();
+	bool CreateDefaultSampler();
 	bool CreateConstantBuffer();
 	void Release();
 	void ReleaseShader();
