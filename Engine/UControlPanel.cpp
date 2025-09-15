@@ -7,6 +7,7 @@
 #include "UDefaultScene.h"
 #include "UNamePool.h"
 #include "UQuadComponent.h"
+#include "URenderer.h"
 
 // 활성화(선택) 상태면 버튼색을 Active 계열로 바꿔서 '눌린 버튼'처럼 보이게 하는 헬퍼
 static bool ModeButton(const char* label, bool active, const ImVec2& size = ImVec2(0, 0))
@@ -55,6 +56,8 @@ void UControlPanel::RenderContent()
 	SceneManagementSection();
 	ImGui::Separator();
 	CameraManagementSection();
+	ImGui::Separator();
+	ViewModeSection();
 }
 
 void UControlPanel::PrimaryInformationSection()
@@ -308,5 +311,25 @@ void UControlPanel::CameraManagementSection()
 	if (rotCommitted)
 	{
 		camera->SetPitchYawDegrees(pitchYawRoll[0], pitchYawRoll[1]);
+	}
+}
+
+void UControlPanel::ViewModeSection()
+{
+	// 뷰모드 섹션
+	ImGui::Text("View Mode");
+
+	// 라디오 버튼 리스트로 현재 씬의 뷰모드 선택
+	EViewModeIndex Current = SceneManager->GetScene()->GetViewMode();
+	int32 Mode = static_cast<int32>(Current);
+	bool bChanged = false;
+
+	bChanged |= ImGui::RadioButton("Lit", &Mode, static_cast<int32>(EViewModeIndex::VMI_Lit));
+	bChanged |= ImGui::RadioButton("Unlit", &Mode, static_cast<int32>(EViewModeIndex::VMI_Unlit));
+	bChanged |= ImGui::RadioButton("Wireframe", &Mode, static_cast<int32>(EViewModeIndex::VMI_Wireframe));
+
+	if (bChanged && Mode != static_cast<int32>(Current))
+	{
+		SceneManager->GetScene()->SetViewMode(static_cast<EViewModeIndex>(Mode));
 	}
 }

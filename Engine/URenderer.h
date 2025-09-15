@@ -82,6 +82,13 @@ struct FBatchSprite
 	}
 };
 
+enum class EViewModeIndex : uint32
+{
+	VMI_Lit,
+	VMI_Unlit,
+	VMI_Wireframe,
+};
+
 class URenderer : UEngineSubsystem
 {
 	DECLARE_UCLASS(URenderer, UEngineSubsystem)
@@ -103,7 +110,8 @@ private:
 	ID3D11ShaderResourceView* shaderResourceView;
 	ID3D11SamplerState* samplerState;
 	ID3D11DepthStencilView* depthStencilView;
-	ID3D11RasterizerState* rasterizerState;
+	ID3D11RasterizerState* SolidRasterizerState;
+	ID3D11RasterizerState* WireframeRasterizerState;
 	
 	// TMap으로 관리
 	TMap<FString, ID3D11InputLayout*> InputLayouts;
@@ -130,6 +138,8 @@ private:
 
 	FMatrix mVP;                 // 프레임 캐시
 	CBTransform   mCBData;
+
+	EViewModeIndex CurrentViewMode = EViewModeIndex::VMI_Unlit;
 
 public:
 	URenderer();
@@ -205,6 +215,9 @@ public:
 	ID3D11VertexShader* GetVertexShader(const FString& name) { return VertexShaders[name]; }
 	ID3D11PixelShader* GetPixelShader(const FString& name) { return PixelShaders[name]; }
 
+	// View mode
+	EViewModeIndex GetViewMode() const { return CurrentViewMode; }
+	void SetViewMode(EViewModeIndex Mode) { CurrentViewMode = Mode; }
 	// Utility functions
 	bool CheckDeviceState();
 	void GetBackBufferSize(int32& width, int32& height);

@@ -19,6 +19,7 @@ URenderer::URenderer()
 	, constantBuffer(nullptr)
 	, fontConstantBuffer(nullptr)
 	, rasterizerState(nullptr)
+	, SolidRasterizerState(nullptr)
 	, hWnd(nullptr)
 	, bIsInitialized(false)
 {
@@ -314,8 +315,24 @@ bool URenderer::CreateRasterizerState()
 	rasterizerDesc.MultisampleEnable = FALSE;
 	rasterizerDesc.AntialiasedLineEnable = FALSE;
 
-	HRESULT hr = device->CreateRasterizerState(&rasterizerDesc, &rasterizerState);
-	return CheckResult(hr, "CreateRasterizerState");
+	// 솔리드 모드 래스터라이저 상태 생성
+	HRESULT hr = device->CreateRasterizerState(&rasterizerDesc, &SolidRasterizerState);
+	bool bResult = CheckResult(hr, "CreateRasterizerState (Solid)");
+	if (!bResult) 
+	{ 
+		return false; 
+	}
+
+	// 와이어프레임 모드 래스터라이저 상태 생성
+	rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
+	hr = device->CreateRasterizerState(&rasterizerDesc, &WireframeRasterizerState);
+	bResult = CheckResult(hr, "CreateRasterizerState (Wireframe)");
+	if (!bResult) 
+	{ 
+		return false; 
+	}
+	
+	return true;
 }
 
 bool URenderer::CreateDefaultSampler()
@@ -614,7 +631,7 @@ void URenderer::Release()
 	ReleaseShader();
 	ReleaseConstantBuffer();
 
-	SAFE_RELEASE(rasterizerState);
+	SAFE_RELEASE(SolidRasterizerState);
 	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(renderTargetView);
 	SAFE_RELEASE(shaderResourceView);
@@ -786,9 +803,17 @@ void URenderer::PrepareShader()
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set rasterizer state (와인딩 순서 적용)
-	if (rasterizerState)
+	switch (CurrentViewMode)
 	{
-		deviceContext->RSSetState(rasterizerState);
+	case EViewModeIndex::VMI_Unlit:
+		deviceContext->RSSetState(SolidRasterizerState);
+		break;
+	case EViewModeIndex::VMI_Wireframe:
+		deviceContext->RSSetState(WireframeRasterizerState);
+		break;
+	default:
+		deviceContext->RSSetState(SolidRasterizerState);
+		break;
 	}
 
 	// Set constant buffer
