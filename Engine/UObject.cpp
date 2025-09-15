@@ -14,17 +14,79 @@ bool UObject::IsNameInUse(const FName& Name)
 // 전역 이름 집합 등록(유효 이름만)
 void UObject::RegisterName(const FName& Name)
 {
-    if (Name.ToString() == "None") return;
+    if (Name == "None") 
+    {
+        return;
+    }
+
     GAllObjectNames.insert(Name);
 }
 
-// 전역 이름 집합 해제
+// 전역 이름 집합 해제 + 접미사 카운터 조정
 void UObject::UnregisterName(const FName& Name)
 {
     auto It = GAllObjectNames.find(Name);
     if (It != GAllObjectNames.end())
     {
         GAllObjectNames.erase(It);
+    }
+
+    // 접미사가 있는 경우(Base_N) NameSuffixCounters를 낮춰서 재사용 가능하게 함
+    const FString S = Name.ToString();
+    if (!S.empty())
+    {
+        const size_t Us = S.find_last_of('_');
+        if (Us != FString::npos && Us + 1 < S.size())
+        {
+            const FString SuffixStr = S.substr(Us + 1);
+            bool bAllDigits = !SuffixStr.empty();
+            for (char c : SuffixStr)
+            {
+                if (c < '0' || c > '9') 
+                { 
+                    bAllDigits = false; 
+                    break; 
+                }
+            }
+
+            if (bAllDigits)
+            {
+                uint32 FreedSuffix = 0;
+                try 
+                { 
+                    FreedSuffix = static_cast<uint32>(std::stoul(SuffixStr)); 
+                }
+                catch (...) 
+                { 
+                    FreedSuffix = 0; 
+                }
+
+                if (FreedSuffix > 0)
+                {
+                    const FName Base(S.substr(0, Us));
+                    auto CIt = NameSuffixCounters.find(Base);
+                    if (CIt == NameSuffixCounters.end())
+                    {
+                        // 카운터가 없다면 이번에 해제된 접미사부터 시도하도록 설정
+                        NameSuffixCounters[Base] = FreedSuffix;
+                    }
+                    else
+                    {
+                        // 다음 시도 값이 더 크면 낮춰서 방금 해제된 번호를 재사용
+                        if (CIt->second > FreedSuffix)
+                        {
+                            CIt->second = FreedSuffix;
+                        }
+                    }
+                }
+            }
+			// 평문 Base 해제 시 Base를 다시 사용 가능하게 카운터 제거
+            else 
+            {
+                const FName Base(S);
+                NameSuffixCounters.erase(Base);
+            }
+        }
     }
 }
 
