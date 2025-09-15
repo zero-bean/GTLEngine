@@ -2,7 +2,8 @@
 #include "UApplication.h"
 #include "UScene.h"
 #include "EditorIni.h"
-
+#include "UGizmoManager.h"
+#include "EditorApplication.h"
 // Static member definitions
 WCHAR UApplication::WindowClass[] = L"EngineWindowClass";
 WCHAR UApplication::DefaultTitle[] = L"Engine Application";
@@ -168,6 +169,10 @@ void UApplication::Shutdown()
 		// 필요하면 위치/직교폭 등도 추가로 저장
 		// EditorIni::Get().SetFloat("Camera", "OrthoWidth",  ... );
 		// EditorIni::Get().SetFloat("Camera", "OrthoHeight", ... );
+	}
+	// 어쩔 수 없는 금단의 기술입니다...
+	if (auto* editorApp = dynamic_cast<EditorApplication*>(this)) {
+		CEditorIni::Get().SetFloat("Grid", "Spacing", editorApp->GetGizmoManager().GetGridSpacing());
 	}
 	CEditorIni::Get().Save();
 }

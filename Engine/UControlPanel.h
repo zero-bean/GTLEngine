@@ -21,8 +21,13 @@ class UControlPanel : public ImGuiWindowWrapper
 	// Scene Management Section
 	char sceneName[256] = "Default";
 
-	// Camera Management Section
+	
 
+	// Grid Cache
+	bool bGridUIInited = false;
+	float GridSpacingEdit = 1.0f;
+	int   GridHalfLinesEdit = 1000;
+	int   GridBoldEveryEdit = 5;
 
 public:
 	UControlPanel(USceneManager* sceneManager, UGizmoManager* gizmoManager, UShowFlagManager* InShowFlagManager);
@@ -34,5 +39,6 @@ public:
 	void ViewModeSection();
 	void ShowFlagSection();
 	USceneComponent* CreateSceneComponentFromChoice(int index);
+	void GridAndAxisSection();
 };
 
