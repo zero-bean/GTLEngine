@@ -58,6 +58,8 @@ void UControlPanel::RenderContent()
 	CameraManagementSection();
 	ImGui::Separator();
 	ViewModeSection();
+
+	GridAndAxisSection(); // ⬅️ 추가
 }
 
 void UControlPanel::PrimaryInformationSection()
@@ -332,4 +334,47 @@ void UControlPanel::ViewModeSection()
 	{
 		SceneManager->GetScene()->SetViewMode(static_cast<EViewModeIndex>(Mode));
 	}
+}
+void UControlPanel::GridAndAxisSection()
+{
+	if (!GizmoManager) return;
+
+	ImGui::SeparatorText("Grid / Axis");
+
+	bool showGrid = GizmoManager->GetShowGrid();
+	bool showAxis = GizmoManager->GetShowAxis();
+	if (ImGui::Checkbox("Show Grid", &showGrid)) GizmoManager->SetShowGrid(showGrid);
+	ImGui::SameLine();
+	if (ImGui::Checkbox("Show Axis", &showAxis)) GizmoManager->SetShowAxis(showAxis);
+
+	float spacing = GizmoManager->GetGridSpacing();
+	ImGui::SetNextItemWidth(80);
+	if (ImGui::DragFloat("Grid Spacing", &spacing, 0.01f, 0.01f, 10000.0f, "%.3f",
+		ImGuiSliderFlags_AlwaysClamp))
+	{
+		GizmoManager->SetGridSpacing(spacing);
+		// editor.ini에 저장
+		CEditorIni::Get().SetFloat("Grid", "Spacing", spacing);
+		CEditorIni::Get().Save();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Reset##gridspacing")) GizmoManager->SetGridSpacing(1.0f);
+
+	int halfLines = GizmoManager->GetGridHalfLines();
+	ImGui::SetNextItemWidth(80);
+	if (ImGui::InputInt("Half Lines", &halfLines))
+	{
+		GizmoManager->SetGridHalfLines(halfLines); // 그 다음 프레임부터 새 개수로 생성/제출
+	}
+
+	//int boldEvery = GizmoManager->GetGridBoldEvery();
+	//ImGui::SetNextItemWidth(80);
+	//if (ImGui::DragInt("Bold Every N", &boldEvery, 1, 1, 1000))
+	//{
+	//	GizmoManager->SetGridBoldEvery(boldEvery);
+	//}
+
+	//// (선택) 라이브 확인용
+	//ImGui::TextDisabled("Live: spacing=%.3f half=%d bold=%d",
+	//	GizmoManager->GetGridSpacing(), GizmoManager->GetGridHalfLines(), GizmoManager->GetGridBoldEvery());
 }

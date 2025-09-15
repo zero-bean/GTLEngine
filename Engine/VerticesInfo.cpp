@@ -689,8 +689,8 @@ TArray<FVertexPosColor> GridGenerator::CreateGridVertices(float gridSize, int32 
     {
         if (i == 0) continue; // skip the central X axis line
         FVector4 color = (i % 5 == 0) ? highlightColor : normalColor;
-        vertices.push_back({ -gridSize * gridCount, 0.0f, i * gridSize, color.X, color.Y, color.Z, color.W });
-        vertices.push_back({ gridSize * gridCount, 0.0f, i * gridSize, color.X, color.Y, color.Z, color.W });
+        vertices.push_back({ -gridSize * gridCount, i * gridSize, 0.0f, color.X, color.Y, color.Z, color.W });
+        vertices.push_back({ gridSize * gridCount, i * gridSize, 0.0f, color.X, color.Y, color.Z, color.W });
     }
 
     // X축에 평행한 가로 선들을 생성하는 로직
@@ -698,11 +698,9 @@ TArray<FVertexPosColor> GridGenerator::CreateGridVertices(float gridSize, int32 
     {
         if (i == 0) continue; // skip the central Z axis line
         FVector4 color = (i % 5 == 0) ? highlightColor : normalColor;
-        vertices.push_back({ i * gridSize, 0.0f, -gridSize * gridCount, color.X, color.Y, color.Z, color.W });
-        vertices.push_back({ i * gridSize, 0.0f, gridSize * gridCount, color.X, color.Y, color.Z, color.W });
+        vertices.push_back({ i * gridSize, -gridSize * gridCount, 0.0f, color.X, color.Y, color.Z, color.W });
+        vertices.push_back({ i * gridSize, gridSize * gridCount, 0.0f, color.X, color.Y, color.Z, color.W });
     }
-
-    FVertexPosColor::ChangeAxis(vertices.data(), (int32)vertices.size(), 1, 2);
 
     return vertices;
 }
@@ -730,17 +728,15 @@ TArray<FVertexPosColor> GridGenerator::CreateAxisVertices(float gridSize, int32 
 
     // Y axis
     vertices.push_back({ 0.0f, 0.0f, 0.0f, yNeg.X, yNeg.Y, yNeg.Z, yNeg.W });
-    vertices.push_back({ 0.0f, 0.0f, -axisLength, yNeg.X, yNeg.Y, yNeg.Z, yNeg.W });
+    vertices.push_back({ 0.0f, -axisLength, 0.0f, yNeg.X, yNeg.Y, yNeg.Z, yNeg.W });
     vertices.push_back({ 0.0f, 0.0f, 0.0f, yPos.X, yPos.Y, yPos.Z, yPos.W });
-    vertices.push_back({ 0.0f,  0.0f, axisLength, yPos.X, yPos.Y, yPos.Z, yPos.W });
+    vertices.push_back({ 0.0f,  axisLength, 0.0f, yPos.X, yPos.Y, yPos.Z, yPos.W });
 
     // Z axis
     vertices.push_back({ 0.0f, 0.0f, 0.0f, zNeg.X, zNeg.Y, zNeg.Z, zNeg.W });
-    vertices.push_back({ 0.0f, -axisLength, 0.0f, zNeg.X, zNeg.Y, zNeg.Z, zNeg.W });
+    vertices.push_back({ 0.0f, 0.0f, -axisLength, zNeg.X, zNeg.Y, zNeg.Z, zNeg.W });
     vertices.push_back({ 0.0f, 0.0f, 0.0f, zPos.X, zPos.Y, zPos.Z, zPos.W });
-    vertices.push_back({ 0.0f, axisLength, 0.0f, zPos.X, zPos.Y, zPos.Z, zPos.W });
-
-    FVertexPosColor::ChangeAxis(vertices.data(), (int32)vertices.size(), 1, 2);
+    vertices.push_back({ 0.0f, 0.0f, axisLength, zPos.X, zPos.Y, zPos.Z, zPos.W });
 
     return vertices;
 }
