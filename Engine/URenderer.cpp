@@ -83,6 +83,12 @@ bool URenderer::Initialize(HWND windowHandle)
 
 	DirectX::CreateDDSTextureFromFile(device, L"assets/font_transparent.dds", &resource, &shaderResourceView);
 	CreateFontConstantBuffer();
+	if (!InitializeCharacterMap("assets/DejaVuSansMono.txt"))
+	{
+		LogError("Fail load txt", E_FAIL);
+		return false;
+	}
+	
 
 	bIsInitialized = true;
 	return true;
@@ -674,6 +680,48 @@ void URenderer::ReleaseConstantBuffer()
 	SAFE_RELEASE(constantBuffer);
 	SAFE_RELEASE(fontConstantBuffer);
 }
+
+bool URenderer::InitializeCharacterMap(const FString& filePath)
+{
+	std::ifstream inFile(filePath);
+	if (!inFile.is_open())
+	{
+		UE_LOG("txt 파일 로드 실패");
+
+		return false;
+	}
+	const float atlasGridSize = 16.0f;
+	const float cellWidth = 1.0f / atlasGridSize;
+	const float cellHeight = 1.0f / atlasGridSize;
+	FString line;
+	while (std::getline(inFile, line))
+	{
+		if (line.empty()) continue;
+		
+		std::stringstream ss(line);
+		int index, unicodeValue;
+
+		if (!(ss >> index >> unicodeValue)) {
+			// 파싱 실패 시 해당 줄은 건너뛰기 (예: 주석만 있는 줄)
+			continue;
+		}
+		int column = index % (int)atlasGridSize;
+		int row = index / (int)atlasGridSize;
+
+		CharacterInfo info;
+		info.u = column * cellWidth;
+		info.v = row * cellHeight;
+		info.width = cellWidth;
+		info.height = cellHeight;
+
+		CharacterInfos[unicodeValue] = info;
+	}
+	inFile.close();
+	return true;
+}
+
+
+
 
 ID3D11Buffer* URenderer::CreateIndexBuffer(const void* data, size_t sizeInBytes)
 {
