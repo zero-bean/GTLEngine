@@ -26,7 +26,7 @@ static bool ModeButton(const char* label, bool active, const ImVec2& size = ImVe
 }
 
 UControlPanel::UControlPanel(USceneManager* sceneManager, UGizmoManager* gizmoManager)
-	: ImGuiWindowWrapper("Control Panel", ImVec2(0, 0), ImVec2(275, 390)), SceneManager(sceneManager), GizmoManager(gizmoManager)
+	: ImGuiWindowWrapper("Control Panel", ImVec2(0, 0), ImVec2(290, 500)), SceneManager(sceneManager), GizmoManager(gizmoManager)
 {
 	for (const auto& registeredType : UClass::GetClassList())
 	{
