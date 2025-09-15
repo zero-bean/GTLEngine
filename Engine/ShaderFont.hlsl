@@ -22,7 +22,7 @@ VSOutput VS_Main(VSInput input)
     VSOutput output = (VSOutput) 0;
 
     output.position = mul(float4(input.position, 1.0f), MVP);
-    output.texCoord = input.texCoord;
+    output.texCoord = float2(input.texCoord.x, 1.0 - input.texCoord.y);
    
     return output;
 }
