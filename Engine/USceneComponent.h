@@ -60,6 +60,7 @@ public:
 	{
 		return RelativeQuaternion;
 	}
+	FVector GetWorldLocation();
 
 	json::JSON Serialize() const override;
 	bool Deserialize(const json::JSON& data) override;

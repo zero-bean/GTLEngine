@@ -11,7 +11,22 @@ struct CBTransform
 	float MVP[16];
 	float MeshColor[4];
 	float IsSelected;
-	float padding[3];
+	float Pad0[3];
+
+
+	// --- billboard per-object ---
+	float BillboardCenterWS[3]; float SizeX; // 센터(xyz) + 가로
+	float SizeY; float Pad1[3];          // 세로
+};
+
+// 퍼-프레임용(카메라 축/뷰포트/모드)은 별도 CB로!
+struct CBFrame
+{
+	float CamRightWS[3]; float FPad0;
+	float CamUpWS[3];    float FPad1;
+	float ViewportSize[2]; // (W,H) in pixels
+	int   ScreenAlignMode; // 0=World-Size, 1=Screen-Pixel
+	int   FPad2;
 };
 
 // 행벡터 규약: p' = p * M
@@ -74,6 +89,8 @@ private:
 
 	// Constant buffer
 	ID3D11Buffer* constantBuffer;
+	// =========== 빌보드용 ===========
+	ID3D11Buffer* FrameConstantBuffer;  // b1 (신규)
 
 	// Viewport
 	D3D11_VIEWPORT viewport;
@@ -88,6 +105,8 @@ private:
 
 	FMatrix mVP;                 // 프레임 캐시
 	CBTransform   mCBData;
+
+	CBFrame       MCBFrame;             // 신규 per-frame 캐시
 
 public:
 	URenderer();
@@ -160,6 +179,23 @@ public:
 	bool CheckDeviceState();
 	void GetBackBufferSize(int32& width, int32& height);
 
+
+
+
+	bool CreateFrameConstantBuffer();   // 신규
+	void ReleaseFrameConstantBuffer();  // 신규
+	bool UpdateFrameConstantBuffer();   // 신규
+
+	// =========== 빌보드용 =============
+	// 프레임 공통 값 세팅 (씬에서 매 프레임 1번 호출)
+	void SetBillboardFrame(const FVector& CamRight,
+		const FVector& CamUp,
+		float ViewW, float ViewH,
+		int ScreenAlignMode);
+
+	// 오브젝트별 값 세팅 (그 오브젝트 그리기 직전)
+	void SetBillboardObject(const FVector& CenterWS,
+		float SizeX, float SizeY);
 private:
 	// Internal helper functions
 	bool CreateDeviceAndSwapChain(HWND windowHandle);
@@ -182,8 +218,9 @@ private:
 				dst[r * 4 + c] = src.M[r][c];
 	}
 public:
-	void SetViewProj(const FMatrix& V, const FMatrix& P); // 내부에 VP 캐시
 	void SetModel(const FMatrix& M, const FVector4& color, bool IsSelected); // M*VP → b0 업로드
+	// ============== 뷰포트 관련 ==============
+	void SetViewProj(const FMatrix& V, const FMatrix& P); // 내부에 VP 캐시
 	void SetTargetAspect(float a) { if (a > 0.f) targetAspect = a; }
 	// targetAspect를 내부에서 사용 (카메라에 의존 X)
 	D3D11_VIEWPORT MakeAspectFitViewport(int32 winW, int32 winH) const;

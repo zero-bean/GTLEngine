@@ -57,9 +57,9 @@ TArray<FVertexPosTexCoord> quad_vertices = {
 // DirectX의 기본 와인딩 순서(Front-Face)는 반시계 방향(CCW)입니다.
 TArray<uint32> quad_indices = {
     // 첫 번째 삼각형
-    0, 1, 2,
+    0, 2, 1,
     // 두 번째 삼각형
-    0, 2, 3
+    0, 3, 2
 };
 
 
