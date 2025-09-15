@@ -60,4 +60,7 @@ public:
 
 	int32 GetBackBufferWidth() { return backBufferWidth; };
 	int32 GetBackBufferHeight() { return backBufferHeight; };
+
+	EViewModeIndex GetViewMode() const { return renderer ? renderer->GetViewMode() : EViewModeIndex::VMI_Unlit; }
+	void SetViewMode(EViewModeIndex Mode) { if (renderer) renderer->SetViewMode(Mode); }
 };
