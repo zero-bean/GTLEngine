@@ -97,9 +97,9 @@ struct FVertexPos
 struct FSlicedUV
 {
 public:
+	FSlicedUV() : u0(0), v0(0), u1(1), v1(1) {}
 	FSlicedUV(float inU0, float inV0, float inU1, float inV1)
-		: u0(inU0), v0(inV0), u1(inU1), v1(inV1) {
-	}
+		: u0(inU0), v0(inV0), u1(inU1), v1(inV1) {}
 
 	float u0;
 	float v0;

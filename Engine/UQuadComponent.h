@@ -5,6 +5,8 @@
 #include "VertexPosColor.h"
 #include "Vector.h"
 
+class UMeshManager;
+
 class UQuadComponent : public UPrimitiveComponent
 {
 	DECLARE_UCLASS(UQuadComponent, UPrimitiveComponent)
@@ -15,7 +17,12 @@ public:
 	UQuadComponent(FVector pos = { 0, 0, 0 }, FVector rot = { 0, 0, 0 }, FVector scl = { 1, 1, 1 })
 		:UPrimitiveComponent(pos, rot, scl) {}
 
+	virtual bool Init(UMeshManager* meshManager) override;
 	virtual void UpdateConstantBuffer(URenderer& renderer) override;
+	virtual void Draw(URenderer& renderer) override;
+
+	void SetDigitSize(float w, float h) { DigitW = w; DigitH = h; }
+	void SetSpacing(float s) { Spacing = s; }
 
 	// font_default 전용 => 필요한 사람이 확장할 것
 	inline FSlicedUV GetFontUV(const int id, float padPixel = 0.f)
@@ -41,4 +48,12 @@ public:
 
 		return FSlicedUV(u0, v0, u1, v1);
 	}
+
+private:
+	std::string TextDigits;
+
+	// 월드 단위: 한 글자 크기 + 자간
+	float DigitW = 0.30f;
+	float DigitH = 0.50f;
+	float Spacing = 0.02f;
 };
