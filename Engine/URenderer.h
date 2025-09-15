@@ -13,6 +13,16 @@ struct CBTransform
 	float IsSelected;
 	float Pad0[3];
 };
+
+// 폰트용 Constant 버퍼 전달 구조체
+struct FConstantFont
+{
+	float u0;
+	float v0;
+	float u1;
+	float v1;
+};
+
 // 행벡터 규약: p' = p * M
 static inline void TransformPosRow(float& x, float& y, float& z, const FMatrix& M) {
 	const float X = x, Y = y, Z = z;
@@ -71,6 +81,7 @@ private:
 
 	// Constant buffer
 	ID3D11Buffer* constantBuffer;
+	ID3D11Buffer* fontConstantBuffer;
 
 	// Viewport
 	D3D11_VIEWPORT viewport;
@@ -96,6 +107,7 @@ public:
 	bool CreateRasterizerState();
 	bool CreateDefaultSampler();
 	bool CreateConstantBuffer();
+	bool CreateFontConstantBuffer();
 	void Release();
 	void ReleaseShader();
 	void ReleaseConstantBuffer();
@@ -133,6 +145,7 @@ public:
 
 	// Constant buffer updates
 	bool UpdateConstantBuffer(const void* data, size_t sizeInBytes);
+	void UpdateFontConstantBuffer(const FConstantFont& r);
 
 	// Batch Mode only for LineList
 	void BeginBatchLineList();       
@@ -152,7 +165,6 @@ public:
 	ID3D11InputLayout* GetInputLayout(const FString& name) { return InputLayouts[name]; }
 	ID3D11VertexShader* GetVertexShader(const FString& name) { return VertexShaders[name]; }
 	ID3D11PixelShader* GetPixelShader(const FString& name) { return PixelShaders[name]; }
-
 
 	// Utility functions
 	bool CheckDeviceState();

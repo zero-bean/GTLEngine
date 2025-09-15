@@ -93,3 +93,16 @@ struct FVertexPos
 
 };
 
+// 폰트 편집용
+struct FSlicedUV
+{
+public:
+	FSlicedUV(float inU0, float inV0, float inU1, float inV1)
+		: u0(inU0), v0(inV0), u1(inU1), v1(inV1) {
+	}
+
+	float u0;
+	float v0;
+	float u1;
+	float v1;
+};

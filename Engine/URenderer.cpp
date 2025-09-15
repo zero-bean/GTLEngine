@@ -17,6 +17,7 @@ URenderer::URenderer()
 	, samplerState(nullptr)
 	, depthStencilView(nullptr)
 	, constantBuffer(nullptr)
+	, fontConstantBuffer(nullptr)
 	, rasterizerState(nullptr)
 	, hWnd(nullptr)
 	, bIsInitialized(false)
@@ -79,7 +80,8 @@ bool URenderer::Initialize(HWND windowHandle)
 		return false;
 	}
 
-	DirectX::CreateDDSTextureFromFile(device, L"assets/font_default.dds", &resource, &shaderResourceView);
+	DirectX::CreateDDSTextureFromFile(device, L"assets/font_transparent.dds", &resource, &shaderResourceView);
+	CreateFontConstantBuffer();
 
 	bIsInitialized = true;
 	return true;
@@ -332,14 +334,27 @@ bool URenderer::CreateDefaultSampler()
 
 bool URenderer::CreateConstantBuffer()
 {
-	D3D11_BUFFER_DESC bufferDesc = {};
-	bufferDesc.ByteWidth = sizeof(CBTransform);   // ← 변경
-	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	// 월드 좌표용 상수 버퍼
+	{
+		D3D11_BUFFER_DESC bufferDesc = {};
+		bufferDesc.ByteWidth = sizeof(CBTransform);   // ← 변경
+		bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	HRESULT hr = device->CreateBuffer(&bufferDesc, nullptr, &constantBuffer);
-	return CheckResult(hr, "CreateConstantBuffer");
+		return CheckResult(device->CreateBuffer(&bufferDesc, nullptr, &constantBuffer), "CreateConstantBuffer");
+	}
+}
+
+bool URenderer::CreateFontConstantBuffer()
+{
+	// 폰트 uv용 상수 버퍼
+	D3D11_BUFFER_DESC bufferDesc = {};
+	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bufferDesc.ByteWidth = sizeof(float) * 4; // UVRect 4 floats (16 bytes)
+	bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	return CheckResult(device->CreateBuffer(&bufferDesc, nullptr, &fontConstantBuffer), "fontConstantBuffer");
 }
 
 ID3D11Buffer* URenderer::CreateVertexBuffer(const void* data, size_t sizeInBytes)
@@ -385,6 +400,14 @@ bool URenderer::UpdateConstantBuffer(const void* data, size_t sizeInBytes)
 	deviceContext->Unmap(constantBuffer, 0);
 
 	return true;
+}
+
+void URenderer::UpdateFontConstantBuffer(const FConstantFont& r)
+{
+	const float uv[4] = { r.u0, r.v0, r.u1, r.v1 };
+	deviceContext->UpdateSubresource(fontConstantBuffer, 0, nullptr, uv, 0, 0);
+	deviceContext->VSSetConstantBuffers(2, 1, &fontConstantBuffer);
+	deviceContext->PSSetConstantBuffers(2, 1, &fontConstantBuffer);
 }
 
 
@@ -516,6 +539,7 @@ void URenderer::Release()
 	SAFE_RELEASE(swapChain);
 	SAFE_RELEASE(deviceContext);
 	SAFE_RELEASE(device);
+	SAFE_RELEASE(resource);
 
 	bIsInitialized = false;
 	hWnd = nullptr;
@@ -545,6 +569,7 @@ void URenderer::ReleaseShader()
 void URenderer::ReleaseConstantBuffer()
 {
 	SAFE_RELEASE(constantBuffer);
+	SAFE_RELEASE(fontConstantBuffer);
 }
 
 
