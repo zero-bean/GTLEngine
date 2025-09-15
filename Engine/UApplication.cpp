@@ -69,7 +69,7 @@ bool UApplication::Initialize(HINSTANCE hInstance, const std::wstring& title, in
 		return false;
 	}
 
-	if (!renderer.CreateConstantBuffer() || !renderer.CreateFrameConstantBuffer())
+	if (!renderer.CreateConstantBuffer())
 	{
 		MessageBox(hWnd, L"Failed to create constant buffer", L"Engine Error", MB_OK | MB_ICONERROR);
 		return false;

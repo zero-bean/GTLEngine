@@ -12,21 +12,6 @@ struct CBTransform
 	float MeshColor[4];
 	float IsSelected;
 	float Pad0[3];
-
-
-	// --- billboard per-object ---
-	float BillboardCenterWorld[3]; float SizeX; // 센터(xyz) + 가로
-	float SizeY; float Pad1[3];          // 세로
-};
-
-// 퍼-프레임용(카메라 축/뷰포트/모드)은 별도 CB로!
-struct CBFrame
-{
-	float CameraRightWorld[3]; float FPad0;
-	float CameraUpWorld[3];    float FPad1;
-	float ViewportSize[2]; // (W,H) in pixels
-	int   ScreenAlignMode; // 0=World-Size, 1=Screen-Pixel
-	int   FPad2;
 };
 // 행벡터 규약: p' = p * M
 static inline void TransformPosRow(float& x, float& y, float& z, const FMatrix& M) {
@@ -86,8 +71,6 @@ private:
 
 	// Constant buffer
 	ID3D11Buffer* constantBuffer;
-	// =========== 빌보드용 ===========
-	ID3D11Buffer* FrameConstantBuffer;  // b1 (신규)
 
 	// Viewport
 	D3D11_VIEWPORT viewport;
@@ -102,8 +85,6 @@ private:
 
 	FMatrix mVP;                 // 프레임 캐시
 	CBTransform   mCBData;
-
-	CBFrame       MCBFrame;             // 신규 per-frame 캐시
 
 public:
 	URenderer();
@@ -177,23 +158,6 @@ public:
 	bool CheckDeviceState();
 	void GetBackBufferSize(int32& width, int32& height);
 
-
-
-
-	bool CreateFrameConstantBuffer();   // 신규
-	void ReleaseFrameConstantBuffer();  // 신규
-	bool UpdateFrameConstantBuffer();   // 신규
-
-	// =========== 빌보드용 =============
-	// 프레임 공통 값 세팅 (씬에서 매 프레임 1번 호출)
-	void SetBillboardFrame(const FVector& CamRight,
-		const FVector& CamUp,
-		float ViewW, float ViewH,
-		int ScreenAlignMode);
-
-	// 오브젝트별 값 세팅 (그 오브젝트 그리기 직전)
-	void SetBillboardObject(const FVector& CenterWS,
-		float SizeX, float SizeY);
 private:
 	// Internal helper functions
 	bool CreateDeviceAndSwapChain(HWND windowHandle);
