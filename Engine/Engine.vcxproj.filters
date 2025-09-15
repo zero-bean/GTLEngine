@@ -213,6 +213,9 @@
     <ClCompile Include="ImguiConsole.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>
+    <ClCompile Include="ShowFlagManager.cpp">
+      <Filter>Engine\Subsystem</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\imconfig.h">
@@ -394,6 +397,9 @@
     </ClInclude>
     <ClInclude Include="UClass.h">
       <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ShowFlagManager.h">
+      <Filter>Engine\Subsystem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

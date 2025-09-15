@@ -4,10 +4,13 @@
 #include "USceneComponent.h"
 #include "UGizmoManager.h"
 
+class UShowFlagManager;
+
 class UControlPanel : public ImGuiWindowWrapper
 {
 	USceneManager* SceneManager;
 	UGizmoManager* GizmoManager;
+	UShowFlagManager* ShowFlagManager;
 
 	// Spawn Primitive Section
 	TArray<UClass*> registeredTypes;
@@ -22,13 +25,14 @@ class UControlPanel : public ImGuiWindowWrapper
 
 
 public:
-	UControlPanel(USceneManager* sceneManager, UGizmoManager* gizmoManager);
+	UControlPanel(USceneManager* sceneManager, UGizmoManager* gizmoManager, UShowFlagManager* InShowFlagManager);
 	void RenderContent() override;
 	void PrimaryInformationSection();
 	void SpawnPrimitiveSection();
 	void SceneManagementSection();
 	void CameraManagementSection();
 	void ViewModeSection();
+	void ShowFlagSection();
 	USceneComponent* CreateSceneComponentFromChoice(int index);
 };
 

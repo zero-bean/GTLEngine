@@ -8,9 +8,10 @@
 #include "UNamePool.h"
 #include "UQuadComponent.h"
 #include "URenderer.h"
+#include "ShowFlagManager.h"
 
 // 활성화(선택) 상태면 버튼색을 Active 계열로 바꿔서 '눌린 버튼'처럼 보이게 하는 헬퍼
-static bool ModeButton(const char* label, bool active, const ImVec2& size = ImVec2(0, 0))
+static bool ModeButton(const char* Label, bool active, const ImVec2& size = ImVec2(0, 0))
 {
 	ImGuiStyle& style = ImGui::GetStyle();
 	ImVec4 colBtn = active ? style.Colors[ImGuiCol_ButtonActive] : style.Colors[ImGuiCol_Button];
@@ -20,13 +21,13 @@ static bool ModeButton(const char* label, bool active, const ImVec2& size = ImVe
 	ImGui::PushStyleColor(ImGuiCol_Button, colBtn);
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colHover);
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, colActive);
-	bool pressed = ImGui::Button(label, size);
+	bool pressed = ImGui::Button(Label, size);
 	ImGui::PopStyleColor(3);
 	return pressed;
 }
 
-UControlPanel::UControlPanel(USceneManager* sceneManager, UGizmoManager* gizmoManager)
-	: ImGuiWindowWrapper("Control Panel", ImVec2(0, 0), ImVec2(290, 500)), SceneManager(sceneManager), GizmoManager(gizmoManager)
+UControlPanel::UControlPanel(USceneManager* sceneManager, UGizmoManager* gizmoManager, UShowFlagManager* InShowFlagManager)
+	: ImGuiWindowWrapper("Control Panel", ImVec2(0, 0), ImVec2(290, 500)), SceneManager(sceneManager), GizmoManager(gizmoManager), ShowFlagManager(InShowFlagManager)
 {
 	for (const auto& registeredType : UClass::GetClassList())
 	{
@@ -58,6 +59,8 @@ void UControlPanel::RenderContent()
 	CameraManagementSection();
 	ImGui::Separator();
 	ViewModeSection();
+	ImGui::Separator();
+	ShowFlagSection();
 }
 
 void UControlPanel::PrimaryInformationSection()
@@ -332,4 +335,28 @@ void UControlPanel::ViewModeSection()
 	{
 		SceneManager->GetScene()->SetViewMode(static_cast<EViewModeIndex>(Mode));
 	}
+}
+
+void UControlPanel::ShowFlagSection()
+{
+	ImGui::SeparatorText("Show Flags");
+
+	if (ShowFlagManager == nullptr)
+	{
+		ImGui::TextUnformatted("ShowFlagManager not available");
+		return;
+	}
+
+	auto FlagCheckbox = [&](const char* Label, EEngineShowFlags Flag)
+		{
+			bool enabled = ShowFlagManager->IsEnabled(Flag);
+			// 체크 상태 표시 + 클릭 시 토글
+			if (ImGui::Checkbox(Label, &enabled))
+			{
+				ShowFlagManager->Toggle(Flag);
+			}
+		};
+
+	FlagCheckbox("Primitives", EEngineShowFlags::SF_Primitives);
+	FlagCheckbox("BillboardText", EEngineShowFlags::SF_BillboardText);
 }

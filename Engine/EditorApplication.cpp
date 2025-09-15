@@ -195,7 +195,7 @@ bool EditorApplication::OnInitialize()
 	UApplication::OnInitialize();
 	// 리사이즈/초기화
 
-	controlPanel = NewObject<UControlPanel>(&GetSceneManager(), &gizmoManager);
+	controlPanel = NewObject<UControlPanel>(&GetSceneManager(), &gizmoManager, &GetShowFlagManager());
 	SceneManagerPanel = NewObject<USceneManagerPanel>(&GetSceneManager(), [this](UPrimitiveComponent* Prim) { OnPrimitiveSelected(Prim); });
 	propertyWindow = NewObject<USceneComponentPropertyWindow>();
 
