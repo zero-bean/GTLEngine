@@ -15,8 +15,12 @@ protected:
 	UMesh* mesh;
 	FVector4 Color = { 1, 1, 1, 1 };
 	bool    bBillboard = false;  // 이 컴포넌트를 billboard로 그릴지
-	float   BillboardSizeX = 64.f; // Mode=1이면 픽셀, Mode=0이면 월드 단위
-	float   BillboardSizeY = 64.f;
+	/*
+		빌보드 사이즈는 쿼드의 생성자에서 SetBillboardSize()에 의해 조정된다.
+	*/
+	// 기본 빌보드 사이즈
+	float   BillboardSizeX = 1.f; 
+	float   BillboardSizeY = 1.f;
 	ID3D11ShaderResourceView* BillboardSRV = nullptr; // 텍스처가 있으면 바인딩
 public:
 	UPrimitiveComponent(FVector loc = { 0,0,0 }, FVector rot = { 0,0,0 }, FVector scl = { 1,1,1 })

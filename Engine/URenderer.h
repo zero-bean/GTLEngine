@@ -15,15 +15,15 @@ struct CBTransform
 
 
 	// --- billboard per-object ---
-	float BillboardCenterWS[3]; float SizeX; // 센터(xyz) + 가로
+	float BillboardCenterWorld[3]; float SizeX; // 센터(xyz) + 가로
 	float SizeY; float Pad1[3];          // 세로
 };
 
 // 퍼-프레임용(카메라 축/뷰포트/모드)은 별도 CB로!
 struct CBFrame
 {
-	float CamRightWS[3]; float FPad0;
-	float CamUpWS[3];    float FPad1;
+	float CameraRightWorld[3]; float FPad0;
+	float CameraUpWorld[3];    float FPad1;
 	float ViewportSize[2]; // (W,H) in pixels
 	int   ScreenAlignMode; // 0=World-Size, 1=Screen-Pixel
 	int   FPad2;

@@ -1262,23 +1262,23 @@ void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices,
 
 
 // ======= 빌보드 관련 =======
-void URenderer::SetBillboardFrame(const FVector& CamRight,
-	const FVector& CamUp,
-	float ViewW, float ViewH,
+void URenderer::SetBillboardFrame(const FVector& CameraRightWorld,
+	const FVector& CameraUpWorld,
+	float ViewportWidth, float ViewportHeight,
 	int ScreenAlignMode)
 {
-	MCBFrame.CamRightWS[0] = CamRight.X; MCBFrame.CamRightWS[1] = CamRight.Y; MCBFrame.CamRightWS[2] = CamRight.Z;
-	MCBFrame.CamUpWS[0] = CamUp.X;       MCBFrame.CamUpWS[1] = CamUp.Y;       MCBFrame.CamUpWS[2] = CamUp.Z;
-	MCBFrame.ViewportSize[0] = ViewW;    MCBFrame.ViewportSize[1] = ViewH;
+	MCBFrame.CameraRightWorld[0] = CameraRightWorld.X; MCBFrame.CameraRightWorld[1] = CameraRightWorld.Y; MCBFrame.CameraRightWorld[2] = CameraRightWorld.Z;
+	MCBFrame.CameraUpWorld[0] = CameraUpWorld.X;       MCBFrame.CameraUpWorld[1] = CameraUpWorld.Y;       MCBFrame.CameraUpWorld[2] = CameraUpWorld.Z;
+	MCBFrame.ViewportSize[0] = ViewportWidth;    MCBFrame.ViewportSize[1] = ViewportHeight;
 	MCBFrame.ScreenAlignMode = ScreenAlignMode;
 	UpdateFrameConstantBuffer(); // 매 프레임 1회
 }
 
 void URenderer::SetBillboardObject(const FVector& CenterWS, float SizeX, float SizeY)
 {
-	mCBData.BillboardCenterWS[0] = CenterWS.X;
-	mCBData.BillboardCenterWS[1] = CenterWS.Y;
-	mCBData.BillboardCenterWS[2] = CenterWS.Z;
+	mCBData.BillboardCenterWorld[0] = CenterWS.X;
+	mCBData.BillboardCenterWorld[1] = CenterWS.Y;
+	mCBData.BillboardCenterWorld[2] = CenterWS.Z;
 	mCBData.SizeX = SizeX;
 	mCBData.SizeY = SizeY;
 	// 실제 업로드는 SetModel(...) 호출 시점에 mCBData 전체가 Map/Unmap됨 (기존 흐름 유지)

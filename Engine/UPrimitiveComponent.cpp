@@ -48,11 +48,10 @@ void UPrimitiveComponent::Draw(URenderer& renderer)
         Ctx->PSSetShader(renderer.GetPixelShader("Font"), nullptr, 0);
 
         // 월드 위치(센터) 뽑기
-        const FMatrix M = GetWorldTransform();
-        const FVector centerWS(M.M[3][0], M.M[3][1], M.M[3][2]);
+        const FVector CenterWorld = GetWorldLocation();
 
         // per-object: Center/Size 채우기
-        renderer.SetBillboardObject(centerWS, BillboardSizeX, BillboardSizeY);
+        renderer.SetBillboardObject(CenterWorld, BillboardSizeX, BillboardSizeY);
 
         // billboard는 단위 쿼드 기준 → M = Identity
         renderer.SetModel(FMatrix::IdentityMatrix(), Color, bIsSelected);

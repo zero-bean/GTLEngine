@@ -4,16 +4,16 @@ cbuffer Constants: register(b0)
     float4 MeshColor;
     float IsSelected;
     float3 Pad0;
-    float3 BillboardCenterWS;
+    float3 BillboardCenterWorld;
     float SizeX;
     float SizeY;
     float3 Pad1;
 }
 cbuffer CBFrame : register(b1)
 {
-    float3 CamRightWS;
+    float3 CameraRightWorld;
     float FPad0;
-    float3 CamUpWS;
+    float3 CameraUpWorld;
     float FPad1;
     float2 ViewportSize;
     // 화면축 정렬 모드 선택 : 0 = 월드 크기, 1 = 픽셀 고정
@@ -47,21 +47,21 @@ VSOutput VS_Main(VSInput Input)
     }
     else if (ScreenAlignMode == 0)
     {
-        float3 ws = BillboardCenterWS
-                  + CamRightWS * (Input.Position.x * SizeX)
-                  + CamUpWS * (Input.Position.y * SizeY);
+        float3 ws = BillboardCenterWorld
+                  + CameraRightWorld * (Input.Position.x * SizeX)
+                  + CameraUpWorld * (Input.Position.y * SizeY);
         Output.Position = mul(float4(ws, 1), MVP);
     }
     else
     {
-        float4 Center = mul(float4(BillboardCenterWS, 1), MVP);
+        float4 Center = mul(float4(BillboardCenterWorld, 1), MVP);
         float2 Px = float2(Input.Position.x * SizeX, Input.Position.y * SizeY);
         float2 Ndc = float2(2 * Px.x / ViewportSize.x, -2 * Px.y / ViewportSize.y);
         Output.Position = float4(Center.xy + Ndc * Center.w, Center.z, Center.w);
     }
     // 원래
     // Output.Position = mul(float4(Input.Position, 1.0f), MVP);
-    // Output.TexCoord = Input.TexCoord;
+    Output.TexCoord = Input.TexCoord;
    
     return Output;
 }
@@ -74,8 +74,8 @@ struct PSInput
 float4 PS_Main(PSInput Input) : SV_TARGET
 {
     // Get pixel color from texture using UV 
-	float4 textureColor = Texture.Sample(Sampler, Input.TexCoord);
-	float4 Output = textureColor;
+	float4 TextureColor = Texture.Sample(Sampler, Input.TexCoord);
+	float4 Output = TextureColor;
     
 	return Output;
 }
