@@ -765,19 +765,10 @@ void URenderer::DrawMesh(UMesh* mesh)
 		deviceContext->IASetInputLayout(GetInputLayout("Font"));
 		deviceContext->VSSetShader(GetVertexShader("Font"), nullptr, 0);
 		deviceContext->PSSetShader(GetPixelShader("Font"), nullptr, 0);
-		/*
-		// 월드 위치(센터) 뽑기
-		const FVector CenterWorld = GetWorldLocation();
-
-		// per-object: Center/Size 채우기
-		renderer.SetBillboardObject(CenterWorld, BillboardSizeX, BillboardSizeY);
-
-		// billboard는 단위 쿼드 기준 → M = Identity
-		renderer.SetModel(FMatrix::IdentityMatrix(), Color, bIsSelected);
 
 		if (shaderResourceView) { deviceContext->PSSetShaderResources(0, 1, &shaderResourceView); }
 		if (samplerState) { deviceContext->PSSetSamplers(0, 1, &samplerState); }
-		*/
+
 		// 3) Draw
 		if (mesh->IndexBuffer && mesh->NumIndices > 0)
 		{
