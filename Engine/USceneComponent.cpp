@@ -46,3 +46,8 @@ bool USceneComponent::Deserialize(const json::JSON& data)
 
     return true;
 }
+FVector USceneComponent::GetWorldLocation()
+{
+    const FMatrix M = GetWorldTransform();
+    return FVector(M.M[3][0], M.M[3][1], M.M[3][2]); // row-vector 규약: translation = 4번째 행
+}

@@ -341,7 +341,16 @@ bool URenderer::CreateConstantBuffer()
 	HRESULT hr = device->CreateBuffer(&bufferDesc, nullptr, &constantBuffer);
 	return CheckResult(hr, "CreateConstantBuffer");
 }
-
+bool URenderer::CreateFrameConstantBuffer() // (신규 b1)
+{
+	D3D11_BUFFER_DESC bd = {};
+	bd.ByteWidth = sizeof(CBFrame);
+	bd.Usage = D3D11_USAGE_DYNAMIC;
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	HRESULT hr = device->CreateBuffer(&bd, nullptr, &FrameConstantBuffer);
+	return CheckResult(hr, "CreateFrameConstantBuffer(b1)");
+}
 ID3D11Buffer* URenderer::CreateVertexBuffer(const void* data, size_t sizeInBytes)
 {
 	if (!device || !data || sizeInBytes == 0)
@@ -384,6 +393,17 @@ bool URenderer::UpdateConstantBuffer(const void* data, size_t sizeInBytes)
 	memcpy(mappedResource.pData, data, sizeInBytes);
 	deviceContext->Unmap(constantBuffer, 0);
 
+	return true;
+}
+
+bool URenderer::UpdateFrameConstantBuffer()
+{
+	if (!FrameConstantBuffer) return false;
+	D3D11_MAPPED_SUBRESOURCE m{};
+	HRESULT hr = deviceContext->Map(FrameConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &m);
+	if (FAILED(hr)) { LogError("Map FrameConstantBuffer", hr); return false; }
+	memcpy(m.pData, &MCBFrame, sizeof(MCBFrame));
+	deviceContext->Unmap(FrameConstantBuffer, 0);
 	return true;
 }
 
@@ -545,6 +565,10 @@ void URenderer::ReleaseConstantBuffer()
 {
 	SAFE_RELEASE(constantBuffer);
 }
+void URenderer::ReleaseFrameConstantBuffer() 
+{ 
+	SAFE_RELEASE(FrameConstantBuffer); 
+}
 
 bool URenderer::ReleaseVertexBuffer(ID3D11Buffer* buffer)
 {
@@ -703,6 +727,11 @@ void URenderer::PrepareShader()
 	if (constantBuffer)
 	{
 		deviceContext->VSSetConstantBuffers(0, 1, &constantBuffer);
+	}
+
+	if (FrameConstantBuffer)
+	{
+		deviceContext->VSSetConstantBuffers(1, 1, &FrameConstantBuffer); // b1
 	}
 }
 
@@ -1166,4 +1195,28 @@ void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices,
 			batchLineList.Indices.push_back((uint32)(base + p * 2 + 1));
 		}
 	}
+}
+
+
+// ======= 빌보드 관련 =======
+void URenderer::SetBillboardFrame(const FVector& CameraRightWorld,
+	const FVector& CameraUpWorld,
+	float ViewportWidth, float ViewportHeight,
+	int ScreenAlignMode)
+{
+	MCBFrame.CameraRightWorld[0] = CameraRightWorld.X; MCBFrame.CameraRightWorld[1] = CameraRightWorld.Y; MCBFrame.CameraRightWorld[2] = CameraRightWorld.Z;
+	MCBFrame.CameraUpWorld[0] = CameraUpWorld.X;       MCBFrame.CameraUpWorld[1] = CameraUpWorld.Y;       MCBFrame.CameraUpWorld[2] = CameraUpWorld.Z;
+	MCBFrame.ViewportSize[0] = ViewportWidth;    MCBFrame.ViewportSize[1] = ViewportHeight;
+	MCBFrame.ScreenAlignMode = ScreenAlignMode;
+	UpdateFrameConstantBuffer(); // 매 프레임 1회
+}
+
+void URenderer::SetBillboardObject(const FVector& CenterWS, float SizeX, float SizeY)
+{
+	mCBData.BillboardCenterWorld[0] = CenterWS.X;
+	mCBData.BillboardCenterWorld[1] = CenterWS.Y;
+	mCBData.BillboardCenterWorld[2] = CenterWS.Z;
+	mCBData.SizeX = SizeX;
+	mCBData.SizeY = SizeY;
+	// 실제 업로드는 SetModel(...) 호출 시점에 mCBData 전체가 Map/Unmap됨 (기존 흐름 유지)
 }

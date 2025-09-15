@@ -151,7 +151,19 @@ void UScene::Render()
 	// 카메라가 바뀌면 원하는 타이밍(매 프레임도 OK)에 알려주면 됨
 	renderer->SetTargetAspect(camera->GetAspect());
 	renderer->SetViewProj(camera->GetView(), camera->GetProj());
+	// --- 프레임 공통 (b1) 갱신 ---
+	int32 ViewW = 0, ViewH = 0;
+	renderer->GetBackBufferSize(ViewW, ViewH);
 
+	// 화면축 정렬 모드 선택: 0=월드 크기, 1=픽셀 고정, -1 = 이전의 폰트
+	const int ScreenAlignMode = 0; // 라벨/아이콘이면 보통 1이 편함
+
+	renderer->SetBillboardFrame(
+		camera->GetRight(),    // 월드 기준 Right
+		camera->GetUp(),       // 월드 기준 Up
+		(float)ViewW, (float)ViewH,
+		ScreenAlignMode
+	);
 	ID3D11DeviceContext* context = renderer->GetDeviceContext();
 	context->IASetInputLayout(renderer->GetInputLayout("Default"));
 	context->VSSetShader(renderer->GetVertexShader("Default"), nullptr, 0);
