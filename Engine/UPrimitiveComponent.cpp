@@ -37,7 +37,6 @@ void UPrimitiveComponent::Draw(URenderer& renderer)
 		renderer.SubmitLineList(mesh->Vertices, mesh->Indices, M);
 		return;
 	}
-
 	UpdateConstantBuffer(renderer);
 	renderer.DrawMesh(mesh);
 }

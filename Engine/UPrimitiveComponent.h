@@ -14,6 +14,7 @@ class UPrimitiveComponent : public USceneComponent
 protected:
 	UMesh* mesh;
 	FVector4 Color = { 1, 1, 1, 1 };
+	ID3D11ShaderResourceView* BillboardSRV = nullptr; // 텍스처가 있으면 바인딩
 public:
 	UPrimitiveComponent(FVector loc = { 0,0,0 }, FVector rot = { 0,0,0 }, FVector scl = { 1,1,1 })
 		: USceneComponent(loc, rot, scl), mesh(nullptr)

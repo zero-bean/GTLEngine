@@ -159,11 +159,9 @@
     <ClCompile Include="USceneComponentPropertyWindow.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>
-    <ClCompile Include="ImguiConsole.cpp" />
     <ClCompile Include="UCamera.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="UClass.cpp" />
     <ClCompile Include="UGizmoScaleHandleComp.cpp">
       <Filter>Engine\Core\Component</Filter>
     </ClCompile>
@@ -203,8 +201,16 @@
     <ClCompile Include="UGizmoAxisComp.cpp">
       <Filter>Engine\Core\Component</Filter>
     </ClCompile>
-    <ClCompile Include="UQuadComponent.cpp" />
     <ClCompile Include="SceneManagerPanel.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UQuadComponent.cpp">
+      <Filter>Engine\Core\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="UClass.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ImguiConsole.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>
   </ItemGroup>
@@ -338,7 +344,6 @@
     <ClInclude Include="UGizmoScaleHandleComp.h">
       <Filter>Engine\Core\Component</Filter>
     </ClInclude>
-    <ClInclude Include="UClass.h" />
     <ClInclude Include="DynamicBitset.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
@@ -381,9 +386,14 @@
     <ClInclude Include="UGizmoAxisComp.h">
       <Filter>Engine\Core\Component</Filter>
     </ClInclude>
-    <ClInclude Include="UQuadComponent.h" />
     <ClInclude Include="SceneManagerPanel.h">
       <Filter>Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UQuadComponent.h">
+      <Filter>Engine\Core\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="UClass.h">
+      <Filter>Engine\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -393,9 +403,13 @@
     <None Include="ShaderW0.vs">
       <Filter>Shader</Filter>
     </None>
-    <None Include="ShaderFont.hlsl" />
+    <None Include="ShaderFont.hlsl">
+      <Filter>Shader</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="ShaderLine.hlsl" />
+    <FxCompile Include="ShaderLine.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

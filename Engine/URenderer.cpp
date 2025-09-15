@@ -13,10 +13,9 @@ URenderer::URenderer()
 	, deviceContext(nullptr)
 	, swapChain(nullptr)
 	, renderTargetView(nullptr)
+	, shaderResourceView(nullptr)
+	, samplerState(nullptr)
 	, depthStencilView(nullptr)
-	/*, vertexShader(nullptr)
-	, pixelShader(nullptr)
-	, inputLayout(nullptr)*/
 	, constantBuffer(nullptr)
 	, rasterizerState(nullptr)
 	, hWnd(nullptr)
@@ -73,6 +72,14 @@ bool URenderer::Initialize(HWND windowHandle)
 		LogError("CreateRasterizerState", E_FAIL);
 		return false;
 	}
+
+	if (!CreateDefaultSampler())
+	{
+		LogError("SamplerState", E_FAIL);
+		return false;
+	}
+
+	DirectX::CreateDDSTextureFromFile(device, L"assets/font_default.dds", &resource, &shaderResourceView);
 
 	bIsInitialized = true;
 	return true;
@@ -289,99 +296,6 @@ bool URenderer::CreateShader()
 		batchLineList.inputLayout = InputLayouts["Line"];
 	}
 	return true;
-
-	/*// Load vertex shader from file
-	ID3DBlob* vsBlob = nullptr;
-	ID3DBlob* errorBlob = nullptr;
-
-	HRESULT hr = D3DCompileFromFile(
-		L"ShaderW0.vs",           // 파일 경로
-		nullptr,                  // 매크로 정의
-		nullptr,                  // Include 핸들러
-		"main",                   // 진입점 함수명
-		"vs_5_0",                 // 셰이더 모델
-		0,                        // 컴파일 플래그
-		0,                        // 효과 플래그
-		&vsBlob,                  // 컴파일된 셰이더
-		&errorBlob                // 에러 메시지
-	);
-
-	if (FAILED(hr))
-	{
-		if (errorBlob)
-		{
-			OutputDebugStringA("Vertex Shader Compile Error:\n");
-			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-			SAFE_RELEASE(errorBlob);
-		}
-		else
-		{
-			OutputDebugStringA("Failed to load vertex shader file: ShaderW0.vs\n");
-		}
-		return false;
-	}
-
-	// Create vertex shader
-	hr = device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(),
-		nullptr, &vertexShader);
-	if (!CheckResult(hr, "CreateVertexShader"))
-	{
-		SAFE_RELEASE(vsBlob);
-		return false;
-	}
-
-	// Create input layout
-	D3D11_INPUT_ELEMENT_DESC inputElements[] = {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-
-
-	hr = device->CreateInputLayout(inputElements, ARRAYSIZE(inputElements),
-		vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(),
-		&inputLayout);
-	SAFE_RELEASE(vsBlob);
-
-	if (!CheckResult(hr, "CreateInputLayout"))
-	{
-		return false;
-	}
-
-	// Load pixel shader from file
-	ID3DBlob* psBlob = nullptr;
-	hr = D3DCompileFromFile(
-		L"ShaderW0.ps",           // 파일 경로
-		nullptr,                  // 매크로 정의
-		nullptr,                  // Include 핸들러
-		"main",                   // 진입점 함수명
-		"ps_5_0",                 // 셰이더 모델
-		0,                        // 컴파일 플래그
-		0,                        // 효과 플래그
-		&psBlob,                  // 컴파일된 셰이더
-		&errorBlob                // 에러 메시지
-	);
-
-	if (FAILED(hr))
-	{
-		if (errorBlob)
-		{
-			OutputDebugStringA("Pixel Shader Compile Error:\n");
-			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-			SAFE_RELEASE(errorBlob);
-		}
-		else
-		{
-			OutputDebugStringA("Failed to load pixel shader file: ShaderW0.ps\n");
-		}
-		return false;
-	}
-
-	// Create pixel shader
-	hr = device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(),
-		nullptr, &pixelShader);
-	SAFE_RELEASE(psBlob);
-
-	return CheckResult(hr, "CreatePixelShader");*/
 }
 
 bool URenderer::CreateRasterizerState()
@@ -400,6 +314,20 @@ bool URenderer::CreateRasterizerState()
 
 	HRESULT hr = device->CreateRasterizerState(&rasterizerDesc, &rasterizerState);
 	return CheckResult(hr, "CreateRasterizerState");
+}
+
+bool URenderer::CreateDefaultSampler()
+{
+	D3D11_SAMPLER_DESC samplerDesc{};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	HRESULT hr = device->CreateSamplerState(&samplerDesc, &samplerState);
+	return CheckResult(hr, "CreateDefaultSampler");
 }
 
 bool URenderer::CreateConstantBuffer()
@@ -458,6 +386,7 @@ bool URenderer::UpdateConstantBuffer(const void* data, size_t sizeInBytes)
 
 	return true;
 }
+
 
 void URenderer::BeginBatchLineList()
 {
@@ -582,6 +511,8 @@ void URenderer::Release()
 	SAFE_RELEASE(rasterizerState);
 	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(renderTargetView);
+	SAFE_RELEASE(shaderResourceView);
+	SAFE_RELEASE(samplerState);
 	SAFE_RELEASE(swapChain);
 	SAFE_RELEASE(deviceContext);
 	SAFE_RELEASE(device);
@@ -592,11 +523,6 @@ void URenderer::Release()
 
 void URenderer::ReleaseShader()
 {
-	/* Comment: 이제 TMap에 보관한 걸 해제하도록 변경합니다.
-	SAFE_RELEASE(inputLayout);
-	SAFE_RELEASE(pixelShader);
-	SAFE_RELEASE(vertexShader);
-	*/
 	for (auto& pair : PixelShaders)
 	{
 		SAFE_RELEASE(pair.second);
@@ -614,13 +540,13 @@ void URenderer::ReleaseShader()
 		SAFE_RELEASE(pair.second);
 	}
 	InputLayouts.clear();
-	
 }
 
 void URenderer::ReleaseConstantBuffer()
 {
 	SAFE_RELEASE(constantBuffer);
 }
+
 
 bool URenderer::ReleaseVertexBuffer(ID3D11Buffer* buffer)
 {
@@ -766,16 +692,6 @@ void URenderer::PrepareShader()
 	if (!deviceContext)
 		return;
 
-	/*  Comment: 원래 렌더러에서 하나의 Shader를 Set해주었는데,
-	//          개수가 늘었으므로 TMap에 보관한 IL, VS, PS를 변경하도록 해야합니다.
-	// Set shaders
-	deviceContext->VSSetShader(vertexShader, nullptr, 0);
-	deviceContext->PSSetShader(pixelShader, nullptr, 0);
-
-	// Set input layout
-	deviceContext->IASetInputLayout(inputLayout);
-	*/
-
 	// Set primitive topology (default to triangle list)
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -790,6 +706,7 @@ void URenderer::PrepareShader()
 	{
 		deviceContext->VSSetConstantBuffers(0, 1, &constantBuffer);
 	}
+
 }
 
 void URenderer::SwapBuffer()
@@ -838,29 +755,52 @@ void URenderer::DrawMesh(UMesh* mesh)
 {
 	if (!mesh || !mesh->IsInitialized())
 		return;
+	
+	UINT offset = 0;
+	deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
+	deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
 
-	deviceContext->IASetInputLayout(GetInputLayout("Default"));
-	deviceContext->VSSetShader(GetVertexShader("Default"), nullptr, 0);
-	deviceContext->PSSetShader(GetPixelShader("Default"), nullptr, 0);
+	if (mesh->Type == EVertexType::VERTEX_POS_UV)
+	{
+		deviceContext->IASetInputLayout(GetInputLayout("Font"));
+		deviceContext->VSSetShader(GetVertexShader("Font"), nullptr, 0);
+		deviceContext->PSSetShader(GetPixelShader("Font"), nullptr, 0);
 
-	// 인덱스 버퍼도 가지고 있으면 아래 방식으로 Draw
-	if (mesh->NumIndices > 0)
-	{
-		UINT offset = 0;
-		deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
-		deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, offset);
-		deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
-		deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
+		if (shaderResourceView) { deviceContext->PSSetShaderResources(0, 1, &shaderResourceView); }
+		if (samplerState) { deviceContext->PSSetSamplers(0, 1, &samplerState); }
+
+		// 3) Draw
+		if (mesh->IndexBuffer && mesh->NumIndices > 0)
+		{
+			deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+			deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
+		}
+		else
+		{
+			deviceContext->Draw(mesh->NumVertices, 0);
+		}
+
 	}
-	// 정점 버퍼만 가지고 있으면 아래 방식으로 Draw
-	else if (mesh->NumIndices == 0)
+	else if (mesh->Type == EVertexType::VERTEX_POS_COLOR)
 	{
-		UINT offset = 0;
-		deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
-		deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
-		deviceContext->Draw(mesh->NumVertices, 0);
-		UE_LOG("Draw Call %d \n", cnt++);
+		deviceContext->IASetInputLayout(GetInputLayout("Default"));
+		deviceContext->VSSetShader(GetVertexShader("Default"), nullptr, 0);
+		deviceContext->PSSetShader(GetPixelShader("Default"), nullptr, 0);
+
+		// 인덱스 버퍼도 가지고 있으면 아래 방식으로 Draw
+		if (mesh->NumIndices > 0)
+		{
+			deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, offset);
+			deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
+		}
+		// 정점 버퍼만 가지고 있으면 아래 방식으로 Draw
+		else if (mesh->NumIndices == 0)
+		{
+			deviceContext->Draw(mesh->NumVertices, 0);
+			UE_LOG("Draw Call %d \n", cnt++);
+		}
 	}
+
 }
 
 void URenderer::DrawMeshOnTop(UMesh* mesh)

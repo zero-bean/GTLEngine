@@ -50,7 +50,7 @@ bool UScene::Initialize(URenderer* r, UMeshManager* mm, UInputManager* im)
 	CEditorIni::Get().SetPath(std::filesystem::path("./config/editor.ini"));
 	CEditorIni::Get().Load(); // 없으면 걍 실패하고 넘어감(기본값 사용)
 	camera = new UCamera();
-	camera->LookAt({ 5,0,0 }, { 0,0,0 }, { 0,0,1 });
+	camera->LookAt({ -5,0,0 }, { 0,0,0 }, { 0,0,1 });
 	return OnInitialize();
 }
 

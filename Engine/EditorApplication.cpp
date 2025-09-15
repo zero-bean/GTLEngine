@@ -163,7 +163,7 @@ void EditorApplication::Render()
 {
 	UApplication::Render();
 	gizmoManager.Draw(GetRenderer());
-	// ★ AABB 그리기 (항상 OnTop)
+	// AABB 그리기
 	AABBManager.Draw(GetRenderer());
 }
 

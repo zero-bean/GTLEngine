@@ -47,19 +47,19 @@ TArray<uint32> plane_indices = {
 
 TArray<FVertexPosTexCoord> quad_vertices = {
     //    x      y      z       u     v
-    { -0.5f, -0.5f, 0.0f,    0.0f, 1.0f }, // 0: 좌하단 (Bottom-Left)
-    { -0.5f,  0.5f, 0.0f,    0.0f, 0.0f }, // 1: 좌상단 (Top-Left)
-    {  0.5f,  0.5f, 0.0f,    1.0f, 0.0f }, // 2: 우상단 (Top-Right)
-    {  0.5f, -0.5f, 0.0f,    1.0f, 1.0f }  // 3: 우하단 (Bottom-Right)
+    {  0.0f,-0.5f, -0.5f,    0.0f, 1.0f }, // 0: 좌하단 (Bottom-Left)
+    {  0.0f,-0.5f,  0.5f,    0.0f, 0.0f }, // 1: 좌상단 (Top-Left)
+    {  0.0f, 0.5f,  0.5f,    1.0f, 0.0f }, // 2: 우상단 (Top-Right)
+    {  0.0f, 0.5f, -0.5f,    1.0f, 1.0f }  // 3: 우하단 (Bottom-Right)
 };
 
 // 6개의 인덱스를 사용해 2개의 삼각형으로 Quad를 정의합니다.
 // DirectX의 기본 와인딩 순서(Front-Face)는 반시계 방향(CCW)입니다.
 TArray<uint32> quad_indices = {
     // 첫 번째 삼각형
-    0, 1, 2,
+    0, 2, 1,
     // 두 번째 삼각형
-    0, 2, 3
+    0, 3, 2
 };
 
 
