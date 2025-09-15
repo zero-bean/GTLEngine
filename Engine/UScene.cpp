@@ -166,7 +166,7 @@ void UScene::Render()
 	}
 
 	renderer->FlushBatchLineList();
-	renderer->BeginBatchLineList();
+	renderer->FlushBatchSprite();
 }
 
 void UScene::Update(float deltaTime)

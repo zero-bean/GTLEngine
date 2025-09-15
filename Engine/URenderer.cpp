@@ -17,6 +17,8 @@ URenderer::URenderer()
 	, samplerState(nullptr)
 	, depthStencilView(nullptr)
 	, constantBuffer(nullptr)
+	, fontConstantBuffer(nullptr)
+	, rasterizerState(nullptr)
 	, SolidRasterizerState(nullptr)
 	, hWnd(nullptr)
 	, bIsInitialized(false)
@@ -79,7 +81,8 @@ bool URenderer::Initialize(HWND windowHandle)
 		return false;
 	}
 
-	DirectX::CreateDDSTextureFromFile(device, L"assets/font_default.dds", &resource, &shaderResourceView);
+	DirectX::CreateDDSTextureFromFile(device, L"assets/font_transparent.dds", &resource, &shaderResourceView);
+	CreateFontConstantBuffer();
 
 	bIsInitialized = true;
 	return true;
@@ -348,14 +351,27 @@ bool URenderer::CreateDefaultSampler()
 
 bool URenderer::CreateConstantBuffer()
 {
-	D3D11_BUFFER_DESC bufferDesc = {};
-	bufferDesc.ByteWidth = sizeof(CBTransform);   // ← 변경
-	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	// 월드 좌표용 상수 버퍼
+	{
+		D3D11_BUFFER_DESC bufferDesc = {};
+		bufferDesc.ByteWidth = sizeof(CBTransform);   // ← 변경
+		bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	HRESULT hr = device->CreateBuffer(&bufferDesc, nullptr, &constantBuffer);
-	return CheckResult(hr, "CreateConstantBuffer");
+		return CheckResult(device->CreateBuffer(&bufferDesc, nullptr, &constantBuffer), "CreateConstantBuffer");
+	}
+}
+
+bool URenderer::CreateFontConstantBuffer()
+{
+	// 폰트 uv용 상수 버퍼
+	D3D11_BUFFER_DESC bufferDesc = {};
+	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bufferDesc.ByteWidth = sizeof(float) * 4; // UVRect 4 floats (16 bytes)
+	bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	return CheckResult(device->CreateBuffer(&bufferDesc, nullptr, &fontConstantBuffer), "fontConstantBuffer");
 }
 
 ID3D11Buffer* URenderer::CreateVertexBuffer(const void* data, size_t sizeInBytes)
@@ -403,10 +419,12 @@ bool URenderer::UpdateConstantBuffer(const void* data, size_t sizeInBytes)
 	return true;
 }
 
-
-void URenderer::BeginBatchLineList()
+void URenderer::UpdateFontConstantBuffer(const FConstantFont& r)
 {
-	batchLineList.Clear();
+	const float uv[4] = { r.u0, r.v0, r.u1, r.v1 };
+	deviceContext->UpdateSubresource(fontConstantBuffer, 0, nullptr, uv, 0, 0);
+	deviceContext->VSSetConstantBuffers(2, 1, &fontConstantBuffer);
+	deviceContext->PSSetConstantBuffers(2, 1, &fontConstantBuffer);
 }
 
 void URenderer::SubmitLineList(const UMesh* mesh)
@@ -495,6 +513,95 @@ void URenderer::FlushBatchLineList()
 
 	deviceContext->DrawIndexed(static_cast<UINT>(iCount), 0, 0);
 	UE_LOG("[Batch] LineList DrawIndexed iCount=%u (draw #%d)\n", (UINT)iCount, cnt++);
+
+	batchLineList.Clear();
+}
+
+void URenderer::SubmitSprite(const FMatrix& M, const FVector& baseXY, const FVector& sizeXY, const FSlicedUV& uv, float z, const FVector& pivot)
+{
+	// 1) 쿼드 4정점(좌하단 기준) 로컬 좌표 생성
+	const float w = sizeXY.X;
+	const float h = sizeXY.Y;
+	const float ox = baseXY.X - pivot.X * w;
+	const float oy = baseXY.Y - pivot.Y * h;
+
+	FVertexPosTexCoord v[4];
+	// CCW: (0)LB,(1)RB,(2)RT,(3)LT
+	v[0] = { ox + 0,  oy + 0,  z,  uv.u0, uv.v1 };
+	v[1] = { ox + w,  oy + 0,  z,  uv.u1, uv.v1 };
+	v[2] = { ox + w,  oy + h,  z,  uv.u1, uv.v0 };
+	v[3] = { ox + 0,  oy + h,  z,  uv.u0, uv.v0 };
+
+	// 2) 월드 변환(행벡터 규약)
+	for (int i = 0; i < 4; ++i)
+		TransformPosRow(v[i].x, v[i].y, v[i].z, M);
+
+	// 3) 배치 버퍼에 push
+	const uint32 base = (uint32)batchSprite.Vertices.size();
+	batchSprite.Vertices.push_back(v[0]);
+	batchSprite.Vertices.push_back(v[1]);
+	batchSprite.Vertices.push_back(v[2]);
+	batchSprite.Vertices.push_back(v[3]);
+
+	// 인덱스: 두 삼각형
+	batchSprite.Indices.push_back(base + 0);
+	batchSprite.Indices.push_back(base + 1);
+	batchSprite.Indices.push_back(base + 2);
+	batchSprite.Indices.push_back(base + 0);
+	batchSprite.Indices.push_back(base + 2);
+	batchSprite.Indices.push_back(base + 3);
+}
+
+void URenderer::FlushBatchSprite()
+{
+	const size_t vcount = batchSprite.Vertices.size();
+	const size_t icount = batchSprite.Indices.size();
+	if (vcount == 0 || icount == 0) return;
+
+	// 0) 버퍼 용량 확보
+	EnsureBatchCapacity(batchSprite, vcount, icount);
+
+	// 1) VB/IB에 업로드(Map)
+	{
+		D3D11_MAPPED_SUBRESOURCE mr{};
+		if (SUCCEEDED(deviceContext->Map(batchSprite.VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mr))) {
+			memcpy(mr.pData, batchSprite.Vertices.data(), vcount * sizeof(FVertexPosTexCoord));
+			deviceContext->Unmap(batchSprite.VertexBuffer, 0);
+		}
+		if (SUCCEEDED(deviceContext->Map(batchSprite.IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mr))) {
+			memcpy(mr.pData, batchSprite.Indices.data(), icount * sizeof(uint32));
+			deviceContext->Unmap(batchSprite.IndexBuffer, 0);
+		}
+	}
+
+	// 2) 파이프라인(Font 경로 재사용)
+	UINT stride = sizeof(FVertexPosTexCoord);
+	UINT offset = 0;
+	deviceContext->IASetVertexBuffers(0, 1, &batchSprite.VertexBuffer, &stride, &offset);
+	deviceContext->IASetIndexBuffer(batchSprite.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	deviceContext->IASetInputLayout(GetInputLayout("Font"));
+	deviceContext->VSSetShader(GetVertexShader("Font"), nullptr, 0);
+	deviceContext->PSSetShader(GetPixelShader("Font"), nullptr, 0);
+
+	if (shaderResourceView)    deviceContext->PSSetShaderResources(0, 1, &shaderResourceView);
+	if (samplerState)          deviceContext->PSSetSamplers(0, 1, &samplerState);
+
+	// 3) 상수버퍼 설정: Model=Identity, Color=white, UVRect=(0,0,1,1)
+	{
+		FMatrix I = FMatrix::IdentityMatrix();
+		SetModel(I, FVector4(1, 1, 1, 1), /*IsSelected=*/false);
+
+		FConstantFont idUv{}; idUv.u0 = 0; idUv.v0 = 0; idUv.u1 = 1; idUv.v1 = 1;
+		UpdateFontConstantBuffer(idUv);
+	}
+
+	// 4) 드로우 1회
+	deviceContext->DrawIndexed((UINT)icount, 0, 0);
+
+	// 5) 다음 프레임을 위해 비워 둠(필요 시)
+	batchSprite.Clear();
 }
 
 void URenderer::LogError(const char* function, HRESULT hr)
@@ -532,6 +639,10 @@ void URenderer::Release()
 	SAFE_RELEASE(swapChain);
 	SAFE_RELEASE(deviceContext);
 	SAFE_RELEASE(device);
+	SAFE_RELEASE(resource);
+
+	batchLineList.Release();
+	batchSprite.Release();
 
 	bIsInitialized = false;
 	hWnd = nullptr;
@@ -561,27 +672,7 @@ void URenderer::ReleaseShader()
 void URenderer::ReleaseConstantBuffer()
 {
 	SAFE_RELEASE(constantBuffer);
-}
-
-
-bool URenderer::ReleaseVertexBuffer(ID3D11Buffer* buffer)
-{
-	if (buffer)
-	{
-		buffer->Release();
-		return true;
-	}
-	return false;
-}
-
-bool URenderer::ReleaseIndexBuffer(ID3D11Buffer* buffer)
-{
-	if (buffer)
-	{
-		buffer->Release();
-		return true;
-	}
-	return false;
+	SAFE_RELEASE(fontConstantBuffer);
 }
 
 ID3D11Buffer* URenderer::CreateIndexBuffer(const void* data, size_t sizeInBytes)
@@ -1118,6 +1209,41 @@ void URenderer::EnsureBatchCapacity(FBatchLineList& B, size_t vNeed, size_t iNee
 		bd.ByteWidth = static_cast<UINT>(B.MaxIndex * sizeof(uint32));
 		HRESULT hr = device->CreateBuffer(&bd, nullptr, &B.IndexBuffer);
 		CheckResult(hr, "EnsureBatchCapacity.Create IB");
+	}
+}
+
+void URenderer::EnsureBatchCapacity(FBatchSprite& B, size_t vNeed, size_t iNeed)
+{
+	if (vNeed > B.MaxVertex) {
+		if (B.VertexBuffer)
+		{
+			B.VertexBuffer->Release();
+		}
+
+		B.MaxVertex = max(vNeed, B.MaxVertex * 2 + 1024);
+		
+		D3D11_BUFFER_DESC bd{};
+		bd.Usage = D3D11_USAGE_DYNAMIC;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		bd.ByteWidth = UINT(B.MaxVertex * sizeof(FVertexPosTexCoord));
+		device->CreateBuffer(&bd, nullptr, &B.VertexBuffer);
+	}
+
+	if (iNeed > B.MaxIndex) {
+		if (B.IndexBuffer)
+		{
+			B.IndexBuffer->Release();
+		}
+
+		B.MaxIndex = max(iNeed, B.MaxIndex * 2 + 2048);
+		
+		D3D11_BUFFER_DESC bd{};
+		bd.Usage = D3D11_USAGE_DYNAMIC;
+		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		bd.ByteWidth = UINT(B.MaxIndex * sizeof(uint32));
+		device->CreateBuffer(&bd, nullptr, &B.IndexBuffer);
 	}
 }
 
