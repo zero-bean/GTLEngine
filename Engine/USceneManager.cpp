@@ -29,10 +29,7 @@ UScene* USceneManager::GetScene()
 
 void USceneManager::SetScene(UScene* scene)
 {
-	if (currentScene != nullptr)
-	{
-		delete currentScene;
-	}
+	ReleaseCurrentScene();
 
 	currentScene = scene;
 
@@ -42,6 +39,15 @@ void USceneManager::SetScene(UScene* scene)
 		&application->GetInputManager());
 
 	application->OnSceneChange();
+}
+
+void USceneManager::ReleaseCurrentScene()
+{
+	if (currentScene != nullptr)
+	{
+		delete currentScene;
+		currentScene = nullptr;
+	}
 }
 
 void USceneManager::RequestExit()
@@ -65,6 +71,9 @@ void USceneManager::LoadScene(const FString& path)
 	buffer << file.rdbuf();
 
 	json::JSON sceneData = json::JSON::Load(buffer.str());
+	
+	// 이름 충돌을 방지하기 위해 현재 씬 미리 해제
+	ReleaseCurrentScene();
 	SetScene(UScene::Create(sceneData));
 }
 
