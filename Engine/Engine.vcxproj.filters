@@ -219,6 +219,9 @@
     <ClCompile Include="ShowFlagManager.cpp">
       <Filter>Engine\Subsystem</Filter>
     </ClCompile>
+    <ClCompile Include="USpotLight.cpp">
+      <Filter>Engine\Core\Component\Shape</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\imconfig.h">
@@ -409,6 +412,9 @@
     </ClInclude>
     <ClInclude Include="ShowFlagManager.h">
       <Filter>Engine\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="USpotLight.h">
+      <Filter>Engine\Core\Component\Shape</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

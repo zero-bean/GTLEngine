@@ -5,6 +5,10 @@
 #include "BoundingBox.h"
 // IsA를 통한 구별법을 위해 헤더 추가
 #include "UQuadComponent.h"
+#include "USpotLight.h"
+
+class UQuadComponent;
+class USpotLight;
 // 메타 등록
 IMPLEMENT_UCLASS(UBoundingBoxComponent, USceneComponent)
 
@@ -144,6 +148,11 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
     */
     // 1. 타입으로 필터(가장 견고)
     if (Target->IsA<UQuadComponent>())
+    {
+        bHideAABB = true;
+        return; // 그릴 필요 없으므로 추가 계산 생략
+    }
+    if (Target->IsA<USpotLight>())
     {
         bHideAABB = true;
         return; // 그릴 필요 없으므로 추가 계산 생략
