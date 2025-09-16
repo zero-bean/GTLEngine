@@ -96,7 +96,15 @@ public:
 	void SubmitLineList(const TArray<FVertexPosColor4>& vertices,
 		const TArray<uint32>& indices,
 		const FMatrix& model); // NEW
+
+	void SetBillboardFrame(const FVector& RightWorld, const FVector& UpWorld);
+	FMatrix MakeBillboardModel(const FVector& AnchorWorld, float SizeX, float SizeY) const;
+	void SubmitBillboardSprite(const FVector& AnchorWorld, float SizeX, float SizeY, const FSlicedUV& UV);
+	const FVector& GetBillboardRight() const { return CamRightW; }
+	const FVector& GetBillboardUp()    const { return CamUpW; }
 private:
+	FVector CamRightW{ 0,1,0 };
+	FVector CamUpW{ 0,0,1 };
 	// Batch Rendering
 	FBatchLineList batchLineList;
 	FBatchSprite batchSprite;
