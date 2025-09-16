@@ -96,7 +96,8 @@ public:
 	void SubmitLineList(const TArray<FVertexPosColor4>& vertices,
 		const TArray<uint32>& indices,
 		const FMatrix& model); // NEW
-
+	void SubmitLineList(const UMesh* mesh);
+	void SubmitLineList(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices);
 	void SetBillboardFrame(const FVector& RightWorld, const FVector& UpWorld);
 	FMatrix MakeBillboardModel(const FVector& AnchorWorld, float SizeX, float SizeY) const;
 	void SubmitBillboardSprite(const FVector& AnchorWorld, float SizeX, float SizeY, const FSlicedUV& UV, int charcode);
