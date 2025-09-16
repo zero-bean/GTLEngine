@@ -55,8 +55,8 @@ void UBillboardComponent::Draw(URenderer& renderer)
             offsetZ = 0.5f * localHeightZ * owner->GetScale().Z + DigitH * 0.5f + 0.02f;
         }
     }
-    anchor.Z += offsetZ;
 
+    anchor.Z += offsetZ;
     auto R_object = GetQuaternion().ToMatrixRow();
     const float deg = -90.0f;
     float rad = deg * 3.1415926535f / 180.0f;
@@ -75,21 +75,18 @@ void UBillboardComponent::Draw(URenderer& renderer)
     for (char ch : TextDigits)
     {
         if (ch < '0' || ch > '9') { penX += (DigitW + Spacing); continue; }
-        const int digit = (int)(ch);
-        const FSlicedUV uv = GetFontUV(digit);
+        FConstantFont fontData{};
+        fontData.cellSizeX = 1.0f / 16.0f;
+        fontData.cellSizeY = 1.0f / 16.0f;
+        fontData.atlasCols = 16;
+        renderer.UpdateFontConstantBuffer(fontData);
 
         const FVector baseXY(penX, penY, 0.f);
         const FVector sizeXY(DigitW, DigitH, 0.f);
 
-        renderer.SubmitSprite(M, baseXY, sizeXY, uv);
+        renderer.SubmitSprite(M, baseXY, sizeXY, FSlicedUV(0, 0, 1, 1), 0,  FVector(0, 0, 0), (int)ch);
         penX += (DigitW + Spacing);
     }
-}
-
-void UBillboardComponent::UpdateConstantBuffer(URenderer& renderer)
-{
-    int a = 3;
-	/* FSlicedUV s = GetFontUV(48); renderer.UpdateFontConstantBuffer({ s.u0, s.v0, s.u1, s.v1 });*/
 }
 
 UMesh* UBillboardComponent::GetMesh() { return mesh; }

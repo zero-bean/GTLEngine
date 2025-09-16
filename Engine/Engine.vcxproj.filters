@@ -215,7 +215,7 @@
     </ClCompile>
     <ClCompile Include="UBillboardComponent.cpp">
       <Filter>Engine\Core\Component</Filter>
-	</ClCompile>
+    </ClCompile>
     <ClCompile Include="ShowFlagManager.cpp">
       <Filter>Engine\Subsystem</Filter>
     </ClCompile>
@@ -406,7 +406,7 @@
     </ClInclude>
     <ClInclude Include="UBillboardComponent.h">
       <Filter>Engine\Core\Component</Filter>
-	</ClInclude>
+    </ClInclude>
     <ClInclude Include="ShowFlagManager.h">
       <Filter>Engine\Subsystem</Filter>
     </ClInclude>
@@ -424,6 +424,9 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderLine.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="ShaderImage.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
   </ItemGroup>

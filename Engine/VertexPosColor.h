@@ -67,6 +67,14 @@ struct FVertexPosTexCoord
 		return tmp;
 	}
 };
+
+// 폰트용
+struct FVertexPosTexCoordFont
+{
+	FVertexPosTexCoord data;
+	float charCode;
+};
+
 // 라인용
 struct FVertexPos
 {
