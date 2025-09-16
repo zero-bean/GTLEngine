@@ -31,9 +31,9 @@ bool UBillboardComponent::Init(UMeshManager* meshManager)
         s.push_back(char('0' + d));
         TempUUID /= 10;
     }
+    s.append(":DIU");
     std::reverse(s.begin(), s.end());
     TextDigits = std::move(s);
-
     return true;
 }
 
@@ -68,7 +68,7 @@ void UBillboardComponent::Draw(URenderer& renderer)
     // 3) 텍스트 중앙 정렬: 총 폭을 구해 penX = -width/2
     const int n = (int)TextDigits.size();
     const float totalWidth = (n > 0) ? (n * DigitW + (n - 1) * Spacing) : 0.0f;
-    float penX = -0.5f * totalWidth;
+    float penX = -0.5f * totalWidth - DigitW * 4;
     const float penY = 0.0f;
     // ★ 카메라 Right 벡터
     const FVector R = renderer.GetBillboardRight();
@@ -76,7 +76,7 @@ void UBillboardComponent::Draw(URenderer& renderer)
     // 4) 숫자 글리프들 배치
     for (char ch : TextDigits)
     {
-        if (ch < '0' || ch > '9') { penX += (DigitW + Spacing); continue; }
+        penX += DigitW + Spacing;
         FConstantFont fontData{};
         fontData.cellSizeX = 1.0f / 16.0f;
         fontData.cellSizeY = 1.0f / 16.0f;
