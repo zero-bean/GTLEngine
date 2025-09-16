@@ -210,10 +210,7 @@ void UScene::Render()
 	{
 		if (UPrimitiveComponent* primitive = obj->Cast<UPrimitiveComponent>())
 		{
-			if (ShowFlagManager->IsEnabled(EEngineShowFlags::SF_Primitives))
-			{
-				primitive->Draw(*renderer);
-			}
+			primitive->Draw(*renderer, ShowFlagManager);
 		}
 	}
 
