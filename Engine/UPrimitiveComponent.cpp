@@ -23,11 +23,6 @@ void UPrimitiveComponent::UpdateConstantBuffer(URenderer& renderer)
 {
 	FMatrix M = GetWorldTransform();
 	renderer.SetModel(M, Color, bIsSelected);
-
-	if (billBoard)
-	{
-		billBoard->UpdateConstantBuffer(renderer);
-	}
 }
 
 UPrimitiveComponent::~UPrimitiveComponent()

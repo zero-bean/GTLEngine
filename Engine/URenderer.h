@@ -15,12 +15,12 @@ struct CBTransform
 };
 
 // 폰트용 Constant 버퍼 전달 구조체
-struct FConstantFont
+struct alignas(16) FConstantFont
 {
-	float u0;
-	float v0;
-	float u1;
-	float v1;
+	float cellSizeX;
+	float cellSizeY;
+	int atlasCols;
+	float pad;
 };
 
 // 행벡터 규약: p' = p * M
@@ -61,7 +61,7 @@ struct FBatchLineList
 
 struct FBatchSprite
 {
-	TArray<FVertexPosTexCoord> Vertices{};
+	TArray<FVertexPosTexCoordFont> Vertices{};
 	TArray<uint32> Indices{};
 	ID3D11VertexShader* VertexShader = nullptr;
 	ID3D11Buffer* VertexBuffer = nullptr;
@@ -108,6 +108,7 @@ private:
 	IDXGISwapChain* swapChain;
 	ID3D11RenderTargetView* renderTargetView;
 	ID3D11ShaderResourceView* shaderResourceView;
+	ID3D11ShaderResourceView* shaderResourceView2;
 	ID3D11SamplerState* samplerState;
 	ID3D11DepthStencilView* depthStencilView;
 	ID3D11RasterizerState* SolidRasterizerState;
@@ -205,7 +206,8 @@ public:
 		const FVector& sizeXY,
 		const FSlicedUV& uv,
 		float z = 0.0f,
-		const FVector& pivot = FVector(0.0f, 0.0f));
+		const FVector& pivot = FVector(0.0f, 0.0f),
+		const int charCode = 0);
 	void FlushBatchSprite();
 
 	// Window resize handling
