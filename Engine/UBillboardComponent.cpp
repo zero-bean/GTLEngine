@@ -55,8 +55,8 @@ void UBillboardComponent::Draw(URenderer& renderer)
             offsetZ = 0.5f * localHeightZ * owner->GetScale().Z + DigitH * 0.5f + 0.02f;
         }
     }
-
     anchor.Z += offsetZ;
+
     auto R_object = GetQuaternion().ToMatrixRow();
     const float deg = -90.0f;
     float rad = deg * 3.1415926535f / 180.0f;
@@ -66,10 +66,12 @@ void UBillboardComponent::Draw(URenderer& renderer)
     const FMatrix M = FMatrix::SRTRowQuaternion(anchor, converted, GetScale());
 
     // 3) 텍스트 중앙 정렬: 총 폭을 구해 penX = -width/2
-    const int n = static_cast<int>(TextDigits.size());
+    const int n = (int)TextDigits.size();
     const float totalWidth = (n > 0) ? (n * DigitW + (n - 1) * Spacing) : 0.0f;
     float penX = -0.5f * totalWidth;
     const float penY = 0.0f;
+    // ★ 카메라 Right 벡터
+    const FVector R = renderer.GetBillboardRight();
 
     // 4) 숫자 글리프들 배치
     for (char ch : TextDigits)
@@ -84,7 +86,11 @@ void UBillboardComponent::Draw(URenderer& renderer)
         const FVector baseXY(penX, penY, 0.f);
         const FVector sizeXY(DigitW, DigitH, 0.f);
 
-        renderer.SubmitSprite(M, baseXY, sizeXY, FSlicedUV(0, 0, 1, 1), 0,  FVector(0, 0, 0), (int)ch);
+        const float LocalCenterX = penX + 0.5f * DigitW;
+        const FVector GlyphAnchor = anchor + R * LocalCenterX;
+        //renderer.SubmitSprite(M, baseXY, sizeXY, FSlicedUV(0, 0, 1, 1), 0, FVector(0, 0, 0), (int)ch);
+        //    renderer.SubmitSprite(M, baseXY, sizeXY, uv);
+        renderer.SubmitBillboardSprite(GlyphAnchor, DigitW, DigitH, FSlicedUV(0,0,1,1), (int)ch);
         penX += (DigitW + Spacing);
     }
 }

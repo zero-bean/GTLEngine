@@ -1,7 +1,6 @@
 ﻿#include "stdafx.h"
 #include "URenderer.h"
 #include "UClass.h"
-int cnt = 0;
 /* *
 * IASetIndexBuffer https://learn.microsoft.com/ko-kr/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-iasetindexbuffer
 */
@@ -582,7 +581,6 @@ void URenderer::FlushBatchLineList()
 	deviceContext->PSSetShader(batchLineList.pixelShader, nullptr, 0);
 
 	deviceContext->DrawIndexed(static_cast<UINT>(iCount), 0, 0);
-	UE_LOG("[Batch] LineList DrawIndexed iCount=%u (draw #%d)\n", (UINT)iCount, cnt++);
 
 	batchLineList.Clear();
 }
@@ -1016,7 +1014,6 @@ void URenderer::DrawMesh(UMesh* mesh)
 		else if (mesh->NumIndices == 0)
 		{
 			deviceContext->Draw(mesh->NumVertices, 0);
-			UE_LOG("Draw Call %d \n", cnt++);
 		}
 	}
 
@@ -1423,4 +1420,38 @@ void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices,
 			batchLineList.Indices.push_back((uint32)(base + p * 2 + 1));
 		}
 	}
+}
+void URenderer::SetBillboardFrame(const FVector& RightWorld, const FVector& UpWorld)
+{
+	CamRightW = RightWorld; CamRightW.Normalize();
+	CamUpW = UpWorld;    CamUpW.Normalize();
+}
+
+// 행-벡터(row-major) 규약: row0=R, row1=U, row2=F
+FMatrix URenderer::MakeBillboardModel(const FVector& AnchorWorld, float SizeX, float SizeY) const
+{
+	const FVector R = CamRightW;
+	const FVector U = CamUpW;
+	const FVector F = R.Cross(U); // 필요시 부호 반전(좌/우핸디드 맞춰)
+
+	FMatrix Rot = FMatrix::IdentityMatrix();
+	Rot.M[0][0] = R.X; Rot.M[0][1] = R.Y; Rot.M[0][2] = R.Z;
+	Rot.M[1][0] = U.X; Rot.M[1][1] = U.Y; Rot.M[1][2] = U.Z;
+	Rot.M[2][0] = F.X; Rot.M[2][1] = F.Y; Rot.M[2][2] = F.Z;
+
+	const FMatrix S = FMatrix::Scale(SizeX, SizeY, 1.0f);
+	const FMatrix T = FMatrix::TranslationRow(AnchorWorld);
+
+	return S * Rot * T; // 행-벡터 규약
+}
+
+void URenderer::SubmitBillboardSprite(const FVector& AnchorWorld, float SizeX, float SizeY, const FSlicedUV& UV, int charcode)
+{
+	// 쿼드가 앵커를 “가운데”로 오게 하려면 baseXY를 (-w/2,-h/2)로 둔다.
+	const FMatrix M = MakeBillboardModel(AnchorWorld, 1.0f, 1.0f);
+	const FVector baseXY(-0.5f * SizeX, -0.5f * SizeY, 0.0f);
+	const FVector sizeXY(SizeX, SizeY, 0.0f);
+
+	// 주의: SubmitSprite는 로컬 쿼드 생성 후 M으로 “CPU에서” 좌표를 월드로 변환해서 배치 버퍼에 push
+	SubmitSprite(M, baseXY, sizeXY, UV, 0.0f, FVector(0, 0, 0), charcode);
 }

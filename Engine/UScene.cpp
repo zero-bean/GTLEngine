@@ -199,6 +199,9 @@ void UScene::Render()
 	renderer->SetTargetAspect(camera->GetAspect());
 	renderer->SetViewProj(camera->GetView(), camera->GetProj());
 
+	renderer->SetBillboardFrame(camera->GetRight(),
+		camera->GetUp());
+
 	ID3D11DeviceContext* context = renderer->GetDeviceContext();
 	context->IASetInputLayout(renderer->GetInputLayout("Default"));
 	context->VSSetShader(renderer->GetVertexShader("Default"), nullptr, 0);
@@ -207,10 +210,7 @@ void UScene::Render()
 	{
 		if (UPrimitiveComponent* primitive = obj->Cast<UPrimitiveComponent>())
 		{
-			if (ShowFlagManager->IsEnabled(EEngineShowFlags::SF_Primitives))
-			{
-				primitive->Draw(*renderer);
-			}
+			primitive->Draw(*renderer, ShowFlagManager);
 		}
 	}
 

@@ -3,6 +3,7 @@
 #include "UBillboardComponent.h"
 #include "UMeshManager.h"
 #include "URenderer.h"
+#include "ShowFlagManager.h"
 
 IMPLEMENT_UCLASS(UPrimitiveComponent, USceneComponent)
 bool UPrimitiveComponent::Init(UMeshManager* meshManager)
@@ -19,18 +20,7 @@ bool UPrimitiveComponent::Init(UMeshManager* meshManager)
 	return false;
 }
 
-void UPrimitiveComponent::UpdateConstantBuffer(URenderer& renderer)
-{
-	FMatrix M = GetWorldTransform();
-	renderer.SetModel(M, Color, bIsSelected);
-}
-
-UPrimitiveComponent::~UPrimitiveComponent()
-{
-	SAFE_DELETE(billBoard);
-}
-
-void UPrimitiveComponent::Draw(URenderer& renderer)
+void UPrimitiveComponent::DrawMesh(URenderer& renderer)
 {
 	if (!mesh || !mesh->VertexBuffer)
 	{
@@ -49,9 +39,38 @@ void UPrimitiveComponent::Draw(URenderer& renderer)
 	}
 	UpdateConstantBuffer(renderer);
 	renderer.DrawMesh(mesh);
+}
 
+void UPrimitiveComponent::DrawBillboard(URenderer& renderer)
+{
 	if (billBoard)
 	{
 		billBoard->Draw(renderer);
+	}
+}
+
+void UPrimitiveComponent::UpdateConstantBuffer(URenderer& renderer)
+{
+	FMatrix M = GetWorldTransform();
+	renderer.SetModel(M, Color, bIsSelected);
+}
+
+UPrimitiveComponent::~UPrimitiveComponent()
+{
+	SAFE_DELETE(billBoard);
+}
+
+void UPrimitiveComponent::Draw(URenderer& renderer, UShowFlagManager* ShowFlagManager)
+{
+	assert(ShowFlagManager != nullptr);
+
+	if (ShowFlagManager->IsEnabled(EEngineShowFlags::SF_Primitives))
+	{
+		DrawMesh(renderer);
+	}
+	
+	if (ShowFlagManager->IsEnabled(EEngineShowFlags::SF_BillboardText))
+	{
+		DrawBillboard(renderer);
 	}
 }

@@ -7,6 +7,7 @@
 
 class UMeshManager; // 전방 선언
 class UBillboardComponent;
+class UShowFlagManager;
 
 class UPrimitiveComponent : public USceneComponent
 {
@@ -18,13 +19,14 @@ protected:
 public:
 	UPrimitiveComponent(FVector loc = { 0,0,0 }, FVector rot = { 0,0,0 }, FVector scl = { 1,1,1 })
 		: USceneComponent(loc, rot, scl), mesh(nullptr)
+		, billBoard(nullptr)
 	{
 	}
 	virtual ~UPrimitiveComponent();
 
 	bool bIsSelected = false;
 
-	virtual void Draw(URenderer& renderer);
+	virtual void Draw(URenderer& renderer, UShowFlagManager* ShowFlagManager);
 	virtual void UpdateConstantBuffer(URenderer& renderer);
 
 	// 별도의 초기화 메서드
@@ -36,4 +38,8 @@ public:
 
 	void SetColor(const FVector4& newColor) { Color = newColor; }
 	FVector4 GetColor() const { return Color; }
+
+private:
+	void DrawMesh(URenderer& renderer);
+	void DrawBillboard(URenderer& renderer);
 };
