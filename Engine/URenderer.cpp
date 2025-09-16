@@ -649,6 +649,9 @@ void URenderer::FlushBatchSprite()
 	deviceContext->IASetIndexBuffer(batchSprite.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	// 스프라이트는 wireframe 영향받지 않음
+	deviceContext->RSSetState(SolidRasterizerState);
+
 	deviceContext->IASetInputLayout(GetInputLayout("Font"));
 	deviceContext->VSSetShader(GetVertexShader("Font"), nullptr, 0);
 	deviceContext->PSSetShader(GetPixelShader("Font"), nullptr, 0);
