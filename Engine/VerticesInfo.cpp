@@ -745,3 +745,69 @@ TArray<FVertexPosColor> GridGenerator::CreateAxisVertices(float gridSize, int32 
     return vertices;
 }
 ////////////////////////////////////////////////////////////////////////////////////////
+
+TArray<FVertexPosColor> SpotlightGenerator::CreateSpotlightConeVertices(float height, float coneAngleDegrees, int32 circleSegments)
+{
+    TArray<FVertexPosColor> vertices;
+    FVector4 color(1.0f, 1.0f, 1.0f, 1.0f); // 라인 색상 (흰색)
+
+    // --- 1. 기본 파라미터 계산 ---
+    const float coneAngleRadians = coneAngleDegrees * 3.14159265f / 180.0f;
+    const float radius = height * tanf(coneAngleRadians * 0.5f);
+
+    // 원뿔의 꼭짓점 (로컬 좌표계의 원점)
+    FVector apexPos(0.0f, 0.0f, 0.0f);
+
+    // --- 2. 옆면 선 생성 (꼭짓점 -> 밑면 원) ---
+    for (int32 i = 0; i < circleSegments; ++i)
+    {
+        float angle = (float)i / (float)circleSegments * 2.0f * 3.14159265f;
+
+        // 원뿔이 로컬 Z축 방향으로 뻗어나간다고 가정
+ /*       float x = cosf(angle) * radius;
+        float y = sinf(angle) * radius;
+        float z = height;*/
+        float x = height;               // X축이 높이(길이) 방향
+        float y = cosf(angle) * radius; // Y와 Z가 원을 그리는 평면
+        float z = sinf(angle) * radius;
+        FVector circlePos(x, y, z);
+
+        // 라인 하나 = 정점 2개
+        vertices.push_back({ apexPos.X, apexPos.Y, apexPos.Z, color.X, color.Y, color.Z, color.W });
+        vertices.push_back({ circlePos.X, circlePos.Y, circlePos.Z, color.X, color.Y, color.Z, color.W });
+    }
+
+    // --- 3. 밑면 원 생성 ---
+    for (int32 i = 0; i < circleSegments; ++i)
+    {
+        //float angle1 = (float)i / (float)circleSegments * 2.0f * 3.14159265f;
+        //float x1 = cosf(angle1) * radius;
+        //float y1 = sinf(angle1) * radius;
+        //FVector circlePos1(x1, y1, height);
+
+        //// 다음 점 계산 (마지막 점은 첫 번째 점과 연결)
+        //float angle2 = (float)(i + 1) / (float)circleSegments * 2.0f * 3.14159265f;
+        //float x2 = cosf(angle2) * radius;
+        //float y2 = sinf(angle2) * radius;
+        //FVector circlePos2(x2, y2, height);
+
+        float angle1 = (float)i / (float)circleSegments * 2.0f * 3.14159265f;
+        float x1 = height;
+        float y1 = cosf(angle1) * radius;
+        float z1 = sinf(angle1) * radius;
+        FVector circlePos1(x1, y1, z1);
+
+        float angle2 = (float)(i + 1) / (float)circleSegments * 2.0f * 3.14159265f;
+        float x2 = height;
+        float y2 = cosf(angle2) * radius;
+        float z2 = sinf(angle2) * radius;
+        FVector circlePos2(x2, y2, z2);
+
+        // 라인 하나 = 정점 2개
+        vertices.push_back({ circlePos1.X, circlePos1.Y, circlePos1.Z, color.X, color.Y, color.Z, color.W });
+        vertices.push_back({ circlePos2.X, circlePos2.Y, circlePos2.Z, color.X, color.Y, color.Z, color.W });
+    }
+
+    return vertices;
+
+}
