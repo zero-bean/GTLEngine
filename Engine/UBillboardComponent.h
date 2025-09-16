@@ -29,5 +29,5 @@ private:
 	std::string TextDigits;
 	float DigitW = 0.16f;
 	float DigitH = 0.36f;
-	float Spacing = 0.01f;
+	float Spacing = 0.0f;
 };
