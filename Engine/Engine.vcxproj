@@ -234,6 +234,7 @@
     <ClCompile Include="UScene.cpp" />
     <ClCompile Include="USceneComponent.cpp" />
     <ClCompile Include="USphereComp.cpp" />
+    <ClCompile Include="USpotLight.cpp" />
     <ClCompile Include="UTimeManager.cpp" />
     <ClCompile Include="UGUI.cpp" />
     <ClCompile Include="UInputManager.cpp" />
@@ -257,6 +258,7 @@
     <ClInclude Include="UBoundingBoxComponent.h" />
     <ClInclude Include="UBoundingBoxManager.h" />
     <ClInclude Include="UCamera.h" />
+    <ClInclude Include="USpotLight.h" />
     <ClInclude Include="VertexPosColor.h" />
     <ClInclude Include="ImguiConsole.h" />
     <ClInclude Include="ImGui\imconfig.h" />

@@ -24,4 +24,14 @@ public:
 	static TArray<FVertexPosColor> CreateAxisVertices(float gridSize, int32 gridCount);
 	static TArray<FVertexPosColor> CreateRotationHandleVertices();
 };
+
+class SpotlightGenerator
+{
+public:
+	static TArray<FVertexPosColor> CreateSpotlightConeVertices(
+		float height,			// 원뿔 높이
+		float coneAngleDegrees,	// 원뿔 각도
+		int32 circleSegments
+	);
+};
 ////////////////////////////////////////////////////////////////////////////////////////

@@ -496,50 +496,50 @@ void URenderer::UpdateFontConstantBuffer(const FConstantFont& r)
 	deviceContext->PSSetConstantBuffers(2, 1, &fontConstantBuffer);
 }
 
-void URenderer::SubmitLineList(const UMesh* mesh)
-{
-	if (mesh == nullptr || mesh->PrimitiveType != D3D11_PRIMITIVE_TOPOLOGY_LINELIST) { return; }
-
-	SubmitLineList(mesh->Vertices, mesh->Indices);
-}
-
-void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices)
-{
-	if (vertices.empty()) { return; }
-
-	const size_t base = batchLineList.Vertices.size();
-
-	batchLineList.Vertices.insert(batchLineList.Vertices.end(), vertices.begin(), vertices.end());
-
-	if (!indices.empty())
-	{
-		batchLineList.Indices.reserve(batchLineList.Indices.size() + indices.size());
-		for (uint32 idx : indices)
-		{
-			batchLineList.Indices.push_back(static_cast<uint32>(base + idx));
-		}
-	}
-	else
-	{
-		// 인덱스 없음 → (0,1),(2,3)... 페어링해서 생성
-		const size_t n = vertices.size();
-		const bool hasOdd = (n & 1) != 0;
-		const size_t pairs = n >> 1; // n/2
-
-		if (hasOdd)
-		{
-			// 마지막 남는 1개는 버림 (라인 페어 불가). 필요하면 여기서 디버그 로그만 찍자.
-			OutputDebugStringA("[Batch] LineList mesh has odd vertex count; dropping last vertex.\n");
-		}
-
-		batchLineList.Indices.reserve(batchLineList.Indices.size() + pairs * 2);
-		for (size_t p = 0; p < pairs; ++p)
-		{
-			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 0)));
-			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 1)));
-		}
-	}
-}
+//void URenderer::SubmitLineList(const UMesh* mesh)
+//{
+//	if (mesh == nullptr || mesh->PrimitiveType != D3D11_PRIMITIVE_TOPOLOGY_LINELIST) { return; }
+//
+//	SubmitLineList(mesh->Vertices, mesh->Indices);
+//}
+//
+//void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices)
+//{
+//	if (vertices.empty()) { return; }
+//
+//	const size_t base = batchLineList.Vertices.size();
+//
+//	batchLineList.Vertices.insert(batchLineList.Vertices.end(), vertices.begin(), vertices.end());
+//
+//	if (!indices.empty())
+//	{
+//		batchLineList.Indices.reserve(batchLineList.Indices.size() + indices.size());
+//		for (uint32 idx : indices)
+//		{
+//			batchLineList.Indices.push_back(static_cast<uint32>(base + idx));
+//		}
+//	}
+//	else
+//	{
+//		// 인덱스 없음 → (0,1),(2,3)... 페어링해서 생성
+//		const size_t n = vertices.size();
+//		const bool hasOdd = (n & 1) != 0;
+//		const size_t pairs = n >> 1; // n/2
+//
+//		if (hasOdd)
+//		{
+//			// 마지막 남는 1개는 버림 (라인 페어 불가). 필요하면 여기서 디버그 로그만 찍자.
+//			OutputDebugStringA("[Batch] LineList mesh has odd vertex count; dropping last vertex.\n");
+//		}
+//
+//		batchLineList.Indices.reserve(batchLineList.Indices.size() + pairs * 2);
+//		for (size_t p = 0; p < pairs; ++p)
+//		{
+//			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 0)));
+//			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 1)));
+//		}
+//	}
+//}
 
 void URenderer::FlushBatchLineList()
 {
