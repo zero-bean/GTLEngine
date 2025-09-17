@@ -973,6 +973,9 @@ void URenderer::DrawMeshOnTop(UMesh* mesh)
 	deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
 	deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
 
+	// 기즈모는 와이어프레임 모드 영향받지 않음
+	deviceContext->RSSetState(SolidRasterizerState);
+
 	// 3) 인덱스 있으면 DrawIndexed, 없으면 Draw
 	if (mesh->IndexBuffer && mesh->NumIndices > 0)
 	{
