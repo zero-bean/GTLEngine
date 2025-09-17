@@ -25,7 +25,7 @@ static inline bool IsUniform(float ScaleX, float ScaleY, float ScaleZ, float Eps
 }
 // 문자열 s에서 실수를 파싱해서 반환
 static inline float ParseNameToFloat(const FString& Name, float defv) {
-    try { return Name.empty() ? defv : std::stof(Name); }
+    try { return Name.empty() ? defv : std::stof(Name); } // 문자열을 float으로 반환
     catch (...) { return defv; }
 }
 // 각 컬럼의 길이(행벡터 규약: 열 기준)
@@ -66,13 +66,21 @@ static inline void Abs3x3RowMajor(const FMatrix& M, float A[3][3])
     A[1][0] = fabsf(M.M[1][0]); A[1][1] = fabsf(M.M[1][1]); A[1][2] = fabsf(M.M[1][2]);
     A[2][0] = fabsf(M.M[2][0]); A[2][1] = fabsf(M.M[2][1]); A[2][2] = fabsf(M.M[2][2]);
 }
-
-// row-vector, LH 가정.
-// MatrixWorld = [ R | T ]
-// CenterWorld = CenterLocal * R + T
-// Ew = (|R|)^T * halfSize   (row-vector 기준으로 구현하면 결국 각 축 절댓값을 요소곱으로 더하는 것과 동일)
+// 큐브의 AABB 구하기
 FBoundingBox UBoundingBoxComponent::TransformArvoAABB(const FBoundingBox& Local, const FMatrix& MatrixWorld)
 {
+    /*
+        MatrixWorld = [ R | T ]
+        CenterWorld = CenterLocal * R + T
+        ExtentWorld = (|R|)^T * halfSize
+    
+        Arvo 방식이란?
+         - 로컬 반측길이(ELocal)를 월드 반측길이(EWorld)로 변환할 때,
+           월드행렬의 회전/스케일 부분에서 각 열의 절댓값을 가져와
+           로컬 X/Y/Z 기여도를 곱하고 모두 더해 월드축별 최대 길이를 구한다.
+         - 쉽게 말해: "각 로컬축이 월드 X/Y/Z축에 얼마나 기여하는지"를 계산해서 합산한 값 = 월드 AABB 반측길이
+         Why?-> 큐브의 8개의 꼭짓점을 전부 변환한 뒤 Min/Max 를 구하는 것은 성능 Down
+    */
     FVector CenterLocal = (Local.Min + Local.Max) * 0.5f;
     FVector halfSize = (Local.Max - Local.Min) * 0.5f;
 
@@ -100,6 +108,7 @@ FBoundingBox UBoundingBoxComponent::TransformArvoAABB(const FBoundingBox& Local,
     out.Max = CenterWorld + ExtentWorld;
     return out;
 }
+// 구의 AABB 구하기
 FBoundingBox UBoundingBoxComponent::TransformSphereToWorldAABB(const FVector& CenterLocal, float Radius, const FMatrix& MatrixWorld)
 {
     // 월드 중심: CenterWorld = CenterLocal * Rotation + Translation  (행벡터 규약)
@@ -146,28 +155,27 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
         도형을 눌렀다가 Quad를 누르면 이전 도형에서 AABB 보이는 문제 발생
         따라서 우선은 컴포넌트에서 처리하기로
     */
-    // 1. 타입으로 필터(가장 견고)
-    if (Target->IsA<UQuadComponent>())
+    // 1. 타입으로 필터링(가장 견고)
+    // AABB를 하지 않을 것들이다.
+    if (Target->IsA<UQuadComponent>() || Target->IsA<USpotLight>())
     {
         bHideAABB = true;
         return; // 그릴 필요 없으므로 추가 계산 생략
     }
-    if (Target->IsA<USpotLight>())
-    {
-        bHideAABB = true;
-        return; // 그릴 필요 없으므로 추가 계산 생략
-    }
+
+    /*
     // 2. 타깃 컴포넌트의 클래스 메타로 판정(유연함)
+        // 방법 1이 더 이상적이지만, 추후 같은 컴포넌트이더라도 메타로 나뉠 것에 대비해 남겨 놓는다.
     const std::string TargetClassMeshName = Target->GetClass()->GetMeta("MeshName");
     if (TargetClassMeshName == "Quad")
     {
         bHideAABB = true;
-        return; // 그릴 필요 없으니 추가 계산 생략
+        return;
     }
+    */
 
-
-    const FMatrix MeshTarget = Target->GetWorldTransform();
-
+    // 3. AABB를 적용할 대상이면 필요한 변수들 초기화
+    const FMatrix MeshTarget = Target->GetWorldTransform(); // 메시의 WorldSpace 가져오기
     // 기본값(박스)
     FBoundingBox SrcLocal = LocalBox;
     bool  bUseSphere = false;
@@ -175,8 +183,8 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
     FVector SphereCenterLocal(0, 0, 0);
 
     // 1) 컴포넌트 클래스 메타 읽기
-    const FString BoundsType = Target->GetClass()->GetMeta("BoundsType");
-    const bool MetaSaysSphere = (!BoundsType.empty() && (BoundsType == "Sphere" || BoundsType == "sphere"));
+    const FString BoundType = Target->GetClass()->GetMeta("BoundType");
+    bUseSphere = (!BoundType.empty() && (BoundType == "Sphere" || BoundType == "sphere"));
 
     // 2) FromMesh 소스일 때 메시 참조
     UMesh* Mesh = TargetMesh;
@@ -184,16 +192,17 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
         if (auto Prim = Target->Cast<UPrimitiveComponent>()) Mesh = Prim->GetMesh();
     }
 
-    if (MetaSaysSphere)
+    if (bUseSphere)
     {
         // === Sphere 경로 ===
-        bUseSphere = true;
 
-        // 반지름: 메타 우선
+        // 반지름 : 메타에 저장된 반지름 우선
         SphereRadius = ParseNameToFloat(Target->GetClass()->GetMeta("BoundsRadius"), 0.0f);
 
+        // 메쉬의 생성자에서 미리 계산된 AABB가 있다면
         if (Mesh && Mesh->HasPrecomputedAABB()) {
-            FVector Center, Half; FBoundingBox::CenterExtents(Mesh->GetPrecomputedLocalBox(), Center, Half);
+            FVector Center, Half;
+            FBoundingBox::CenterExtents(Mesh->GetPrecomputedLocalBox(), Center, Half); // 미리 계산된 Box, Center, Half 길이 가져오기
             SphereCenterLocal = Center;
             if (SphereRadius <= 0.0f) SphereRadius = max(Half.X, max(Half.Y, Half.Z)); // 보수적
         }
@@ -201,8 +210,14 @@ void UBoundingBoxComponent::Update(float /*deltaTime*/)
             // 메시 AABB가 없으면 LocalBox에서 추정(Explicit 모드 포함)
             FVector Center, Half; FBoundingBox::CenterExtents(LocalBox, Center, Half);
             SphereCenterLocal = Center;
-            if (SphereRadius <= 0.0f) SphereRadius = max(Half.X, max(Half.Y, Half.Z));
-            if (SphereRadius <= 0.0f) { SphereCenterLocal = FVector(0, 0, 0); SphereRadius = 1.0f; } // 최후 fallback
+            if (SphereRadius <= 0.0f)
+            {
+                SphereRadius = max(Half.X, max(Half.Y, Half.Z));
+            }
+            if (SphereRadius <= 0.0f) 
+            {
+                SphereCenterLocal = FVector(0, 0, 0); SphereRadius = 1.0f; // 최후 fallback
+            }
         }
 
         WorldBox = TransformSphereToWorldAABB(SphereCenterLocal, SphereRadius, MeshTarget);

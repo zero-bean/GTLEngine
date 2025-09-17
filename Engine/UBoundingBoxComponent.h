@@ -32,7 +32,7 @@ public:
 
     // 로컬 AABB 소스 선택
     void SetSource(EAABBSource Src) { Source = Src; }
-    // 1) Explicit 모드일 때: 외부에서 로컬 AABB 지정
+    // 1) Explicit 모드(외부에서 직접 Min/Max 값을 넣어준다)일 때: 외부에서 로컬 AABB 지정
     void SetLocalBox(const FBoundingBox& Box) { LocalBox = Box; }
     // 2) FromMesh 모드일 때: 대상 메시 지정(메시에 저장된 Local AABB를 사용)
     void SetTargetMesh(UMesh* InMesh) { TargetMesh = InMesh; }
@@ -52,7 +52,7 @@ public:
 
 
 private:
-    // 로컬AABB -> 월드AABB (Arvo 방식, row-vector 규약/LH)
+    // 큐브의 로컬AABB -> 월드AABB (Arvo 방식, row-vector 규약/LH)
     static FBoundingBox TransformArvoAABB(const FBoundingBox& Local, const FMatrix& Matrixworld);
 
     // 로컬 → Center/Extents
@@ -60,6 +60,7 @@ private:
         Center = (Box.Min + Box.Max) * 0.5f;
         Length = (Box.Max - Box.Min) * 0.5f;
     }
+    // 구의 AABB 구하기
     static FBoundingBox TransformSphereToWorldAABB(const FVector& CenterLocal, float Radius, const FMatrix& Matrixworld);
 
 private:
