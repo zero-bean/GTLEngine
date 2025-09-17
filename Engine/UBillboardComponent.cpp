@@ -40,7 +40,7 @@ bool UBillboardComponent::Init(UMeshManager* meshManager, UMaterialManager* Mate
         s.push_back(char('0' + d));
         TempUUID /= 10;
     }
-    s.append(":DIU");
+    s.append(":DIUU");
     std::reverse(s.begin(), s.end());
     TextDigits = std::move(s);
     return true;
