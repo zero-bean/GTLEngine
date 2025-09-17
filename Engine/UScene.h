@@ -2,6 +2,7 @@
 #include "ISerializable.h"
 #include "Array.h"
 #include "UMeshManager.h"
+#include "UMaterialManager.h"
 #include "USceneManager.h"
 #include "json.hpp"
 #include "UGizmoManager.h"
@@ -23,6 +24,7 @@ protected:
 	// Reference from outside
 	URenderer* renderer;
 	UMeshManager* meshManager;
+	UMaterialManager* materialManager;
 	UInputManager* inputManager;
 	//URaycastManager* RaycastManager;
 	//UGizmoManager* GizmoManager;
@@ -37,7 +39,7 @@ protected:
 public:
 	UScene();
 	virtual ~UScene();
-	virtual bool Initialize(URenderer* r, UMeshManager* mm, UShowFlagManager* InShowFlagManager, UInputManager* im = nullptr);
+	virtual bool Initialize(URenderer* r, UMeshManager* mm, UMaterialManager* mrm, UShowFlagManager* InShowFlagManager, UInputManager* im = nullptr);
 
 	virtual void Render();
 	virtual void Update(float deltaTime);

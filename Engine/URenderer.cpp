@@ -1,9 +1,8 @@
 ﻿#include "stdafx.h"
 #include "URenderer.h"
 #include "UClass.h"
-/* *
-* IASetIndexBuffer https://learn.microsoft.com/ko-kr/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-iasetindexbuffer
-*/
+#include "UTexture.h"
+#include "UMaterial.h"
 
 IMPLEMENT_UCLASS(URenderer, UEngineSubsystem)
 
@@ -12,9 +11,6 @@ URenderer::URenderer()
 	, deviceContext(nullptr)
 	, swapChain(nullptr)
 	, renderTargetView(nullptr)
-	, shaderResourceView(nullptr)
-	, shaderResourceView2(nullptr)
-	, samplerState(nullptr)
 	, depthStencilView(nullptr)
 	, constantBuffer(nullptr)
 	, fontConstantBuffer(nullptr)
@@ -75,27 +71,33 @@ bool URenderer::Initialize(HWND windowHandle)
 		return false;
 	}
 
-	if (!CreateDefaultSampler())
-	{
-		LogError("SamplerState", E_FAIL);
-		return false;
-	}
-
-	DirectX::CreateDDSTextureFromFile(device, L"assets/font_transparent.dds", &resource, &shaderResourceView);
-	DirectX::CreateDDSTextureFromFile(device, L"assets/rabbit.dds", &resource, &shaderResourceView2);
-	CreateFontConstantBuffer();
 	if (!InitializeCharacterMap("assets/DejaVuSansMono.txt"))
 	{
 		LogError("Fail load txt", E_FAIL);
 		return false;
 	}
 	
+	CreateFontConstantBuffer();
+	CreateTextures();
 
 	bIsInitialized = true;
 	return true;
 }
 
-// URenderer.cpp의 CreateShader() 함수를 다음과 같이 수정
+void URenderer::CreateTextures()
+{
+	{
+		UTexture* texture = NewObject<UTexture>();
+		texture->LoadFromFile(device, L"assets/rabbit.dds");
+		Textures["rabbit"] = texture;
+	}
+	
+	{
+		UTexture* texture = NewObject<UTexture>();
+		texture->LoadFromFile(device, L"assets/font_transparent.dds");
+		Textures["font"] = texture;
+	}
+}
 
 bool URenderer::CreateShader()
 {
@@ -405,20 +407,6 @@ bool URenderer::CreateRasterizerState()
 	return true;
 }
 
-bool URenderer::CreateDefaultSampler()
-{
-	D3D11_SAMPLER_DESC samplerDesc{};
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	HRESULT hr = device->CreateSamplerState(&samplerDesc, &samplerState);
-	return CheckResult(hr, "CreateDefaultSampler");
-}
-
 bool URenderer::CreateConstantBuffer()
 {
 	// 월드 좌표용 상수 버퍼
@@ -496,51 +484,6 @@ void URenderer::UpdateFontConstantBuffer(const FConstantFont& r)
 	deviceContext->PSSetConstantBuffers(2, 1, &fontConstantBuffer);
 }
 
-//void URenderer::SubmitLineList(const UMesh* mesh)
-//{
-//	if (mesh == nullptr || mesh->PrimitiveType != D3D11_PRIMITIVE_TOPOLOGY_LINELIST) { return; }
-//
-//	SubmitLineList(mesh->Vertices, mesh->Indices);
-//}
-//
-//void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices)
-//{
-//	if (vertices.empty()) { return; }
-//
-//	const size_t base = batchLineList.Vertices.size();
-//
-//	batchLineList.Vertices.insert(batchLineList.Vertices.end(), vertices.begin(), vertices.end());
-//
-//	if (!indices.empty())
-//	{
-//		batchLineList.Indices.reserve(batchLineList.Indices.size() + indices.size());
-//		for (uint32 idx : indices)
-//		{
-//			batchLineList.Indices.push_back(static_cast<uint32>(base + idx));
-//		}
-//	}
-//	else
-//	{
-//		// 인덱스 없음 → (0,1),(2,3)... 페어링해서 생성
-//		const size_t n = vertices.size();
-//		const bool hasOdd = (n & 1) != 0;
-//		const size_t pairs = n >> 1; // n/2
-//
-//		if (hasOdd)
-//		{
-//			// 마지막 남는 1개는 버림 (라인 페어 불가). 필요하면 여기서 디버그 로그만 찍자.
-//			OutputDebugStringA("[Batch] LineList mesh has odd vertex count; dropping last vertex.\n");
-//		}
-//
-//		batchLineList.Indices.reserve(batchLineList.Indices.size() + pairs * 2);
-//		for (size_t p = 0; p < pairs; ++p)
-//		{
-//			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 0)));
-//			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 1)));
-//		}
-//	}
-//}
-
 void URenderer::FlushBatchLineList()
 {
 	const size_t vCount = batchLineList.Vertices.size();
@@ -579,6 +522,7 @@ void URenderer::FlushBatchLineList()
 	deviceContext->IASetInputLayout(batchLineList.inputLayout);
 	deviceContext->VSSetShader(batchLineList.vertexShader, nullptr, 0);
 	deviceContext->PSSetShader(batchLineList.pixelShader, nullptr, 0);
+
 
 	deviceContext->DrawIndexed(static_cast<UINT>(iCount), 0, 0);
 
@@ -626,6 +570,9 @@ void URenderer::FlushBatchSprite()
 	const size_t icount = batchSprite.Indices.size();
 	if (vcount == 0 || icount == 0) return;
 
+	// 정점 이미 월드 변환했기에, MVP는 단위 행렬로 처리
+	SetModel(FMatrix::IdentityMatrix(), FVector4(1, 1, 1, 1), false);
+
 	// 0) 버퍼 용량 확보
 	EnsureBatchCapacity(batchSprite, vcount, icount);
 
@@ -656,8 +603,7 @@ void URenderer::FlushBatchSprite()
 	deviceContext->VSSetShader(GetVertexShader("Font"), nullptr, 0);
 	deviceContext->PSSetShader(GetPixelShader("Font"), nullptr, 0);
 
-	if (shaderResourceView)    deviceContext->PSSetShaderResources(0, 1, &shaderResourceView);
-	if (samplerState)          deviceContext->PSSetSamplers(0, 1, &samplerState);
+	Textures["font"]->Bind(deviceContext);
 
 	// 4) 드로우 1회
 	deviceContext->DrawIndexed((UINT)icount, 0, 0);
@@ -696,14 +642,12 @@ void URenderer::Release()
 	SAFE_RELEASE(SolidRasterizerState);
 	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(renderTargetView);
-	SAFE_RELEASE(shaderResourceView);
-	SAFE_RELEASE(shaderResourceView2);
-	SAFE_RELEASE(samplerState);
 	SAFE_RELEASE(swapChain);
 	SAFE_RELEASE(deviceContext);
 	SAFE_RELEASE(device);
 	SAFE_RELEASE(resource);
 
+	Textures.clear();
 	batchLineList.Release();
 	batchSprite.Release();
 
@@ -968,58 +912,26 @@ void URenderer::Draw(UINT vertexCount, UINT startVertexLocation)
 	}
 }
 
-void URenderer::DrawMesh(UMesh* mesh)
+void URenderer::DrawMesh(UMesh* mesh, UMaterial* InMaterial)
 {
-	if (!mesh || !mesh->IsInitialized())
+	if (mesh == nullptr || mesh->IsInitialized() == false || InMaterial == nullptr)
 		return;
 	
 	UINT offset = 0;
 	deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
 	deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
+	
+	InMaterial->Apply(deviceContext);
 
-	if (mesh->Type == EVertexType::VERTEX_POS_UV)
+	if (mesh->IndexBuffer && mesh->NumIndices > 0)
 	{
-		deviceContext->IASetInputLayout(GetInputLayout("Image"));
-		deviceContext->VSSetShader(GetVertexShader("Image"), nullptr, 0);
-		deviceContext->PSSetShader(GetPixelShader("Image"), nullptr, 0);
-
-		if (shaderResourceView2) 
-		{ 
-			deviceContext->PSSetShaderResources(0, 1, &shaderResourceView2); 
-		}
-		if (samplerState) { deviceContext->PSSetSamplers(0, 1, &samplerState); }
-
-		// 3) Draw
-		if (mesh->IndexBuffer && mesh->NumIndices > 0)
-		{
-			deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-			deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
-		}
-		else
-		{
-			deviceContext->Draw(mesh->NumVertices, 0);
-		}
-
+		deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
 	}
-	else if (mesh->Type == EVertexType::VERTEX_POS_COLOR)
+	else
 	{
-		deviceContext->IASetInputLayout(GetInputLayout("Default"));
-		deviceContext->VSSetShader(GetVertexShader("Default"), nullptr, 0);
-		deviceContext->PSSetShader(GetPixelShader("Default"), nullptr, 0);
-
-		// 인덱스 버퍼도 가지고 있으면 아래 방식으로 Draw
-		if (mesh->NumIndices > 0)
-		{
-			deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, offset);
-			deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
-		}
-		// 정점 버퍼만 가지고 있으면 아래 방식으로 Draw
-		else if (mesh->NumIndices == 0)
-		{
-			deviceContext->Draw(mesh->NumVertices, 0);
-		}
+		deviceContext->Draw(mesh->NumVertices, 0);
 	}
-
 }
 
 void URenderer::DrawMeshOnTop(UMesh* mesh)

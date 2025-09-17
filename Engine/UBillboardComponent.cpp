@@ -2,20 +2,29 @@
 #include "UBillboardComponent.h"
 #include "UPrimitiveComponent.h"
 #include "UMeshManager.h"
+#include "UMaterialManager.h"
 #include "URenderer.h"
 #include "UMesh.h"
+#include "UMaterial.h"
 
 IMPLEMENT_UCLASS(UBillboardComponent, USceneComponent)
+UCLASS_META(UBillboardComponent, MaterialName, "Font")
 
 UBillboardComponent::~UBillboardComponent()
 {
     owner = nullptr;
 }
 
-bool UBillboardComponent::Init(UMeshManager* meshManager)
+bool UBillboardComponent::Init(UMeshManager* meshManager, UMaterialManager* MaterialManager)
 {
 	if (owner == nullptr)
 		return false;
+
+    if (MaterialManager)
+    {
+        Material = MaterialManager->RetrieveMaterial(GetClass()->GetMeta("MaterialName"));
+    }
+
 
     std::string s;
     int TempUUID = owner->UUID;
@@ -95,7 +104,7 @@ void UBillboardComponent::Draw(URenderer& renderer)
     }
 }
 
-UMesh* UBillboardComponent::GetMesh() { return mesh; }
+UMesh* UBillboardComponent::GetMesh() { return Mesh; }
 
 void UBillboardComponent::SetOwner(UPrimitiveComponent* inOwner)
 {

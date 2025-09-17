@@ -35,10 +35,11 @@ UScene::~UScene()
 	delete camera;
 }
 
-bool UScene::Initialize(URenderer* r, UMeshManager* mm, UShowFlagManager* InShowFlagManager, UInputManager* im)
+bool UScene::Initialize(URenderer* r, UMeshManager* mm, UMaterialManager* mrm, UShowFlagManager* InShowFlagManager, UInputManager* im)
 {
 	renderer = r;
 	meshManager = mm;
+	materialManager = mrm;
 	inputManager = im;
 	ShowFlagManager = InShowFlagManager;
 
@@ -50,7 +51,7 @@ bool UScene::Initialize(URenderer* r, UMeshManager* mm, UShowFlagManager* InShow
 	{
 		if (UPrimitiveComponent* primitive = obj->Cast<UPrimitiveComponent>())
 		{
-			primitive->Init(meshManager);
+			primitive->Init(meshManager, materialManager);
 		}
 	}
 	// TODO - UApplication에서 하면 가장 마지막에 처리되므로 
@@ -87,7 +88,7 @@ void UScene::AddObject(USceneComponent* obj)
 	// 일단 표준 RTTI 사용
 	if (UPrimitiveComponent* primitive = obj->Cast<UPrimitiveComponent>())
 	{
-		primitive->Init(meshManager);
+		primitive->Init(meshManager, materialManager);
 		if (obj->CountOnInspector())
 			++primitiveCount;
 	}
@@ -214,8 +215,8 @@ void UScene::Render()
 		}
 	}
 
-	renderer->FlushBatchLineList();
 	renderer->FlushBatchSprite();
+	renderer->FlushBatchLineList();
 }
 
 void UScene::Update(float deltaTime)

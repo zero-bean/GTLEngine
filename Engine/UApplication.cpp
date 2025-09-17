@@ -76,6 +76,11 @@ bool UApplication::Initialize(HINSTANCE hInstance, const std::wstring& title, in
 		return false;
 	}
 
+	if (!materialManager.Initialize(&renderer))
+	{
+		MessageBox(hWnd, L"Failed to initialize material manager", L"Engine Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
 
 	if (!meshManager.Initialize(&renderer))
 	{

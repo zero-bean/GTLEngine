@@ -6,5 +6,5 @@
 IMPLEMENT_UCLASS(UPlaneComp, UPrimitiveComponent)
 UCLASS_META(UPlaneComp, DisplayName, "Plane")
 UCLASS_META(UPlaneComp, MeshName, "Plane")
-
-UCLASS_META(UPlaneComp, BoundType, "Box")   // 평면은 박스로 처리(두께 0)
+UCLASS_META(UPlaneComp, MaterialName, "Font");
+UCLASS_META(UPlaneComp, BoundsType, "Box")   // 평면은 박스로 처리(두께 0)

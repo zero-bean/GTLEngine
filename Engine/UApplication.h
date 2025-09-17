@@ -9,6 +9,7 @@
 #include "USceneManager.h"
 #include "UGizmoManager.h"
 #include "ShowFlagManager.h"
+#include "UMaterialManager.h"
 
 class UApplication
 {
@@ -20,6 +21,7 @@ private:
 	UGUI gui;
 	UTimeManager timeManager;
 	UMeshManager meshManager;
+	UMaterialManager materialManager;
 	USceneManager sceneManager;
 	UShowFlagManager ShowFlagManager;
 	URaycastManager raycastManager;
@@ -38,8 +40,6 @@ private:
 	int32 windowWidth;
 	int32 windowHeight;
 
-
-
 public:
 	UApplication();
 	virtual ~UApplication();
@@ -56,6 +56,7 @@ public:
 
 	// System access
 	URenderer& GetRenderer() { return renderer; }
+	UMaterialManager& GetMaterialManager() { return materialManager; }
 	UMeshManager& GetMeshManager() { return meshManager; }
 	USceneManager& GetSceneManager() { return sceneManager; }
 	UShowFlagManager& GetShowFlagManager() { return ShowFlagManager; }

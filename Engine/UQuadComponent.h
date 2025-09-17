@@ -3,6 +3,7 @@
 #include "Vector.h"
 
 class UMeshManager;
+class UMaterialManager;
 
 class UQuadComponent : public UPrimitiveComponent
 {

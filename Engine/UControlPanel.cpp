@@ -390,15 +390,4 @@ void UControlPanel::GridAndAxisSection()
 	{
 		GizmoManager->SetGridHalfLines(halfLines); // 그 다음 프레임부터 새 개수로 생성/제출
 	}
-
-	//int boldEvery = GizmoManager->GetGridBoldEvery();
-	//ImGui::SetNextItemWidth(80);
-	//if (ImGui::DragInt("Bold Every N", &boldEvery, 1, 1, 1000))
-	//{
-	//	GizmoManager->SetGridBoldEvery(boldEvery);
-	//}
-
-	//// (선택) 라이브 확인용
-	//ImGui::TextDisabled("Live: spacing=%.3f half=%d bold=%d",
-	//	GizmoManager->GetGridSpacing(), GizmoManager->GetGridHalfLines(), GizmoManager->GetGridBoldEvery());
 }
