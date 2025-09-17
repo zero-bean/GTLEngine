@@ -18,6 +18,7 @@ bool USceneManager::Initialize(UApplication* _application)
 	currentScene->Initialize(
 		&application->GetRenderer(),
 		&application->GetMeshManager(),
+		&application->GetMaterialManager(),
 		&application->GetShowFlagManager(),
 		&application->GetInputManager());
 	return true;
@@ -37,6 +38,7 @@ void USceneManager::SetScene(UScene* scene)
 	currentScene->Initialize(
 		&application->GetRenderer(),
 		&application->GetMeshManager(),
+		&application->GetMaterialManager(),
 		&application->GetShowFlagManager(),
 		&application->GetInputManager());
 

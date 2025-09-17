@@ -13,7 +13,7 @@ public:
 	FQuaternion OriginQuaternion;
 
 	UGizmoComponent(FVector loc = { 0,0,0 }, FVector rot = { 0,0,0 }, FVector scl = { 1,1,1 })
-		: USceneComponent(loc, rot, scl), mesh(nullptr)
+		: USceneComponent(loc, rot, scl), Mesh(nullptr)
 	{
 	}
 
@@ -29,7 +29,7 @@ public:
 	virtual void DrawOnTop(URenderer& renderer);
 	virtual void UpdateConstantBuffer(URenderer& renderer);
 
-	UMesh* GetMesh() { return mesh; }
+	UMesh* GetMesh() { return Mesh; }
 
 	void SetOriginRotation(FVector originRotation)
 	{
@@ -44,6 +44,6 @@ public:
 	}
 
 protected:
-	UMesh* mesh;
+	UMesh* Mesh;
 	FVector4 Color = { 1, 1, 1, 1 };
 };

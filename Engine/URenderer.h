@@ -6,6 +6,7 @@
 #include "CharacterInfo.h"
 
 class UTexture;
+class UMaterial;
 
 // URenderer.h or cpp 상단
 struct CBTransform
@@ -193,7 +194,7 @@ public:
 	// Drawing operations
 	void DrawIndexed(UINT indexCount, UINT startIndexLocation = 0, INT baseVertexLocation = 0);
 	void Draw(UINT vertexCount, UINT startVertexLocation = 0);
-	void DrawMesh(UMesh* mesh);
+	void DrawMesh(UMesh* mesh, UMaterial* InMaterial);
 	void DrawMeshOnTop(UMesh* mesh);
 
 	// Resource binding
@@ -262,6 +263,7 @@ private:
 			for (int32 c = 0; c < 4; ++c)
 				dst[r * 4 + c] = src.M[r][c];
 	}
+
 public:
 	void SetModel(const FMatrix& M, const FVector4& color, bool IsSelected); // M*VP → b0 업로드
 	// ============== 뷰포트 관련 ==============

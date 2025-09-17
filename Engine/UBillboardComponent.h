@@ -2,7 +2,9 @@
 #include "USceneComponent.h"
 
 class UMeshManager;
+class UMaterialManager;
 class UMesh;
+class UMaterial;
 class URenderer;
 class UPrimitiveComponent;
 
@@ -14,8 +16,8 @@ public:
 		: USceneComponent(loc, rot, scl) { }
 	virtual ~UBillboardComponent();
 
-	bool Init(UMeshManager* meshManager);
-	void Draw(URenderer& renderer);
+	bool Init(UMeshManager* MeshManager, UMaterialManager* MaterialManager);
+	void Draw(URenderer& InRenderer);
 
 	UMesh* GetMesh();
 
@@ -24,8 +26,9 @@ public:
 	void SetSpacing(float s) { Spacing = s; }
 
 private:
-	UMesh* mesh;
-	UPrimitiveComponent* owner;
+	UMesh* Mesh{ nullptr };
+	UMaterial* Material{ nullptr };
+	UPrimitiveComponent* owner{ nullptr };
 	std::string TextDigits;
 	float DigitW = 0.16f;
 	float DigitH = 0.36f;

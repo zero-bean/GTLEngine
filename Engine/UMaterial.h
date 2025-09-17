@@ -13,8 +13,8 @@ public:
     void Apply(ID3D11DeviceContext* InContext);
 
     // Getter //
-    ID3D11VertexShader* GetVS() const { return VertexShader; }
-    ID3D11PixelShader* GetPS() const { return PixelShader; }
+    ID3D11VertexShader* GetVertexShader() const { return VertexShader; }
+    ID3D11PixelShader* GetPixelShader() const { return PixelShader; }
     ID3D11InputLayout* GetInputLayout() const { return InputLayout; }
     UTexture* GetTexture() const { return Texture; }
     // Setter //

@@ -2,6 +2,7 @@
 #include "URenderer.h"
 #include "UClass.h"
 #include "UTexture.h"
+#include "UMaterial.h"
 
 IMPLEMENT_UCLASS(URenderer, UEngineSubsystem)
 
@@ -97,8 +98,6 @@ void URenderer::CreateTextures()
 		Textures["font"] = texture;
 	}
 }
-
-// URenderer.cpp의 CreateShader() 함수를 다음과 같이 수정
 
 bool URenderer::CreateShader()
 {
@@ -485,51 +484,6 @@ void URenderer::UpdateFontConstantBuffer(const FConstantFont& r)
 	deviceContext->PSSetConstantBuffers(2, 1, &fontConstantBuffer);
 }
 
-//void URenderer::SubmitLineList(const UMesh* mesh)
-//{
-//	if (mesh == nullptr || mesh->PrimitiveType != D3D11_PRIMITIVE_TOPOLOGY_LINELIST) { return; }
-//
-//	SubmitLineList(mesh->Vertices, mesh->Indices);
-//}
-//
-//void URenderer::SubmitLineList(const TArray<FVertexPosColor4>& vertices, const TArray<uint32>& indices)
-//{
-//	if (vertices.empty()) { return; }
-//
-//	const size_t base = batchLineList.Vertices.size();
-//
-//	batchLineList.Vertices.insert(batchLineList.Vertices.end(), vertices.begin(), vertices.end());
-//
-//	if (!indices.empty())
-//	{
-//		batchLineList.Indices.reserve(batchLineList.Indices.size() + indices.size());
-//		for (uint32 idx : indices)
-//		{
-//			batchLineList.Indices.push_back(static_cast<uint32>(base + idx));
-//		}
-//	}
-//	else
-//	{
-//		// 인덱스 없음 → (0,1),(2,3)... 페어링해서 생성
-//		const size_t n = vertices.size();
-//		const bool hasOdd = (n & 1) != 0;
-//		const size_t pairs = n >> 1; // n/2
-//
-//		if (hasOdd)
-//		{
-//			// 마지막 남는 1개는 버림 (라인 페어 불가). 필요하면 여기서 디버그 로그만 찍자.
-//			OutputDebugStringA("[Batch] LineList mesh has odd vertex count; dropping last vertex.\n");
-//		}
-//
-//		batchLineList.Indices.reserve(batchLineList.Indices.size() + pairs * 2);
-//		for (size_t p = 0; p < pairs; ++p)
-//		{
-//			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 0)));
-//			batchLineList.Indices.push_back(static_cast<uint32>(base + (p * 2 + 1)));
-//		}
-//	}
-//}
-
 void URenderer::FlushBatchLineList()
 {
 	const size_t vCount = batchLineList.Vertices.size();
@@ -568,6 +522,7 @@ void URenderer::FlushBatchLineList()
 	deviceContext->IASetInputLayout(batchLineList.inputLayout);
 	deviceContext->VSSetShader(batchLineList.vertexShader, nullptr, 0);
 	deviceContext->PSSetShader(batchLineList.pixelShader, nullptr, 0);
+
 
 	deviceContext->DrawIndexed(static_cast<UINT>(iCount), 0, 0);
 
@@ -614,6 +569,9 @@ void URenderer::FlushBatchSprite()
 	const size_t vcount = batchSprite.Vertices.size();
 	const size_t icount = batchSprite.Indices.size();
 	if (vcount == 0 || icount == 0) return;
+
+	// 정점 이미 월드 변환했기에, MVP는 단위 행렬로 처리
+	SetModel(FMatrix::IdentityMatrix(), FVector4(1, 1, 1, 1), false);
 
 	// 0) 버퍼 용량 확보
 	EnsureBatchCapacity(batchSprite, vcount, icount);
@@ -954,54 +912,26 @@ void URenderer::Draw(UINT vertexCount, UINT startVertexLocation)
 	}
 }
 
-void URenderer::DrawMesh(UMesh* mesh)
+void URenderer::DrawMesh(UMesh* mesh, UMaterial* InMaterial)
 {
-	if (!mesh || !mesh->IsInitialized())
+	if (mesh == nullptr || mesh->IsInitialized() == false || InMaterial == nullptr)
 		return;
 	
 	UINT offset = 0;
 	deviceContext->IASetVertexBuffers(0, 1, &mesh->VertexBuffer, &mesh->Stride, &offset);
 	deviceContext->IASetPrimitiveTopology(mesh->PrimitiveType);
+	
+	InMaterial->Apply(deviceContext);
 
-	if (mesh->Type == EVertexType::VERTEX_POS_UV)
+	if (mesh->IndexBuffer && mesh->NumIndices > 0)
 	{
-		deviceContext->IASetInputLayout(GetInputLayout("Image"));
-		deviceContext->VSSetShader(GetVertexShader("Image"), nullptr, 0);
-		deviceContext->PSSetShader(GetPixelShader("Image"), nullptr, 0);
-
-		Textures["rabbit"]->Bind(deviceContext);
-
-		// 3) Draw
-		if (mesh->IndexBuffer && mesh->NumIndices > 0)
-		{
-			deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-			deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
-		}
-		else
-		{
-			deviceContext->Draw(mesh->NumVertices, 0);
-		}
-
+		deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
 	}
-	else if (mesh->Type == EVertexType::VERTEX_POS_COLOR)
+	else
 	{
-		deviceContext->IASetInputLayout(GetInputLayout("Default"));
-		deviceContext->VSSetShader(GetVertexShader("Default"), nullptr, 0);
-		deviceContext->PSSetShader(GetPixelShader("Default"), nullptr, 0);
-
-		// 인덱스 버퍼도 가지고 있으면 아래 방식으로 Draw
-		if (mesh->NumIndices > 0)
-		{
-			deviceContext->IASetIndexBuffer(mesh->IndexBuffer, DXGI_FORMAT_R32_UINT, offset);
-			deviceContext->DrawIndexed(mesh->NumIndices, 0, 0);
-		}
-		// 정점 버퍼만 가지고 있으면 아래 방식으로 Draw
-		else if (mesh->NumIndices == 0)
-		{
-			deviceContext->Draw(mesh->NumVertices, 0);
-		}
+		deviceContext->Draw(mesh->NumVertices, 0);
 	}
-
 }
 
 void URenderer::DrawMeshOnTop(UMesh* mesh)

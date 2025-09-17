@@ -10,8 +10,8 @@ bool UGizmoComponent::Init(UMeshManager* meshManager)
 {
 	if (meshManager)
 	{
-		mesh = meshManager->RetrieveMesh(GetClass()->GetMeta("MeshName"));
-		return mesh != nullptr;
+		Mesh = meshManager->RetrieveMesh(GetClass()->GetMeta("MeshName"));
+		return Mesh != nullptr;
 	}
 	return false;
 }
@@ -33,29 +33,29 @@ void UGizmoComponent::Update(float deltaTime)
 
 void UGizmoComponent::Draw(URenderer& renderer)
 {
-	if (!mesh || !mesh->VertexBuffer)
+	if (!Mesh || !Mesh->VertexBuffer)
 	{
 		return;
 	}
 
-	if (mesh->PrimitiveType == D3D10_PRIMITIVE_TOPOLOGY_LINELIST)
+	if (Mesh->PrimitiveType == D3D10_PRIMITIVE_TOPOLOGY_LINELIST)
 	{
 		const FMatrix M = GetWorldTransform();
-		renderer.SubmitLineList(mesh->Vertices, mesh->Indices, M);
+		renderer.SubmitLineList(Mesh->Vertices, Mesh->Indices, M);
 		return;
 	}
 
 	UpdateConstantBuffer(renderer);
-	renderer.DrawMesh(mesh);
+	renderer.DrawMesh(Mesh, nullptr);
 }
 
 void UGizmoComponent::DrawOnTop(URenderer& renderer)
 {
-	if (!mesh || !mesh->VertexBuffer)
+	if (!Mesh || !Mesh->VertexBuffer)
 	{
 		return;
 	}
 
 	UpdateConstantBuffer(renderer);
-	renderer.DrawMeshOnTop(mesh);
+	renderer.DrawMeshOnTop(Mesh);
 }

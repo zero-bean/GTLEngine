@@ -6,7 +6,7 @@
 IMPLEMENT_UCLASS(USphereComp, UPrimitiveComponent)
 UCLASS_META(USphereComp, DisplayName, "Sphere")
 UCLASS_META(USphereComp, MeshName, "Sphere")
-
+UCLASS_META(USphereComp, MaterialName, "Default")
 // AABB 판단용 메타
 UCLASS_META(USphereComp, BoundsType, "Sphere")
 // sphere 버텍스의 정보에 따라서 반지름 길이 설정
