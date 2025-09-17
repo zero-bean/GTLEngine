@@ -78,7 +78,7 @@ void UPrimitiveComponent::Draw(URenderer& renderer, UShowFlagManager* ShowFlagMa
 		DrawMesh(renderer);
 	}
 	
-	if (ShowFlagManager->IsEnabled(EEngineShowFlags::SF_BillboardText))
+	if (bIsSelected && ShowFlagManager->IsEnabled(EEngineShowFlags::SF_BillboardText))
 	{
 		DrawBillboard(renderer);
 	}
