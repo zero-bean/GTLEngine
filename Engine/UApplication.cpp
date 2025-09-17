@@ -186,7 +186,6 @@ void UApplication::Update(float deltaTime)
 {
 	// Base class update - can be overridden by derived classes
 	// Update core engine systems here if needed
-
 	sceneManager.GetScene()->Update(deltaTime);
 }
 

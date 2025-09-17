@@ -179,7 +179,7 @@ void EditorApplication::RenderGUI()
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove |
 		ImGuiWindowFlags_NoCollapse);                // Prevent resizing, moving, collapsing
-
+	 
 	ImGui::Text("Allocated Object Count : %d", UEngineStatics::GetTotalAllocationCount());
 	ImGui::Text("Allocated Object Bytes : %d", UEngineStatics::GetTotalAllocationBytes());
 
@@ -254,6 +254,7 @@ void EditorApplication::OnPrimitiveSelected(UPrimitiveComponent* Primitive)
 	}
 	else
 	{
+		// 기본값의 큐브 넣어주기
 		AABBManager.UseExplicitLocalAABB(FBoundingBox{ FVector(-0.5f,-0.5f,-0.5f), FVector(+0.5f,+0.5f,+0.5f) });
 	}
 }
