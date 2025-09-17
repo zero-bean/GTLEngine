@@ -146,6 +146,7 @@
     <ClCompile Include="UBillboardComponent.cpp" />
     <ClCompile Include="ShowFlagManager.cpp" />
     <ClCompile Include="UGizmoAxisComp.cpp" />
+    <ClCompile Include="UMaterial.cpp" />
     <ClCompile Include="UNamePool.cpp" />
     <ClCompile Include="ImGuiWindowWrapper.cpp" />
     <ClCompile Include="ImguiConsole.cpp" />
@@ -233,8 +234,10 @@
     <ClCompile Include="UObject.cpp" />
     <ClCompile Include="UScene.cpp" />
     <ClCompile Include="USceneComponent.cpp" />
+    <ClCompile Include="UShader.cpp" />
     <ClCompile Include="USphereComp.cpp" />
     <ClCompile Include="USpotLight.cpp" />
+    <ClCompile Include="UTexture.cpp" />
     <ClCompile Include="UTimeManager.cpp" />
     <ClCompile Include="UGUI.cpp" />
     <ClCompile Include="UInputManager.cpp" />
@@ -252,13 +255,16 @@
     <ClInclude Include="UBillboardComponent.h" />
     <ClInclude Include="ShowFlagManager.h" />
     <ClInclude Include="UGizmoAxisComp.h" />
+    <ClInclude Include="UMaterial.h" />
     <ClInclude Include="UNamePool.h" />
     <ClInclude Include="ImGuiWindowWrapper.h" />
     <ClInclude Include="Array.h" />
     <ClInclude Include="UBoundingBoxComponent.h" />
     <ClInclude Include="UBoundingBoxManager.h" />
     <ClInclude Include="UCamera.h" />
+    <ClInclude Include="UShader.h" />
     <ClInclude Include="USpotLight.h" />
+    <ClInclude Include="UTexture.h" />
     <ClInclude Include="VertexPosColor.h" />
     <ClInclude Include="ImguiConsole.h" />
     <ClInclude Include="ImGui\imconfig.h" />

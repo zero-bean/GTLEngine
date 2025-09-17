@@ -1,9 +1,7 @@
 ﻿#include "stdafx.h"
 #include "URenderer.h"
 #include "UClass.h"
-/* *
-* IASetIndexBuffer https://learn.microsoft.com/ko-kr/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-iasetindexbuffer
-*/
+#include "UTexture.h"
 
 IMPLEMENT_UCLASS(URenderer, UEngineSubsystem)
 
@@ -12,9 +10,6 @@ URenderer::URenderer()
 	, deviceContext(nullptr)
 	, swapChain(nullptr)
 	, renderTargetView(nullptr)
-	, shaderResourceView(nullptr)
-	, shaderResourceView2(nullptr)
-	, samplerState(nullptr)
 	, depthStencilView(nullptr)
 	, constantBuffer(nullptr)
 	, fontConstantBuffer(nullptr)
@@ -75,24 +70,32 @@ bool URenderer::Initialize(HWND windowHandle)
 		return false;
 	}
 
-	if (!CreateDefaultSampler())
-	{
-		LogError("SamplerState", E_FAIL);
-		return false;
-	}
-
-	DirectX::CreateDDSTextureFromFile(device, L"assets/font_transparent.dds", &resource, &shaderResourceView);
-	DirectX::CreateDDSTextureFromFile(device, L"assets/rabbit.dds", &resource, &shaderResourceView2);
-	CreateFontConstantBuffer();
 	if (!InitializeCharacterMap("assets/DejaVuSansMono.txt"))
 	{
 		LogError("Fail load txt", E_FAIL);
 		return false;
 	}
 	
+	CreateFontConstantBuffer();
+	CreateTextures();
 
 	bIsInitialized = true;
 	return true;
+}
+
+void URenderer::CreateTextures()
+{
+	{
+		UTexture* texture = NewObject<UTexture>();
+		texture->LoadFromFile(device, L"assets/rabbit.dds");
+		Textures["rabbit"] = texture;
+	}
+	
+	{
+		UTexture* texture = NewObject<UTexture>();
+		texture->LoadFromFile(device, L"assets/font_transparent.dds");
+		Textures["font"] = texture;
+	}
 }
 
 // URenderer.cpp의 CreateShader() 함수를 다음과 같이 수정
@@ -405,20 +408,6 @@ bool URenderer::CreateRasterizerState()
 	return true;
 }
 
-bool URenderer::CreateDefaultSampler()
-{
-	D3D11_SAMPLER_DESC samplerDesc{};
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	HRESULT hr = device->CreateSamplerState(&samplerDesc, &samplerState);
-	return CheckResult(hr, "CreateDefaultSampler");
-}
-
 bool URenderer::CreateConstantBuffer()
 {
 	// 월드 좌표용 상수 버퍼
@@ -656,8 +645,7 @@ void URenderer::FlushBatchSprite()
 	deviceContext->VSSetShader(GetVertexShader("Font"), nullptr, 0);
 	deviceContext->PSSetShader(GetPixelShader("Font"), nullptr, 0);
 
-	if (shaderResourceView)    deviceContext->PSSetShaderResources(0, 1, &shaderResourceView);
-	if (samplerState)          deviceContext->PSSetSamplers(0, 1, &samplerState);
+	Textures["font"]->Bind(deviceContext);
 
 	// 4) 드로우 1회
 	deviceContext->DrawIndexed((UINT)icount, 0, 0);
@@ -696,14 +684,12 @@ void URenderer::Release()
 	SAFE_RELEASE(SolidRasterizerState);
 	SAFE_RELEASE(depthStencilView);
 	SAFE_RELEASE(renderTargetView);
-	SAFE_RELEASE(shaderResourceView);
-	SAFE_RELEASE(shaderResourceView2);
-	SAFE_RELEASE(samplerState);
 	SAFE_RELEASE(swapChain);
 	SAFE_RELEASE(deviceContext);
 	SAFE_RELEASE(device);
 	SAFE_RELEASE(resource);
 
+	Textures.clear();
 	batchLineList.Release();
 	batchSprite.Release();
 
@@ -983,11 +969,7 @@ void URenderer::DrawMesh(UMesh* mesh)
 		deviceContext->VSSetShader(GetVertexShader("Image"), nullptr, 0);
 		deviceContext->PSSetShader(GetPixelShader("Image"), nullptr, 0);
 
-		if (shaderResourceView2) 
-		{ 
-			deviceContext->PSSetShaderResources(0, 1, &shaderResourceView2); 
-		}
-		if (samplerState) { deviceContext->PSSetSamplers(0, 1, &samplerState); }
+		Textures["rabbit"]->Bind(deviceContext);
 
 		// 3) Draw
 		if (mesh->IndexBuffer && mesh->NumIndices > 0)

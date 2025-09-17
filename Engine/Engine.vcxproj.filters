@@ -55,6 +55,15 @@
     <Filter Include="Utils\INI">
       <UniqueIdentifier>{bf97ad30-a244-4f48-b481-fe9fd13b6014}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Core\Shader">
+      <UniqueIdentifier>{2fe5048e-b44a-4195-a466-5e7ffb71f5fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Core\Texture">
+      <UniqueIdentifier>{8699bb05-4222-462d-b51a-fa1d0a1da8de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Core\Material">
+      <UniqueIdentifier>{484a396e-da5c-461c-b76a-dbb2fd3e1bf8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImGui\imgui.cpp">
@@ -221,6 +230,15 @@
     </ClCompile>
     <ClCompile Include="USpotLight.cpp">
       <Filter>Engine\Core\Component\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="UShader.cpp">
+      <Filter>Engine\Core\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="UTexture.cpp">
+      <Filter>Engine\Core\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="UMaterial.cpp">
+      <Filter>Engine\Core\Material</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -415,6 +433,15 @@
     </ClInclude>
     <ClInclude Include="USpotLight.h">
       <Filter>Engine\Core\Component\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="UShader.h">
+      <Filter>Engine\Core\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="UTexture.h">
+      <Filter>Engine\Core\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="UMaterial.h">
+      <Filter>Engine\Core\Material</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

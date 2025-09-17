@@ -4,6 +4,9 @@
 #include "Matrix.h"
 #include "UEngineSubsystem.h"
 #include "CharacterInfo.h"
+
+class UTexture;
+
 // URenderer.h or cpp 상단
 struct CBTransform
 {
@@ -116,9 +119,6 @@ private:
 	ID3D11DeviceContext* deviceContext;
 	IDXGISwapChain* swapChain;
 	ID3D11RenderTargetView* renderTargetView;
-	ID3D11ShaderResourceView* shaderResourceView;
-	ID3D11ShaderResourceView* shaderResourceView2;
-	ID3D11SamplerState* samplerState;
 	ID3D11DepthStencilView* depthStencilView;
 	ID3D11RasterizerState* SolidRasterizerState;
 	ID3D11RasterizerState* WireframeRasterizerState;
@@ -127,6 +127,7 @@ private:
 	TMap<FString, ID3D11InputLayout*> InputLayouts;
 	TMap<FString, ID3D11PixelShader*> PixelShaders;
 	TMap<FString, ID3D11VertexShader*> VertexShaders;
+	TMap<FString, UTexture*> Textures;
 
 	// Resources
 	ID3D11Resource* resource;
@@ -159,9 +160,9 @@ public:
 
 	// Initialization and cleanup
 	bool Initialize(HWND windowHandle);
+	void CreateTextures();
 	bool CreateShader();
 	bool CreateRasterizerState();
-	bool CreateDefaultSampler();
 	bool CreateConstantBuffer();
 	bool CreateFontConstantBuffer();
 	void Release();
