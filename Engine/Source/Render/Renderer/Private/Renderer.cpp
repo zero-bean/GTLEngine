@@ -4,6 +4,7 @@
 #include "Render/FontRenderer/Public/FontRenderer.h"
 #include "Component/Public/TextRenderComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
+#include "Component/Public/DecalComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Editor/Public/Editor.h"
 #include "Editor/Public/EditorEngine.h"
@@ -55,6 +56,7 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateDepthStencilState();
 	CreateDefaultShader();
 	CreateTextureShader();
+	CreateProjectionDecalShader();
 	CreateConstantBuffer();
 	CreateBillboardResources();
 
@@ -97,6 +99,7 @@ void URenderer::Init(HWND InWindowHandle)
 		ID3D11Buffer* ThreadCBModels = nullptr;
 		ID3D11Buffer* ThreadCBColors = nullptr;
 		ID3D11Buffer* ThreadCBMaterials = nullptr;
+		ID3D11Buffer* ThreadCBProjectionDecals = nullptr;
 
 		// Create Model Constant Buffer
 		D3D11_BUFFER_DESC ModelConstantBufferDescription = {};
@@ -124,6 +127,15 @@ void URenderer::Init(HWND InWindowHandle)
 		MaterialConstantBufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		GetDevice()->CreateBuffer(&MaterialConstantBufferDescription, nullptr, &ThreadCBMaterials);
 		ThreadConstantBufferMaterials.push_back(ThreadCBMaterials);
+
+		// Create Material Constant Buffer
+		D3D11_BUFFER_DESC ProjectionDecalConstantBufferDescription = {};
+		ProjectionDecalConstantBufferDescription.ByteWidth = sizeof(FMaterial) + 0xf & 0xfffffff0;
+		ProjectionDecalConstantBufferDescription.Usage = D3D11_USAGE_DYNAMIC;
+		ProjectionDecalConstantBufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		ProjectionDecalConstantBufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		GetDevice()->CreateBuffer(&ProjectionDecalConstantBufferDescription, nullptr, &ThreadCBProjectionDecals);
+		ThreadConstantBufferMaterials.push_back(ThreadCBProjectionDecals);
 	}
 #endif
 }
@@ -135,6 +147,8 @@ void URenderer::Release()
 	ReleaseDepthStencilState();
 	ReleaseRasterizerState();
 	ReleaseBillboardResources();
+	ReleaseTextureShader();
+	ReleaseProjectionDecalShader();
 
 	SafeDelete(ViewportClient);
 
@@ -181,6 +195,15 @@ void URenderer::Release()
 	}
 	ThreadConstantBufferMaterials.clear();
 
+	for (ID3D11Buffer* Buffer : ThreadConstantBufferProjectionDecals)
+	{
+		if (Buffer)
+		{
+			Buffer->Release();
+		}
+	}
+	ThreadConstantBufferProjectionDecals.clear();
+
 	for (ID3D11CommandList* CommandList : CommandLists)
 	{
 		if (CommandList)
@@ -225,6 +248,17 @@ void URenderer::CreateDepthStencilState()
 	DisabledDescription.StencilEnable = FALSE;
 
 	GetDevice()->CreateDepthStencilState(&DisabledDescription, &DisabledDepthStencilState);
+
+	// Disabled Depth Stencil 설정 (Depth 판정 O, Stencil 판정 X)
+	D3D11_DEPTH_STENCIL_DESC ProjectionDecalDescription = {};
+
+	ProjectionDecalDescription.DepthEnable = TRUE;
+	ProjectionDecalDescription.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // 깊이 버퍼에 쓰지 않음
+	ProjectionDecalDescription.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+	ProjectionDecalDescription.StencilEnable = FALSE;
+
+	GetDevice()->CreateDepthStencilState(&ProjectionDecalDescription, &ProjectionDecalDepthState);
 }
 
 /**
@@ -298,6 +332,38 @@ void URenderer::CreateTextureShader()
 	TexturePSBlob->Release();
 }
 
+void URenderer::CreateProjectionDecalShader()
+{
+	ID3DBlob* ProjectionDecalVSBlob;
+	ID3DBlob* ProjectionDecalPSBlob;
+
+	D3DCompileFromFile(L"Asset/Shader/ProjectionDecal.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&ProjectionDecalVSBlob, nullptr);
+
+	GetDevice()->CreateVertexShader(ProjectionDecalVSBlob->GetBufferPointer(),
+		ProjectionDecalVSBlob->GetBufferSize(), nullptr, &ProjectionDecalVertexShader);
+
+	D3DCompileFromFile(L"Asset/Shader/ProjectionDecal.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&ProjectionDecalPSBlob, nullptr);
+
+	GetDevice()->CreatePixelShader(ProjectionDecalPSBlob->GetBufferPointer(),
+		ProjectionDecalPSBlob->GetBufferSize(), nullptr, &ProjectionDecalPixelShader);
+
+	D3D11_INPUT_ELEMENT_DESC ProjectionDecalLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FNormalVertex, Position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FNormalVertex, Normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FNormalVertex, Color), D3D11_INPUT_PER_VERTEX_DATA, 0	},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FNormalVertex, TexCoord), D3D11_INPUT_PER_VERTEX_DATA, 0	}
+	};
+
+	GetDevice()->CreateInputLayout(ProjectionDecalLayout, ARRAYSIZE(ProjectionDecalLayout), ProjectionDecalVSBlob->GetBufferPointer(),
+		ProjectionDecalVSBlob->GetBufferSize(), &ProjectionDecalInputLayout);
+
+	ProjectionDecalVSBlob->Release();
+	ProjectionDecalPSBlob->Release();
+}
+
 /**
  * @brief 래스터라이저 상태를 해제하는 함수
  */
@@ -305,33 +371,32 @@ void URenderer::ReleaseRasterizerState()
 {
 	for (auto& Cache : RasterCache)
 	{
-		if (Cache.second != nullptr)
-		{
-			Cache.second->Release();
-		}
+		SafeRelease(Cache.second);
 	}
 	RasterCache.clear();
 }
 
 void URenderer::ReleaseBillboardResources()
 {
-	if (BillboardVertexBuffer)
-	{
-		BillboardVertexBuffer->Release();
-		BillboardVertexBuffer = nullptr;
-	}
+	SafeRelease(BillboardVertexBuffer);
+	SafeRelease(BillboardIndexBuffer);
+	SafeRelease(BillboardBlendState);
+}
 
-	if (BillboardIndexBuffer)
-	{
-		BillboardIndexBuffer->Release();
-		BillboardIndexBuffer = nullptr;
-	}
+void URenderer::ReleaseTextureShader()
+{
+	SafeRelease(TextureVertexShader);
+	SafeRelease(TexturePixelShader);
+	SafeRelease(TextureInputLayout);
+}
 
-	if (BillboardBlendState)
-	{
-		BillboardBlendState->Release();
-		BillboardBlendState = nullptr;
-	}
+void URenderer::ReleaseProjectionDecalShader()
+{
+	SafeRelease(ProjectionDecalInputLayout);
+	SafeRelease(ProjectionDecalVertexShader);
+	SafeRelease(ProjectionDecalPixelShader);
+	SafeRelease(ProjectionDecalDepthState);
+	SafeRelease(ProjectionDecalBlendState);
 }
 
 /**
@@ -339,42 +404,21 @@ void URenderer::ReleaseBillboardResources()
  */
 void URenderer::ReleaseDefaultShader()
 {
-	if (DefaultInputLayout)
-	{
-		DefaultInputLayout->Release();
-		DefaultInputLayout = nullptr;
-	}
-
-	if (DefaultPixelShader)
-	{
-		DefaultPixelShader->Release();
-		DefaultPixelShader = nullptr;
-	}
-
-	if (DefaultVertexShader)
-	{
-		DefaultVertexShader->Release();
-		DefaultVertexShader = nullptr;
-	}
+	SafeRelease(DefaultInputLayout);
+	SafeRelease(DefaultPixelShader);
+	SafeRelease(DefaultVertexShader);
 }
 
-/**
- * @brief 렌더러에 사용된 모든 리소스를 해제하는 함수
- */
 void URenderer::ReleaseDepthStencilState()
 {
-	if (DefaultDepthStencilState)
-	{
-		DefaultDepthStencilState->Release();
-		DefaultDepthStencilState = nullptr;
-	}
+	SafeRelease(DefaultDepthStencilState);
+	SafeRelease(DisabledDepthStencilState);
 
-	if (DisabledDepthStencilState)
+	if (DisableDepthWriteDepthStencilState)
 	{
-		DisabledDepthStencilState->Release();
-		DisabledDepthStencilState = nullptr;
+		DisableDepthWriteDepthStencilState->Release();
+		DisableDepthWriteDepthStencilState = nullptr;
 	}
-
 	// 렌더 타겟을 초기화
 	if (GetDeviceContext())
 	{
@@ -401,7 +445,7 @@ void URenderer::Tick(float DeltaSeconds)
 		// 3. 해당 카메라의 View/Projection 행렬로 상수 버퍼를 업데이트합니다.
 		CurrentCamera->Update(ViewportClient.GetViewportInfo());
 		Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
-		UpdateConstant(GetDeviceContext(), ConstantBufferViewProj, CurrentCamera->GetFViewProjConstants());
+		UpdateConstant(ConstantBufferViewProj, CurrentCamera->GetFViewProjConstants(), 1, true, true);
 
 		// 4. 씬(레벨, 에디터 요소 등)을 이 뷰포트와 카메라 기준으로 렌더링합니다.
 		RenderLevel(CurrentCamera, ViewportClient);
@@ -509,6 +553,8 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	auto& OcclusionRenderer = UOcclusionRenderer::GetInstance();
 	TObjectPtr<UTextRenderComponent> TextRender = nullptr;
 	TArray<TObjectPtr<UBillboardComponent>> Billboards;
+	TArray<TObjectPtr<UDecalComponent>> Decals;
+	TArray<TObjectPtr<UPrimitiveComponent>> PrimitivesToRenderByDecals;
 
 	for (size_t i = 0; i < InPrimitiveComponents.size(); ++i)
 	{
@@ -536,11 +582,34 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		{
 			Billboards.push_back(Cast<UBillboardComponent>(PrimitiveComponent));
 		}
+		else if (PrimitiveComponent->IsA(UDecalComponent::StaticClass()))
+		{
+			Decals.push_back(Cast<UDecalComponent>(PrimitiveComponent)); 
+		}
 		else
 		{
-			RenderPrimitiveComponent(*Pipeline, PrimitiveComponent, LoadedRasterizerState, ConstantBufferModels, ConstantBufferColor, ConstantBufferMaterial);
+			PrimitivesToRenderByDecals.push_back(PrimitiveComponent);
 		}
 	}
+
+	// 1. 먼저 일반 프리미티브들(StaticMesh 등)을 렌더링합니다.
+	for (UPrimitiveComponent* PrimitiveComponent : PrimitivesToRenderByDecals)
+	{
+		FRenderState RenderState = PrimitiveComponent->GetRenderState();
+		const EViewModeIndex ViewMode = GEngine->GetEditor()->GetViewMode();
+		if (ViewMode == EViewModeIndex::VMI_Wireframe)
+		{
+			RenderState.CullMode = ECullMode::None;
+			RenderState.FillMode = EFillMode::WireFrame;
+		}
+		ID3D11RasterizerState* LoadedRasterizerState = GetRasterizerState(RenderState);
+
+		RenderPrimitiveComponent(*Pipeline, PrimitiveComponent, LoadedRasterizerState, ConstantBufferModels, ConstantBufferColor, ConstantBufferMaterial);
+	}
+
+	// 2. 그 다음, 렌더링된 프리미티브 위에 데칼을 렌더링합니다.
+	RenderDecals(InCurrentCamera, Decals, PrimitivesToRenderByDecals);
+
 
 	for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
 	{
@@ -696,11 +765,10 @@ void URenderer::RenderEditorPrimitive(UPipeline& InPipeline, const FEditorPrimit
     InPipeline.UpdatePipeline(PipelineInfo);
 
     // Update constant buffers
-    InPipeline.SetConstantBuffer(0, true, ConstantBufferModels);
-    UpdateConstant(InPipeline.GetDeviceContext(), ConstantBufferModels, InEditorPrimitive.Location, InEditorPrimitive.Rotation, InEditorPrimitive.Scale);
+	FMatrix ModelMatrix = FMatrix::GetModelMatrix(InEditorPrimitive.Location, FVector::GetDegreeToRadian(InEditorPrimitive.Rotation), InEditorPrimitive.Scale);
+	UpdateConstant(ConstantBufferModels, ModelMatrix, 0, true, false);
 
-    InPipeline.SetConstantBuffer(2, false, ConstantBufferColor);
-    UpdateConstant(InPipeline.GetDeviceContext(), ConstantBufferColor, InEditorPrimitive.Color);
+	UpdateConstant(ConstantBufferColor, InEditorPrimitive.Color, 2, false, true);
 
     // Set vertex buffer and draw
     InPipeline.SetVertexBuffer(InEditorPrimitive.Vertexbuffer, Stride);
@@ -742,20 +810,95 @@ void URenderer::RenderEditorPrimitiveIndexed(UPipeline& InPipeline, const FEdito
     InPipeline.UpdatePipeline(PipelineInfo);
 
     // 기본 상수 버퍼 사용하는 경우에만 업데이트
-    if (bInUseBaseConstantBuffer)
-    {
-        InPipeline.SetConstantBuffer(0, true, ConstantBufferModels);
-    	UpdateConstant(InPipeline.GetDeviceContext(), ConstantBufferModels, InEditorPrimitive.Location, InEditorPrimitive.Rotation, InEditorPrimitive.Scale);
+	if (bInUseBaseConstantBuffer)
+	{
+		FMatrix ModelMatrix = FMatrix::GetModelMatrix(InEditorPrimitive.Location, FVector::GetDegreeToRadian(InEditorPrimitive.Rotation), InEditorPrimitive.Scale);
+		UpdateConstant(ConstantBufferModels, ModelMatrix, 0, true, false);
 
-        InPipeline.SetConstantBuffer(2, true, ConstantBufferColor);
-        UpdateConstant(InPipeline.GetDeviceContext(), ConstantBufferColor, InEditorPrimitive.Color);
-    }
+		UpdateConstant(ConstantBufferColor, InEditorPrimitive.Color, 2, false, true);
+	}
 
     // Set buffers and draw indexed
     InPipeline.SetIndexBuffer(InEditorPrimitive.IndexBuffer, InIndexBufferStride);
     InPipeline.SetVertexBuffer(InEditorPrimitive.Vertexbuffer, InStride);
     InPipeline.DrawIndexed(InEditorPrimitive.NumIndices, 0, 0);
 }
+
+void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<UDecalComponent>>& InDecals,
+	const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives)
+{
+	// 0. 데칼이 없으면 함수를 종료합니다.
+	if (InDecals.empty()) { return; }
+
+	// 1. 파이프라인을 데칼 렌더링용으로 설정합니다.
+	FRenderState DecalRenderState = {};
+	DecalRenderState.CullMode = ECullMode::Back;
+	DecalRenderState.FillMode = EFillMode::Solid;
+
+	FPipelineInfo PipelineInfo = {
+		ProjectionDecalInputLayout,
+		ProjectionDecalVertexShader,
+		GetRasterizerState(DecalRenderState),
+		ProjectionDecalDepthState, 
+		ProjectionDecalPixelShader,
+		ProjectionDecalBlendState, 
+	};
+
+	// 2. 모든 데칼 컴포넌트에 대해 반복합니다.
+	for (UDecalComponent* Decal : InDecals)
+	{
+		// 데칼이 보이지 않거나 바운딩 볼륨이 없으면 건너뜁니다.
+		if (!Decal) { continue; }
+
+		UMaterial* DecalMaterial = Decal->GetDecalMaterial();
+		if (DecalMaterial == nullptr || DecalMaterial->GetDiffuseTexture() == nullptr) { continue; }
+
+		if (auto* Proxy = DecalMaterial->GetDiffuseTexture()->GetRenderProxy())
+		{
+			Pipeline->SetTexture(0, false, Proxy->GetSRV());
+			Pipeline->SetSamplerState(0, false, Proxy->GetSampler());
+		}
+		Pipeline->UpdatePipeline(PipelineInfo);
+
+		// 3. 데칼의 월드 변환 역행렬을 계산하여 셰이더로 전달합니다.
+		FDecalConstants DecalData(Decal->GetWorldTransformMatrix(), Decal->GetWorldTransformMatrixInverse());
+		UpdateConstant(ConstantBufferProjectionDecal, DecalData, 3, true, true);
+
+		// 데칼의 바운딩 볼륨을 가져옵니다.
+		const IBoundingVolume* DecalBounds = Decal->GetBoundingBox();
+
+		// 4. 화면에 보이는 모든 프리미티브와 데칼 볼륨의 충돌 검사를 수행합니다.
+		for (UPrimitiveComponent* Primitive : InVisiblePrimitives)
+		{
+			if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
+
+			// 데칼 액터의 시각화 컴포넌트에는 데칼을 적용하지 않도록 예외 처리합니다.
+			//if (Primitive == Decal) { continue; }
+
+			// AABB(Axis-Aligned Bounding Box) 교차 검사
+			if (DecalBounds->Intersects(*Primitive->GetBoundingBox()))
+			{
+				// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
+				FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
+					Primitive->GetWorldTransformMatrixInverse().Transpose());
+				UpdateConstant(ConstantBufferModels, ModelConstants, 0, true, false);
+
+				// 프리미티브의 버텍스/인덱스 버퍼를 설정합니다.
+				Pipeline->SetVertexBuffer(Primitive->GetVertexBuffer(), sizeof(FNormalVertex));
+				if (Primitive->GetIndexBuffer() && Primitive->GetNumIndices() > 0)
+				{
+					Pipeline->SetIndexBuffer(Primitive->GetIndexBuffer(), 0);
+					Pipeline->DrawIndexed(Primitive->GetNumIndices(), 0, 0);
+				}
+				else
+				{
+					Pipeline->Draw(Primitive->GetNumVertices(), 0);
+				}
+			}
+		}
+	}
+}
+
 /**
  * @brief 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
  */
@@ -784,16 +927,7 @@ void URenderer::RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* In
     };
     InPipeline.UpdatePipeline(PipelineInfo);
 
-    // Constant buffer & transform
-    InPipeline.SetConstantBuffer(0, true, InConstantBufferModels);
-    UpdateConstant(
-        InPipeline.GetDeviceContext(),
-        InConstantBufferModels,
-        InMeshComp
-        // InMeshComp->GetRelativeLocation(),
-        // InMeshComp->GetRelativeRotation(),
-        // InMeshComp->GetRelativeScale3D()
-    );
+	UpdateConstant(InConstantBufferModels, InMeshComp->GetWorldTransformMatrix(), 0, true, false);
 
     InPipeline.SetVertexBuffer(InMeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
     InPipeline.SetIndexBuffer(InMeshComp->GetIndexBuffer(), 0);
@@ -830,8 +964,7 @@ void URenderer::RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* In
             MaterialConstants.Time = InMeshComp->GetElapsedTime();
 
             // Update Constant Buffer
-            InPipeline.SetConstantBuffer(2, false, InConstantBufferMaterial);
-            UpdateConstant(InPipeline.GetDeviceContext(), InConstantBufferMaterial, MaterialConstants);
+            UpdateConstant(InConstantBufferMaterial, MaterialConstants, 2, false, true);
 
             if (Material->GetDiffuseTexture()){
                 auto* Proxy = Material->GetDiffuseTexture()->GetRenderProxy();
@@ -893,6 +1026,8 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 
 	FRenderState BillboardRenderState = InBillboardComp->GetRenderState();
 	ID3D11RasterizerState* RasterizerState = GetRasterizerState(BillboardRenderState);
+	ID3D11DepthStencilState* DepthStencilState = DisableDepthWriteDepthStencilState;
+
 	if (!RasterizerState)
 	{
 		FRenderState DefaultState;
@@ -903,24 +1038,22 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 		TextureInputLayout,
 		TextureVertexShader,
 		RasterizerState,
-		DefaultDepthStencilState,
+		DepthStencilState,
 		TexturePixelShader,
 		BillboardBlendState,
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
 	};
 	Pipeline->UpdatePipeline(PipelineInfo);
 
-	Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
-	UpdateConstant(GetDeviceContext(), ConstantBufferModels, ModelMatrix);
-	Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
+	UpdateConstant(ConstantBufferModels, ModelMatrix, 0, true, false);
+	UpdateConstant(ConstantBufferModels, ConstantBufferViewProj, 1, true, false);
 
 	constexpr uint32 MATERIAL_FLAG_DIFFUSE_MAP = 1 << 0;
 	FMaterialConstants MaterialConstants = {};
 	MaterialConstants.MaterialFlags = MATERIAL_FLAG_DIFFUSE_MAP;
 	MaterialConstants.Kd = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	MaterialConstants.D = 1.0f;
-	Pipeline->SetConstantBuffer(2, false, ConstantBufferMaterial);
-	UpdateConstant(GetDeviceContext(), ConstantBufferMaterial, MaterialConstants);
+    UpdateConstant(ConstantBufferMaterial, MaterialConstants, 2, false, true);
 
 	Pipeline->SetTexture(0, false, RenderProxy->GetSRV());
 	Pipeline->SetSamplerState(0, false, RenderProxy->GetSampler());
@@ -971,17 +1104,10 @@ void URenderer::RenderPrimitiveDefault(UPipeline& InPipeline, UPrimitiveComponen
     InPipeline.UpdatePipeline(PipelineInfo);
 
     // Update pipeline buffers
-    InPipeline.SetConstantBuffer(0, true, InConstantBufferModels);
-    UpdateConstant(
-        InPipeline.GetDeviceContext(),
-        InConstantBufferModels,
-        InPrimitiveComp
-        // InPrimitiveComp->GetRelativeLocation(),
-        // InPrimitiveComp->GetRelativeRotation(),
-        // InPrimitiveComp->GetRelativeScale3D()
-    );
-    InPipeline.SetConstantBuffer(2, true, InConstantBufferColor);
-    UpdateConstant(InPipeline.GetDeviceContext(), InConstantBufferColor, InPrimitiveComp->GetColor());
+	UpdateConstant(InConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true, false);
+	// [수정] 새로운 UpdateConstantBuffer 함수 사용 (색상은 슬롯 2번)
+	UpdateConstant(InConstantBufferColor, InPrimitiveComp->GetColor(), 2, false, true);
+
 
     // Bind vertex buffer
     InPipeline.SetVertexBuffer(InPrimitiveComp->GetVertexBuffer(), Stride);
@@ -1250,6 +1376,16 @@ void URenderer::CreateConstantBuffer()
 
 		GetDevice()->CreateBuffer(&MaterialConstantBufferDescription, nullptr, &ConstantBufferMaterial);
 	}
+
+	{
+		D3D11_BUFFER_DESC ProjectionDecalConstantBufferDescription = {};
+		ProjectionDecalConstantBufferDescription.ByteWidth = sizeof(FMaterial) + 0xf & 0xfffffff0;
+		ProjectionDecalConstantBufferDescription.Usage = D3D11_USAGE_DYNAMIC; // 매 프레임 CPU에서 업데이트
+		ProjectionDecalConstantBufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		ProjectionDecalConstantBufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+		GetDevice()->CreateBuffer(&ProjectionDecalConstantBufferDescription, nullptr, &ConstantBufferProjectionDecal);
+	}
 }
 
 void URenderer::CreateBillboardResources()
@@ -1324,138 +1460,14 @@ void URenderer::CreateBillboardResources()
  */
 void URenderer::ReleaseConstantBuffer()
 {
-	if (ConstantBufferModels)
-	{
-		ConstantBufferModels->Release();
-		ConstantBufferModels = nullptr;
-	}
-
-	if (ConstantBufferColor)
-	{
-		ConstantBufferColor->Release();
-		ConstantBufferColor = nullptr;
-	}
-
-	if (ConstantBufferViewProj)
-	{
-		ConstantBufferViewProj->Release();
-		ConstantBufferViewProj = nullptr;
-	}
-
-	if (ConstantBufferMaterial)
-	{
-		ConstantBufferMaterial->Release();
-		ConstantBufferMaterial = nullptr;
-	}
+	SafeRelease(ConstantBufferModels);
+	SafeRelease(ConstantBufferColor);
+	SafeRelease(ConstantBufferViewProj);
+	SafeRelease(ConstantBufferMaterial);
+	SafeRelease(ConstantBufferProjectionDecal);
+	SafeRelease(ConstantBufferBatchLine);
 }
 
-void URenderer::UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const UPrimitiveComponent* InPrimitive) const
-{
-    if (InConstantBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
-
-        InDeviceContext->Map(InConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
-        // update constant buffer every frame
-        FMatrix* Constants = static_cast<FMatrix*>(constantbufferMSR.pData);
-        {
-            // *Constants = FMatrix::GetModelMatrix(InPrimitive->GetRelativeLocation(),
-            //     FVector::GetDegreeToRadian(InPrimitive->GetRelativeRotation()),
-            //     InPrimitive->GetRelativeScale3D());
-        	*Constants = InPrimitive->GetWorldTransformMatrix();
-        }
-        InDeviceContext->Unmap(InConstantBuffer, 0);
-    }
-}
-
-/**
- * @brief 상수 버퍼 업데이트 함수
- * @param InPosition
- * @param InRotation
- * @param InScale Ball Size
- */
-void URenderer::UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const
-{
-    if (InConstantBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
-
-        InDeviceContext->Map(InConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
-
-        // update constant buffer every frame
-        FMatrix* Constants = static_cast<FMatrix*>(constantbufferMSR.pData);
-        {
-            *Constants = FMatrix::GetModelMatrix(InPosition, FVector::GetDegreeToRadian(InRotation), InScale);
-        }
-        InDeviceContext->Unmap(InConstantBuffer, 0);
-    }
-}
-void URenderer::UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const FViewProjConstants& InViewProjConstants) const
-{
-    if (InConstantBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR = {};
-
-        InDeviceContext->Map(InConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR);
-        // update constant buffer every frame
-        FViewProjConstants* ViewProjectionConstants = static_cast<FViewProjConstants*>(ConstantBufferMSR.pData);
-        {
-            ViewProjectionConstants->View = InViewProjConstants.View;
-            ViewProjectionConstants->Projection = InViewProjConstants.Projection;
-        }
-        InDeviceContext->Unmap(InConstantBuffer, 0);
-    }
-}
-void URenderer::UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const FMatrix& InMatrix) const
-{
-    if (InConstantBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE MappedSubResource;
-        InDeviceContext->Map(InConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubResource);
-        memcpy(MappedSubResource.pData, &InMatrix, sizeof(FMatrix));
-        InDeviceContext->Unmap(InConstantBuffer, 0);
-    }
-}
-void URenderer::UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const FVector4& InColor) const
-{
-    if (InConstantBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR = {};
-
-        InDeviceContext->Map(InConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR);
-        // update constant buffer every frame
-        FVector4* ColorConstants = static_cast<FVector4*>(ConstantBufferMSR.pData);
-        {
-            ColorConstants->X = InColor.X;
-            ColorConstants->Y = InColor.Y;
-            ColorConstants->Z = InColor.Z;
-            ColorConstants->W = InColor.W;
-        }
-        InDeviceContext->Unmap(InConstantBuffer, 0);
-    }
-}
-void URenderer::UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const FMaterialConstants& InMaterial) const
-{
-    if (InConstantBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR = {};
-
-        InDeviceContext->Map(InConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR);
-
-        FMaterialConstants* MaterialConstants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
-        {
-            MaterialConstants->Ka = InMaterial.Ka;
-            MaterialConstants->Kd = InMaterial.Kd;
-            MaterialConstants->Ks = InMaterial.Ks;
-            MaterialConstants->Ns = InMaterial.Ns;
-            MaterialConstants->Ni = InMaterial.Ni;
-            MaterialConstants->D = InMaterial.D;
-            MaterialConstants->MaterialFlags = InMaterial.MaterialFlags;
-            MaterialConstants->Time = InMaterial.Time;
-        }
-        InDeviceContext->Unmap(InConstantBuffer, 0);
-    }
-}
 bool URenderer::UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const
 {
 	if (!GetDeviceContext() || !InVertexBuffer || InVertices.empty())

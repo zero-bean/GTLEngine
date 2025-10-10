@@ -239,6 +239,8 @@ void ULevel::Cleanup()
 
 	// 4. 선택된 액터 참조를 안전하게 해제합니다.
 	SelectedActor = nullptr;
+
+	SafeDelete(Frustum);
 }
 
 void ULevel::InitializeActorsInLevel()

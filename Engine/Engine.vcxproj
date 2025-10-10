@@ -301,6 +301,7 @@
     <ClInclude Include="Source\Actor\Public\Actor.h" />
     <ClInclude Include="Source\Actor\Public\BillboardActor.h" />
     <ClInclude Include="Source\Actor\Public\CubeActor.h" />
+    <ClInclude Include="Source\Actor\Public\DecalActor.h" />
     <ClInclude Include="Source\Actor\Public\SphereActor.h" />
     <ClInclude Include="Source\Actor\Public\SquareActor.h" />
     <ClInclude Include="Source\Actor\Public\StaticMeshActor.h">
@@ -316,6 +317,7 @@
     </ClInclude>
     <ClInclude Include="Source\Component\Public\ActorComponent.h" />
     <ClInclude Include="Source\Component\Public\BillboardComponent.h" />
+    <ClInclude Include="Source\Component\Public\DecalComponent.h" />
     <ClInclude Include="Source\Component\Public\TextRenderComponent.h" />
     <ClInclude Include="Source\Component\Public\LineComponent.h" />
     <ClInclude Include="Source\Component\Public\PrimitiveComponent.h" />
@@ -456,6 +458,7 @@
     <ClCompile Include="Source\Actor\Private\Actor.cpp" />
     <ClCompile Include="Source\Actor\Private\BillboardActor.cpp" />
     <ClCompile Include="Source\Actor\Private\CubeActor.cpp" />
+    <ClCompile Include="Source\Actor\Private\DecalActor.cpp" />
     <ClCompile Include="Source\Actor\Private\SphereActor.cpp" />
     <ClCompile Include="Source\Actor\Private\SquareActor.cpp" />
     <ClCompile Include="Source\Actor\Private\StaticMeshActor.cpp">
@@ -473,6 +476,7 @@
     </ClCompile>
     <ClCompile Include="Source\Component\Private\ActorComponent.cpp" />
     <ClCompile Include="Source\Component\Private\BillboardComponent.cpp" />
+    <ClCompile Include="Source\Component\Private\DecalComponent.cpp" />
     <ClCompile Include="Source\Component\Private\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Component\Private\LineComponent.cpp" />
     <ClCompile Include="Source\Component\Private\PrimitiveComponent.cpp" />
@@ -699,6 +703,10 @@
     <FxCompile Include="Asset\Shader\HiZOcclusionCS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_MT|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Asset\Shader\ProjectionDecal.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Asset\Shader\SampleShader.hlsl">

@@ -15,6 +15,7 @@ class UDeviceResources;
 class UPrimitiveComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
+class UDecalComponent;
 class AActor;
 class AGizmo;
 class UEditor;
@@ -64,6 +65,7 @@ public:
 	void CreateDepthStencilState();
 	void CreateDefaultShader();
 	void CreateTextureShader();
+	void CreateProjectionDecalShader();
 	void CreateConstantBuffer();
 	void CreateBillboardResources();
 
@@ -73,6 +75,8 @@ public:
 	void ReleaseDepthStencilState();
 	void ReleaseRasterizerState();
 	void ReleaseBillboardResources();
+	void ReleaseTextureShader();
+	void ReleaseProjectionDecalShader();
 
 	// Render
 	void Tick(float DeltaSeconds);
@@ -86,6 +90,8 @@ public:
 	void RenderEditorPrimitive(UPipeline& InPipeline, const FEditorPrimitive& InEditorPrimitive, const FRenderState& InRenderState);
 	void RenderEditorPrimitiveIndexed(UPipeline& InPipeline, const FEditorPrimitive& InEditorPrimitive, const FRenderState& InRenderState,
 	                            bool bInUseBaseConstantBuffer, uint32 InStride, uint32 InIndexBufferStride);
+	void RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<UDecalComponent>>& InDecals,
+		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
 
@@ -99,12 +105,31 @@ public:
 	void CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader** InPixelShader) const;
 
 	bool UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const;
-	void UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const UPrimitiveComponent* InPrimitive) const;
-	void UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
-	void UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const FViewProjConstants& InViewProjConstants) const;
-	void UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const FMatrix& InMatrix) const;
-	void UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const FVector4& InColor) const;
-	void UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const FMaterialConstants& InMaterial) const;
+
+	template<typename T>
+	void UpdateConstant(ID3D11Buffer* InBuffer, const T& InData, uint32 InSlot,
+		bool bBindToVertexShader, bool bBindToPixelShader)
+	{
+		if (!InBuffer) return;
+
+		// 1. 상수 버퍼의 메모리에 접근하여 데이터를 업데이트합니다.
+		D3D11_MAPPED_SUBRESOURCE MappedResource;
+		HRESULT hr = GetDeviceContext()->Map(InBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+		if (FAILED(hr)) return;
+
+		memcpy(MappedResource.pData, &InData, sizeof(T));
+		GetDeviceContext()->Unmap(InBuffer, 0);
+
+		// 2. 지정된 슬롯에 상수 버퍼를 바인딩합니다.
+		if (bBindToVertexShader)
+		{
+			GetDeviceContext()->VSSetConstantBuffers(InSlot, 1, &InBuffer);
+		}
+		if (bBindToPixelShader)
+		{
+			GetDeviceContext()->PSSetConstantBuffers(InSlot, 1, &InBuffer);
+		}
+	}
 
 	static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
 	static void ReleaseIndexBuffer(ID3D11Buffer* InIndexBuffer);
@@ -132,6 +157,7 @@ private:
 	void RenderPrimitiveComponent(UPipeline& InPipeline, UPrimitiveComponent* InPrimitiveComponent, ID3D11RasterizerState* InRasterizerState, ID3D11Buffer* InConstantBufferModels, ID3D11Buffer* InConstantBufferColor, ID3D11Buffer* InConstantBufferMaterial);
 	void RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportClient& InViewportClient, const TArray<TObjectPtr<UPrimitiveComponent>>& InPrimitiveComponents);
 	void RenderLevel_MultiThreaded(UCamera* InCurrentCamera, FViewportClient& InViewportClient, const TArray<TObjectPtr<UPrimitiveComponent>>& InPrimitiveComponents);
+
 	UPipeline* Pipeline = nullptr;
 	UDeviceResources* DeviceResources = nullptr;
 	UFontRenderer* FontRenderer = nullptr;
@@ -139,11 +165,13 @@ private:
 
 	ID3D11DepthStencilState* DefaultDepthStencilState = nullptr;
 	ID3D11DepthStencilState* DisabledDepthStencilState = nullptr;
+	ID3D11DepthStencilState* DisableDepthWriteDepthStencilState = nullptr;
 	ID3D11Buffer* ConstantBufferModels = nullptr;
 	ID3D11Buffer* ConstantBufferViewProj = nullptr;
 	ID3D11Buffer* ConstantBufferColor = nullptr;
 	ID3D11Buffer* ConstantBufferBatchLine = nullptr;
 	ID3D11Buffer* ConstantBufferMaterial = nullptr;
+	ID3D11Buffer* ConstantBufferProjectionDecal = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -154,9 +182,16 @@ private:
 	ID3D11VertexShader* TextureVertexShader = nullptr;
 	ID3D11PixelShader* TexturePixelShader = nullptr;
 	ID3D11InputLayout* TextureInputLayout = nullptr;
+
 	ID3D11Buffer* BillboardVertexBuffer = nullptr;
 	ID3D11Buffer* BillboardIndexBuffer = nullptr;
 	ID3D11BlendState* BillboardBlendState = nullptr;
+
+	ID3D11VertexShader* ProjectionDecalVertexShader = nullptr;
+	ID3D11PixelShader* ProjectionDecalPixelShader = nullptr;
+	ID3D11InputLayout* ProjectionDecalInputLayout = nullptr;
+	ID3D11DepthStencilState* ProjectionDecalDepthState = nullptr;
+	ID3D11BlendState* ProjectionDecalBlendState = nullptr;
 
 	uint32 Stride = 0;
 
@@ -205,5 +240,6 @@ private:
 	TArray<ID3D11Buffer*> ThreadConstantBufferModels;
 	TArray<ID3D11Buffer*> ThreadConstantBufferColors;
 	TArray<ID3D11Buffer*> ThreadConstantBufferMaterials;
+	TArray<ID3D11Buffer*> ThreadConstantBufferProjectionDecals;
 	TArray<ID3D11CommandList*> CommandLists;
 };

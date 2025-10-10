@@ -34,11 +34,18 @@ void UAssetManager::Initialize()
 	VertexDatas.emplace(EPrimitiveType::CubeArrow, &VerticesCubeArrow);
 	VertexDatas.emplace(EPrimitiveType::Ring, &VerticesRing);
 	VertexDatas.emplace(EPrimitiveType::Line, &VerticesLine);
+	VertexDatas.emplace(EPrimitiveType::CubeLine, &VerticesCube);
 
 	IndexDatas.emplace(EPrimitiveType::Cube, &IndicesCube);
+	IndexDatas.emplace(EPrimitiveType::CubeLine, &IndicesCubeLine);
+
 	IndexBuffers.emplace(EPrimitiveType::Cube,
 		Renderer.CreateIndexBuffer(IndicesCube.data(), static_cast<int>(IndicesCube.size()) * sizeof(uint32)));
+	IndexBuffers.emplace(EPrimitiveType::CubeLine,
+		Renderer.CreateIndexBuffer(IndicesCubeLine.data(), static_cast<int>(IndicesCubeLine.size()) * sizeof(uint32)));
+
 	NumIndices.emplace(EPrimitiveType::Cube, static_cast<uint32>(IndicesCube.size()));
+	NumIndices.emplace(EPrimitiveType::CubeLine, static_cast<uint32>(IndicesCubeLine.size()));
 
 	// TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
 	VertexBuffers.emplace(EPrimitiveType::Cube, Renderer.CreateVertexBuffer(
@@ -59,6 +66,7 @@ void UAssetManager::Initialize()
 		VerticesRing.data(), static_cast<int>(VerticesRing.size() * sizeof(FNormalVertex))));
 	VertexBuffers.emplace(EPrimitiveType::Line, Renderer.CreateVertexBuffer(
 		VerticesLine.data(), static_cast<int>(VerticesLine.size() * sizeof(FNormalVertex))));
+	VertexBuffers.emplace(EPrimitiveType::CubeLine, VertexBuffers[EPrimitiveType::Cube]);
 
 	NumVertices.emplace(EPrimitiveType::Cube, static_cast<uint32>(VerticesCube.size()));
 	NumVertices.emplace(EPrimitiveType::Sphere, static_cast<uint32>(VerticesSphere.size()));
@@ -69,6 +77,7 @@ void UAssetManager::Initialize()
 	NumVertices.emplace(EPrimitiveType::CubeArrow, static_cast<uint32>(VerticesCubeArrow.size()));
 	NumVertices.emplace(EPrimitiveType::Ring, static_cast<uint32>(VerticesRing.size()));
 	NumVertices.emplace(EPrimitiveType::Line, static_cast<uint32>(VerticesLine.size()));
+	NumVertices.emplace(EPrimitiveType::CubeLine, NumVertices[EPrimitiveType::Cube]);
 
 	// Calculate AABB for all primitive types (excluding StaticMesh)
 	for (const auto& Pair : VertexDatas)

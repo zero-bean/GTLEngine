@@ -10,6 +10,7 @@
 #include "Component/Mesh/Public/MeshComponent.h"
 #include "Component/Public/TextRenderComponent.h"
 #include "Component/Public/LineComponent.h"
+#include "Component/Public/DecalComponent.h"
 #include "Component/Mesh/Public/CubeComponent.h"
 #include "Component/Mesh/Public/SphereComponent.h"
 #include "Component/Mesh/Public/SquareComponent.h"
@@ -21,7 +22,6 @@
 #include "Texture/Public/Texture.h"
 #include "Core/Public/BVHierarchy.h"
 #include "Core/Public/Object.h"
-#include "Core/Public/ObjectIterator.h"
 #include "Texture/Public/Texture.h"
 #include "Manager/Asset/Public/AssetManager.h"
 
@@ -288,6 +288,10 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		if (ImGui::MenuItem("Billboard Component"))
 		{
 			AddComponentToActor(new UBillboardComponent());
+		}
+		if (ImGui::MenuItem("Decal Component"))
+		{
+			AddComponentToActor(new UDecalComponent());
 		}
 		ImGui::Separator();
 		if (ImGui::MenuItem("Cube Component"))

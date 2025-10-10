@@ -25,6 +25,38 @@ struct FViewProjConstants
 	FMatrix Projection;
 };
 
+struct FDecalConstants
+{
+	FDecalConstants(const FMatrix& InDecalWorld, const FMatrix& InDecalInverseWorld)
+	{
+		DecalWorld = InDecalWorld;
+		DecalInverseWorld = InDecalInverseWorld;
+	}
+
+	FMatrix DecalInverseWorld;
+	FMatrix DecalWorld;
+
+private:
+	// 사용하기 불편하다면 지워도 상관없습니다. (25.10.07 PYB)
+	FDecalConstants() = delete;
+};
+
+struct FModelConstants
+{
+	FModelConstants(const FMatrix& InWorld, const FMatrix& InWorldInverseTranspose)
+	{
+		World = InWorld;
+		WorldInverseTranspose = InWorldInverseTranspose;
+	}
+
+	FMatrix World;
+	FMatrix WorldInverseTranspose;
+
+private:
+	// 사용하기 불편하다면 지워도 상관없습니다. (25.10.07 PYB)
+	FModelConstants() = delete;
+};
+
 struct FMaterialConstants
 {
 	FVector4 Ka;

@@ -27,10 +27,29 @@ struct FAABB : public IBoundingVolume
 	FAABB() : Min(0.f, 0.f, 0.f), Max(0.f, 0.f, 0.f) {}
 	FAABB(const FVector& InMin, const FVector& InMax) : Min(InMin), Max(InMax) {}
 
+	bool IsIntersected(const FAABB& Other) const;
+
 	bool RaycastHit(const FRay& Ray, float* OutDistance) const override;
 	EBoundingVolumeType GetType() const override { return EBoundingVolumeType::AABB; }
+	bool Intersects(const IBoundingVolume& Other) const override;
 	FAABB Union(const FAABB& A, const FAABB& B) const;
 };
+
+inline bool FAABB::Intersects(const IBoundingVolume& Other) const
+{
+	// 상대방의 타입을 확인합니다.
+	switch (Other.GetType())
+	{
+	case EBoundingVolumeType::AABB:
+	{
+		// 상대방이 AABB라면, 기존의 AABB-AABB 검사를 수행합니다.
+		const FAABB& OtherAABB = static_cast<const FAABB&>(Other);
+		return this->IsIntersected(OtherAABB);
+	}
+	default:
+		return false;
+	}
+}
 
 inline FAABB FAABB::Union(const FAABB& A, const FAABB& B) const
 {
@@ -48,6 +67,13 @@ inline FAABB FAABB::Union(const FAABB& A, const FAABB& B) const
 
 	return FAABB(FVector(tmpMin[0], tmpMin[1], tmpMin[2]),
 				 FVector(tmpMax[0], tmpMax[1], tmpMax[2]));
+}
+
+inline bool FAABB::IsIntersected(const FAABB& Other) const
+{
+	return (Min.X <= Other.Max.X && Max.X >= Other.Min.X) &&
+		(Min.Y <= Other.Max.Y && Max.Y >= Other.Min.Y) &&
+		(Min.Z <= Other.Max.Z && Max.Z >= Other.Min.Z);
 }
 
 FORCEINLINE bool FAABB::RaycastHit(const FRay& Ray, float* OutDistance) const

@@ -20,7 +20,7 @@ public:
 	const uint32 GetNumVertices() const;
 	const uint32 GetNumIndices() const;
 
-	const FRenderState& GetRenderState() const { return RenderState; }
+	FRenderState& GetRenderState() { return RenderState; }
 
 	void SetTopology(D3D11_PRIMITIVE_TOPOLOGY InTopology);
 	D3D11_PRIMITIVE_TOPOLOGY GetTopology() const;

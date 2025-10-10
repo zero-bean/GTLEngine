@@ -10,6 +10,16 @@ static void SafeDelete(T& InDynamicObject)
 	InDynamicObject = nullptr;
 }
 
+template <typename T>
+void SafeRelease(T*& ComObj)
+{
+	if (ComObj != nullptr)
+	{
+		ComObj->Release();
+		ComObj = nullptr;
+	}
+}
+
 /**
  * @brief wstring을 멀티바이트 FString으로 변환합니다.
  * @param InString 변환할 FString

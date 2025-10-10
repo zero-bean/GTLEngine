@@ -18,6 +18,7 @@ UWorld::UWorld()
 UWorld::~UWorld()
 {
 	SafeDelete(Level);
+	SafeDelete(Frustum);
 }
 
 void UWorld::Tick(float DeltaSeconds)

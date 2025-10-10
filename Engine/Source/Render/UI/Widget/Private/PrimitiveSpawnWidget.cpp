@@ -8,6 +8,7 @@
 #include "Actor/Public/SphereActor.h"
 #include "Actor/Public/SquareActor.h"
 #include "Actor/Public/TriangleActor.h"
+#include "Actor/Public/DecalActor.h"
 #include "Actor/Public/StaticMeshActor.h"
 #include "Component/Public/BillboardComponent.h"
 #include "Core/public/BVHierarchy.h"
@@ -41,7 +42,8 @@ void UPrimitiveSpawnWidget::RenderWidget()
 		"Triangle",
 		"Square",
 		"StaticMesh",
-		"Billboard"
+		"Billboard",
+		"Decal"
 	};
 
 	// None을 고려한 Enum 변환 처리
@@ -50,7 +52,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	ImGui::Text("Primitive Type:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120);
-	ImGui::Combo("##PrimitiveType", &TypeNumber, PrimitiveTypes, 6);
+	ImGui::Combo("##PrimitiveType", &TypeNumber, PrimitiveTypes, 7);
 
 	// ImGui가 받은 값을 반영
 	SelectedPrimitiveType = static_cast<EPrimitiveType>(TypeNumber + 1);
@@ -123,6 +125,9 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 			break;
 		case (EPrimitiveType::Billboard):
 			NewActor = CurrentLevel->SpawnActorToLevel(ABillboardActor::StaticClass());
+			break;
+		case (EPrimitiveType::Decal):
+			NewActor = CurrentLevel->SpawnActorToLevel(ADecalActor::StaticClass());
 			break;
 		default:
 			break;

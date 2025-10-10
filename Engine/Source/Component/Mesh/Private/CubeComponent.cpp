@@ -25,4 +25,3 @@ UCubeComponent::UCubeComponent()
 	RenderState.FillMode = EFillMode::Solid;
 	BoundingBox = &ResourceManager.GetAABB(Type);
 }
-
