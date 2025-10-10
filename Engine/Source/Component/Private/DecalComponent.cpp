@@ -5,7 +5,7 @@
 
 IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
 
-UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
+UDecalComponent::UDecalComponent() : DecalMaterial(nullptr), ProjectionBox(nullptr)
 {
 	if (DecalMaterial = NewObject<UMaterial>())
 	{
@@ -30,36 +30,73 @@ UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
 	const FAABB* AABB = &ResourceManager.GetAABB(Type);
 	BoundingBox = AABB;
 
-	FVector minV = AABB->Min;
-	FVector maxV = AABB->Max;
-
-	if (minV.X > maxV.X) std::swap(minV.X, maxV.X);
-	if (minV.Y > maxV.Y) std::swap(minV.Y, maxV.Y);
-	if (minV.Z > maxV.Z) std::swap(minV.Z, maxV.Z);
-
-	FOBB* OBB = new FOBB;
-	OBB->Center      = (minV + maxV) * 0.5f;
-	OBB->Extents     = (maxV - minV) * 0.5f;   // half-size on each axis
-	OBB->Orientation = FMatrix::Identity();      // axis-aligned → identity
-	ProjectionBox = OBB;
-
 	// 렌더링 상태를 와이어프레임으로 설정 (DecalActor 생성자에서 가져옴)
 	RenderState.FillMode = EFillMode::Solid;
 	RenderState.CullMode = ECullMode::None;
+    // Initialize projection OBB from current world transform
+    {
+        const FMatrix& M = GetWorldTransformMatrix();
+
+        FVector axisX(M.Data[0][0], M.Data[0][1], M.Data[0][2]);
+        FVector axisY(M.Data[1][0], M.Data[1][1], M.Data[1][2]);
+        FVector axisZ(M.Data[2][0], M.Data[2][1], M.Data[2][2]);
+
+        float sx = std::sqrt(axisX.X * axisX.X + axisX.Y * axisX.Y + axisX.Z * axisX.Z);
+        float sy = std::sqrt(axisY.X * axisY.X + axisY.Y * axisY.Y + axisY.Z * axisY.Z);
+        float sz = std::sqrt(axisZ.X * axisZ.X + axisZ.Y * axisZ.Y + axisZ.Z * axisZ.Z);
+
+        // Avoid divide-by-zero; fall back to identity axis if degenerate
+        FVector oX = (sx > 1e-6f) ? (axisX / sx) : FVector(1.f, 0.f, 0.f);
+        FVector oY = (sy > 1e-6f) ? (axisY / sy) : FVector(0.f, 1.f, 0.f);
+        FVector oZ = (sz > 1e-6f) ? (axisZ / sz) : FVector(0.f, 0.f, 1.f);
+
+        FVector extents(0.5f * sx, 0.5f * sy, 0.5f * sz);
+        FVector center(M.Data[3][0], M.Data[3][1], M.Data[3][2]);
+
+        if (!ProjectionBox)
+        {
+            ProjectionBox = new FOBB();
+        }
+        ProjectionBox->Center = center;
+        ProjectionBox->Extents = extents;
+        ProjectionBox->Orientation = FMatrix(oX, oY, oZ);
+    }
 }
 
 UDecalComponent::~UDecalComponent()
 {
-	SafeDelete(DecalMaterial);
-	ProjectionBox = nullptr;
+    SafeDelete(DecalMaterial);
+    SafeDelete(ProjectionBox);
 }
 
 void UDecalComponent::TickComponent(float DeltaSeconds)
 {
-	ProjectionBox->Center = GetOwner()->GetActorLocation() + GetRelativeLocation();
-	ProjectionBox->Extents = GetRelativeScale3D() * 0.5f;
-	FMatrix RotationMatrix = FMatrix::RotationMatrix(GetRelativeRotation());
-	ProjectionBox->Orientation = RotationMatrix;
+	UE_LOG("ticking...");
+    // Keep ProjectionBox in sync with the component's world transform
+    const FMatrix& M = GetWorldTransformMatrix();
+
+    FVector axisX(M.Data[0][0], M.Data[0][1], M.Data[0][2]);
+    FVector axisY(M.Data[1][0], M.Data[1][1], M.Data[1][2]);
+    FVector axisZ(M.Data[2][0], M.Data[2][1], M.Data[2][2]);
+
+    float sx = std::sqrt(axisX.X * axisX.X + axisX.Y * axisX.Y + axisX.Z * axisX.Z);
+    float sy = std::sqrt(axisY.X * axisY.X + axisY.Y * axisY.Y + axisY.Z * axisY.Z);
+    float sz = std::sqrt(axisZ.X * axisZ.X + axisZ.Y * axisZ.Y + axisZ.Z * axisZ.Z);
+
+    FVector oX = (sx > 1e-6f) ? (axisX / sx) : FVector(1.f, 0.f, 0.f);
+    FVector oY = (sy > 1e-6f) ? (axisY / sy) : FVector(0.f, 1.f, 0.f);
+    FVector oZ = (sz > 1e-6f) ? (axisZ / sz) : FVector(0.f, 0.f, 1.f);
+
+    FVector extents(0.5f * sx, 0.5f * sy, 0.5f * sz);
+    FVector center(M.Data[3][0], M.Data[3][1], M.Data[3][2]);
+
+    if (!ProjectionBox)
+    {
+        ProjectionBox = new FOBB();
+    }
+    ProjectionBox->Center = center;
+    ProjectionBox->Extents = extents;
+    ProjectionBox->Orientation = FMatrix(oX, oY, oZ);
 }
 
 void UDecalComponent::SetDecalMaterial(UMaterial* InMaterial)

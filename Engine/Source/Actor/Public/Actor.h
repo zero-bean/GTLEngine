@@ -81,6 +81,6 @@ private:
 	TObjectPtr<USceneComponent> RootComponent = nullptr;
 	TArray<TObjectPtr<UActorComponent>> OwnedComponents;
 
-	bool bIsActorTickEnabled = false;
-	bool bTickInEditor = false;
+	bool bIsActorTickEnabled = true;
+	bool bTickInEditor = true;
 };

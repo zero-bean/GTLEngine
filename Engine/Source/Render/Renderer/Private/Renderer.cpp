@@ -20,6 +20,7 @@
 #include "Source/Component/Mesh/Public/StaticMesh.h"
 
 #include "Render/Renderer/Public/OcclusionRenderer.h"
+#include "Physics/Public/AABB.h"
 
 #include "cpp-thread-pool/thread_pool.h"
 
@@ -887,9 +888,14 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 			// 데칼 액터의 시각화 컴포넌트에는 데칼을 적용하지 않도록 예외 처리합니다.
 			//if (Primitive == Decal) { continue; }
 
-			// AABB(Axis-Aligned Bounding Box) 교차 검사
-			if (DecalBounds->Intersects(*Primitive->GetBoundingBox()))
-			{
+	        // AABB(Axis-Aligned Bounding Box) 교차 검사
+	        // Note: Primitive->GetBoundingBox() is in local space; build a world-space AABB
+	        FVector WorldMin, WorldMax;
+	        Primitive->GetWorldAABB(WorldMin, WorldMax);
+	        FAABB WorldAABB(WorldMin, WorldMax);
+	        if (DecalBounds->Intersects(WorldAABB))
+	        {
+	        	UE_LOG("intersects!");
 				// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
 				FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
 					Primitive->GetWorldTransformMatrixInverse().Transpose());

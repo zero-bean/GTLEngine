@@ -9,15 +9,15 @@ bool FOBB::RaycastHit(const FRay& Ray, float* OutDistance) const
 
 bool FOBB::Intersects(const IBoundingVolume& Other) const
 {
-	switch (Other.GetType())
-	{
-		case EBoundingVolumeType::AABB:
-		{
-			IntersectsAABB(static_cast<const FAABB&>(Other));
-		}
-	default:
-		return false;
-	}
+    switch (Other.GetType())
+    {
+        case EBoundingVolumeType::AABB:
+        {
+            return IntersectsAABB(static_cast<const FAABB&>(Other));
+        }
+        default:
+            return false;
+    }
 }
 
 bool FOBB::IntersectsAABB(const FAABB& InAABB) const
