@@ -41,10 +41,10 @@ struct FBVHPrimitive
 
 class FFrustumCull;
 
-class UBVHManager : UObject
+class UBVHierarchy : UObject
 {
 	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(UBVHManager, UObject)
+	DECLARE_SINGLETON_CLASS(UBVHierarchy, UObject)
 
 public:
 	void Initialize();

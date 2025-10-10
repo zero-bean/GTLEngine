@@ -19,7 +19,7 @@
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Component/Mesh/Public/StaticMesh.h"
 #include "Physics/Public/RayIntersection.h"
-#include "Manager/BVH/public/BVHManager.h"
+#include "Core/Public/BVHierarchy.h"
 
 FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive) const
 {
@@ -38,7 +38,7 @@ UPrimitiveComponent* UObjectPicker::PickPrimitive(const FRay& WorldRay, const TA
 	UPrimitiveComponent* ShortestPrimitive = nullptr;
 	float PrimitiveDistance = D3D11_FLOAT32_MAX;
 
-	UBVHManager::GetInstance().Raycast(WorldRay, ShortestPrimitive, PrimitiveDistance);
+	UBVHierarchy::GetInstance().Raycast(WorldRay, ShortestPrimitive, PrimitiveDistance);
 	*OutDistance = PrimitiveDistance;
 
 	return ShortestPrimitive;

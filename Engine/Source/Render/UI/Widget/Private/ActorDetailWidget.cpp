@@ -19,7 +19,7 @@
 #include "Global/Function.h"
 #include "Core/Public/ObjectIterator.h"
 #include "Texture/Public/Texture.h"
-#include "Manager/BVH/Public/BVHManager.h"
+#include "Core/Public/BVHierarchy.h"
 #include "Core/Public/Object.h"
 #include "Core/Public/ObjectIterator.h"
 #include "Texture/Public/Texture.h"
@@ -658,7 +658,7 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 	}
 	if (bTransformChanged && InComponent->IsA(UPrimitiveComponent::StaticClass()))
 	{
-		UBVHManager::GetInstance().Refit();
+		UBVHierarchy::GetInstance().Refit();
 	}
 }
 

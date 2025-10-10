@@ -18,7 +18,7 @@
 
 #include <json.hpp>
 
-#include "Manager/BVH/public/BVHManager.h"
+#include "Core/Public/BVHierarchy.h"
 #include "World/Public/World.h"
 
 IMPLEMENT_CLASS(ULevel, UObject)
@@ -253,8 +253,8 @@ void ULevel::InitializeActorsInLevel()
 	}
 
 	TArray<FBVHPrimitive> BVHPrimitives;
-	UBVHManager::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
-	UBVHManager::GetInstance().Build(BVHPrimitives);
+	UBVHierarchy::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
+	UBVHierarchy::GetInstance().Build(BVHPrimitives);
 }
 
 AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
@@ -280,8 +280,8 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
 	{
 		AddLevelPrimitiveComponentsInActor(NewActor);
 		TArray<FBVHPrimitive> BVHPrimitives;
-		UBVHManager::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
-		UBVHManager::GetInstance().Build(BVHPrimitives);
+		UBVHierarchy::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
+		UBVHierarchy::GetInstance().Build(BVHPrimitives);
 	}
 
 	return NewActor;
@@ -310,8 +310,8 @@ void ULevel::RegisterDuplicatedActor(AActor* NewActor)
 	{
 		AddLevelPrimitiveComponentsInActor(NewActor);
 		TArray<FBVHPrimitive> BVHPrimitives;
-		UBVHManager::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
-		UBVHManager::GetInstance().Build(BVHPrimitives);
+		UBVHierarchy::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
+		UBVHierarchy::GetInstance().Build(BVHPrimitives);
 	}
 }
 
@@ -325,7 +325,7 @@ TArray<TObjectPtr<UPrimitiveComponent>> ULevel::GetVisiblePrimitiveComponents(UC
 
 	Frustum->Update(InCamera);
 	// UBV Tree를 순회하며 컬링
-	UBVHManager::GetInstance().FrustumCull(*Frustum, VisibleComponents);
+	UBVHierarchy::GetInstance().FrustumCull(*Frustum, VisibleComponents);
 
 	// 선형탐색으로 컬링
 	// for (auto& PrimitiveComponent : LevelPrimitiveComponents)
@@ -399,8 +399,8 @@ void ULevel::AddLevelPrimitiveComponent(TObjectPtr<UPrimitiveComponent> InPrimit
 	LevelPrimitiveComponents.push_back(InPrimitiveComponent);
 
 	TArray<FBVHPrimitive> BVHPrimitives;
-	UBVHManager::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
-	UBVHManager::GetInstance().Build(BVHPrimitives);
+	UBVHierarchy::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
+	UBVHierarchy::GetInstance().Build(BVHPrimitives);
 }
 
 void ULevel::SetSelectedActor(AActor* InActor)
