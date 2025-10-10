@@ -15,5 +15,6 @@ struct FOBB : public IBoundingVolume
 		: Center(InCenter), Extents(InExtents), Orientation(InOrientation) {}
 
 	bool OverlapsAABB(const FAABB& InAABB) const;
+	bool RaycastHit(const FRay& Ray, float* OutDistance) const override;
 	EBoundingVolumeType GetType() const override { return EBoundingVolumeType::OBB; }
 };

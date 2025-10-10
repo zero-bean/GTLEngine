@@ -1,6 +1,12 @@
 ﻿#include "pch.h"
 #include "Physics/Public/OBB.h"
 
+bool FOBB::RaycastHit(const FRay& Ray, float* OutDistance) const
+{
+	// TODO
+	return false;
+}
+
 bool FOBB::OverlapsAABB(const FAABB& InAABB) const
 {
 	constexpr float kEps = 1e-6f;

@@ -92,7 +92,7 @@ void UEditor::Tick(float DeltaSeconds)
 				}
 				else
 				{
-					BatchLines.UpdateBoundingBoxVertices({ { 0.0f,0.0f,0.0f }, { 0.0f, 0.0f, 0.0f } });
+					BatchLines.UpdateBoundingBoxVertices(FAABB({ 0.0f,0.0f,0.0f }, { 0.0f, 0.0f, 0.0f }));
 				}
 			}
 		}

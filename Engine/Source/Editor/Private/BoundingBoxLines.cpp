@@ -31,19 +31,12 @@ void UBoundingBoxLines::MergeVerticesAt(TArray<FVector>& destVertices, size_t in
 		Vertices.begin() + overwriteCount,
 		destVertices.begin() + insertStartIndex
 	);
-
-	// 원하는 위치에 삽입
-	/*destVertices.insert(
-		destVertices.begin() + insertStartIndex,
-		Vertices.begin(),
-		Vertices.end()
-	);*/
 }
 
 void UBoundingBoxLines::UpdateVertices(FAABB boundingBoxInfo)
 {
 	// 중복 삽입 방지
-	if (RenderedBoxInfo.Min == boundingBoxInfo.Min && RenderedBoxInfo.Max == boundingBoxInfo.Max)
+	if (RenderedAABBoxInfo.Min == boundingBoxInfo.Min && RenderedAABBoxInfo.Max == boundingBoxInfo.Max)
 	{
 		return;
 	}
@@ -67,6 +60,58 @@ void UBoundingBoxLines::UpdateVertices(FAABB boundingBoxInfo)
 	Vertices[vertexIndex++] = { MaxX, MaxY, MaxZ }; // Back-Top-Right
 	Vertices[vertexIndex++] = { MinX, MaxY, MaxZ }; // Back-Top-Left
 
-	RenderedBoxInfo = boundingBoxInfo;
+	RenderedAABBoxInfo = boundingBoxInfo;
 }
 
+void UBoundingBoxLines::UpdateVertices(FOBB boundingBoxInfo)
+{
+	auto MatrixNearEqual = [](const FMatrix& A, const FMatrix& B, float eps = 1e-6f)
+	{
+		for (int r = 0; r < 4; ++r)
+			for (int c = 0; c < 4; ++c)
+				if (fabs(A.Data[r][c] - B.Data[r][c]) > eps)
+					return false;
+		return true;
+	};
+
+    if (RenderedOBBoxInfo.Center   == boundingBoxInfo.Center &&
+        RenderedOBBoxInfo.Extents  == boundingBoxInfo.Extents &&
+        MatrixNearEqual(RenderedOBBoxInfo.Orientation, boundingBoxInfo.Orientation))
+    {
+        return;
+    }
+
+    if (Vertices.size() < NumVertices)
+        Vertices.resize(NumVertices);
+
+    const FVector  C = boundingBoxInfo.Center;
+    const FVector  E = boundingBoxInfo.Extents;
+    const FMatrix& M = boundingBoxInfo.Orientation;
+
+    // Row-major + row-vector convention: rows are the world-space axes of the OBB.
+    FVector Ux(M.Data[0][0], M.Data[0][1], M.Data[0][2]); // local +X axis in world
+    FVector Uy(M.Data[1][0], M.Data[1][1], M.Data[1][2]); // local +Y axis in world
+    FVector Uz(M.Data[2][0], M.Data[2][1], M.Data[2][2]); // local +Z axis in world
+
+    // Be defensive in case the matrix isn’t perfectly orthonormal
+    Ux.Normalize(); Uy.Normalize(); Uz.Normalize();
+
+    // Scale axes by half-sizes
+    const FVector ex = Ux * E.X;
+    const FVector ey = Uy * E.Y;
+    const FVector ez = Uz * E.Z;
+
+    // Same corner ordering as your AABB version, but in OBB local ±X/±Y/±Z space:
+    // 0~3: "front" face (using -Z side), 4~7: "back" face (using +Z side)
+    uint32 i = 0;
+    Vertices[i++] = C - ex - ey - ez; // Front-Bottom-Left
+    Vertices[i++] = C + ex - ey - ez; // Front-Bottom-Right
+    Vertices[i++] = C + ex + ey - ez; // Front-Top-Right
+    Vertices[i++] = C - ex + ey - ez; // Front-Top-Left
+    Vertices[i++] = C - ex - ey + ez; // Back-Bottom-Left
+    Vertices[i++] = C + ex - ey + ez; // Back-Bottom-Right
+    Vertices[i++] = C + ex + ey + ez; // Back-Top-Right
+    Vertices[i++] = C - ex + ey + ez; // Back-Top-Left
+
+    RenderedOBBoxInfo = boundingBoxInfo;
+}
