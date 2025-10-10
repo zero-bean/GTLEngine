@@ -403,6 +403,7 @@
     <ClInclude Include="Source\Manager\Path\Public\PathManager.h" />
     <ClInclude Include="Source\Manager\Time\Public\TimeManager.h" />
     <ClInclude Include="Source\Manager\UI\Public\UIManager.h" />
+    <ClInclude Include="Source\Physics\Public\OBB.h" />
     <ClInclude Include="Source\Physics\Public\RayIntersection.h" />
     <ClInclude Include="Source\Render\FontRenderer\Public\FontRenderer.h" />
     <ClInclude Include="Source\Render\Renderer\Public\DeviceResources.h" />
@@ -622,6 +623,7 @@
     <ClCompile Include="Source\Manager\Path\Private\PathManager.cpp" />
     <ClCompile Include="Source\Manager\Time\Private\TimeManager.cpp" />
     <ClCompile Include="Source\Manager\UI\Private\UIManager.cpp" />
+    <ClCompile Include="Source\Physics\Private\OBB.cpp" />
     <ClCompile Include="Source\Render\Renderer\Private\DeviceResources.cpp" />
     <ClCompile Include="Source\Render\Renderer\Private\OcclusionRenderer.cpp" />
     <ClCompile Include="Source\Render\Renderer\Private\Pipeline.cpp" />

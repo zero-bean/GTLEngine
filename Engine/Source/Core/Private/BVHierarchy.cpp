@@ -373,6 +373,61 @@ void UBVHierarchy::RaycastIterative(const FRay& InRay, float& OutClosestHit, int
         }
     }
 }
+
+bool UBVHierarchy::CheckOBBoxCollision(const FOBB& InOBB, TArray<UPrimitiveComponent*>& HitComponents) const
+{
+	if (RootIndex < 0 || Nodes.empty())
+	{
+		return false;
+	}
+
+	TArray<int> HitObjectIndexes = {};
+
+	CheckOBBoxCollisionRecursive(RootIndex, InOBB, HitObjectIndexes);
+	if (HitObjectIndexes.empty())
+	{
+		return false;
+	}
+
+	for (int index : HitObjectIndexes)
+	{
+		HitComponents.push_back(Primitives[index].Primitive);
+	}
+	return true;
+}
+
+void UBVHierarchy::CheckOBBoxCollisionRecursive(int NodeIndex, const FOBB& InOBB, TArray<int>& OutHitObjects) const
+{
+	const FBVHNode& Node = Nodes[NodeIndex];
+
+	if (!InOBB.OverlapsAABB(Node.Bounds))
+	{
+		return;
+	}
+
+	if (Node.bIsLeaf)
+	{
+		for (int i = 0; i < Node.Count; ++i)
+		{
+			const FBVHPrimitive& Prim = Primitives[Node.Start + i];
+			if (!Prim.Primitive || !Prim.Primitive->IsVisible())
+			{
+				continue;
+			}
+
+			if (InOBB.OverlapsAABB(Prim.Bounds))
+			{
+				OutHitObjects.push_back(Node.Start + i);
+			}
+		}
+	}
+	else
+	{
+		CheckOBBoxCollisionRecursive(Node.LeftChild, InOBB, OutHitObjects);
+		CheckOBBoxCollisionRecursive(Node.RightChild, InOBB, OutHitObjects);
+	}
+}
+
 void UBVHierarchy::ConvertComponentsToBVHPrimitives(
 	const TArray<TObjectPtr<UPrimitiveComponent>>& InComponents, TArray<FBVHPrimitive>& OutPrimitives)
 {
