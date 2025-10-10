@@ -376,7 +376,10 @@ void ULevel::AddLevelPrimitiveComponentsInActor(AActor* Actor)
 		{
 			continue; // 현재 컴포넌트만 스킵하고 다음 컴포넌트로 계속
 		}
-
+		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Decal && !(ShowFlags & EEngineShowFlags::SF_Decals))
+		{
+			continue;
+		}
 		if (PrimitiveComponent->GetPrimitiveType() != EPrimitiveType::TextRender)
 		{
 			LevelPrimitiveComponents.push_back(PrimitiveComponent);

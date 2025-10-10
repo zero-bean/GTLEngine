@@ -15,7 +15,7 @@ struct FTimeProfile
 	const char* GetConstChar() const
 	{
 		static char buffer[64];
-		snprintf(buffer, sizeof(buffer), " : %.3fms, Call : %d", Milliseconds, CallCount);
+		snprintf(buffer, sizeof(buffer), " : %.3fms, Call : %d", Milliseconds, static_cast<int>(CallCount));
 		return buffer;
 	}
 };
@@ -66,7 +66,7 @@ public:
 		double Milliseconds = FWindowsPlatformTime::ToMilliseconds(CycleDiff);
 		if (UsedStatId.Key.empty() == false)
 		{
-			AddTimeProfile(UsedStatId, Milliseconds); 
+			AddTimeProfile(UsedStatId, Milliseconds);
 		}
 		return Milliseconds;
 	}

@@ -3,7 +3,7 @@
 
 TMap<FString, FTimeProfile> TimeProfileMap;
 void FScopeCycleCounter::AddTimeProfile(const TStatId StatId, const double Milliseconds)
-{	if (TimeProfileMap.find(StatId.Key) != TimeProfileMap.end())
+{	if (!TimeProfileMap.Contains(StatId.Key))
 	{
 		TimeProfileMap[StatId.Key] = FTimeProfile{Milliseconds, 1};
 	}

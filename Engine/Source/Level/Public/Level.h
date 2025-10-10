@@ -29,6 +29,7 @@ enum class EEngineShowFlags : uint64
 	SF_Primitives = 0x01,
 	SF_BillboardText = 0x10,
 	SF_Bounds = 0x20,
+	SF_Decals = 0x40,
 };
 
 inline uint64 operator|(EEngineShowFlags lhs, EEngineShowFlags rhs)

@@ -22,6 +22,8 @@
 #include "Render/Renderer/Public/OcclusionRenderer.h"
 #include "Physics/Public/AABB.h"
 
+#include "Core/Public/ScopeCycleCounter.h"
+
 #include "cpp-thread-pool/thread_pool.h"
 
 #ifdef _
@@ -590,6 +592,10 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		{
 			Billboards.push_back(Cast<UBillboardComponent>(PrimitiveComponent));
 		}
+		else if (PrimitiveComponent->IsA(UDecalComponent::StaticClass()))
+		{
+			Decals.push_back(Cast<UDecalComponent>(PrimitiveComponent));
+		}
 		else
 		{
 			PrimitivesToRenderByDecals.push_back(PrimitiveComponent);
@@ -839,6 +845,8 @@ void URenderer::RenderEditorPrimitiveIndexed(UPipeline& InPipeline, const FEdito
 void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<UDecalComponent>>& InDecals,
 	const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives)
 {
+	TIME_PROFILE(Decal)
+
 	// 0. 데칼이 없으면 함수를 종료합니다.
 	if (InDecals.empty()) { return; }
 

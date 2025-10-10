@@ -58,16 +58,15 @@ void UStatOverlay::Release()
 
 void UStatOverlay::Render()
 {
-	TIME_PROFILE(Run)
 	if (!D2DRenderTarget) return;
 
 	D2DRenderTarget->BeginDraw();
 
 	if (IsStatEnabled(EStatType::FPS))		{ RenderFPS(); }
 	if (IsStatEnabled(EStatType::Memory))	{ RenderMemory(); }
+	if (IsStatEnabled(EStatType::Decal))	{ RenderDecal(); }
 
 	D2DRenderTarget->EndDraw();
-	TIME_PROFILE_END(Run)
 }
 
 void UStatOverlay::CreateRenderTarget()
@@ -144,8 +143,27 @@ void UStatOverlay::RenderMemory()
 	sprintf_s(MemoryBuffer, sizeof(MemoryBuffer), "Memory: %.1f MB (%u objects)", MemoryMB, TotalAllocationCount);
 	FString MemoryText = MemoryBuffer;
 
-	float OffsetY = IsStatEnabled(EStatType::FPS) ? 20.0f : 0.0f;
+	int Count = 0;
+	if (IsStatEnabled(EStatType::FPS)) Count++;
+	if (IsStatEnabled(EStatType::Decal)) Count++;
+	float OffsetY = 20.0f *Count;
 	RenderText(MemoryText, OverlayX, OverlayY + OffsetY, 1.0f, 1.0f, 0.0f);
+}
+
+void UStatOverlay::RenderDecal()
+{
+	int Count = 0;
+	if (IsStatEnabled(EStatType::FPS)) Count++;
+	if (IsStatEnabled(EStatType::Memory)) Count++;
+
+	float OffsetY = 20.0f * Count;
+
+	FString Key = "Decal";
+	FTimeProfile Value = FScopeCycleCounter::GetTimeProfile(Key);
+	FString Text = Key + Value.GetConstChar();
+	RenderText(Text, OverlayX, OverlayY+OffsetY, 1.0f, 0.0f, 1.0f);
+
+	FScopeCycleCounter::TimeProfileInit();
 }
 
 void UStatOverlay::RenderText(const FString& Text, float X, float Y, float R, float G, float B)

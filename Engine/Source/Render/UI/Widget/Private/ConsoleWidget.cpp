@@ -488,6 +488,11 @@ void UConsoleWidget::HandleStatCommand(const FString& StatCommand)
 		StatOverlay.ShowMemory(true);
 		AddLog(ELogType::Success, "Memory overlay enabled");
 	}
+	else if (StatCommand == "decal")
+	{
+		StatOverlay.ShowDecal(true);
+		AddLog(ELogType::Success, "Decal overlay enabled");
+	}
 	else if (StatCommand == "none")
 	{
 		StatOverlay.ShowAll(false);
