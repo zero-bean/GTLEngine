@@ -16,7 +16,7 @@ UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
 
 	UAssetManager& ResourceManager = UAssetManager::GetInstance();
 
-	Type = EPrimitiveType::CubeLine;
+	Type = EPrimitiveType::Decal;
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 
 	Vertices = ResourceManager.GetVertexData(Type);
@@ -50,6 +50,7 @@ UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
 
 UDecalComponent::~UDecalComponent()
 {
+	SafeDelete(DecalMaterial);
 	ProjectionBox = nullptr;
 }
 

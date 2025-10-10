@@ -6,6 +6,7 @@
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
 
+#include "Core/Public/ScopeCycleCounter.h"
 IMPLEMENT_SINGLETON_CLASS_BASE(UStatOverlay)
 
 UStatOverlay::UStatOverlay() {}
@@ -57,6 +58,7 @@ void UStatOverlay::Release()
 
 void UStatOverlay::Render()
 {
+	TIME_PROFILE(Run)
 	if (!D2DRenderTarget) return;
 
 	D2DRenderTarget->BeginDraw();
@@ -65,6 +67,7 @@ void UStatOverlay::Render()
 	if (IsStatEnabled(EStatType::Memory))	{ RenderMemory(); }
 
 	D2DRenderTarget->EndDraw();
+	TIME_PROFILE_END(Run)
 }
 
 void UStatOverlay::CreateRenderTarget()

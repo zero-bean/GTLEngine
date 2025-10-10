@@ -140,7 +140,6 @@ enum class EPrimitiveType : uint8
 	CubeArrow,
 	Ring,
 	Line,
-	CubeLine,
 	TextRender,
 
 	End = 0xFF

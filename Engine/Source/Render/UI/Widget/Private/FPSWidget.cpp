@@ -5,6 +5,8 @@
 
 #include "Manager/Config/Public/ConfigManager.h"
 
+#include "Core/Public/ScopeCycleCounter.h"
+
 constexpr float REFRESH_INTERVAL = 0.1f;
 
 UFPSWidget::UFPSWidget()
@@ -61,7 +63,8 @@ void UFPSWidget::Update()
 void UFPSWidget::RenderWidget()
 {
 	// 러프한 일정 간격으로 FPS 및 Delta Time 정보 출력
-	if (TotalGameTime - PreviousTime > REFRESH_INTERVAL)
+	bool bRefresh = TotalGameTime - PreviousTime > REFRESH_INTERVAL;
+	if (bRefresh)
 	{
 		PrintFPS = CurrentFPS;
 		PrintDeltaSeconds = CurrentDeltaSeconds * 1000.0f;
@@ -92,7 +95,26 @@ void UFPSWidget::RenderWidget()
 		ImGui::Text("  Min FPS: %.1f", MinFPS);
 		ImGui::Text("  Max FPS: %.1f", MaxFPS);
 		ImGui::Text("  Average Frame Time: %.2f ms", AverageFrameTime);
+#ifdef _DEBUG
+		ImGui::Separator();
+		ImGui::Text("Time");
+		static TArray<FString> TimeProfileKeys;
+		static TArray<FTimeProfile> TimeProfileValues;
+		if (bRefresh)
+		{
+			TimeProfileKeys = FScopeCycleCounter::GetTimeProfileKeys();
+			TimeProfileValues = FScopeCycleCounter::GetTimeProfileValues();
+		}
 
+		int TimeProfileSize = TimeProfileKeys.size();
+		for (int i = 0; i < TimeProfileSize; i++)
+		{
+			FString Text = TimeProfileKeys[i] + TimeProfileValues[i].GetConstChar();
+			ImGui::Text(Text.c_str());
+		}
+
+		FScopeCycleCounter::TimeProfileInit();
+#endif
 		if (ImGui::Button("Reset Statistics"))
 		{
 			MinFPS = 999.0f;

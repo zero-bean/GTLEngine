@@ -9,6 +9,8 @@ IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent)
 UPrimitiveComponent::UPrimitiveComponent()
 {
 	ComponentType = EComponentType::Primitive;
+	FVector MinBounds, MaxBounds;
+	GetWorldAABB(MinBounds, MaxBounds);
 }
 
 UObject* UPrimitiveComponent::Duplicate(FObjectDuplicationParameters Parameters)

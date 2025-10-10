@@ -87,6 +87,7 @@ public:
 	void RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* InCurrentCamera);
 	void RenderText(UTextRenderComponent* InBillBoardComp, UCamera* InCurrentCamera);
 	void RenderPrimitiveDefault(UPipeline& InPipeline, UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState, ID3D11Buffer* InConstantBufferModels, ID3D11Buffer* InConstantBufferColor);
+	void RenderPrimitiveLine(UPipeline& InPipeline, UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState, ID3D11Buffer* InConstantBufferModels, ID3D11Buffer* InConstantBufferColor);
 	void RenderEditorPrimitive(UPipeline& InPipeline, const FEditorPrimitive& InEditorPrimitive, const FRenderState& InRenderState);
 	void RenderEditorPrimitiveIndexed(UPipeline& InPipeline, const FEditorPrimitive& InEditorPrimitive, const FRenderState& InRenderState,
 	                            bool bInUseBaseConstantBuffer, uint32 InStride, uint32 InIndexBufferStride);
@@ -94,6 +95,8 @@ public:
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
+
+
 
 	// Create function
 	void CreateVertexShaderAndInputLayout(const wstring& InFilePath,
