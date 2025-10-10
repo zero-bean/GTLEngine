@@ -4,6 +4,7 @@
 #include "Core/Public/ScopeCycleCounter.h"
 #include "Editor/Public/Camera.h"
 #include "Editor/Public/Editor.h"
+#include "Component/Public/DecalComponent.h"
 #include "Editor/Public/EditorEngine.h"
 #include "Editor/Public/Viewport.h"
 #include "Global/Quaternion.h"

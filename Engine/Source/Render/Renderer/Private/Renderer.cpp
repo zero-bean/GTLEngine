@@ -584,7 +584,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		}
 		else if (PrimitiveComponent->IsA(UDecalComponent::StaticClass()))
 		{
-			Decals.push_back(Cast<UDecalComponent>(PrimitiveComponent)); 
+			Decals.push_back(Cast<UDecalComponent>(PrimitiveComponent));
 		}
 		else
 		{
@@ -839,9 +839,9 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		ProjectionDecalInputLayout,
 		ProjectionDecalVertexShader,
 		GetRasterizerState(DecalRenderState),
-		ProjectionDecalDepthState, 
+		ProjectionDecalDepthState,
 		ProjectionDecalPixelShader,
-		ProjectionDecalBlendState, 
+		ProjectionDecalBlendState,
 	};
 
 	// 2. 모든 데칼 컴포넌트에 대해 반복합니다.
@@ -865,12 +865,13 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		UpdateConstant(ConstantBufferProjectionDecal, DecalData, 3, true, true);
 
 		// 데칼의 바운딩 볼륨을 가져옵니다.
-		const IBoundingVolume* DecalBounds = Decal->GetBoundingBox();
+		const FOBB* DecalBounds = Decal->GetProjectionBox();
 
 		// 4. 화면에 보이는 모든 프리미티브와 데칼 볼륨의 충돌 검사를 수행합니다.
 		for (UPrimitiveComponent* Primitive : InVisiblePrimitives)
 		{
 			if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
+			if (Primitive->IsA(UDecalComponent::StaticClass())) { continue; }
 
 			// 데칼 액터의 시각화 컴포넌트에는 데칼을 적용하지 않도록 예외 처리합니다.
 			//if (Primitive == Decal) { continue; }
@@ -878,6 +879,7 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 			// AABB(Axis-Aligned Bounding Box) 교차 검사
 			if (DecalBounds->Intersects(*Primitive->GetBoundingBox()))
 			{
+				UE_LOG("intersects!");
 				// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
 				FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
 					Primitive->GetWorldTransformMatrixInverse().Transpose());

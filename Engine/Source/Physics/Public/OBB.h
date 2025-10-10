@@ -14,7 +14,10 @@ struct FOBB : public IBoundingVolume
 	FOBB(const FVector& InCenter, const FVector& InExtents, const FMatrix& InOrientation)
 		: Center(InCenter), Extents(InExtents), Orientation(InOrientation) {}
 
-	bool OverlapsAABB(const FAABB& InAABB) const;
 	bool RaycastHit(const FRay& Ray, float* OutDistance) const override;
 	EBoundingVolumeType GetType() const override { return EBoundingVolumeType::OBB; }
+	bool Intersects(const IBoundingVolume& Other) const override;
+
+private:
+	bool IntersectsAABB(const FAABB& Other) const;
 };

@@ -7,7 +7,20 @@ bool FOBB::RaycastHit(const FRay& Ray, float* OutDistance) const
 	return false;
 }
 
-bool FOBB::OverlapsAABB(const FAABB& InAABB) const
+bool FOBB::Intersects(const IBoundingVolume& Other) const
+{
+	switch (Other.GetType())
+	{
+		case EBoundingVolumeType::AABB:
+		{
+			IntersectsAABB(static_cast<const FAABB&>(Other));
+		}
+	default:
+		return false;
+	}
+}
+
+bool FOBB::IntersectsAABB(const FAABB& InAABB) const
 {
 	constexpr float kEps = 1e-6f;
 

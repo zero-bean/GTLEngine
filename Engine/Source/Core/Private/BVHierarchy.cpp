@@ -400,7 +400,7 @@ void UBVHierarchy::CheckOBBoxCollisionRecursive(int NodeIndex, const FOBB& InOBB
 {
 	const FBVHNode& Node = Nodes[NodeIndex];
 
-	if (!InOBB.OverlapsAABB(Node.Bounds))
+	if (!InOBB.Intersects(Node.Bounds))
 	{
 		return;
 	}
@@ -415,7 +415,7 @@ void UBVHierarchy::CheckOBBoxCollisionRecursive(int NodeIndex, const FOBB& InOBB
 				continue;
 			}
 
-			if (InOBB.OverlapsAABB(Prim.Bounds))
+			if (InOBB.Intersects(Prim.Bounds))
 			{
 				OutHitObjects.push_back(Node.Start + i);
 			}
