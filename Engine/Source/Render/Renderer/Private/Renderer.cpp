@@ -903,7 +903,6 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 	        FAABB WorldAABB(WorldMin, WorldMax);
 	        if (DecalBounds->Intersects(WorldAABB))
 	        {
-	        	UE_LOG("intersects!");
 				// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
 				FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
 					Primitive->GetWorldTransformMatrixInverse().Transpose());

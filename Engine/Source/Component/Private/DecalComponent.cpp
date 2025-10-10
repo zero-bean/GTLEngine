@@ -71,7 +71,6 @@ UDecalComponent::~UDecalComponent()
 
 void UDecalComponent::TickComponent(float DeltaSeconds)
 {
-	UE_LOG("ticking...");
     // Keep ProjectionBox in sync with the component's world transform
     const FMatrix& M = GetWorldTransformMatrix();
 
