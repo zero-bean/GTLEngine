@@ -408,6 +408,22 @@ void ULevel::AddLevelPrimitiveComponent(TObjectPtr<UPrimitiveComponent> InPrimit
 	UBVHierarchy::GetInstance().Build(BVHPrimitives);
 }
 
+void ULevel::RemoveLevelPrimitiveComponent(TObjectPtr<UPrimitiveComponent> InPrimitiveComponent)
+{
+	if (!InPrimitiveComponent)
+	{
+		return;
+	}
+
+	LevelPrimitiveComponents.erase(
+		std::remove(LevelPrimitiveComponents.begin(), LevelPrimitiveComponents.end(), InPrimitiveComponent),
+		LevelPrimitiveComponents.end());
+
+	TArray<FBVHPrimitive> BVHPrimitives;
+	UBVHierarchy::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
+	UBVHierarchy::GetInstance().Build(BVHPrimitives);
+}
+
 void ULevel::SetSelectedActor(AActor* InActor)
 {
 	// Set Selected Actor

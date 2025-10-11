@@ -347,6 +347,34 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		ImGui::EndPopup();
 	}
 
+	ImGui::SameLine();
+	static float RemoveMessageTimer = 0.0f;
+
+	if (ImGui::Button(" - Remove "))
+	{
+		if (!SelectedComponent || RootAsActorComponent == SelectedComponent)
+		{
+			RemoveMessageTimer = 2.0f;
+		}
+		else
+		{
+			InSelectedActor->RemoveComponent(SelectedComponent);
+			SelectedComponent = RootAsActorComponent;
+			return;
+		}
+	}
+
+	if (RemoveMessageTimer > 0.0f)
+	{
+		ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "Cannot remove root component.");
+		RemoveMessageTimer -= ImGui::GetIO().DeltaTime;
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Removes the selected component from this actor");
+	}
+
 	ImGui::Separator();
 
 	const bool bHasRootComponent = (RootSceneComponentRaw != nullptr);

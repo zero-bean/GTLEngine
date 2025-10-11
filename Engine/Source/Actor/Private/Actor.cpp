@@ -37,7 +37,7 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 	if (bInIsLoading)
 	{
-		// 0. 기존에 있던 모든 컴포넌트 자원을 할당 해제합니다. 
+		// 0. 기존에 있던 모든 컴포넌트 자원을 할당 해제합니다.
 		for (UActorComponent* Component : OwnedComponents) { SafeDelete(Component); }
 		OwnedComponents.clear();
 		RootComponent = nullptr;
@@ -64,7 +64,7 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 				}
 			}
 		}
-		
+
 		// 2. 루트 컴포넌트를 찾아 루트 계층으로 설정합니다.
 		if (InOutHandle.hasKey("RootComponentName"))
 		{
@@ -246,6 +246,25 @@ void AActor::AddComponent(TObjectPtr<UActorComponent> InComponent)
 
 	TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(InComponent);
 	GEngine->GetCurrentLevel()->AddLevelPrimitiveComponent(PrimitiveComponent);
+}
+
+void AActor::RemoveComponent(TObjectPtr<UActorComponent> Component)
+{
+	if (!Component || !RootComponent)
+	{
+		return;
+	}
+
+	USceneComponent* SceneComponent = Cast<USceneComponent>(Component);
+	RootComponent->RemoveChild(SceneComponent);
+	OwnedComponents.erase(std::remove(OwnedComponents.begin(), OwnedComponents.end(), Component), OwnedComponents.end());
+
+	TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+	GEngine->GetCurrentLevel()->RemoveLevelPrimitiveComponent(PrimitiveComponent);
+
+	Component->SetOwner(nullptr);
+	delete Component.Get();
+	Component = nullptr;
 }
 
 void AActor::Tick(float DeltaSeconds)
