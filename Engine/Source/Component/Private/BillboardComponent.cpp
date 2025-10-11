@@ -1,5 +1,8 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Component/Public/BillboardComponent.h"
+
+#include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Manager/Asset/Public/AssetManager.h"
 
 IMPLEMENT_CLASS(UBillboardComponent, UPrimitiveComponent)
 
@@ -18,6 +21,22 @@ UBillboardComponent::~UBillboardComponent()
 {
     Sprite = nullptr;
     POwnerActor = nullptr;
+}
+
+void UBillboardComponent::SetSprite(ELightType LightType)
+{
+	// jft
+	if (BillboardSpriteOptions.size() == 0)
+	{
+		BillboardSpriteOptions = UAssetManager::GetInstance().GetBillboardSpriteOptions();
+	}
+
+	switch (LightType)
+	{
+	case ELightType::Spotlight:
+		SetSprite(BillboardSpriteOptions[0].Texture);
+		break;
+	}
 }
 
 void UBillboardComponent::SetSprite(UTexture* InTexture)

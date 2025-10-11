@@ -5,6 +5,7 @@
 #include "Component/Public/TextRenderComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Public/DecalComponent.h"
+#include "Component/Public/SpotLightComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Core/Public/BVHierarchy.h"
 #include "Editor/Public/Editor.h"
@@ -61,6 +62,7 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateDefaultShader();
 	CreateTextureShader();
 	CreateProjectionDecalShader();
+	CreateSpotlightShader();
 	CreateConstantBuffer();
 	CreateBillboardResources();
 
@@ -387,6 +389,38 @@ void URenderer::CreateProjectionDecalShader()
 	}
 }
 
+void URenderer::CreateSpotlightShader()
+{
+	ID3DBlob* SpotLightVSBlob;
+	ID3DBlob* SpotLightPSBlob;
+
+	D3DCompileFromFile(L"Asset/Shader/SpotlightShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&SpotLightVSBlob, nullptr);
+
+	GetDevice()->CreateVertexShader(SpotLightVSBlob->GetBufferPointer(),
+		SpotLightVSBlob->GetBufferSize(), nullptr, &SpotlightVertexShader);
+
+	D3DCompileFromFile(L"Asset/Shader/SpotlightShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&SpotLightPSBlob, nullptr);
+
+	GetDevice()->CreatePixelShader(SpotLightPSBlob->GetBufferPointer(),
+		SpotLightPSBlob->GetBufferSize(), nullptr, &SpotlightPixelShader);
+
+	D3D11_INPUT_ELEMENT_DESC SpotlightLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FNormalVertex, Position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FNormalVertex, Normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FNormalVertex, Color), D3D11_INPUT_PER_VERTEX_DATA, 0	},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FNormalVertex, TexCoord), D3D11_INPUT_PER_VERTEX_DATA, 0	}
+	};
+
+	GetDevice()->CreateInputLayout(SpotlightLayout, ARRAYSIZE(SpotlightLayout), SpotLightVSBlob->GetBufferPointer(),
+		SpotLightVSBlob->GetBufferSize(), &SpotlightInputLayout);
+
+	SpotLightVSBlob->Release();
+	SpotLightPSBlob->Release();
+}
+
 /**
  * @brief 래스터라이저 상태를 해제하는 함수
  */
@@ -418,10 +452,16 @@ void URenderer::ReleaseProjectionDecalShader()
 	SafeRelease(ProjectionDecalInputLayout);
 	SafeRelease(ProjectionDecalVertexShader);
 	SafeRelease(ProjectionDecalPixelShader);
-	SafeRelease(DisableDepthWriteDepthStencilState);
 	SafeRelease(ProjectionDecalBlendState);
 }
 
+void URenderer::ReleaseSpotlightShader()
+{
+	SafeRelease(SpotlightVertexShader);
+	SafeRelease(SpotlightInputLayout);
+	SafeRelease(SpotlightBlendState);
+	SafeRelease(SpotlightPixelShader);
+}
 /**
  * @brief Shader Release
  */
@@ -436,12 +476,8 @@ void URenderer::ReleaseDepthStencilState()
 {
 	SafeRelease(DefaultDepthStencilState);
 	SafeRelease(DisabledDepthStencilState);
+	SafeRelease(DisableDepthWriteDepthStencilState);
 
-	if (DisableDepthWriteDepthStencilState)
-	{
-		DisableDepthWriteDepthStencilState->Release();
-		DisableDepthWriteDepthStencilState = nullptr;
-	}
 	// 렌더 타겟을 초기화
 	if (GetDeviceContext())
 	{
@@ -565,6 +601,9 @@ void URenderer::RenderPrimitiveComponent(UPipeline& InPipeline, UPrimitiveCompon
 	case EPrimitiveType::Decal:
 		RenderPrimitiveLine(InPipeline, InPrimitiveComponent, InRasterizerState, InConstantBufferModels, InConstantBufferColor);
 		break;
+	case EPrimitiveType::Spotlight:
+		RenderPrimitiveLine(InPipeline, InPrimitiveComponent, InRasterizerState, InConstantBufferModels, InConstantBufferColor);
+		break;
 	case EPrimitiveType::StaticMesh:
 		RenderStaticMesh(InPipeline, Cast<UStaticMeshComponent>(InPrimitiveComponent), InRasterizerState, InConstantBufferModels, InConstantBufferMaterial);
 		break;
@@ -580,6 +619,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	TObjectPtr<UTextRenderComponent> TextRender = nullptr;
 	TArray<TObjectPtr<UBillboardComponent>> Billboards;
 	TArray<TObjectPtr<UDecalComponent>> Decals;
+	TArray<TObjectPtr<USpotLightComponent>> SpotLights;
 	TArray<TObjectPtr<UPrimitiveComponent>> PrimitivesToRenderByDecals;
 
 	for (size_t i = 0; i < InPrimitiveComponents.size(); ++i)
@@ -603,6 +643,10 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Decal)
 		{
 			Decals.push_back(Cast<UDecalComponent>(PrimitiveComponent));
+		}
+		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Spotlight)
+		{
+			SpotLights.push_back(Cast<USpotLightComponent>(PrimitiveComponent));
 		}
 		else if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::TextRender)
 		{
@@ -649,8 +693,18 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		}
 	}
 
+	for (UPrimitiveComponent* PrimitiveComponent : SpotLights)
+	{
+		FRenderState RenderState = PrimitiveComponent->GetRenderState();
+		ID3D11RasterizerState* LoadedRasterizerState = GetRasterizerState(RenderState);
+
+		RenderPrimitiveComponent(*Pipeline, PrimitiveComponent, LoadedRasterizerState, ConstantBufferModels, ConstantBufferColor, ConstantBufferMaterial);
+	}
+
 	// 3. 그 다음, 렌더링된 프리미티브 위에 데칼을 렌더링합니다.
 	RenderDecals(InCurrentCamera, Decals, PrimitivesToRenderByDecals);
+	RenderLights(InCurrentCamera, SpotLights, PrimitivesToRenderByDecals);
+
 
 	for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
 	{
@@ -991,6 +1045,73 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 			else
 			{
 				Pipeline->Draw(Primitive->GetNumVertices(), 0);
+			}
+		}
+	}
+}
+
+//jft
+void URenderer::RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<USpotLightComponent>>& InSpotlights,
+	const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives)
+{
+	if (InSpotlights.empty()) { return; }
+
+	// 1. 파이프라인을 light용으로 수정
+	FRenderState LightRenderState = {};
+	LightRenderState.CullMode = ECullMode::Back;
+	LightRenderState.FillMode = EFillMode::Solid;
+
+	FPipelineInfo PipelineInfo = {
+		SpotlightInputLayout, // just Spotlight for now
+		SpotlightVertexShader,
+		GetRasterizerState(LightRenderState),
+		DisableDepthWriteDepthStencilState,
+		SpotlightPixelShader,
+		SpotlightBlendState,
+	};
+
+	// 2. 모든 데칼 컴포넌트에 대해 반복합니다.
+	for (USpotLightComponent* Light : InSpotlights)
+	{
+		// 데칼이 보이지 않거나 바운딩 볼륨이 없으면 건너뜁니다.
+		if (!Light) { continue; }
+
+		Pipeline->UpdatePipeline(PipelineInfo);
+
+		// 3. 데칼의 월드 변환 역행렬을 계산하여 셰이더로 전달합니다.
+		FLightConstants LightData(Light->GetWorldTransformMatrix(), Light->GetWorldTransformMatrixInverse());
+		UpdateConstant(ConstantBufferSpotlight, LightData, 3, true, true);
+
+		// 데칼의 바운딩 볼륨을 가져옵니다.
+		const IBoundingVolume* LightBounds = Light->GetBoundingBox();
+
+		// 4. 화면에 보이는 모든 프리미티브와 데칼 볼륨의 충돌 검사를 수행합니다.
+		for (UPrimitiveComponent* Primitive : InVisiblePrimitives)
+		{
+			if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
+
+			// 데칼 액터의 시각화 컴포넌트에는 데칼을 적용하지 않도록 예외 처리합니다.
+			if (Primitive == Light) { continue; }
+
+			// AABB(Axis-Aligned Bounding Box) 교차 검사
+			if (LightBounds->Intersects(*Primitive->GetBoundingBox()))
+			{
+				// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
+				FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
+					Primitive->GetWorldTransformMatrixInverse().Transpose());
+				UpdateConstant(ConstantBufferModels, ModelConstants, 0, true, false);
+
+				// 프리미티브의 버텍스/인덱스 버퍼를 설정합니다.
+				Pipeline->SetVertexBuffer(Primitive->GetVertexBuffer(), sizeof(FNormalVertex));
+				if (Primitive->GetIndexBuffer() && Primitive->GetNumIndices() > 0)
+				{
+					Pipeline->SetIndexBuffer(Primitive->GetIndexBuffer(), 0);
+					Pipeline->DrawIndexed(Primitive->GetNumIndices(), 0, 0);
+				}
+				else
+				{
+					Pipeline->Draw(Primitive->GetNumVertices(), 0);
+				}
 			}
 		}
 	}
@@ -1522,6 +1643,17 @@ void URenderer::CreateConstantBuffer()
 
 		GetDevice()->CreateBuffer(&ProjectionDecalConstantBufferDescription, nullptr, &ConstantBufferProjectionDecal);
 	}
+
+	{
+		// jft : material size 아님!
+		D3D11_BUFFER_DESC SpotlightConstantBufferDescription = {};
+		SpotlightConstantBufferDescription.ByteWidth = sizeof(FMaterial) + 0xf & 0xfffffff0;
+		SpotlightConstantBufferDescription.Usage = D3D11_USAGE_DYNAMIC; // 매 프레임 CPU에서 업데이트
+		SpotlightConstantBufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		SpotlightConstantBufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+		GetDevice()->CreateBuffer(&SpotlightConstantBufferDescription, nullptr, &ConstantBufferSpotlight);
+	}
 }
 
 void URenderer::CreateBillboardResources()
@@ -1602,6 +1734,7 @@ void URenderer::ReleaseConstantBuffer()
 	SafeRelease(ConstantBufferMaterial);
 	SafeRelease(ConstantBufferProjectionDecal);
 	SafeRelease(ConstantBufferBatchLine);
+	SafeRelease(ConstantBufferSpotlight);
 }
 
 bool URenderer::UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const

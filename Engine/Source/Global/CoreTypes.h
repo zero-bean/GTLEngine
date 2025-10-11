@@ -42,6 +42,22 @@ private:
 	FDecalConstants() = delete;
 };
 
+
+struct FLightConstants
+{
+	FLightConstants(const FMatrix& InLightWorld, const FMatrix& InLightInverseWorld)
+	{
+		LightWorld = InLightWorld;
+		LightInverseWorld = InLightInverseWorld;
+	}
+
+	FMatrix LightInverseWorld;
+	FMatrix LightWorld;
+
+private:
+	FLightConstants() = delete;
+};
+
 struct FModelConstants
 {
 	FModelConstants(const FMatrix& InWorld, const FMatrix& InWorldInverseTranspose)
