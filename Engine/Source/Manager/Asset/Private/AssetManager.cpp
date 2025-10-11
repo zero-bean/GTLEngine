@@ -128,9 +128,6 @@ void UAssetManager::Initialize()
 	ID3D11PixelShader* PixelShader;
 	URenderer::GetInstance().CreatePixelShader(L"Asset/Shader/BatchLinePS.hlsl", &PixelShader);
 	PixelShaders.emplace(EShaderType::BatchLine, PixelShader);
-
-	// jft Load Textures, Cache
-	LoadAssets();
 }
 
 void UAssetManager::Release()
@@ -484,11 +481,6 @@ ID3D11InputLayout* UAssetManager::GetIputLayout(EShaderType Type)
 	return InputLayouts[Type];
 }
 
-// billboard cache
-TArray<FTextureOption> BillboardSpriteOptions;
-// decal cache
-TArray<FTextureOption> DecalTextureOptions;
-
 void UAssetManager::LoadAssets()
 {
 	// 빌보드 아이콘 로드
@@ -556,13 +548,21 @@ const FAABB& UAssetManager::GetStaticMeshAABB(FName InName)
 	return StaticMeshAABBs[InName];
 }
 
-const TArray<FTextureOption>& UAssetManager::GetBillboardSpriteOptions() const
+const TArray<FTextureOption>& UAssetManager::GetBillboardSpriteOptions()
 {
+	if (BillboardSpriteOptions.size() == 0)
+	{
+		LoadAssets();
+	}
 	return BillboardSpriteOptions;
 }
 
-const TArray<FTextureOption>& UAssetManager::GetDecalTextureOptions() const
+const TArray<FTextureOption>& UAssetManager::GetDecalTextureOptions()
 {
+	if (DecalTextureOptions.size() == 0)
+	{
+		LoadAssets();
+	}
 	return DecalTextureOptions;
 }
 

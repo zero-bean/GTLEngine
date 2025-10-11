@@ -33,5 +33,5 @@ private:
 
 	//jft
 	// billboard cache
-	TArray<FTextureOption>& BillboardSpriteOptions;
+	TArray<FTextureOption> BillboardSpriteOptions;
 };

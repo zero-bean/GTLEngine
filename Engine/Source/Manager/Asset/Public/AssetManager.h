@@ -71,8 +71,8 @@ public:
 	const FAABB& GetStaticMeshAABB(FName InName);
 
 	// jft Texture Cache
-	const TArray<FTextureOption>& GetBillboardSpriteOptions() const;
-	const TArray<FTextureOption>& GetDecalTextureOptions() const;
+	const TArray<FTextureOption>& GetBillboardSpriteOptions();
+	const TArray<FTextureOption>& GetDecalTextureOptions();
 
 private:
 	// Vertex Resource
