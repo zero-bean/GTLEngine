@@ -34,6 +34,7 @@
     <FxCompile Include="Asset\Shader\ProjectionDecal.hlsl">
       <Filter>Asset\Shader</Filter>
     </FxCompile>
+    <FxCompile Include="Asset\Shader\SpotlightShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -361,7 +362,6 @@
     <ClCompile Include="Source\Render\Renderer\Private\OcclusionRenderer.cpp" />
     <ClCompile Include="Source\Editor\Private\FrustumCull.cpp" />
     <ClCompile Include="Source\Manager\Asset\Private\LODMaker.cpp" />
-    <ClCompile Include="Source\Manager\BVH\private\BVHManager.cpp" />
     <ClCompile Include="Source\Core\Private\WindowsBinReader.cpp">
       <Filter>Source\Core\Private</Filter>
     </ClCompile>
@@ -378,6 +378,15 @@
     </ClCompile>
     <ClCompile Include="Source\Actor\Private\DecalActor.cpp">
       <Filter>Source\Actor\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Private\BVHierarchy.cpp" />
+    <ClCompile Include="Source\Core\Private\TriangleBVH.cpp" />
+    <ClCompile Include="Source\Physics\Private\OBB.cpp" />
+    <ClCompile Include="Source\Component\Private\LightComponent.cpp">
+      <Filter>Source\Component\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Component\Private\SpotLightComponent.cpp">
+      <Filter>Source\Component\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -753,7 +762,6 @@
     <ClInclude Include="Source\Render\Renderer\Public\OcclusionRenderer.h" />
     <ClInclude Include="Source\Editor\Public\FrustumCull.h" />
     <ClInclude Include="Source\Manager\Asset\Public\LODMaker.h" />
-    <ClInclude Include="Source\Manager\BVH\public\BVHManager.h" />
     <ClInclude Include="Source\Physics\Public\RayIntersection.h" />
     <ClInclude Include="Source\Core\Public\DuplicatedDataReader.h" />
     <ClInclude Include="Source\Editor\Public\EditorEngine.h" />
@@ -769,6 +777,15 @@
     </ClInclude>
     <ClInclude Include="Source\Actor\Public\DecalActor.h">
       <Filter>Source\Actor\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Public\BVHierarchy.h" />
+    <ClInclude Include="Source\Core\Public\TriangleBVH.h" />
+    <ClInclude Include="Source\Physics\Public\OBB.h" />
+    <ClInclude Include="Source\Component\Public\LightComponent.h">
+      <Filter>Source\Component\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Component\Public\SpotLightComponent.h">
+      <Filter>Source\Component\Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
