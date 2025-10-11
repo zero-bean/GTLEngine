@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Manager/BVH/public/BVHManager.h"
+#include "Core/Public/BVHierarchy.h"
 
 #include "Editor/Public/FrustumCull.h"
 
@@ -8,19 +8,19 @@
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Component/Mesh/Public/StaticMesh.h"
 
-IMPLEMENT_SINGLETON_CLASS_BASE(UBVHManager)
+IMPLEMENT_SINGLETON_CLASS_BASE(UBVHierarchy)
 
-UBVHManager::UBVHManager() : Boxes()
+UBVHierarchy::UBVHierarchy() : Boxes()
 {
 }
-UBVHManager::~UBVHManager() = default;
+UBVHierarchy::~UBVHierarchy() = default;
 
-void UBVHManager::Initialize()
+void UBVHierarchy::Initialize()
 {
 
 }
 
-void UBVHManager::Build(const TArray<FBVHPrimitive>& InPrimitives, int MaxLeafSize)
+void UBVHierarchy::Build(const TArray<FBVHPrimitive>& InPrimitives, int MaxLeafSize)
 {
 	Nodes.clear();
 	Primitives = InPrimitives;
@@ -35,7 +35,7 @@ void UBVHManager::Build(const TArray<FBVHPrimitive>& InPrimitives, int MaxLeafSi
 	RootIndex = BuildRecursive(0, static_cast<int>(Primitives.size()), MaxLeafSize);
 }
 
-int UBVHManager::BuildRecursive(int Start, int Count, int MaxLeafSize)
+int UBVHierarchy::BuildRecursive(int Start, int Count, int MaxLeafSize)
 {
 	FBVHNode Node;
 
@@ -111,7 +111,7 @@ int UBVHManager::BuildRecursive(int Start, int Count, int MaxLeafSize)
 	return NodeIndex;
 }
 
-void UBVHManager::Refit()
+void UBVHierarchy::Refit()
 {
 	if (Nodes.empty() || Primitives.empty())
 	{
@@ -147,7 +147,7 @@ void UBVHManager::Refit()
 }
 
 
-FAABB UBVHManager::RefitRecursive(int NodeIndex)
+FAABB UBVHierarchy::RefitRecursive(int NodeIndex)
 {
 	FBVHNode& Node = Nodes[NodeIndex];
 
@@ -177,7 +177,7 @@ FAABB UBVHManager::RefitRecursive(int NodeIndex)
 	}
 }
 
-bool UBVHManager::Raycast(const FRay& InRay, UPrimitiveComponent*& HitComponent, float& HitT) const
+bool UBVHierarchy::Raycast(const FRay& InRay, UPrimitiveComponent*& HitComponent, float& HitT) const
 {
     HitComponent = nullptr;
 
@@ -199,7 +199,7 @@ bool UBVHManager::Raycast(const FRay& InRay, UPrimitiveComponent*& HitComponent,
     return true;
 }
 
-void UBVHManager::RaycastRecursive(int NodeIndex, const FRay& InRay, float& OutClosestHit, int& OutHitObject) const
+void UBVHierarchy::RaycastRecursive(int NodeIndex, const FRay& InRay, float& OutClosestHit, int& OutHitObject) const
 {
     const FBVHNode& Node = Nodes[NodeIndex];
 
@@ -257,7 +257,7 @@ void UBVHManager::RaycastRecursive(int NodeIndex, const FRay& InRay, float& OutC
     }
 }
 
-void UBVHManager::RaycastIterative(const FRay& InRay, float& OutClosestHit, int& OutHitObject) const
+void UBVHierarchy::RaycastIterative(const FRay& InRay, float& OutClosestHit, int& OutHitObject) const
 {
     struct FStackEntry
     {
@@ -373,7 +373,66 @@ void UBVHManager::RaycastIterative(const FRay& InRay, float& OutClosestHit, int&
         }
     }
 }
-void UBVHManager::ConvertComponentsToBVHPrimitives(
+
+bool UBVHierarchy::CheckOBBoxCollision(const FOBB& InOBB, TArray<UPrimitiveComponent*>& HitComponents) const
+{
+	if (RootIndex < 0 || Nodes.empty())
+	{
+		return false;
+	}
+
+	TArray<int> HitObjectIndexes = {};
+	FAABB AABB = InOBB.ToAABB();
+
+	CheckOBBoxCollisionRecursive(RootIndex, InOBB, AABB, HitObjectIndexes);
+	if (HitObjectIndexes.empty())
+	{
+		return false;
+	}
+
+	for (int index : HitObjectIndexes)
+	{
+		HitComponents.push_back(Primitives[index].Primitive);
+	}
+	return true;
+}
+
+void UBVHierarchy::CheckOBBoxCollisionRecursive(int NodeIndex, const FOBB& InOBB, const FAABB& InAABB, TArray<int>& OutHitObjects) const
+{
+	const FBVHNode& Node = Nodes[NodeIndex];
+
+	if (!InAABB.Intersects(Node.Bounds))
+	{
+		return;
+	}
+
+	if (Node.bIsLeaf)
+	{
+		for (int i = 0; i < Node.Count; ++i)
+		{
+			const FBVHPrimitive& Prim = Primitives[Node.Start + i];
+			if (!Prim.Primitive || !Prim.Primitive->IsVisible())
+			{
+				continue;
+			}
+
+			if (InAABB.Intersects(Prim.Bounds))
+			{
+				if (InOBB.Intersects(Prim.Bounds))
+				{
+					OutHitObjects.push_back(Node.Start + i);
+				}
+			}
+		}
+	}
+	else
+	{
+		CheckOBBoxCollisionRecursive(Node.LeftChild, InOBB, InAABB, OutHitObjects);
+		CheckOBBoxCollisionRecursive(Node.RightChild, InOBB, InAABB, OutHitObjects);
+	}
+}
+
+void UBVHierarchy::ConvertComponentsToBVHPrimitives(
 	const TArray<TObjectPtr<UPrimitiveComponent>>& InComponents, TArray<FBVHPrimitive>& OutPrimitives)
 {
 	OutPrimitives.clear();
@@ -408,7 +467,7 @@ void UBVHManager::ConvertComponentsToBVHPrimitives(
 	}
 }
 
-void UBVHManager::FrustumCull(FFrustumCull& InFrustum, TArray<TObjectPtr<UPrimitiveComponent>>& OutVisibleComponents)
+void UBVHierarchy::FrustumCull(FFrustumCull& InFrustum, TArray<TObjectPtr<UPrimitiveComponent>>& OutVisibleComponents)
 {
 	OutVisibleComponents.clear();
 
@@ -421,7 +480,7 @@ void UBVHManager::FrustumCull(FFrustumCull& InFrustum, TArray<TObjectPtr<UPrimit
 	TraverseForCulling(RootIndex, InFrustum, ToBaseType(EFrustumPlane::All), OutVisibleComponents);
 }
 
-void UBVHManager::CollectNodeBounds(TArray<FAABB>& OutBounds) const
+void UBVHierarchy::CollectNodeBounds(TArray<FAABB>& OutBounds) const
 {
 	OutBounds.clear();
 	OutBounds.reserve(Nodes.size());
@@ -432,7 +491,7 @@ void UBVHManager::CollectNodeBounds(TArray<FAABB>& OutBounds) const
 	}
 }
 
-void UBVHManager::TraverseForCulling(uint32 NodeIndex, FFrustumCull& InFrustum, uint32 InMask,
+void UBVHierarchy::TraverseForCulling(uint32 NodeIndex, FFrustumCull& InFrustum, uint32 InMask,
 	TArray<TObjectPtr<UPrimitiveComponent>>& OutVisibleComponents)
 {
 	// 목적: 현재 노드를 검사하고, 그 결과에 따라 자식 노드로 재귀 호출할지 결정한다.
@@ -542,7 +601,7 @@ void UBVHManager::TraverseForCulling(uint32 NodeIndex, FFrustumCull& InFrustum, 
 
 }
 
-void UBVHManager::AddAllPrimitives(uint32 NodeIndex, TArray<TObjectPtr<UPrimitiveComponent>>& OutVisibleComponents)
+void UBVHierarchy::AddAllPrimitives(uint32 NodeIndex, TArray<TObjectPtr<UPrimitiveComponent>>& OutVisibleComponents)
 {
 	if (NodeIndex < 0 || NodeIndex >= Nodes.size())
 	{

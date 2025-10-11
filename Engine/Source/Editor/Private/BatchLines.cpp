@@ -49,17 +49,41 @@ void UBatchLines::UpdateUGridVertices(const float newCellSize)
 	bChangedVertices = true;
 }
 
-void UBatchLines::UpdateBoundingBoxVertices(const FAABB& newBoundingBoxInfo)
+void UBatchLines::UpdateBoundingBoxVertices(const IBoundingVolume& newBoundingVolumeInfo)
 {
-	FAABB curBoudingBoxInfo = BoundingBoxLines.GetRenderedBoxInfo();
-	if (newBoundingBoxInfo.Min == curBoudingBoxInfo.Min && newBoundingBoxInfo.Max == curBoudingBoxInfo.Max)
+	switch (newBoundingVolumeInfo.GetType())
 	{
+	case EBoundingVolumeType::AABB:
+		{
+			const FAABB& box = static_cast<const FAABB&>(newBoundingVolumeInfo);
+			if (BoundingBoxLines.GetRenderedAABBoxInfo().Min == box.Min && BoundingBoxLines.GetRenderedAABBoxInfo().Max == box.Max)
+				return;
+
+			BoundingBoxLines.UpdateVertices(box);
+			BoundingBoxLines.MergeVerticesAt(Vertices, Grid.GetNumVertices());
+			bChangedVertices = true;
+			break;
+		}
+
+	case EBoundingVolumeType::OBB:
+		{
+			const FOBB& box = static_cast<const FOBB&>(newBoundingVolumeInfo);
+			// Early-out if unchanged
+			if (BoundingBoxLines.GetRenderedOBBoxInfo().Center  == box.Center &&
+				BoundingBoxLines.GetRenderedOBBoxInfo().Extents == box.Extents &&
+				FMatrix::MatrixNearEqual(BoundingBoxLines.GetRenderedOBBoxInfo().Orientation, box.Orientation))
+				return;
+
+			BoundingBoxLines.UpdateVertices(box);
+			BoundingBoxLines.MergeVerticesAt(Vertices, Grid.GetNumVertices());
+			bChangedVertices = true;
+			break;
+		}
+
+	default:
+		// None / Sphere not supported in this visualizer (yet)
 		return;
 	}
-
-	BoundingBoxLines.UpdateVertices(newBoundingBoxInfo);
-	BoundingBoxLines.MergeVerticesAt(Vertices, Grid.GetNumVertices());
-	bChangedVertices = true;
 }
 
 void UBatchLines::UpdateBatchLineVertices(const float newCellSize, const FAABB& newBoundingBoxInfo)

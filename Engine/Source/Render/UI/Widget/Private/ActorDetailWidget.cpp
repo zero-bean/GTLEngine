@@ -20,7 +20,7 @@
 #include "Global/Function.h"
 #include "Core/Public/ObjectIterator.h"
 #include "Texture/Public/Texture.h"
-#include "Manager/BVH/Public/BVHManager.h"
+#include "Core/Public/BVHierarchy.h"
 #include "Core/Public/Object.h"
 #include "Manager/Asset/Public/AssetManager.h"
 
@@ -86,28 +86,38 @@ void UActorDetailWidget::LoadAssets()
 {
 	if (bAssetsLoaded) { return; }
 
-	// 빌보드 아이콘 로드
-	const std::filesystem::path IconDirectory = std::filesystem::absolute(std::filesystem::path("Asset/Icon"));
-	if (std::filesystem::exists(IconDirectory))
-	{
-		UAssetManager& AssetManager = UAssetManager::GetInstance();
-		for (const auto& Entry : std::filesystem::directory_iterator(IconDirectory))
-		{
-			if (!Entry.is_regular_file() || Entry.path().extension() != ".png") continue;
+    // 빌보드 아이콘 로드
+    const std::filesystem::path IconDirectory = std::filesystem::absolute(std::filesystem::path("Asset/Icon"));
+    if (std::filesystem::exists(IconDirectory))
+    {
+        UAssetManager& AssetManager = UAssetManager::GetInstance();
+        for (const auto& Entry : std::filesystem::directory_iterator(IconDirectory))
+        {
+            if (!Entry.is_regular_file()) continue;
 
-			FString FilePath = Entry.path().generic_string();
-			FString DisplayName = Entry.path().stem().string();
+            FString Extension = Entry.path().extension().string();
+            std::transform(Extension.begin(), Extension.end(), Extension.begin(),
+                [](unsigned char InChar) { return static_cast<char>(std::tolower(InChar)); });
 
-			if (UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName))
-			{
-				BillboardSpriteOptions.push_back({ DisplayName, FilePath, TObjectPtr(Texture) });
-			}
-		}
-		std::sort(BillboardSpriteOptions.begin(), BillboardSpriteOptions.end(),
-			[](const FBillboardSpriteOption& A, const FBillboardSpriteOption& B) {
-				return A.DisplayName < B.DisplayName;
-			});
-	}
+            // Support common image formats; handle upper/lower-case extensions
+            if (Extension != ".png" && Extension != ".jpg" && Extension != ".jpeg")
+            {
+                continue;
+            }
+
+            FString FilePath = Entry.path().generic_string();
+            FString DisplayName = Entry.path().stem().string();
+
+            if (UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName))
+            {
+                BillboardSpriteOptions.push_back({ DisplayName, FilePath, TObjectPtr(Texture) });
+            }
+        }
+        std::sort(BillboardSpriteOptions.begin(), BillboardSpriteOptions.end(),
+            [](const FBillboardSpriteOption& A, const FBillboardSpriteOption& B) {
+                return A.DisplayName < B.DisplayName;
+            });
+    }
 
 	// 데칼 텍스처 로드
 	const std::filesystem::path DecalTextureDirectory = std::filesystem::absolute(std::filesystem::path("Asset/Texture/"));
@@ -154,7 +164,7 @@ void UActorDetailWidget::ReleaseAssets()
 			Option.Texture = nullptr;
 		}
 	}
-	BillboardSpriteOptions.clear(); 
+	BillboardSpriteOptions.clear();
 
 	// DecalTextureOptions에 있는 UTexture 객체들을 순회하며 메모리 해제
 	for (FTextureOption& Option : DecalTextureOptions)
@@ -165,7 +175,7 @@ void UActorDetailWidget::ReleaseAssets()
 			Option.Texture = nullptr;
 		}
 	}
-	DecalTextureOptions.clear(); 
+	DecalTextureOptions.clear();
 
 	bAssetsLoaded = false; // 애셋이 해제되었음을 표시
 	UE_LOG("ActorDetailWidget: Released all static assets.");
@@ -309,6 +319,8 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		if (ImGui::MenuItem("Decal Component"))
 		{
 			AddComponentToActor(new UDecalComponent());
+			InSelectedActor->SetActorTickEnabled(true);
+			InSelectedActor->SetTickInEditor(true);
 		}
 		ImGui::Separator();
 		if (ImGui::MenuItem("Cube Component"))
@@ -684,7 +696,7 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 	}
 	if (bTransformChanged && InComponent->IsA(UPrimitiveComponent::StaticClass()))
 	{
-		UBVHManager::GetInstance().Refit();
+		UBVHierarchy::GetInstance().Refit();
 	}
 }
 

@@ -6,6 +6,7 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Public/DecalComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Core/Public/BVHierarchy.h"
 #include "Editor/Public/Editor.h"
 #include "Editor/Public/EditorEngine.h"
 #include "Editor/Public/Viewport.h"
@@ -20,6 +21,7 @@
 #include "Source/Component/Mesh/Public/StaticMesh.h"
 
 #include "Render/Renderer/Public/OcclusionRenderer.h"
+#include "Physics/Public/AABB.h"
 
 #include "Core/Public/ScopeCycleCounter.h"
 
@@ -260,7 +262,7 @@ void URenderer::CreateDepthStencilState()
 
 	ProjectionDecalDescription.StencilEnable = FALSE;
 
-	GetDevice()->CreateDepthStencilState(&ProjectionDecalDescription, &ProjectionDecalDepthState);
+	GetDevice()->CreateDepthStencilState(&ProjectionDecalDescription, &DisableDepthWriteDepthStencilState);
 }
 
 /**
@@ -397,7 +399,7 @@ void URenderer::ReleaseProjectionDecalShader()
 	SafeRelease(ProjectionDecalInputLayout);
 	SafeRelease(ProjectionDecalVertexShader);
 	SafeRelease(ProjectionDecalPixelShader);
-	SafeRelease(ProjectionDecalDepthState);
+	SafeRelease(DisableDepthWriteDepthStencilState);
 	SafeRelease(ProjectionDecalBlendState);
 }
 
@@ -849,6 +851,55 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 	// 0. 데칼이 없으면 함수를 종료합니다.
 	if (InDecals.empty()) { return; }
 
+    // Helper to quickly test if decal OBB projects inside the view. Conservative and cheap.
+    auto IsDecalRoughlyOnScreen = [&](const FOBB& OBB) -> bool
+    {
+        const FViewProjConstants& VP = InCurrentCamera->GetFViewProjConstants();
+        FMatrix ViewProj = VP.View * VP.Projection;
+
+        // OBB axes (world space)
+        const FVector ax(OBB.Orientation.Data[0][0], OBB.Orientation.Data[0][1], OBB.Orientation.Data[0][2]);
+        const FVector ay(OBB.Orientation.Data[1][0], OBB.Orientation.Data[1][1], OBB.Orientation.Data[1][2]);
+        const FVector az(OBB.Orientation.Data[2][0], OBB.Orientation.Data[2][1], OBB.Orientation.Data[2][2]);
+
+        const FVector e = OBB.Extents;
+
+        FVector corners[8];
+        int ci = 0;
+        for (int sx : { -1, 1 })
+        for (int sy : { -1, 1 })
+        for (int sz : { -1, 1 })
+        {
+            corners[ci++] = OBB.Center + ax * (e.X * (float)sx) + ay * (e.Y * (float)sy) + az * (e.Z * (float)sz);
+        }
+
+        float ndcMinX = +FLT_MAX, ndcMinY = +FLT_MAX;
+        float ndcMaxX = -FLT_MAX, ndcMaxY = -FLT_MAX;
+        bool anyInFront = false;
+
+        for (int i = 0; i < 8; ++i)
+        {
+            FVector4 p = FVector4(corners[i].X, corners[i].Y, corners[i].Z, 1.0f);
+            p = p * ViewProj;
+            if (p.W <= 0.0f) { continue; }
+            anyInFront = true;
+            const float invW = 1.0f / p.W;
+            const float x = p.X * invW;
+            const float y = p.Y * invW;
+            ndcMinX = std::min(ndcMinX, x);
+            ndcMaxX = std::max(ndcMaxX, x);
+            ndcMinY = std::min(ndcMinY, y);
+            ndcMaxY = std::max(ndcMaxY, y);
+        }
+
+        if (!anyInFront) return false; // completely behind camera
+
+        // Test overlap with the NDC clip rectangle [-1,1]^2
+        if (ndcMaxX < -1.0f || ndcMinX > 1.0f) return false;
+        if (ndcMaxY < -1.0f || ndcMinY > 1.0f) return false;
+        return true;
+    };
+
 	// 1. 파이프라인을 데칼 렌더링용으로 설정합니다.
 	FRenderState DecalRenderState = {};
 	DecalRenderState.CullMode = ECullMode::Back;
@@ -858,7 +909,7 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		ProjectionDecalInputLayout,
 		ProjectionDecalVertexShader,
 		GetRasterizerState(DecalRenderState),
-		ProjectionDecalDepthState,
+		DisableDepthWriteDepthStencilState,
 		ProjectionDecalPixelShader,
 		ProjectionDecalBlendState,
 	};
@@ -884,35 +935,38 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		UpdateConstant(ConstantBufferProjectionDecal, DecalData, 3, true, true);
 
 		// 데칼의 바운딩 볼륨을 가져옵니다.
-		const IBoundingVolume* DecalBounds = Decal->GetBoundingBox();
+		const FOBB* DecalBounds = Decal->GetProjectionBox();
+
+        // Quick off-screen reject for decal to avoid BVH query cost
+        if (!DecalBounds || !IsDecalRoughlyOnScreen(*DecalBounds))
+        {
+            continue;
+        }
 
 		// 4. 화면에 보이는 모든 프리미티브와 데칼 볼륨의 충돌 검사를 수행합니다.
-		for (UPrimitiveComponent* Primitive : InVisiblePrimitives)
+		TArray<UPrimitiveComponent*> HitComponents;
+		UBVHierarchy::GetInstance().CheckOBBoxCollision(*DecalBounds, HitComponents);
+		for (UPrimitiveComponent* Primitive : HitComponents)
 		{
-			if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
-
 			// 데칼 액터의 시각화 컴포넌트에는 데칼을 적용하지 않도록 예외 처리합니다.
-			if (Primitive == Decal) { continue; }
+			if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
+			if (Primitive->IsA(UDecalComponent::StaticClass())) { continue; }
 
-			// AABB(Axis-Aligned Bounding Box) 교차 검사
-			if (DecalBounds->Intersects(*Primitive->GetBoundingBox()))
+			// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
+			FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
+				Primitive->GetWorldTransformMatrixInverse().Transpose());
+			UpdateConstant(ConstantBufferModels, ModelConstants, 0, true, false);
+
+			// 프리미티브의 버텍스/인덱스 버퍼를 설정합니다.
+			Pipeline->SetVertexBuffer(Primitive->GetVertexBuffer(), sizeof(FNormalVertex));
+			if (Primitive->GetIndexBuffer() && Primitive->GetNumIndices() > 0)
 			{
-				// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
-				FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
-					Primitive->GetWorldTransformMatrixInverse().Transpose());
-				UpdateConstant(ConstantBufferModels, ModelConstants, 0, true, false);
-
-				// 프리미티브의 버텍스/인덱스 버퍼를 설정합니다.
-				Pipeline->SetVertexBuffer(Primitive->GetVertexBuffer(), sizeof(FNormalVertex));
-				if (Primitive->GetIndexBuffer() && Primitive->GetNumIndices() > 0)
-				{
-					Pipeline->SetIndexBuffer(Primitive->GetIndexBuffer(), 0);
-					Pipeline->DrawIndexed(Primitive->GetNumIndices(), 0, 0);
-				}
-				else
-				{
-					Pipeline->Draw(Primitive->GetNumVertices(), 0);
-				}
+				Pipeline->SetIndexBuffer(Primitive->GetIndexBuffer(), 0);
+				Pipeline->DrawIndexed(Primitive->GetNumIndices(), 0, 0);
+			}
+			else
+			{
+				Pipeline->Draw(Primitive->GetNumVertices(), 0);
 			}
 		}
 	}
@@ -1045,7 +1099,7 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 
 	FRenderState BillboardRenderState = InBillboardComp->GetRenderState();
 	ID3D11RasterizerState* RasterizerState = GetRasterizerState(BillboardRenderState);
-	ID3D11DepthStencilState* DepthStencilState = DisableDepthWriteDepthStencilState;
+	ID3D11DepthStencilState* DepthStencilState = DefaultDepthStencilState;
 
 	if (!RasterizerState)
 	{
@@ -1065,7 +1119,8 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 	Pipeline->UpdatePipeline(PipelineInfo);
 
 	UpdateConstant(ConstantBufferModels, ModelMatrix, 0, true, false);
-	UpdateConstant(ConstantBufferModels, ConstantBufferViewProj, 1, true, false);
+	Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
+	//UpdateConstant(ConstantBufferViewProj, ConstantBufferViewProj, 1, true, false);
 
 	constexpr uint32 MATERIAL_FLAG_DIFFUSE_MAP = 1 << 0;
 	FMaterialConstants MaterialConstants = {};
@@ -1124,7 +1179,9 @@ void URenderer::RenderPrimitiveDefault(UPipeline& InPipeline, UPrimitiveComponen
 
     // Update pipeline buffers
 	UpdateConstant(InConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true, false);
+	// [수정] 새로운 UpdateConstantBuffer 함수 사용 (색상은 슬롯 2번)
 	UpdateConstant(InConstantBufferColor, InPrimitiveComp->GetColor(), 2, false, true);
+
 
     // Bind vertex buffer
     InPipeline.SetVertexBuffer(InPrimitiveComp->GetVertexBuffer(), Stride);

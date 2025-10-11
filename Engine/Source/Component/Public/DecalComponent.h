@@ -1,5 +1,6 @@
 #pragma once
 #include "PrimitiveComponent.h"
+#include "Physics/Public/OBB.h"
 
 namespace json { class JSON; }
 using JSON = json::JSON;
@@ -15,13 +16,16 @@ class UDecalComponent : public UPrimitiveComponent
 public:
 	UDecalComponent();
 	virtual ~UDecalComponent();
+	void TickComponent(float DeltaSeconds) override;
 
 	void SetDecalMaterial(UMaterial* InMaterial);
 	UMaterial* GetDecalMaterial() const;
+	FOBB* GetProjectionBox() const { return ProjectionBox; }
 
 	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
 private:
 	UMaterial* DecalMaterial;
+	FOBB* ProjectionBox;
 };

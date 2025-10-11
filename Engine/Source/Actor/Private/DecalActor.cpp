@@ -8,11 +8,14 @@ ADecalActor::ADecalActor()
 {
 	UDecalComponent* DecalComponent = CreateDefaultSubobject<UDecalComponent>(FName("DecalComponent"));
 	SetRootComponent(DecalComponent);
+
+	SetActorTickEnabled(true);
+	SetTickInEditor(true);
 }
 
 ADecalActor::~ADecalActor()
 {
-	
+
 }
 
 UDecalComponent* ADecalActor::GetDecalComponent() const

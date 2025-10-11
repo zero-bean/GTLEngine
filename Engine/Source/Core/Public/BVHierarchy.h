@@ -6,6 +6,7 @@
 #include "Editor/Public/BatchLines.h"
 #include "Editor/Public/ObjectPicker.h"
 #include "Physics/Public/AABB.h"
+#include "Physics/Public/OBB.h"
 
 class UStaticMesh;
 struct FBVHNode
@@ -41,21 +42,22 @@ struct FBVHPrimitive
 
 class FFrustumCull;
 
-class UBVHManager : UObject
+class UBVHierarchy : UObject
 {
 	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(UBVHManager, UObject)
+	DECLARE_SINGLETON_CLASS(UBVHierarchy, UObject)
 
 public:
 	void Initialize();
 
 	void Build(const TArray<FBVHPrimitive>& InPrimitives, int MaxLeafSize = 5);
-	// void QueryFrustum(const Frustum& frustum, TArray<int>& outVisible) const;
-	bool Raycast(const FRay& InRay, UPrimitiveComponent*& HitComponent, float& HitT) const;
 	void Refit();
-	bool IsDebugDrawEnabled() const { return bDebugDrawEnabled; }
+
+	bool Raycast(const FRay& InRay, UPrimitiveComponent*& HitComponent, float& HitT) const;
+	bool CheckOBBoxCollision(const FOBB& InOBB, TArray<UPrimitiveComponent*>& HitComponents) const;
+
 	void ConvertComponentsToBVHPrimitives(const TArray<TObjectPtr<UPrimitiveComponent>>& InComponents, TArray<FBVHPrimitive>& OutPrimitives);
-	[[nodiscard]] const TArray<FBVHNode>& GetNodes() const { return Nodes; }
+	const TArray<FBVHNode>& GetNodes() const { return Nodes; }
 	void FrustumCull(FFrustumCull& InFrustum, TArray<TObjectPtr<UPrimitiveComponent>>& OutVisibleComponents);
 
 	TArray<FAABB>& GetBoxes() { return Boxes; }
@@ -63,9 +65,12 @@ public:
 private:
 	int BuildRecursive(int Start, int Count, int MaxLeafSize);
 	FAABB RefitRecursive(int NodeIndex);
-	// void QueryRecursive(int nodeIdx, const Frustum& frustum, TArray<int>& outVisible) const;
+
 	void RaycastIterative(const FRay& InRay, float& OutClosestHit, int& OutHitObject) const;
 	void RaycastRecursive(int NodeIndex, const FRay& InRay, float& OutClosestHit, int& OutHitObject) const;
+
+	void CheckOBBoxCollisionRecursive(int NodeIndex, const FOBB& InOBB, const FAABB& InAABB, TArray<int>& OutHitObjects) const;
+
 	void CollectNodeBounds(TArray<FAABB>& OutBounds) const;
 	void TraverseForCulling(uint32 NodeIndex, FFrustumCull& InFrustum, uint32 InMask, TArray<TObjectPtr<UPrimitiveComponent>>& OutVisibleComponents);
 	void AddAllPrimitives(uint32 NodeIndex, TArray<TObjectPtr<UPrimitiveComponent>>& OutVisibleComponents);
@@ -75,7 +80,6 @@ private:
 	TArray<FBVHNode> Nodes;
 	TArray<FBVHPrimitive> Primitives;
 	int RootIndex = -1;
-	bool bDebugDrawEnabled = true;
 
 	TArray<FAABB> Boxes;
 };
