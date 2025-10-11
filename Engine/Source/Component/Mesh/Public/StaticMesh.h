@@ -4,6 +4,7 @@
 #include "Core/Public/ObjectPtr.h" // TObjectPtr 사용
 #include "Global/CoreTypes.h"        // TArray 등
 #include "Physics/Public/AABB.h"
+#include "Core/Public/TriangleBVH.h"
 
 // 전방 선언: FStaticMesh의 전체 정의를 포함할 필요 없이 포인터만 사용
 struct FMeshSection
@@ -12,71 +13,6 @@ struct FMeshSection
 	uint32 IndexCount;
 	uint32 MaterialSlot;
 };
-
-struct FTriangleBVHPrimitive
-{
-	FAABB Bounds;
-	FVector Center;
-	uint32 Indices[3];
-
-	// Precomputed for fast intersection in *model space*
-	FVector V0;   // Vertices[Indices[0]].Position
-	FVector E0;   // V1 - V0
-	FVector E1;   // V2 - V0
-};
-
-struct FTriangleBVHNode
-{
-	FAABB Bounds;
-	int32 LeftChild = -1;
-	int32 RightChild = -1;
-	int32 Start = 0;
-	int32 Count = 0;
-	bool bIsLeaf = false;
-};
-
-static constexpr float MT_EPS = 1e-8f;
-
-FORCEINLINE bool RayHitTriangle_MT(
-	const FRay& ray,           // model-space
-	const FVector& V0,
-	const FVector& E0,         // V1 - V0
-	const FVector& E1,         // V2 - V0
-	float tMax,                // current closest t (for pruning)
-	float& outT)
-{
-	FVector rayOrigin = FVector(ray.Origin.X, ray.Origin.Y, ray.Origin.Z);
-	FVector rayDirection = FVector(ray.Direction.X, ray.Direction.Y, ray.Direction.Z);
-
-	// pvec = D x E1
-	const FVector pvec = rayDirection.Cross(E1);
-	const float det = E0.Dot(pvec);
-
-	// Cull near-degenerate triangles, accept both sides (no backface cull).
-	if (fabsf(det) < MT_EPS) return false;
-	const float invDet = 1.0f / det;
-
-	// tvec = O - V0
-	const FVector tvec = rayOrigin - V0;
-
-	// u = dot(tvec, pvec) * invDet
-	const float u = (tvec.Dot(pvec)) * invDet;
-	if (u < 0.0f || u > 1.0f) return false;
-
-	// qvec = tvec x E0
-	const FVector qvec = tvec.Cross(E0);
-
-	// v = dot(D, qvec) * invDet
-	const float v = (rayDirection.Dot(qvec)) * invDet;
-	if (v < 0.0f || u + v > 1.0f) return false;
-
-	// t = dot(E1, qvec) * invDet
-	const float t = (E1.Dot(qvec)) * invDet;
-	if (t <= 0.0f || t >= tMax) return false;
-
-	outT = t;
-	return true;
-}
 
 
 // Cooked Data

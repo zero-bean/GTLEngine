@@ -233,7 +233,6 @@ void UBVHierarchy::RaycastRecursive(int NodeIndex, const FRay& InRay, float& Out
                 FRay ModelRay;
                 ModelRay.Origin = InRay.Origin * Prim.WorldToModel;
                 ModelRay.Direction = InRay.Direction * Prim.WorldToModel;
-                ModelRay.Direction.Normalize();
 
                 bHitPrimitive = Prim.StaticMesh->RaycastTriangleBVH(ModelRay, candidateDistance);
             }
@@ -246,7 +245,6 @@ void UBVHierarchy::RaycastRecursive(int NodeIndex, const FRay& InRay, float& Out
             {
                 OutClosestHit = candidateDistance;
                 OutHitObject = Node.Start + i;
-                break;
             }
         }
     }
@@ -321,7 +319,6 @@ void UBVHierarchy::RaycastIterative(const FRay& InRay, float& OutClosestHit, int
                     FRay ModelRay;
                     ModelRay.Origin = InRay.Origin * Prim.WorldToModel;
                     ModelRay.Direction = InRay.Direction * Prim.WorldToModel;
-                    ModelRay.Direction.Normalize();
 
                     bHitPrimitive = Prim.StaticMesh->RaycastTriangleBVH(ModelRay, candidateDistance);
                 }
@@ -334,7 +331,6 @@ void UBVHierarchy::RaycastIterative(const FRay& InRay, float& OutClosestHit, int
                 {
                     OutClosestHit = candidateDistance;
                     OutHitObject = Node.Start + i;
-                    break;
                 }
             }
         }

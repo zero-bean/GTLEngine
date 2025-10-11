@@ -329,6 +329,7 @@
     <ClInclude Include="Source\Component\Mesh\Public\VertexDatas.h" />
     <ClInclude Include="Source\Core\Public\Archive.h" />
     <ClInclude Include="Source\Core\Public\BVHierarchy.h" />
+    <ClInclude Include="Source\Core\Public\TriangleBVH.h" />
     <ClInclude Include="Source\Core\Public\DuplicatedDataReader.h" />
     <ClInclude Include="Source\Core\Public\ObjectIterator.h" />
     <ClInclude Include="Source\Core\Public\PlatformTime.h" />
@@ -517,6 +518,7 @@
     <ClCompile Include="Source\Core\Private\ClientApp.cpp" />
     <ClCompile Include="Source\Core\Private\Name.cpp" />
     <ClCompile Include="Source\Core\Private\Object.cpp" />
+    <ClCompile Include="Source\Core\Private\TriangleBVH.cpp" />
     <ClCompile Include="Source\Editor\Private\Axis.cpp" />
     <ClCompile Include="Source\Editor\Private\BatchLines.cpp" />
     <ClCompile Include="Source\Editor\Private\BoundingBoxLines.cpp" />

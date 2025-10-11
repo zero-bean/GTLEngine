@@ -23,13 +23,14 @@
 
 FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive) const
 {
-	FMatrix ModelInverse = Primitive->GetWorldTransformMatrixInverse();
+    FMatrix ModelInverse = Primitive->GetWorldTransformMatrixInverse();
 
-	FRay ModelRay;
-	ModelRay.Origin = Ray.Origin * ModelInverse;
-	ModelRay.Direction = Ray.Direction * ModelInverse;
-	ModelRay.Direction.Normalize();
-	return ModelRay;
+    FRay ModelRay;
+    ModelRay.Origin = Ray.Origin * ModelInverse;
+    // Do not normalize: keep parameterization consistent with world-space t.
+    // With unnormalized direction, the returned intersection parameter equals world t.
+    ModelRay.Direction = Ray.Direction * ModelInverse;
+    return ModelRay;
 }
 
 UPrimitiveComponent* UObjectPicker::PickPrimitive(const FRay& WorldRay, const TArray<TObjectPtr<UPrimitiveComponent>>& Candidates, float* OutDistance)
