@@ -20,7 +20,7 @@
 #include "Global/Function.h"
 #include "Core/Public/ObjectIterator.h"
 #include "Texture/Public/Texture.h"
-#include "Manager/BVH/Public/BVHManager.h"
+#include "Core/Public/BVHierarchy.h"
 #include "Core/Public/Object.h"
 #include "Manager/Asset/Public/AssetManager.h"
 
@@ -309,6 +309,8 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		if (ImGui::MenuItem("Decal Component"))
 		{
 			AddComponentToActor(new UDecalComponent());
+			InSelectedActor->SetActorTickEnabled(true);
+			InSelectedActor->SetTickInEditor(true);
 		}
 		ImGui::Separator();
 		if (ImGui::MenuItem("Cube Component"))
@@ -684,7 +686,7 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 	}
 	if (bTransformChanged && InComponent->IsA(UPrimitiveComponent::StaticClass()))
 	{
-		UBVHManager::GetInstance().Refit();
+		UBVHierarchy::GetInstance().Refit();
 	}
 }
 

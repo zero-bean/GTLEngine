@@ -4,7 +4,8 @@ enum class EBoundingVolumeType
 {
 	None,
 	AABB,   // Axis-Aligned Bounding Box
-	Sphere  // Bounding Sphere
+	Sphere,  // Bounding Sphere
+	OBB // Oriented Bounding Box
 };
 
 class IBoundingVolume

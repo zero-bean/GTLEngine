@@ -4,6 +4,7 @@
 #include "Core/Public/ScopeCycleCounter.h"
 #include "Editor/Public/Camera.h"
 #include "Editor/Public/Editor.h"
+#include "Component/Public/DecalComponent.h"
 #include "Editor/Public/EditorEngine.h"
 #include "Editor/Public/Viewport.h"
 #include "Global/Quaternion.h"
@@ -19,7 +20,7 @@
 #include "Render/UI/Widget/Public/SceneHierarchyWidget.h"
 #include "Render/UI/Widget/Public/SplitterDebugWidget.h"
 #include "Render/UI/Widget/Public/ViewportMenuBarWidget.h"
-#include "Manager/BVH/public/BVHManager.h"
+#include "Core/Public/BVHierarchy.h"
 
 UEditor::UEditor()
 {
@@ -92,7 +93,7 @@ void UEditor::Tick(float DeltaSeconds)
 				}
 				else
 				{
-					BatchLines.UpdateBoundingBoxVertices({ { 0.0f,0.0f,0.0f }, { 0.0f, 0.0f, 0.0f } });
+					BatchLines.UpdateBoundingBoxVertices(FAABB({ 0.0f,0.0f,0.0f }, { 0.0f, 0.0f, 0.0f }));
 				}
 			}
 		}
@@ -389,7 +390,7 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 			Gizmo.EndDrag();
 			if (bWasDragging && Gizmo.GetSelectedActor())
 			{
-				UBVHManager::GetInstance().Refit();
+				UBVHierarchy::GetInstance().Refit();
 			}
 			// 드래그가 끝나면 선택된 뷰포트를 비활성화 합니다.
 			InteractionViewport = nullptr;

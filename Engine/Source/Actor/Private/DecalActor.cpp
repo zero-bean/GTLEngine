@@ -14,9 +14,12 @@ ADecalActor::ADecalActor()
 		DecalComponent->SetParentAttachment(GetRootComponent());
 		SetRootComponent(DecalComponent);
 	}
+
+	SetActorTickEnabled(true);
+	SetTickInEditor(true);
 }
 
 ADecalActor::~ADecalActor()
 {
-	
+
 }

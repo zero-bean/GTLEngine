@@ -1,5 +1,6 @@
 #pragma once
 #include "PrimitiveComponent.h"
+#include "Physics/Public/OBB.h"
 
 class UMaterial;
 
@@ -12,12 +13,15 @@ class UDecalComponent : public UPrimitiveComponent
 public:
 	UDecalComponent();
 	virtual ~UDecalComponent();
+	void TickComponent(float DeltaSeconds) override;
 
 	void SetDecalMaterial(UMaterial* InMaterial);
 	UMaterial* GetDecalMaterial() const;
+	FOBB* GetProjectionBox() const { return ProjectionBox; }
 
 	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
 
 private:
 	UMaterial* DecalMaterial;
+	FOBB* ProjectionBox;
 };

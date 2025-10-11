@@ -16,7 +16,7 @@ public:
 
 	// 종류별 Vertices 업데이트
 	void UpdateUGridVertices(const float newCellSize);
-	void UpdateBoundingBoxVertices(const FAABB& newBoundingBoxInfo);
+	void UpdateBoundingBoxVertices(const IBoundingVolume& newBoundingVolumeInfo);
 
 	// 전체 업데이트
 	void UpdateBatchLineVertices(const float newCellSize, const FAABB& newBoundingBoxInfo);
@@ -36,7 +36,7 @@ public:
 
 	void DisableRenderBoundingBox()
 	{
-		UpdateBoundingBoxVertices({ {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} });
+		UpdateBoundingBoxVertices(FAABB({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}));
 	}
 
 	void Render(UPipeline& InPipeline);

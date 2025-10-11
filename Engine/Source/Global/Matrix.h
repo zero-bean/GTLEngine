@@ -42,6 +42,7 @@ struct alignas(16) FMatrix
 	* @brief 두 행렬곱을 진행한 행렬을 반환하는 연산자 함수
 	*/
 	FMatrix operator*(const FMatrix& InOtherMatrix);
+	FMatrix operator*(const FMatrix& InOtherMatrix) const;
 	void operator*=(const FMatrix& InOtherMatrix);
 	FMatrix operator+(const FMatrix& Other) const;
 	FMatrix& operator+=(const FMatrix& Other);
@@ -95,4 +96,13 @@ struct alignas(16) FMatrix
 	float Determinant() const;
 
 	FMatrix Inverse() const;
+
+	static bool MatrixNearEqual(const FMatrix& A, const FMatrix& B, float Epsilon = 0.0001f)
+	{
+		for (int r = 0; r < 4; ++r)
+			for (int c = 0; c < 4; ++c)
+				if (std::fabs(A.Data[r][c] - B.Data[r][c]) > Epsilon)
+					return false;
+		return true;
+	}
 };
