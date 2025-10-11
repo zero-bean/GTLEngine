@@ -615,6 +615,48 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 			}
 			ImGui::EndCombo();
 		}
+
+		ImGui::Separator();
+
+		if (ImGui::CollapsingHeader("Fade Effect", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			// 컴포넌트로부터 페이드 속성에 대한 참조를 직접 가져옵니다.
+			FDecalFadeProperty& FadeProps = Decal->GetFadeProperty();
+
+			ImGui::PushItemWidth(120.f); // UI 정렬을 위해 너비 조절
+
+			ImGui::DragFloat("Fade In Duration", &FadeProps.FadeInDuration, 0.01f, 0.0f, 30.0f, "%.2f s");
+			ImGui::DragFloat("Fade In Delay", &FadeProps.FadeInStartDelay, 0.01f, 0.0f, 30.0f, "%.2f s");
+			ImGui::DragFloat("Fade Out Duration", &FadeProps.FadeDuration, 0.01f, 0.0f, 30.0f, "%.2f s");
+			ImGui::DragFloat("Fade Out Delay", &FadeProps.FadeStartDelay, 0.01f, 0.0f, 30.0f, "%.2f s");
+
+			ImGui::PopItemWidth();
+
+			ImGui::Checkbox("Destroy on Fade Out", &FadeProps.bDestroyedAfterFade);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("If checked, the actor will be destroyed after the fade out is complete.");
+			}
+
+			// 페이드 효과를 테스트하기 위한 버튼
+			if (ImGui::Button("Start Fade In"))
+			{
+				Decal->StartFadeIn(FadeProps.FadeInDuration, FadeProps.FadeInStartDelay);
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Start Fade Out"))
+			{
+				Decal->StartFadeOut(FadeProps.FadeDuration, FadeProps.FadeStartDelay, FadeProps.bDestroyedAfterFade);
+			}
+
+			ImGui::Separator();
+
+			// 현재 알파 값을 시각적으로 보여주는 프로그레스 바
+			ImGui::ProgressBar(Decal->GetFadeAlpha(), ImVec2(-1.0f, 0.0f));
+			ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+			ImGui::Text("Current Alpha");
+		}
+
 	}
 	else
 	{

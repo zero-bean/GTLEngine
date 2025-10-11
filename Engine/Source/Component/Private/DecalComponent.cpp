@@ -71,6 +71,9 @@ UDecalComponent::~UDecalComponent()
 
 void UDecalComponent::TickComponent(float DeltaSeconds)
 {
+	// 페이드 인 & 아웃 업데이트
+	FadeProperty.Update(DeltaSeconds);
+
     // Keep ProjectionBox in sync with the component's world transform
     const FMatrix& M = GetWorldTransformMatrix();
 
@@ -98,6 +101,21 @@ void UDecalComponent::TickComponent(float DeltaSeconds)
     ProjectionBox->Orientation = FMatrix(oX, oY, oZ);
 }
 
+void UDecalComponent::StartFadeIn(float Duration, float Delay)
+{
+	FadeProperty.FadeInDuration = Duration;
+	FadeProperty.FadeInStartDelay = Delay;
+	FadeProperty.StartFadeIn();
+}
+
+void UDecalComponent::StartFadeOut(float Duration, float Delay, bool bDestroyOwner)
+{
+	FadeProperty.FadeDuration = Duration;
+	FadeProperty.FadeStartDelay = Delay;
+	FadeProperty.bDestroyedAfterFade = bDestroyOwner;
+	FadeProperty.StartFadeOut();
+}
+
 void UDecalComponent::SetDecalMaterial(UMaterial* InMaterial)
 {
 	if (DecalMaterial == InMaterial) { return; }
@@ -115,6 +133,7 @@ UObject* UDecalComponent::Duplicate(FObjectDuplicationParameters Parameters)
 	auto DupObject = static_cast<UDecalComponent*>(Super::Duplicate(Parameters));
 
 	DupObject->DecalMaterial = DecalMaterial;
+	DupObject->FadeProperty = FadeProperty;
 
 	return DupObject;
 }

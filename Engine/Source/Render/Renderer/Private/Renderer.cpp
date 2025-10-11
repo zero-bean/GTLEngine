@@ -366,6 +366,25 @@ void URenderer::CreateProjectionDecalShader()
 
 	ProjectionDecalVSBlob->Release();
 	ProjectionDecalPSBlob->Release();
+
+	if (!ProjectionDecalBlendState)
+	{
+		D3D11_BLEND_DESC BlendDesc = {};
+		BlendDesc.RenderTarget[0].BlendEnable = TRUE;
+		BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO; 
+		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		HRESULT hr = GetDevice()->CreateBlendState(&BlendDesc, &ProjectionDecalBlendState);
+		if (FAILED(hr))
+		{
+			UE_LOG_ERROR("Renderer: Failed to create projection decal blend state (HRESULT: 0x%08lX)", hr);
+		}
+	}
 }
 
 /**
@@ -931,8 +950,10 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		Pipeline->UpdatePipeline(PipelineInfo);
 
 		// 3. 데칼의 월드 변환 역행렬을 계산하여 셰이더로 전달합니다.
-		FDecalConstants DecalData(Decal->GetWorldTransformMatrix(), Decal->GetWorldTransformMatrixInverse());
+		FDecalConstants DecalData(Decal->GetWorldTransformMatrix(), Decal->GetWorldTransformMatrixInverse(),
+			Decal->GetFadeAlpha());
 		UpdateConstant(ConstantBufferProjectionDecal, DecalData, 3, true, true);
+
 
 		// 데칼의 바운딩 볼륨을 가져옵니다.
 		const FOBB* DecalBounds = Decal->GetProjectionBox();
@@ -1491,7 +1512,7 @@ void URenderer::CreateConstantBuffer()
 
 	{
 		D3D11_BUFFER_DESC ProjectionDecalConstantBufferDescription = {};
-		ProjectionDecalConstantBufferDescription.ByteWidth = sizeof(FMaterial) + 0xf & 0xfffffff0;
+		ProjectionDecalConstantBufferDescription.ByteWidth = sizeof(FDecalConstants) + 0xf & 0xfffffff0;
 		ProjectionDecalConstantBufferDescription.Usage = D3D11_USAGE_DYNAMIC; // 매 프레임 CPU에서 업데이트
 		ProjectionDecalConstantBufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		ProjectionDecalConstantBufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -1555,7 +1576,7 @@ void URenderer::CreateBillboardResources()
 		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO; 
 		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
