@@ -490,15 +490,21 @@ void UAssetManager::LoadAssets()
 		UAssetManager& AssetManager = UAssetManager::GetInstance();
 		for (const auto& Entry : std::filesystem::directory_iterator(IconDirectory))
 		{
-			if (!Entry.is_regular_file() || Entry.path().extension() != ".png") continue;
+			FString Extension = Entry.path().extension().string();
+			std::transform(Extension.begin(), Extension.end(), Extension.begin(),
+				[](unsigned char InChar) { return static_cast<char>(std::tolower(InChar)); });
 
-			FString FilePath = Entry.path().generic_string();
-			FString DisplayName = Entry.path().stem().string();
-
-			if (UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName))
+			if (Extension == ".png" || Extension == ".jpg" || Extension == ".jpeg" || Extension == ".dds" || Extension == ".tga")
 			{
-				BillboardSpriteOptions.push_back({ DisplayName, FilePath, TObjectPtr(Texture) });
+				FString FilePath = Entry.path().generic_string();
+				FString DisplayName = Entry.path().stem().string();
+
+				if (UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName))
+				{
+					BillboardSpriteOptions.push_back({ DisplayName, FilePath, TObjectPtr(Texture) });
+				}
 			}
+
 		}
 		std::sort(BillboardSpriteOptions.begin(), BillboardSpriteOptions.end(),
 			[](const FTextureOption& A, const FTextureOption& B) {
