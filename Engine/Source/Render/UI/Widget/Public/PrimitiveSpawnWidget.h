@@ -17,6 +17,7 @@ public:
 private:
 	EPrimitiveType SelectedPrimitiveType = EPrimitiveType::Sphere;
 	int32 NumberOfSpawn = 1;
-	float SpawnRangeMin = -10.0f;
-	float SpawnRangeMax = 10.0f;
+	FVector SpawnRangeMin;
+	FVector SpawnRangeMax;
+	bool bUseUniformSpawnRange;
 };

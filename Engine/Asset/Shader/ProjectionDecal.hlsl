@@ -61,12 +61,12 @@ PS_INPUT mainVS(VS_INPUT input)
 float4 mainPS(PS_INPUT input) : SV_Target
 {
     // 1. 프로젝션 데칼의 투사 방향을 로컬 X축의 반대 방향으로 가정하고, 월드 공간으로 변환.
-	float3 decalForward = normalize(mul(float4(-1, 0, 0, 0), DecalWorld).xyz);
+	float3 decalForward = normalize(mul(float4(1, 0, 0, 0), DecalWorld).xyz);
     
     // Case 1. 오브젝트와 데칼이 같은 방향을 바라보기 때문에 픽셀을 버립니다.
 	if (dot(input.WorldNormal, decalForward) > 0.0f)
 	{
-        discard; 
+        //discard; 
 	}
 
     // 2. 픽셀의 월드 좌표를 데칼의 로컬 공간으로 변환.
@@ -78,7 +78,7 @@ float4 mainPS(PS_INPUT input) : SV_Target
         abs(localPos.y) > 0.5f ||
         abs(localPos.z) > 0.5f)
 	{
-		//discard;
+		discard;
 	}
     
     // 3. 픽셀의 3D 위치를 X축에서 바라보고 2D 평면(YZ)에 투사하여 UV를 생성.

@@ -913,7 +913,7 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
             ndcMinY = std::min(ndcMinY, y);
             ndcMaxY = std::max(ndcMaxY, y);
         }
-
+		 
         if (!anyInFront) return false; // completely behind camera
 
         // Test overlap with the NDC clip rectangle [-1,1]^2
