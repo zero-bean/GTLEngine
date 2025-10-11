@@ -377,7 +377,7 @@ void URenderer::CreateProjectionDecalShader()
 		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO; 
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
@@ -967,7 +967,7 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
             ndcMinY = std::min(ndcMinY, y);
             ndcMaxY = std::max(ndcMaxY, y);
         }
-		 
+
         if (!anyInFront) return false; // completely behind camera
 
         // Test overlap with the NDC clip rectangle [-1,1]^2
@@ -1029,6 +1029,7 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 			// 데칼 액터의 시각화 컴포넌트에는 데칼을 적용하지 않도록 예외 처리합니다.
 			if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
 			if (Primitive->IsA(UDecalComponent::StaticClass())) { continue; }
+			if (Primitive->IsA(USpotLightComponent::StaticClass())) { continue; }
 
 			// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
 			FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
@@ -1711,7 +1712,7 @@ void URenderer::CreateBillboardResources()
 		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO; 
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 

@@ -9,6 +9,7 @@ extern TArray<FNormalVertex> VerticesArrow;
 extern TArray<FNormalVertex> VerticesCubeArrow;
 extern TArray<FNormalVertex> VerticesRing;
 extern TArray<FNormalVertex> VerticesTorus;
+extern TArray<FNormalVertex> VerticesSpotlight;
 
 extern TArray<uint32> IndicesCube;
 extern TArray<uint32> IndicesCubeLine;

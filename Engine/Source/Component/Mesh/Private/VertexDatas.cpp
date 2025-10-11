@@ -3078,6 +3078,89 @@ TArray<FNormalVertex> VerticesRing = {
 	{{1.000000f, -0.000000f, 0.000000f}, {}, {1.0f, 1.0f, 0.0f, 1.0f}, {} },
 };
 
+// Unit-cube spotlight wire:
+// - Source at (0,0,0.5)  [top face center, z-up]
+// - Rim is a circle on bottom face z = -0.5
+// - Radius defaults to 0.5 (inscribed circle in the bottom face square)
+// - Produces line-list vertices (each edge = 2 verts)
+// - Optional: center ray, rim ring, position flipping (-P)
+static TArray<FNormalVertex> BuildUnitBoxSpotlightWire(
+    int Segments = 24,
+    float Radius = 0.5f,
+    bool bIncludeCenterRay = true,
+    bool bIncludeRimRing = false,
+    const FVector4& Color = FVector4(1.f, 1.f, 0.f, 1.f),
+    bool bFlipPositions = false // your earlier code used -P; keep true if you want that behavior
+)
+{
+    // Guard
+    Segments = std::max(3, Segments);
+    Radius   = std::max(0.0f, Radius);
+
+    auto MakeV = [&](const FVector& P) -> FNormalVertex {
+        FNormalVertex v{};
+        v.Position = bFlipPositions ? -P : P;
+        v.Color    = Color;
+        v.Normal   = FVector(0,0,0);
+        v.TexCoord = FVector2(0,0);
+        return v;
+    };
+
+    const FVector Source(0.f, 0.f,  0.5f);   // top-face center
+    const FVector BottomC(0.f, 0.f, -0.5f);  // bottom-face center (z = -1)
+
+    // Precompute rim points on circle at z = -1
+    const float TwoPi = 6.28318530717958647692f;
+
+    TArray<FVector> Rim;
+    Rim.reserve(static_cast<size_t>(Segments + 1));
+    for (int i = 0; i < Segments; ++i)
+    {
+        const float t = (TwoPi * i) / Segments;
+        const float x = Radius * std::cos(t);
+        const float y = Radius * std::sin(t);
+        Rim.push_back(FVector(x, y, -0.5f));
+    }
+    // close loop convenience
+    Rim.push_back(Rim[0]);
+
+    // Count lines
+    size_t lineCount = static_cast<size_t>(Segments);           // spokes
+    if (bIncludeCenterRay) lineCount += 1;                      // center ray
+    if (bIncludeRimRing)   lineCount += static_cast<size_t>(Segments); // rim edges
+
+    TArray<FNormalVertex> V;
+    V.reserve(lineCount * 2);
+
+    // Optional center ray: source to bottom center
+    if (bIncludeCenterRay)
+    {
+        V.push_back(MakeV(Source));
+        V.push_back(MakeV(BottomC));
+    }
+
+    // Spokes: source -> each rim point
+    for (int i = 0; i < Segments; ++i)
+    {
+        V.push_back(MakeV(Source));
+        V.push_back(MakeV(Rim[i]));
+    }
+
+    // Optional rim ring (outline the circle)
+    if (bIncludeRimRing)
+    {
+        for (int i = 0; i < Segments; ++i)
+        {
+            V.push_back(MakeV(Rim[i]));
+            V.push_back(MakeV(Rim[i+1]));
+        }
+    }
+
+    return V;
+}
+
+TArray<FNormalVertex> VerticesSpotlight = BuildUnitBoxSpotlightWire();
+
 TArray<FNormalVertex> VerticesTorus = {
 	{{ 1.120000f, 0.000000f, 0.000000f }, {}, { 1.000000f, 1.000000f, 1.000000f, 1.000000f }, {} },
 	{{ 1.098480f, 0.218501f, 0.000000f }, {}, { 1.000000f, 1.000000f, 1.000000f, 1.000000f }, {} },
