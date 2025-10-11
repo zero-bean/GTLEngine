@@ -44,7 +44,8 @@ void UBillboardComponent::UpdateRotationMatrix(const UCamera* InCamera)
 	ViewMatrix.Data[3][1] = 0.0f;
 	ViewMatrix.Data[3][2] = 0.0f;
 	ViewMatrix.Data[3][3] = 1.0f;
-	FVector WorldLocation = OwnerActor->GetActorLocation() + this->GetRelativeLocation();
+	FMatrix WorldTransform = GetWorldTransformMatrix();
+	FVector WorldLocation = FVector(WorldTransform.Data[3][0], WorldTransform.Data[3][1], WorldTransform.Data[3][2]);
 	RTMatrix = ViewMatrix * FMatrix::TranslationMatrix(WorldLocation);
 
     // FVector ToCamera = InCamera->GetForward();
