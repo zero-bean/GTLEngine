@@ -269,12 +269,9 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		if (ImGui::MenuItem("SpotLight Component"))
 		{
 			// jft
-			USpotLightComponent* SpotLightComponent = new USpotLightComponent();
-			AddComponentToActor(std::move(SpotLightComponent));
+			AddComponentToActor(new USpotLightComponent());
 			UBillboardComponent* Billboard = new UBillboardComponent();
 			Billboard->SetSprite(ELightType::Spotlight);
-			Billboard->SetParentAttachment(SpotLightComponent);
-			Billboard->SetAboveActor();
 			AddComponentToActor(std::move(Billboard));
 		}
 		ImGui::Separator();

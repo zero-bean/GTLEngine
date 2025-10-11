@@ -15,15 +15,6 @@ UBillboardComponent::UBillboardComponent()
 {
     SetName("BillboardComponent");
     Type = EPrimitiveType::Billboard;
-
-	SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
-}
-
-
-void UBillboardComponent::SetParentAttachment(USceneComponent* SceneComponent)
-{
-	USceneComponent::SetParentAttachment(SceneComponent);
-	SetAboveActor();
 }
 
 UBillboardComponent::~UBillboardComponent()
@@ -51,31 +42,6 @@ void UBillboardComponent::SetSprite(ELightType LightType)
 void UBillboardComponent::SetSprite(UTexture* InTexture)
 {
     Sprite = InTexture;
-}
-
-void UBillboardComponent::SetAboveActor()
-{
-	AActor* Owner = GetOwner();
-	if (Owner)
-	{
-		const USceneComponent* ParentComp = Owner->GetRootComponent();
-		if (ParentComp)
-		{
-			const UPrimitiveComponent* PrimitiveParent = Cast<UPrimitiveComponent>(ParentComp);
-
-			if (!PrimitiveParent)
-			{
-				return;
-			}
-
-			FVector min, max;
-			PrimitiveParent->GetWorldAABB(min, max);
-
-			ZOffset = (max.Z - min.Z) * 0.5f;
-			SetRelativeLocation(FVector(0.f, 0.f, ZOffset));
-		}
-	}
-
 }
 
 void UBillboardComponent::UpdateRotationMatrix(const UCamera* InCamera)

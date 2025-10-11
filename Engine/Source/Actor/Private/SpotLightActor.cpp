@@ -9,15 +9,10 @@ IMPLEMENT_CLASS(ASpotLightActor, ALightActor)
 ASpotLightActor::ASpotLightActor()
 {
 	auto SpotLightComponent = CreateDefaultSubobject<USpotLightComponent>("SpotLightComponent");
-	SpotLightComponent->SetOwner(this);
 	SetRootComponent(SpotLightComponent);
+	auto BillboardComponent = CreateDefaultSubobject<UBillboardComponent>("BillboardComponent");
+	BillboardComponent->SetSprite(ELightType::Spotlight);
 
-	UBillboardComponent* Billboard = CreateDefaultSubobject<UBillboardComponent>("Billboard");
-	Billboard->SetOwner(this);
-	SpotLightComponent->AddChild(Billboard);
-
-	Billboard->SetSprite(ELightType::Spotlight);
-	Billboard->SetParentAttachment(SpotLightComponent);
-	// jft
-	Billboard->SetAboveActor();
+	SpotLightComponent->AddChild(BillboardComponent);
+	BillboardComponent->SetParentAttachment(SpotLightComponent);
 }
