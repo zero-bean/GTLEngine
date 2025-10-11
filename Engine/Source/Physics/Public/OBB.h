@@ -18,6 +18,8 @@ struct FOBB : public IBoundingVolume
 	EBoundingVolumeType GetType() const override { return EBoundingVolumeType::OBB; }
 	bool Intersects(const IBoundingVolume& Other) const override;
 
+	FAABB ToAABB() const;
+
 private:
 	bool IntersectsAABB(const FAABB& Other) const;
 };

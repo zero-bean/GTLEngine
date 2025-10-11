@@ -382,8 +382,9 @@ bool UBVHierarchy::CheckOBBoxCollision(const FOBB& InOBB, TArray<UPrimitiveCompo
 	}
 
 	TArray<int> HitObjectIndexes = {};
+	FAABB AABB = InOBB.ToAABB();
 
-	CheckOBBoxCollisionRecursive(RootIndex, InOBB, HitObjectIndexes);
+	CheckOBBoxCollisionRecursive(RootIndex, InOBB, AABB, HitObjectIndexes);
 	if (HitObjectIndexes.empty())
 	{
 		return false;
@@ -396,11 +397,11 @@ bool UBVHierarchy::CheckOBBoxCollision(const FOBB& InOBB, TArray<UPrimitiveCompo
 	return true;
 }
 
-void UBVHierarchy::CheckOBBoxCollisionRecursive(int NodeIndex, const FOBB& InOBB, TArray<int>& OutHitObjects) const
+void UBVHierarchy::CheckOBBoxCollisionRecursive(int NodeIndex, const FOBB& InOBB, const FAABB& InAABB, TArray<int>& OutHitObjects) const
 {
 	const FBVHNode& Node = Nodes[NodeIndex];
 
-	if (!InOBB.Intersects(Node.Bounds))
+	if (!InAABB.Intersects(Node.Bounds))
 	{
 		return;
 	}
@@ -415,16 +416,19 @@ void UBVHierarchy::CheckOBBoxCollisionRecursive(int NodeIndex, const FOBB& InOBB
 				continue;
 			}
 
-			if (InOBB.Intersects(Prim.Bounds))
+			if (InAABB.Intersects(Prim.Bounds))
 			{
-				OutHitObjects.push_back(Node.Start + i);
+				if (InOBB.Intersects(Prim.Bounds))
+				{
+					OutHitObjects.push_back(Node.Start + i);
+				}
 			}
 		}
 	}
 	else
 	{
-		CheckOBBoxCollisionRecursive(Node.LeftChild, InOBB, OutHitObjects);
-		CheckOBBoxCollisionRecursive(Node.RightChild, InOBB, OutHitObjects);
+		CheckOBBoxCollisionRecursive(Node.LeftChild, InOBB, InAABB, OutHitObjects);
+		CheckOBBoxCollisionRecursive(Node.RightChild, InOBB, InAABB, OutHitObjects);
 	}
 }
 

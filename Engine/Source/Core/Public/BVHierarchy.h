@@ -69,7 +69,7 @@ private:
 	void RaycastIterative(const FRay& InRay, float& OutClosestHit, int& OutHitObject) const;
 	void RaycastRecursive(int NodeIndex, const FRay& InRay, float& OutClosestHit, int& OutHitObject) const;
 
-	void CheckOBBoxCollisionRecursive(int NodeIndex, const FOBB& InOBB, TArray<int>& OutHitObjects) const;
+	void CheckOBBoxCollisionRecursive(int NodeIndex, const FOBB& InOBB, const FAABB& InAABB, TArray<int>& OutHitObjects) const;
 
 	void CollectNodeBounds(TArray<FAABB>& OutBounds) const;
 	void TraverseForCulling(uint32 NodeIndex, FFrustumCull& InFrustum, uint32 InMask, TArray<TObjectPtr<UPrimitiveComponent>>& OutVisibleComponents);

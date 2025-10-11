@@ -42,6 +42,7 @@ struct alignas(16) FMatrix
 	* @brief 두 행렬곱을 진행한 행렬을 반환하는 연산자 함수
 	*/
 	FMatrix operator*(const FMatrix& InOtherMatrix);
+	FMatrix operator*(const FMatrix& InOtherMatrix) const;
 	void operator*=(const FMatrix& InOtherMatrix);
 	FMatrix operator+(const FMatrix& Other) const;
 	FMatrix& operator+=(const FMatrix& Other);

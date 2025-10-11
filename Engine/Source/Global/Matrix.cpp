@@ -103,6 +103,36 @@ FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix)
 	return Result;
 }
 
+FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix) const
+{
+	FMatrix Result;
+
+	for (int i = 0; i < 4; ++i)
+	{
+		// Load the row from the left matrix (this)
+		__m128 a = _mm_loadu_ps(Data[i]); // row i
+
+		// Broadcast each element of row 'i'
+		__m128 a0 = _mm_shuffle_ps(a, a, _MM_SHUFFLE(0,0,0,0));
+		__m128 a1 = _mm_shuffle_ps(a, a, _MM_SHUFFLE(1,1,1,1));
+		__m128 a2 = _mm_shuffle_ps(a, a, _MM_SHUFFLE(2,2,2,2));
+		__m128 a3 = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3,3,3,3));
+
+		// Multiply each broadcast with the corresponding row of the right matrix
+		__m128 r0 = _mm_mul_ps(a0, _mm_loadu_ps(InOtherMatrix.Data[0]));
+		__m128 r1 = _mm_mul_ps(a1, _mm_loadu_ps(InOtherMatrix.Data[1]));
+		__m128 r2 = _mm_mul_ps(a2, _mm_loadu_ps(InOtherMatrix.Data[2]));
+		__m128 r3 = _mm_mul_ps(a3, _mm_loadu_ps(InOtherMatrix.Data[3]));
+
+		// Sum them together
+		__m128 res = _mm_add_ps(_mm_add_ps(r0, r1), _mm_add_ps(r2, r3));
+
+		// Store into Result row
+		_mm_storeu_ps(Result.Data[i], res);
+	}
+	return Result;
+}
+
 void FMatrix::operator*=(const FMatrix& InOtherMatrix)
 {
 	*this = (*this) * InOtherMatrix;

@@ -292,6 +292,8 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		if (ImGui::MenuItem("Decal Component"))
 		{
 			AddComponentToActor(new UDecalComponent());
+			InSelectedActor->SetActorTickEnabled(true);
+			InSelectedActor->SetTickInEditor(true);
 		}
 		ImGui::Separator();
 		if (ImGui::MenuItem("Cube Component"))

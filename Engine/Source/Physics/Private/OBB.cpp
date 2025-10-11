@@ -20,6 +20,28 @@ bool FOBB::Intersects(const IBoundingVolume& Other) const
     }
 }
 
+FAABB FOBB::ToAABB() const
+{
+	// Assumes OBB.Orientation’s columns (or GetAxisX/Y/Z) are the world-space
+	// orthonormal axes of the box; Extents are half-sizes along those axes.
+	const FVector e = Extents;
+
+	// Get the three world-space axes of the OBB (unit length)
+	const FVector ax = FVector(Orientation.Data[0][0], Orientation.Data[0][1], Orientation.Data[0][2]);
+	const FVector ay = FVector(Orientation.Data[1][0], Orientation.Data[1][1], Orientation.Data[1][2]);
+	const FVector az = FVector(Orientation.Data[2][0], Orientation.Data[2][1], Orientation.Data[2][2]);
+
+	// Axis-aligned half extents: |R| * e  (componentwise abs on the 3x3)
+	const FVector half =
+	{
+		std::abs(ax.X) * e.X + std::abs(ay.X) * e.Y + std::abs(az.X) * e.Z,
+		std::abs(ax.Y) * e.X + std::abs(ay.Y) * e.Y + std::abs(az.Y) * e.Z,
+		std::abs(ax.Z) * e.X + std::abs(ay.Z) * e.Y + std::abs(az.Z) * e.Z
+	};
+
+	return FAABB{ Center - half, Center + half };
+}
+
 bool FOBB::IntersectsAABB(const FAABB& InAABB) const
 {
 	constexpr float kEps = 1e-6f;
