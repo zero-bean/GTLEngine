@@ -11,6 +11,7 @@
 #include "Component/Public/TextRenderComponent.h"
 #include "Component/Public/LineComponent.h"
 #include "Component/Public/DecalComponent.h"
+#include "Component/Public/SpotLightComponent.h"
 #include "Component/Mesh/Public/CubeComponent.h"
 #include "Component/Mesh/Public/SphereComponent.h"
 #include "Component/Mesh/Public/SquareComponent.h"
@@ -28,6 +29,8 @@
 #include <cctype>
 #include <exception>
 #include <filesystem>
+
+#include "Component/Public/SpotLightComponent.h"
 
 TArray<FBillboardSpriteOption> UActorDetailWidget::BillboardSpriteOptions;
 TArray<FTextureOption> UActorDetailWidget::DecalTextureOptions;
@@ -154,7 +157,7 @@ void UActorDetailWidget::ReleaseAssets()
 			Option.Texture = nullptr;
 		}
 	}
-	BillboardSpriteOptions.clear(); 
+	BillboardSpriteOptions.clear();
 
 	// DecalTextureOptions에 있는 UTexture 객체들을 순회하며 메모리 해제
 	for (FTextureOption& Option : DecalTextureOptions)
@@ -165,7 +168,7 @@ void UActorDetailWidget::ReleaseAssets()
 			Option.Texture = nullptr;
 		}
 	}
-	DecalTextureOptions.clear(); 
+	DecalTextureOptions.clear();
 
 	bAssetsLoaded = false; // 애셋이 해제되었음을 표시
 	UE_LOG("ActorDetailWidget: Released all static assets.");
@@ -309,6 +312,10 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		if (ImGui::MenuItem("Decal Component"))
 		{
 			AddComponentToActor(new UDecalComponent());
+		}
+		if (ImGui::MenuItem("SpotLight Component"))
+		{
+			AddComponentToActor(new USpotLightComponent());
 		}
 		ImGui::Separator();
 		if (ImGui::MenuItem("Cube Component"))

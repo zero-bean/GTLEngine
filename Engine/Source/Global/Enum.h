@@ -135,6 +135,7 @@ enum class EPrimitiveType : uint8
 	StaticMesh,
 	Billboard,
 	Decal,
+	Spotlight,
 	Torus,
 	Arrow,
 	CubeArrow,

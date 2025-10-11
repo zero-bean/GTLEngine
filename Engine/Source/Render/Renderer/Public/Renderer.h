@@ -16,6 +16,7 @@ class UPrimitiveComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 class UDecalComponent;
+class USpotLightComponent;
 class AActor;
 class AGizmo;
 class UEditor;
@@ -66,6 +67,7 @@ public:
 	void CreateDefaultShader();
 	void CreateTextureShader();
 	void CreateProjectionDecalShader();
+	void CreateSpotlightShader();
 	void CreateConstantBuffer();
 	void CreateBillboardResources();
 
@@ -77,6 +79,7 @@ public:
 	void ReleaseBillboardResources();
 	void ReleaseTextureShader();
 	void ReleaseProjectionDecalShader();
+	void ReleaseSpotlightShader();
 
 	// Render
 	void Tick(float DeltaSeconds);
@@ -93,10 +96,10 @@ public:
 	                            bool bInUseBaseConstantBuffer, uint32 InStride, uint32 InIndexBufferStride);
 	void RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<UDecalComponent>>& InDecals,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
+	void RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<USpotLightComponent>>& InSpotlights,
+		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
-
-
 
 	// Create function
 	void CreateVertexShaderAndInputLayout(const wstring& InFilePath,
@@ -176,6 +179,7 @@ private:
 	ID3D11Buffer* ConstantBufferBatchLine = nullptr;
 	ID3D11Buffer* ConstantBufferMaterial = nullptr;
 	ID3D11Buffer* ConstantBufferProjectionDecal = nullptr;
+	ID3D11Buffer* ConstantBufferSpotlight = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -195,6 +199,11 @@ private:
 	ID3D11PixelShader* ProjectionDecalPixelShader = nullptr;
 	ID3D11InputLayout* ProjectionDecalInputLayout = nullptr;
 	ID3D11BlendState* ProjectionDecalBlendState = nullptr;
+
+	ID3D11VertexShader* SpotlightVertexShader = nullptr;
+	ID3D11PixelShader* SpotlightPixelShader = nullptr;
+	ID3D11InputLayout* SpotlightInputLayout = nullptr;
+	ID3D11BlendState* SpotlightBlendState = nullptr;
 
 	uint32 Stride = 0;
 

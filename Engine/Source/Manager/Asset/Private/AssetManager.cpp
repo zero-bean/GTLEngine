@@ -35,17 +35,23 @@ void UAssetManager::Initialize()
 	VertexDatas.emplace(EPrimitiveType::Ring, &VerticesRing);
 	VertexDatas.emplace(EPrimitiveType::Line, &VerticesLine);
 	VertexDatas.emplace(EPrimitiveType::Decal, &VerticesCube);
+	// jft
+	VertexDatas.emplace(EPrimitiveType::Spotlight, &VerticesCube);
 
 	IndexDatas.emplace(EPrimitiveType::Cube, &IndicesCube);
 	IndexDatas.emplace(EPrimitiveType::Decal, &IndicesCubeLine);
+	IndexDatas.emplace(EPrimitiveType::Spotlight, &IndicesCubeLine);
 
 	IndexBuffers.emplace(EPrimitiveType::Cube,
 		Renderer.CreateIndexBuffer(IndicesCube.data(), static_cast<int>(IndicesCube.size()) * sizeof(uint32)));
 	IndexBuffers.emplace(EPrimitiveType::Decal,
 		Renderer.CreateIndexBuffer(IndicesCubeLine.data(), static_cast<int>(IndicesCubeLine.size()) * sizeof(uint32)));
+	IndexBuffers.emplace(EPrimitiveType::Spotlight,
+		Renderer.CreateIndexBuffer(IndicesCubeLine.data(), static_cast<int>(IndicesCubeLine.size()) * sizeof(uint32)));
 
 	NumIndices.emplace(EPrimitiveType::Cube, static_cast<uint32>(IndicesCube.size()));
 	NumIndices.emplace(EPrimitiveType::Decal, static_cast<uint32>(IndicesCubeLine.size()));
+	NumIndices.emplace(EPrimitiveType::Spotlight, static_cast<uint32>(IndicesCubeLine.size()));
 
 	// TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
 	VertexBuffers.emplace(EPrimitiveType::Cube, Renderer.CreateVertexBuffer(
@@ -67,6 +73,7 @@ void UAssetManager::Initialize()
 	VertexBuffers.emplace(EPrimitiveType::Line, Renderer.CreateVertexBuffer(
 		VerticesLine.data(), static_cast<int>(VerticesLine.size() * sizeof(FNormalVertex))));
 	VertexBuffers.emplace(EPrimitiveType::Decal, VertexBuffers[EPrimitiveType::Cube]);
+	VertexBuffers.emplace(EPrimitiveType::Spotlight, VertexBuffers[EPrimitiveType::Cube]);
 
 	NumVertices.emplace(EPrimitiveType::Cube, static_cast<uint32>(VerticesCube.size()));
 	NumVertices.emplace(EPrimitiveType::Sphere, static_cast<uint32>(VerticesSphere.size()));
@@ -78,6 +85,7 @@ void UAssetManager::Initialize()
 	NumVertices.emplace(EPrimitiveType::Ring, static_cast<uint32>(VerticesRing.size()));
 	NumVertices.emplace(EPrimitiveType::Line, static_cast<uint32>(VerticesLine.size()));
 	NumVertices.emplace(EPrimitiveType::Decal, NumVertices[EPrimitiveType::Cube]);
+	NumVertices.emplace(EPrimitiveType::Spotlight, NumVertices[EPrimitiveType::Cube]);
 
 	// Calculate AABB for all primitive types (excluding StaticMesh)
 	for (const auto& Pair : VertexDatas)
@@ -405,7 +413,7 @@ void UAssetManager::ReleaseMaterial(UMaterial* InMaterial)
 		if (Iter->second.get() == InMaterial)
 		{
 			MaterialCache.erase(Iter);
-			return; 
+			return;
 		}
 	}
 }
