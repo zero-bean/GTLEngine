@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Component/Public/ActorComponent.h"
+#include "Utility/Public/JsonSerializer.h"
+#include <json.hpp>
 
 IMPLEMENT_CLASS(UActorComponent, UObject)
 
@@ -18,6 +20,23 @@ UActorComponent::~UActorComponent()
  *		 따라서, 계층의 중간에 놓인 오브젝트들을 Duplicate할 경우 위쪽 계층이 적절히
  *		 반영되지 않는다. 따라서, 이후에 플래그를 도입해서 이 문제를 해결한다.
  */
+void UActorComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	if (bInIsLoading)
+	{
+		if (InOutHandle.hasKey("Name"))
+		{
+			SetName(FName(InOutHandle["Name"].ToString()));
+		}
+	}
+	else
+	{
+		InOutHandle["Name"] = GetName().ToString();
+	}
+}
+
 UObject* UActorComponent::Duplicate(FObjectDuplicationParameters Parameters)
 {
 	auto DupObject = static_cast<UActorComponent*>(Super::Duplicate(Parameters));

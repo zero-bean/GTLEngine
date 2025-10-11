@@ -13,7 +13,6 @@ public:
 	ADecalActor();
 	virtual ~ADecalActor();
 
-private:
-	UDecalComponent* DecalComponent = nullptr;
+	UDecalComponent* GetDecalComponent() const;
 };
 

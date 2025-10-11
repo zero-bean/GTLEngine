@@ -17,19 +17,22 @@ void USceneComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
 	Super::Serialize(bInIsLoading, InOutHandle);
 
-	// 불러오기
 	if (bInIsLoading)
 	{
 		FJsonSerializer::ReadVector(InOutHandle, "Location", RelativeLocation, FVector::ZeroVector());
 		FJsonSerializer::ReadVector(InOutHandle, "Rotation", RelativeRotation, FVector::ZeroVector());
 		FJsonSerializer::ReadVector(InOutHandle, "Scale", RelativeScale3D, FVector::OneVector());
 	}
-	// 저장
 	else
 	{
 		InOutHandle["Location"] = FJsonSerializer::VectorToJson(RelativeLocation);
 		InOutHandle["Rotation"] = FJsonSerializer::VectorToJson(RelativeRotation);
 		InOutHandle["Scale"] = FJsonSerializer::VectorToJson(RelativeScale3D);
+
+		if (ParentAttachment)
+		{
+			InOutHandle["ParentName"] = ParentAttachment->GetName().ToString();
+		}
 	}
 }
 

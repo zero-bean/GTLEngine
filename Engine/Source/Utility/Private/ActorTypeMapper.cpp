@@ -15,6 +15,8 @@
 #include "Actor/Public/SquareActor.h"
 #include "Actor/Public/StaticMeshActor.h"
 #include "Actor/Public/TriangleActor.h"
+#include "Actor/Public/BillboardActor.h"
+#include "Actor/Public/DecalActor.h"
 
 // 하드 코딩으로 구현
 FString FActorTypeMapper::ActorToType(UClass* InClass)
@@ -40,6 +42,14 @@ FString FActorTypeMapper::ActorToType(UClass* InClass)
 	else if (TypeName == AStaticMeshActor::StaticClass()->GetClassTypeName())
 	{
 		return "StaticMeshComp";
+	}
+	else if (TypeName == ADecalActor::StaticClass()->GetClassTypeName())
+	{
+		return "Decal";
+	}
+	else if (TypeName == ABillboardActor::StaticClass()->GetClassTypeName())
+	{
+		return "BillBoard";
 	}
 }
 
@@ -68,6 +78,14 @@ UClass* FActorTypeMapper::TypeToActor(const FString& InTypeString)
 	else if (InTypeString == "StaticMeshComp")
 	{
 		NewActorClass = AStaticMeshActor::StaticClass();
+	}
+	else if (InTypeString == "Decal")
+	{
+		NewActorClass = ADecalActor::StaticClass();
+	}
+	else if (InTypeString == "BillBoard")
+	{
+		NewActorClass = ABillboardActor::StaticClass();
 	}
 
 	return NewActorClass;

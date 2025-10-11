@@ -4,6 +4,8 @@
 #include "Component/Public/TextRenderComponent.h"
 #include "Editor/Public/EditorEngine.h"
 #include "Level/Public/Level.h"
+#include "Utility/Public/JsonSerializer.h"
+#include <json.hpp>
 
 IMPLEMENT_CLASS(AActor, UObject)
 
@@ -33,9 +35,99 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
 	Super::Serialize(bInIsLoading, InOutHandle);
 
-	if (RootComponent)
+	if (bInIsLoading)
 	{
-		RootComponent->Serialize(bInIsLoading, InOutHandle);
+		// 0. 기존에 있던 모든 컴포넌트 자원을 할당 해제합니다. 
+		for (UActorComponent* Component : OwnedComponents) { SafeDelete(Component); }
+		OwnedComponents.clear();
+		RootComponent = nullptr;
+
+		// 1. 저장된 파일로부터 모든 컴포넌트를 불러와, 생성을 하고 등록합니다.
+		TMap<FName, TObjectPtr<UActorComponent>> CreatedComponentsMap;
+		if (InOutHandle.hasKey("Components"))
+		{
+			JSON ComponentsData = InOutHandle["Components"];
+			for (auto& ComponentData : ComponentsData.ArrayRange())
+			{
+				std::string ClassName = ComponentData["ClassName"].ToString();
+				FName ComponentName = FName(ComponentData["Name"].ToString());
+
+				if (TObjectPtr<UClass> FoundClass = UClass::FindClass(FName(ClassName)))
+				{
+					if (TObjectPtr<UActorComponent> NewComponent = NewObject<UActorComponent>(this, FoundClass))
+					{
+						NewComponent->SetOwner(this);
+						NewComponent->SetName(ComponentName);
+						OwnedComponents.push_back(NewComponent);
+						CreatedComponentsMap.emplace(ComponentName, NewComponent);
+					}
+				}
+			}
+		}
+		
+		// 2. 루트 컴포넌트를 찾아 루트 계층으로 설정합니다.
+		if (InOutHandle.hasKey("RootComponentName"))
+		{
+			FName RootName = FName(InOutHandle["RootComponentName"].ToString());
+			if (auto It = CreatedComponentsMap.find(RootName); It != CreatedComponentsMap.end())
+			{
+				RootComponent = Cast<USceneComponent>(It->second);
+			}
+		}
+
+		// 3. 각 컴포넌트의 부모 컴포넌트를 설정하여, 최종적으로 액터의 계층 구조를 완성합니다.
+		if (InOutHandle.hasKey("Components"))
+		{
+			JSON ComponentsData = InOutHandle["Components"];
+			for (auto& ComponentData : ComponentsData.ArrayRange())
+			{
+				FName ComponentName = FName(ComponentData["Name"].ToString());
+				if (auto It = CreatedComponentsMap.find(ComponentName); It != CreatedComponentsMap.end())
+				{
+					TObjectPtr<UActorComponent> Component = It->second;
+
+					if (ComponentData.hasKey("ParentName"))
+					{
+						FName ParentName = FName(ComponentData["ParentName"].ToString());
+						if (auto ParentIt = CreatedComponentsMap.find(ParentName); ParentIt != CreatedComponentsMap.end())
+						{
+							TObjectPtr<USceneComponent> ParentComponent = Cast<USceneComponent>(ParentIt->second);
+							TObjectPtr<USceneComponent> ChildComponent = Cast<USceneComponent>(Component);
+							if (ParentComponent && ChildComponent)
+							{
+								ChildComponent->SetParentAttachment(ParentComponent);
+								ParentComponent->AddChild(ChildComponent);
+							}
+						}
+					}
+
+					// Now serialize component properties
+					Component->Serialize(bInIsLoading, ComponentData);
+				}
+			}
+		}
+	}
+	else
+	{
+		// 1. 루트 컴포넌트를 저장합니다.
+		if (RootComponent)
+		{
+			InOutHandle["RootComponentName"] = RootComponent->GetName().ToString();
+		}
+
+		// 2. 하위 컴포넌트를 저장합니다.
+		JSON ComponentsData = JSON::Make(JSON::Class::Array);
+		for (const auto& Component : OwnedComponents)
+		{
+			if (Component)
+			{
+				JSON ComponentData;
+				ComponentData["ClassName"] = Component->GetClass()->GetClassTypeName().ToString();
+				Component->Serialize(bInIsLoading, ComponentData);
+				ComponentsData.append(ComponentData);
+			}
+		}
+		InOutHandle["Components"] = ComponentsData;
 	}
 }
 

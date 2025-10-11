@@ -18,6 +18,8 @@ public:
 
 	}*/
 
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+
 	virtual UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
 
 	virtual void BeginPlay();
