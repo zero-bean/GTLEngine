@@ -232,17 +232,18 @@ const FVector& AActor::GetActorScale3D() const
 
 void AActor::AddComponent(TObjectPtr<UActorComponent> InComponent)
 {
-	if (!InComponent || !RootComponent)
-	{
-		return;
-	}
+	AddComponent(InComponent, RootComponent);
+}
+
+void AActor::AddComponent(TObjectPtr<UActorComponent> InComponent, TObjectPtr<USceneComponent> InParent)
+{
+	if (!InComponent || !RootComponent) { return; }
 
 	InComponent->SetOwner(this);
 	OwnedComponents.push_back(InComponent);
 
 	USceneComponent* InSceneComponent = Cast<USceneComponent>(InComponent);
-	RootComponent->AddChild(InSceneComponent);
-	InSceneComponent->SetParentAttachment(RootComponent);
+	InSceneComponent->SetParentAttachment(InParent);
 
 	TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(InComponent);
 	GEngine->GetCurrentLevel()->AddLevelPrimitiveComponent(PrimitiveComponent);

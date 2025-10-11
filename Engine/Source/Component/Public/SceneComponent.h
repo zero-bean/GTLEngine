@@ -36,6 +36,8 @@ public:
 	const FMatrix& GetWorldTransformMatrix() const;
 	const FMatrix& GetWorldTransformMatrixInverse() const;
 
+	const TArray<USceneComponent*>& GetChildren() const;
+
 private:
 	mutable bool bIsTransformDirty = true;
 	mutable bool bIsTransformDirtyInverse = true;

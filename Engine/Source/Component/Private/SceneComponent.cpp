@@ -101,9 +101,9 @@ void USceneComponent::SetParentAttachment(USceneComponent* NewParent)
 	}
 
 	//부모의 조상중에 내 자식이 있으면 순환참조 -> 스택오버플로우 일어남.
-	for (USceneComponent* Ancester = NewParent; Ancester; Ancester = NewParent->ParentAttachment)
+	for (USceneComponent* Ancester = NewParent; Ancester; Ancester = Ancester->ParentAttachment)
 	{
-		if (NewParent == this) //조상중에 내 자식이 있다면 조상중에 내가 있을 것임.
+		if (Ancester == this) //조상중에 내 자식이 있다면 조상중에 내가 있을 것임.
 			return;
 	}
 
@@ -115,6 +115,12 @@ void USceneComponent::SetParentAttachment(USceneComponent* NewParent)
 	}
 
 	ParentAttachment = NewParent;
+
+	// 새로운 부모가 있다면, 그 부모의 자식 목록에 자신을 추가
+	if (ParentAttachment)
+	{
+		ParentAttachment->AddChild(this);
+	}
 
 	MarkAsDirty();
 }
@@ -225,4 +231,9 @@ const FMatrix& USceneComponent::GetWorldTransformMatrixInverse() const
 	}
 
 	return WorldTransformMatrixInverse;
+}
+
+const TArray<USceneComponent*>& USceneComponent::GetChildren() const
+{
+	return Children;
 }
