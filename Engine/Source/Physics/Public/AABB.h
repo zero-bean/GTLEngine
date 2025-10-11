@@ -88,18 +88,19 @@ FORCEINLINE bool FAABB::RaycastHit(const FRay& Ray, float* OutDistance) const
 	// correct bmin packing (typo guard)
 	bmin = _mm_set_ps(0.0f, Min.Z, Min.Y, Min.X);
 
-	// Parallel mask: |d| < eps
-	const __m128 eps = _mm_set1_ps(1e-8f);
-	__m128 absd = _mm_andnot_ps(_mm_set1_ps(-0.0f), d); // clear sign bit
-	__m128 parallelMask = _mm_cmplt_ps(absd, eps);
+    // Parallel mask: |d| < eps
+    const __m128 eps = _mm_set1_ps(1e-8f);
+    __m128 absd = _mm_andnot_ps(_mm_set1_ps(-0.0f), d); // clear sign bit
+    __m128 parallelMask = _mm_cmplt_ps(absd, eps);
 
-	// For parallel axes, the origin must lie within [min,max]
-	__m128 o_ge_min = _mm_cmpge_ps(o, bmin);
-	__m128 o_le_max = _mm_cmple_ps(o, bmax);
-	__m128 insideSlab = _mm_and_ps(o_ge_min, o_le_max);
-	__m128 parallelFail = _mm_and_ps(parallelMask, _mm_xor_ps(insideSlab, _mm_set1_ps(-0.0f))); // invert insideSlab -> outside
-	// If any lane is parallel AND outside → miss
-	if (_mm_movemask_ps(parallelFail) & 0x7) return false;
+    // For parallel axes, the origin must lie within [min,max]
+    __m128 o_ge_min = _mm_cmpge_ps(o, bmin);
+    __m128 o_le_max = _mm_cmple_ps(o, bmax);
+    __m128 insideSlab = _mm_and_ps(o_ge_min, o_le_max);
+    // parallelFail = parallelMask & (~insideSlab)
+    __m128 parallelFail = _mm_andnot_ps(insideSlab, parallelMask);
+    // If any lane is parallel AND outside → miss (ignore w lane)
+    if (_mm_movemask_ps(parallelFail) & 0x7) return false;
 
 	// invD (safe because parallel lanes passed the test above)
 	__m128 invD = _mm_div_ps(_mm_set1_ps(1.0f), d);

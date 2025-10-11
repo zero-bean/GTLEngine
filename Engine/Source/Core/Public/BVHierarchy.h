@@ -21,15 +21,6 @@ struct FBVHNode
 	uint32 FrustumMask = 0;
 };
 
-struct TriBVHNode {
-	FAABB Bounds;
-	int LeftChild;    // -1 if leaf
-	int RightChild;   // -1 if leaf
-	int Start;        // index into triangle array
-	int Count;        // number of triangles in leaf
-	bool bIsLeaf;
-};
-
 struct FBVHPrimitive
 {
 	FVector Center;

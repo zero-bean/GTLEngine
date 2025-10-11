@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "ObjImporter.h"
 #include "Component/Mesh/Public/StaticMesh.h"
@@ -6,6 +6,12 @@
 
 struct FAABB;
 
+struct FTextureOption
+{
+	FString DisplayName;
+	FString FilePath;
+	TObjectPtr<UTexture> Texture;
+};
 /**
  * @brief 전역의 On-Memory Asset을 관리하는 매니저 클래스
  */
@@ -36,6 +42,7 @@ public:
 	ID3D11InputLayout* GetIputLayout(EShaderType Type);
 
 	// Texture 관련 함수들
+	void LoadAssets();
 	ComPtr<ID3D11ShaderResourceView> LoadTexture(const FName& InFilePath, const FName& InName = FName::GetNone());
 	UTexture* CreateTexture(const FName& InFilePath, const FName& InName = FName::GetNone());
 	ComPtr<ID3D11ShaderResourceView> GetTexture(const FName& InFilePath);
@@ -62,6 +69,10 @@ public:
 	// Bounding Box
 	const FAABB& GetAABB(EPrimitiveType InType);
 	const FAABB& GetStaticMeshAABB(FName InName);
+
+	// jft Texture Cache
+	const TArray<FTextureOption>& GetBillboardSpriteOptions();
+	const TArray<FTextureOption>& GetDecalTextureOptions();
 
 private:
 	// Vertex Resource
@@ -100,4 +111,11 @@ private:
 	// AABB Resource
 	TMap<EPrimitiveType, FAABB> AABBs;		// 각 타입별 AABB 저장
 	TMap<FName, FAABB> StaticMeshAABBs;	// 스태틱 메시용 AABB 저장
+
+	//jft
+	// Texture Resources
+	// billboard cache
+	TArray<FTextureOption> BillboardSpriteOptions;
+	// decal cache
+	TArray<FTextureOption> DecalTextureOptions;
 };

@@ -77,6 +77,7 @@ public:
 
 	void AddLevelPrimitiveComponentsInActor(AActor* Actor);
 	void AddLevelPrimitiveComponent(TObjectPtr<UPrimitiveComponent> InPrimitiveComponent);
+	void RemoveLevelPrimitiveComponent(TObjectPtr<UPrimitiveComponent> InPrimitiveComponent);
 	void InitializeActorsInLevel();
 
 	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone());

@@ -48,6 +48,7 @@ public:
 	const FVector& GetActorScale3D() const;
 
 	void AddComponent(TObjectPtr<UActorComponent> InComponent);
+	void RemoveComponent(TObjectPtr<UActorComponent> Component);
 
 	bool IsActorTickEnabled() const { return bIsActorTickEnabled; }
 	void SetActorTickEnabled(bool bInActorTickEnabled) { bIsActorTickEnabled = bInActorTickEnabled; }

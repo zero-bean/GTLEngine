@@ -1,7 +1,9 @@
-#pragma once
+﻿#pragma once
 #include "Widget.h"
 #include "Global/Types.h"
 #include "Component/Public/TextRenderComponent.h"
+// jft
+#include "Manager/Asset/Public/AssetManager.h"
 
 class AActor;
 class UActorComponent;
@@ -9,21 +11,6 @@ class USceneComponent;
 class UStaticMeshComponent;
 class UStaticMeshComponentWidget;
 class UTexture;
-
-struct FBillboardSpriteOption
-{
-	FString DisplayName;
-	FString FilePath;
-	TObjectPtr<UTexture> Texture;
-};
-
-struct FTextureOption
-{
-	FString DisplayName;
-	FString FilePath;
-	TObjectPtr<UTexture> Texture;
-};
-
 /**
  * @brief 선택된 Actor의 이름과 컴포넌트 트리를 표시하는 Widget
  * Rename 기능이 추가되어 있음
@@ -54,11 +41,10 @@ private:
 	TObjectPtr<AActor> StaticMeshWidgetOwner = nullptr;
 
 	// billboard cache
-	static TArray<FBillboardSpriteOption> BillboardSpriteOptions;
-
 	// decal cache
-	static TArray<FTextureOption> DecalTextureOptions;
 
+    static TArray<FTextureOption> BillboardSpriteOptions;
+    static TArray<FTextureOption> DecalTextureOptions;
 	static bool bAssetsLoaded;
 
 	// Helper functions
