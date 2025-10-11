@@ -47,7 +47,7 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_Target
    {
-   	float3 lightForward = normalize(mul(float4(-1, 0, 0, 0), LightWorld).xyz);
+   	float3 lightForward = normalize(mul(float4(0, 0, -1, 0), LightWorld).xyz);
    	// 1. Projector forward vector in world space (local -X)
    	if (dot(input.WorldNormal, lightForward) >= 0.0f)
    	{
@@ -63,10 +63,10 @@ float4 mainPS(PS_INPUT input) : SV_Target
    		discard;
    	}
 
-   	// Cone culling: base at local x = -0.5, tip at local x = +0.5
-   	const float coneHeight = 1.0f;      // length from -0.5 to +0.5 along local X
+   	// Cone culling: base at local z = -0.5, tip at local z = +0.5
+   	const float coneHeight = 1.0f;      // length from -0.5 to +0.5 along local z
    	const float baseRadius = 0.5f;      // radius at the base plane
-   	float depthFromTip = 0.5f - localPos.x; // distance from tip along -X
+   	float depthFromTip = 0.5f - localPos.z; // distance from tip along -z
 
    	if (depthFromTip < 0.0f || depthFromTip > coneHeight)
    	{
@@ -74,12 +74,12 @@ float4 mainPS(PS_INPUT input) : SV_Target
    	}
 
    	float maxRadius = (depthFromTip / coneHeight) * baseRadius;
-   	float radius = length(localPos.yz);
+   	float radius = length(localPos.xy);
 
    	if (radius > maxRadius)
    	{
    		discard;
    	}
 
-   	return float4(0.0f,1.0f,1.0f,0.0f);
+   	return float4(0.0f,0.0f,0.0f,0.0f);
    }
