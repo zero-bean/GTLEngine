@@ -97,10 +97,12 @@ public:
 	FOBB* GetProjectionBox() const { return ProjectionBox; }
 
 	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
-	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+    void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
 private:
-	UMaterial* DecalMaterial;
-	FOBB* ProjectionBox;
-	FDecalFadeProperty FadeProperty;
+    void UpdateProjectionFromWorldTransform();
+
+    UMaterial* DecalMaterial;
+    FOBB* ProjectionBox;
+    FDecalFadeProperty FadeProperty;
 };
