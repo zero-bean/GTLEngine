@@ -17,5 +17,5 @@ public:
 	FVector4 GetLightColor() { return LightColor; }
 protected:
 	FVector4 Brightness;
-	FVector4 LightColor = FVector4(0, 1.0f, 1.0f, 0);
+	FVector4 LightColor;
 };

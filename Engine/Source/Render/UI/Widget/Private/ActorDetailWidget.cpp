@@ -638,6 +638,22 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 		}
 
 	}
+	else if (InComponent->IsA(USpotLightComponent::StaticClass()))
+	{
+		USpotLightComponent* Spot = Cast<USpotLightComponent>(InComponent);
+		ImGui::Text("Spot Light");
+
+		// --- Color ---
+		// 엔진이 선형색(FLinearColor)을 쓴다고 가정. ImGui는 [0..1] float 입력.
+		FVector4 Cur = Spot->GetLightColor();
+		float ColorRGBA[4] = { Cur.X, Cur.Y, Cur.Z, Cur.W };
+		// 알파는 보통 사용 안 하므로 ColorEdit3로도 충분. 필요하면 ColorEdit4로 교체.
+		if (ImGui::ColorEdit3("Color", ColorRGBA, ImGuiColorEditFlags_Float))
+		{
+			Spot->UpdateLightColor(FVector4(ColorRGBA[0], ColorRGBA[1], ColorRGBA[2], 1.0f));
+		}
+		ImGui::Separator();
+	}
 	else
 	{
 		ImGui::TextColored(ImVec4(0.6f,0.6f,0.6f,1.0f), "No detail view for this component type.");

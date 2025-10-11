@@ -21,7 +21,7 @@
 FClientApp::FClientApp() = default;
 
 FClientApp::~FClientApp() = default;
-/**
+/*
  * @brief Client Main Runtime Function
  * App 초기화, Main Loop 실행을 통한 전체 Cycle
  *

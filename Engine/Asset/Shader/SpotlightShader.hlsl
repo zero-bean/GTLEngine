@@ -86,11 +86,5 @@ float4 mainPS(PS_INPUT input) : SV_Target
    		discard;
 	}
 
-	float4 color = float4(1.0f, 1.0f, 1.0f, 1.0f);
-	if (LightColor)
-	{
-   		color = LightColor;
-	}
-
-	return color;
+	return LightColor;
 }
