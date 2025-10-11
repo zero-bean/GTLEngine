@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Widget.h"
 #include "Global/Types.h"
 #include "Component/Public/TextRenderComponent.h"
@@ -50,7 +50,8 @@ private:
 	// Helper functions
 	void RenderActorHeader(TObjectPtr<AActor> InSelectedActor);
 	void RenderComponentTree(TObjectPtr<AActor> InSelectedActor);
-	void RenderComponentNode(TObjectPtr<UActorComponent> InComponent, USceneComponent* InRootComponent);
+	void RenderHierarchyNode(USceneComponent* InComponent, TSet<UActorComponent*>& OutRenderedComponents);
+	void RenderFlatNode(UActorComponent* InComponent);
 	void RenderComponentDetails(TObjectPtr<UActorComponent> InComponent);
 
 	// 이름 변경 함수
