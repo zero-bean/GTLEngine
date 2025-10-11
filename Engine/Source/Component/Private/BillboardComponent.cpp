@@ -34,7 +34,7 @@ void UBillboardComponent::SetSprite(ELightType LightType)
 	switch (LightType)
 	{
 	case ELightType::Spotlight:
-		SetSprite(BillboardSpriteOptions[0].Texture);
+		SetSprite(BillboardSpriteOptions[1].Texture);
 		break;
 	}
 }

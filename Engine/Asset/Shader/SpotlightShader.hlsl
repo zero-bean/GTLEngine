@@ -62,12 +62,6 @@ float4 mainPS(PS_INPUT input) : SV_Target
 	// Transform fragment position into light local space
 	float3 localPos = mul(float4(input.WorldPos.xyz, 1.0f), LightInverseWorld).xyz;
 
-	// Original cube bounds check to keep the local volume stable
-	if (abs(localPos.x) > 0.5f || abs(localPos.y) > 0.5f || abs(localPos.z) > 0.5f)
-	{
-   		discard;
-	}
-
 	// Cone culling: base at local z = -0.5, tip at local z = +0.5
 	const float coneHeight = 1.0f;      // length from -0.5 to +0.5 along local z
 	const float baseRadius = 0.5f;      // radius at the base plane
