@@ -27,14 +27,15 @@ struct FViewProjConstants
 
 struct FDecalConstants
 {
-	FDecalConstants(const FMatrix& InDecalWorld, const FMatrix& InDecalInverseWorld)
+	FDecalConstants(const FMatrix& InDecalWorld, const FMatrix& InDecalInverseWorld, const float& InFadeAlpha)
+		: DecalWorld(InDecalWorld), DecalInverseWorld(InDecalInverseWorld), FadeAlpha(InFadeAlpha)
 	{
-		DecalWorld = InDecalWorld;
-		DecalInverseWorld = InDecalInverseWorld;
 	}
 
 	FMatrix DecalInverseWorld;
 	FMatrix DecalWorld;
+	float FadeAlpha = 1.0f;
+	float Padding[3];
 
 private:
 	// 사용하기 불편하다면 지워도 상관없습니다. (25.10.07 PYB)

@@ -7,7 +7,7 @@
 cbuffer ModelConstantBuffer : register(b0)
 {
 	row_major float4x4 World; // 월드 행렬
-	row_major float4x4 WorldInverseTranspose; // 월드 역전치 행렬 
+	row_major float4x4 WorldInverseTranspose; // 월드 역전치 행렬
 };
 
 // C++의 FViewProjConstants와 일치
@@ -24,6 +24,8 @@ cbuffer DecalConstantBuffer : register(b3)
 {
 	row_major float4x4 DecalInverseWorld; // 데칼의 월드 역행렬
 	row_major float4x4 DecalWorld;
+	float FadeAlpha;					  // Fade in & out
+	float3 padding;
 };
 
 struct VS_INPUT
@@ -90,6 +92,9 @@ float4 mainPS(PS_INPUT input) : SV_Target
 	{
 		discard;
 	}
-    
+
+	// 5. Alpha 값을 갱신한 뒤 반영합니다.
+	decalColor.a *= FadeAlpha;
+	
 	return decalColor;
 }
