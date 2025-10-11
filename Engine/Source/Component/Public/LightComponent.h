@@ -9,8 +9,6 @@ class ULightComponent : public UPrimitiveComponent
 	DECLARE_CLASS(ULightComponent, UPrimitiveComponent)
 
 public:
-
-
 	ULightComponent();
 
 	void UpdateBrightness();
