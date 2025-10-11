@@ -580,6 +580,9 @@ void URenderer::RenderPrimitiveComponent(UPipeline& InPipeline, UPrimitiveCompon
 	case EPrimitiveType::Decal:
 		RenderPrimitiveLine(InPipeline, InPrimitiveComponent, InRasterizerState, InConstantBufferModels, InConstantBufferColor);
 		break;
+	case EPrimitiveType::Spotlight:
+		RenderPrimitiveLine(InPipeline, InPrimitiveComponent, InRasterizerState, InConstantBufferModels, InConstantBufferColor);
+		break;
 	case EPrimitiveType::StaticMesh:
 		RenderStaticMesh(InPipeline, Cast<UStaticMeshComponent>(InPrimitiveComponent), InRasterizerState, InConstantBufferModels, InConstantBufferMaterial);
 		break;
@@ -595,6 +598,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	TObjectPtr<UTextRenderComponent> TextRender = nullptr;
 	TArray<TObjectPtr<UBillboardComponent>> Billboards;
 	TArray<TObjectPtr<UDecalComponent>> Decals;
+	TArray<TObjectPtr<USpotLightComponent>> SpotLights;
 	TArray<TObjectPtr<UPrimitiveComponent>> PrimitivesToRenderByDecals;
 
 	for (size_t i = 0; i < InPrimitiveComponents.size(); ++i)
@@ -618,6 +622,10 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Decal)
 		{
 			Decals.push_back(Cast<UDecalComponent>(PrimitiveComponent));
+		}
+		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Spotlight)
+		{
+			SpotLights.push_back(Cast<USpotLightComponent>(PrimitiveComponent));
 		}
 		else if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::TextRender)
 		{
@@ -661,8 +669,18 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		RenderPrimitiveComponent(*Pipeline, PrimitiveComponent, LoadedRasterizerState, ConstantBufferModels, ConstantBufferColor, ConstantBufferMaterial);
 	}
 
+	for (UPrimitiveComponent* PrimitiveComponent : SpotLights)
+	{
+		FRenderState RenderState = PrimitiveComponent->GetRenderState();
+		ID3D11RasterizerState* LoadedRasterizerState = GetRasterizerState(RenderState);
+
+		RenderPrimitiveComponent(*Pipeline, PrimitiveComponent, LoadedRasterizerState, ConstantBufferModels, ConstantBufferColor, ConstantBufferMaterial);
+	}
+
 	// 3. 그 다음, 렌더링된 프리미티브 위에 데칼을 렌더링합니다.
 	RenderDecals(InCurrentCamera, Decals, PrimitivesToRenderByDecals);
+	RenderLights(InCurrentCamera, SpotLights, PrimitivesToRenderByDecals);
+
 
 	for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
 	{
