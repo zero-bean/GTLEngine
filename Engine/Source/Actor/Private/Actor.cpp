@@ -251,13 +251,26 @@ void AActor::AddComponent(TObjectPtr<UActorComponent> InComponent, TObjectPtr<US
 
 void AActor::RemoveComponent(TObjectPtr<UActorComponent> Component)
 {
-	if (!Component || !RootComponent)
-	{
-		return;
-	}
+	if (!Component || !RootComponent) { return; }
 
-	USceneComponent* SceneComponent = Cast<USceneComponent>(Component);
-	RootComponent->RemoveChild(SceneComponent);
+	if (USceneComponent* SceneComponentToRemove = Cast<USceneComponent>(Component))
+	{
+		// 1. 부모와 자식 목록의 *복사본*을 가져옵니다. 
+		USceneComponent* Parent = SceneComponentToRemove->GetParentAttachment();
+		TArray<USceneComponent*> ChildrenToReparent = SceneComponentToRemove->GetChildren();
+
+		// 2. 부모로부터 현재 컴포넌트를 분리합니다.
+		SceneComponentToRemove->SetParentAttachment(nullptr);
+
+		// 3. 자식들을 이전 부모에게 다시 붙입니다.
+		if (Parent)
+		{
+			for (USceneComponent* Child : ChildrenToReparent)
+			{
+				Child->SetParentAttachment(Parent);
+			}
+		}
+	}
 	OwnedComponents.erase(std::remove(OwnedComponents.begin(), OwnedComponents.end(), Component), OwnedComponents.end());
 
 	TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
