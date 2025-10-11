@@ -6,6 +6,7 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Public/DecalComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Core/Public/BVHierarchy.h"
 #include "Editor/Public/Editor.h"
 #include "Editor/Public/EditorEngine.h"
 #include "Editor/Public/Viewport.h"
@@ -888,39 +889,65 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		const FOBB* DecalBounds = Decal->GetProjectionBox();
 
 		// 4. 화면에 보이는 모든 프리미티브와 데칼 볼륨의 충돌 검사를 수행합니다.
-		for (UPrimitiveComponent* Primitive : InVisiblePrimitives)
+		TArray<UPrimitiveComponent*> HitComponents;
+		UBVHierarchy::GetInstance().CheckOBBoxCollision(*DecalBounds, HitComponents);
+		for (UPrimitiveComponent* Primitive : HitComponents)
 		{
+			// 데칼 액터의 시각화 컴포넌트에는 데칼을 적용하지 않도록 예외 처리합니다.
 			if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
 			if (Primitive->IsA(UDecalComponent::StaticClass())) { continue; }
 
-			// 데칼 액터의 시각화 컴포넌트에는 데칼을 적용하지 않도록 예외 처리합니다.
-			//if (Primitive == Decal) { continue; }
+			// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
+			FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
+				Primitive->GetWorldTransformMatrixInverse().Transpose());
+			UpdateConstant(ConstantBufferModels, ModelConstants, 0, true, false);
 
-	        // AABB(Axis-Aligned Bounding Box) 교차 검사
-	        // Note: Primitive->GetBoundingBox() is in local space; build a world-space AABB
-	        FVector WorldMin, WorldMax;
-	        Primitive->GetWorldAABB(WorldMin, WorldMax);
-	        FAABB WorldAABB(WorldMin, WorldMax);
-	        if (DecalBounds->Intersects(WorldAABB))
-	        {
-				// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
-				FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
-					Primitive->GetWorldTransformMatrixInverse().Transpose());
-				UpdateConstant(ConstantBufferModels, ModelConstants, 0, true, false);
-
-				// 프리미티브의 버텍스/인덱스 버퍼를 설정합니다.
-				Pipeline->SetVertexBuffer(Primitive->GetVertexBuffer(), sizeof(FNormalVertex));
-				if (Primitive->GetIndexBuffer() && Primitive->GetNumIndices() > 0)
-				{
-					Pipeline->SetIndexBuffer(Primitive->GetIndexBuffer(), 0);
-					Pipeline->DrawIndexed(Primitive->GetNumIndices(), 0, 0);
-				}
-				else
-				{
-					Pipeline->Draw(Primitive->GetNumVertices(), 0);
-				}
+			// 프리미티브의 버텍스/인덱스 버퍼를 설정합니다.
+			Pipeline->SetVertexBuffer(Primitive->GetVertexBuffer(), sizeof(FNormalVertex));
+			if (Primitive->GetIndexBuffer() && Primitive->GetNumIndices() > 0)
+			{
+				Pipeline->SetIndexBuffer(Primitive->GetIndexBuffer(), 0);
+				Pipeline->DrawIndexed(Primitive->GetNumIndices(), 0, 0);
+			}
+			else
+			{
+				Pipeline->Draw(Primitive->GetNumVertices(), 0);
 			}
 		}
+
+		// for (UPrimitiveComponent* Primitive : InVisiblePrimitives)
+		// {
+		// 	if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
+		// 	if (Primitive->IsA(UDecalComponent::StaticClass())) { continue; }
+	 //
+		// 	// 데칼 액터의 시각화 컴포넌트에는 데칼을 적용하지 않도록 예외 처리합니다.
+		// 	//if (Primitive == Decal) { continue; }
+	 //
+	 //        // AABB(Axis-Aligned Bounding Box) 교차 검사
+	 //        // Note: Primitive->GetBoundingBox() is in local space; build a world-space AABB
+	 //        FVector WorldMin, WorldMax;
+	 //        Primitive->GetWorldAABB(WorldMin, WorldMax);
+	 //        FAABB WorldAABB(WorldMin, WorldMax);
+	 //        if (DecalBounds->Intersects(WorldAABB))
+	 //        {
+		// 		// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
+		// 		FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
+		// 			Primitive->GetWorldTransformMatrixInverse().Transpose());
+		// 		UpdateConstant(ConstantBufferModels, ModelConstants, 0, true, false);
+	 //
+		// 		// 프리미티브의 버텍스/인덱스 버퍼를 설정합니다.
+		// 		Pipeline->SetVertexBuffer(Primitive->GetVertexBuffer(), sizeof(FNormalVertex));
+		// 		if (Primitive->GetIndexBuffer() && Primitive->GetNumIndices() > 0)
+		// 		{
+		// 			Pipeline->SetIndexBuffer(Primitive->GetIndexBuffer(), 0);
+		// 			Pipeline->DrawIndexed(Primitive->GetNumIndices(), 0, 0);
+		// 		}
+		// 		else
+		// 		{
+		// 			Pipeline->Draw(Primitive->GetNumVertices(), 0);
+		// 		}
+		// 	}
+		// }
 	}
 }
 
