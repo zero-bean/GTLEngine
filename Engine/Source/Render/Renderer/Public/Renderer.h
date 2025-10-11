@@ -194,7 +194,6 @@ private:
 	ID3D11VertexShader* ProjectionDecalVertexShader = nullptr;
 	ID3D11PixelShader* ProjectionDecalPixelShader = nullptr;
 	ID3D11InputLayout* ProjectionDecalInputLayout = nullptr;
-	ID3D11DepthStencilState* ProjectionDecalDepthState = nullptr;
 	ID3D11BlendState* ProjectionDecalBlendState = nullptr;
 
 	uint32 Stride = 0;

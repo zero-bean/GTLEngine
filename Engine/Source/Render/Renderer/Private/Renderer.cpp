@@ -260,7 +260,7 @@ void URenderer::CreateDepthStencilState()
 
 	ProjectionDecalDescription.StencilEnable = FALSE;
 
-	GetDevice()->CreateDepthStencilState(&ProjectionDecalDescription, &ProjectionDecalDepthState);
+	GetDevice()->CreateDepthStencilState(&ProjectionDecalDescription, &DisableDepthWriteDepthStencilState);
 }
 
 /**
@@ -397,7 +397,7 @@ void URenderer::ReleaseProjectionDecalShader()
 	SafeRelease(ProjectionDecalInputLayout);
 	SafeRelease(ProjectionDecalVertexShader);
 	SafeRelease(ProjectionDecalPixelShader);
-	SafeRelease(ProjectionDecalDepthState);
+	SafeRelease(DisableDepthWriteDepthStencilState);
 	SafeRelease(ProjectionDecalBlendState);
 }
 
@@ -858,7 +858,7 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		ProjectionDecalInputLayout,
 		ProjectionDecalVertexShader,
 		GetRasterizerState(DecalRenderState),
-		ProjectionDecalDepthState,
+		DisableDepthWriteDepthStencilState,
 		ProjectionDecalPixelShader,
 		ProjectionDecalBlendState,
 	};
@@ -1045,7 +1045,7 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 
 	FRenderState BillboardRenderState = InBillboardComp->GetRenderState();
 	ID3D11RasterizerState* RasterizerState = GetRasterizerState(BillboardRenderState);
-	// ID3D11DepthStencilState* DepthStencilState = DisableDepthWriteDepthStencilState;
+	ID3D11DepthStencilState* DepthStencilState = DefaultDepthStencilState;
 
 	if (!RasterizerState)
 	{
@@ -1057,7 +1057,7 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 		TextureInputLayout,
 		TextureVertexShader,
 		RasterizerState,
-		DefaultDepthStencilState,
+		DepthStencilState,
 		TexturePixelShader,
 		BillboardBlendState,
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
