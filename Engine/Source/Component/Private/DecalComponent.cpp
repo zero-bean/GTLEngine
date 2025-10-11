@@ -7,14 +7,10 @@ IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
 
 UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
 {
-	if (DecalMaterial = NewObject<UMaterial>())
-	{
-		UAssetManager& AssetManager = UAssetManager::GetInstance();
-		UTexture* DiffuseTexture = AssetManager.CreateTexture(FName("Asset/Texture/recovery_256x.png"), FName("recovery_256x"));
-		DecalMaterial->SetDiffuseTexture(DiffuseTexture);
-	}
-
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
 	UAssetManager& ResourceManager = UAssetManager::GetInstance();
+
+	DecalMaterial = AssetManager.CreateMaterial(FName("recovery_256x"), FName("Asset/Texture/recovery_256x.png"));
 
 	Type = EPrimitiveType::Decal;
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
@@ -35,15 +31,26 @@ UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
 
 UDecalComponent::~UDecalComponent()
 {
-	SafeDelete(DecalMaterial);
+	DecalMaterial = nullptr;
 }
 
 void UDecalComponent::SetDecalMaterial(UMaterial* InMaterial)
 {
+	if (DecalMaterial == InMaterial) { return; }
+
 	DecalMaterial = InMaterial;
 }
 
 UMaterial* UDecalComponent::GetDecalMaterial() const
 {
 	return DecalMaterial;
+}
+
+UObject* UDecalComponent::Duplicate(FObjectDuplicationParameters Parameters)
+{
+	auto DupObject = static_cast<UDecalComponent*>(Super::Duplicate(Parameters));
+
+	DupObject->DecalMaterial = DecalMaterial;
+
+	return DupObject;
 }

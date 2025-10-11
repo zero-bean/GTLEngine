@@ -33,6 +33,11 @@ UDetailWindow::UDetailWindow()
 	AddWidget(new UActorTerminationWidget);
 }
 
+UDetailWindow::~UDetailWindow()
+{
+	UActorDetailWidget::ReleaseAssets();
+}
+
 /**
  * @brief 초기화 함수
  */

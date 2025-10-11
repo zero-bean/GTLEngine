@@ -11,7 +11,7 @@ class UDetailWindow : public UUIWindow
 {
 public:
 	UDetailWindow();
-	virtual ~UDetailWindow() override {}
+	virtual ~UDetailWindow() override;
 
 	void Initialize() override;
 

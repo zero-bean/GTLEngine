@@ -16,6 +16,8 @@ public:
 	void SetDecalMaterial(UMaterial* InMaterial);
 	UMaterial* GetDecalMaterial() const;
 
+	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
+
 private:
 	UMaterial* DecalMaterial;
 };

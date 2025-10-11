@@ -127,6 +127,9 @@ void UAssetManager::Release()
 	// Texture Resource 해제
 	ReleaseAllTextures();
 
+	// Material Resource 해제
+	ReleaseAllMaterials();
+
 	// TMap.Value()
 	for (auto& Pair : VertexBuffers)
 	{
@@ -340,6 +343,78 @@ ID3D11Buffer* UAssetManager::GetIndexBuffer(FName InObjPath)
 	return nullptr;
 }
 
+/**
+ * @brief 머티리얼을 생성하고 캐시에 저장하는 함수
+ * @param InMaterialName 생성할 머티리얼의 이름 (키로 사용)
+ * @param InTexturePath 머티리얼에 사용할 텍스처 파일 경로 (옵션)
+ * @return 성공 시 UMaterial 포인터, 실패 시 nullptr
+ */
+UMaterial* UAssetManager::CreateMaterial(const FName& InMaterialName, const FName& InTexturePath)
+{
+	if (HasMaterial(InMaterialName))
+	{
+		return GetMaterial(InMaterialName);
+	}
+
+	auto NewMaterial = std::make_unique<UMaterial>();
+	if (!NewMaterial)
+	{
+		return nullptr;
+	}
+
+	// 텍스처 경로가 유효하면 텍스처를 생성하여 머티리얼에 설정
+	if (InTexturePath != FName::GetNone() && !InTexturePath.ToString().empty())
+	{
+		UTexture* Texture = CreateTexture(InTexturePath);
+		if (Texture)
+		{
+			NewMaterial->SetDiffuseTexture(Texture);
+		}
+		else
+		{
+			UE_LOG_WARNING("머티리얼 '%s'에 대한 텍스처 로드 실패: %s", InMaterialName.ToString().c_str(), InTexturePath.ToString().c_str());
+		}
+	}
+
+	// 기본 셰이더 설정 (필요에 따라 수정)
+	// NewMaterial->SetVertexShader(GetVertexShader(EShaderType::Default));
+	// NewMaterial->SetPixelShader(GetPixelShader(EShaderType::Default));
+
+	UMaterial* MaterialPtr = NewMaterial.get();
+	MaterialCache.emplace(InMaterialName, std::move(NewMaterial));
+
+	return MaterialPtr;
+}
+
+UMaterial* UAssetManager::GetMaterial(const FName& InMaterialName)
+{
+	if (auto Iter = MaterialCache.find(InMaterialName); Iter != MaterialCache.end())
+	{
+		return Iter->second.get();
+	}
+
+	return nullptr;
+}
+
+void UAssetManager::ReleaseMaterial(UMaterial* InMaterial)
+{
+	if (InMaterial == nullptr) { return; }
+
+	for (auto Iter = MaterialCache.begin(); Iter != MaterialCache.end(); ++Iter)
+	{
+		if (Iter->second.get() == InMaterial)
+		{
+			MaterialCache.erase(Iter);
+			return; 
+		}
+	}
+}
+
+bool UAssetManager::HasMaterial(const FName& InMaterialName) const
+{
+	return MaterialCache.find(InMaterialName) != MaterialCache.end();
+}
+
 ID3D11Buffer* UAssetManager::CreateVertexBuffer(TArray<FNormalVertex> InVertices)
 {
 	return URenderer::GetInstance().CreateVertexBuffer(InVertices.data(), static_cast<int>(InVertices.size()) * sizeof(FNormalVertex));
@@ -519,6 +594,11 @@ void UAssetManager::ReleaseAllTextures()
 		}
 	}
 	TextureCache.clear();
+}
+
+void UAssetManager::ReleaseAllMaterials()
+{
+	MaterialCache.clear();
 }
 
 /**
