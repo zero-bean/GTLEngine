@@ -16,6 +16,8 @@ public:
 	UBillboardComponent();
 	~UBillboardComponent();
 
+	virtual void SetParentAttachment(USceneComponent* SceneComponent) override;
+
     FMatrix GetRTMatrix() const { return RTMatrix; }
 
     void UpdateRotationMatrix(const UCamera* InCamera);
@@ -24,7 +26,7 @@ public:
 
     void SetSprite(ELightType LightType);
     void SetSprite(UTexture* InTexture);
-
+	void SetAboveActor();
 private:
     FMatrix RTMatrix;
     TObjectPtr<UTexture> Sprite;
