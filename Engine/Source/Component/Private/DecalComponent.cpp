@@ -5,16 +5,12 @@
 
 IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
 
-UDecalComponent::UDecalComponent() : DecalMaterial(nullptr), ProjectionBox(nullptr)
+UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
 {
-	if (DecalMaterial = NewObject<UMaterial>())
-	{
-		UAssetManager& AssetManager = UAssetManager::GetInstance();
-		UTexture* DiffuseTexture = AssetManager.CreateTexture(FName("Asset/Texture/recovery_256x.png"), FName("recovery_256x"));
-		DecalMaterial->SetDiffuseTexture(DiffuseTexture);
-	}
-
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
 	UAssetManager& ResourceManager = UAssetManager::GetInstance();
+
+	DecalMaterial = AssetManager.CreateMaterial(FName("recovery_256x"), FName("Asset/Texture/recovery_256x.png"));
 
 	Type = EPrimitiveType::Decal;
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
@@ -27,8 +23,7 @@ UDecalComponent::UDecalComponent() : DecalMaterial(nullptr), ProjectionBox(nullp
 	IndexBuffer = ResourceManager.GetIndexbuffer(Type);
 	NumIndices = ResourceManager.GetNumIndices(Type);
 
-	const FAABB* AABB = &ResourceManager.GetAABB(Type);
-	BoundingBox = AABB;
+	BoundingBox = &ResourceManager.GetAABB(Type);
 
 	// 렌더링 상태를 와이어프레임으로 설정 (DecalActor 생성자에서 가져옴)
 	RenderState.FillMode = EFillMode::Solid;
@@ -65,6 +60,7 @@ UDecalComponent::UDecalComponent() : DecalMaterial(nullptr), ProjectionBox(nullp
 
 UDecalComponent::~UDecalComponent()
 {
+	DecalMaterial = nullptr;
     SafeDelete(DecalMaterial);
     SafeDelete(ProjectionBox);
 }
@@ -100,10 +96,21 @@ void UDecalComponent::TickComponent(float DeltaSeconds)
 
 void UDecalComponent::SetDecalMaterial(UMaterial* InMaterial)
 {
+	if (DecalMaterial == InMaterial) { return; }
+
 	DecalMaterial = InMaterial;
 }
 
 UMaterial* UDecalComponent::GetDecalMaterial() const
 {
 	return DecalMaterial;
+}
+
+UObject* UDecalComponent::Duplicate(FObjectDuplicationParameters Parameters)
+{
+	auto DupObject = static_cast<UDecalComponent*>(Super::Duplicate(Parameters));
+
+	DupObject->DecalMaterial = DecalMaterial;
+
+	return DupObject;
 }

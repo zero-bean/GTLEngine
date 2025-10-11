@@ -22,7 +22,6 @@
 #include "Texture/Public/Texture.h"
 #include "Core/Public/BVHierarchy.h"
 #include "Core/Public/Object.h"
-#include "Texture/Public/Texture.h"
 #include "Manager/Asset/Public/AssetManager.h"
 
 #include <algorithm>
@@ -30,86 +29,15 @@
 #include <exception>
 #include <filesystem>
 
-namespace
-{
-struct FBillboardSpriteOption
-{
-    FString DisplayName;
-    FString FilePath;
-    TObjectPtr<UTexture> Texture;
-};
+TArray<FBillboardSpriteOption> UActorDetailWidget::BillboardSpriteOptions;
+TArray<FTextureOption> UActorDetailWidget::DecalTextureOptions;
+bool UActorDetailWidget::bAssetsLoaded = false;
 
-TArray<FBillboardSpriteOption>& GetBillboardSpriteOptions()
-{
-    static bool bInitialized = false;
-    static TArray<FBillboardSpriteOption> Options;
-
-    if (!bInitialized)
-    {
-    	bInitialized = true;
-
-        const std::filesystem::path IconDirectory = std::filesystem::absolute(std::filesystem::path("Asset/Icon"));
-        const FString IconDirectoryString = IconDirectory.generic_string();
-
-        if (!std::filesystem::exists(IconDirectory))
-        {
-            UE_LOG_WARNING("ActorDetailWidget: Icon directory not found: %s", IconDirectoryString.c_str());
-            return Options;
-        }
-
-        UAssetManager& AssetManager = UAssetManager::GetInstance();
-
-        try
-        {
-            for (const auto& Entry : std::filesystem::directory_iterator(IconDirectory))
-            {
-                if (!Entry.is_regular_file())
-                {
-                    continue;
-                }
-
-                FString Extension = Entry.path().extension().string();
-                std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char InChar)
-                {
-                    return static_cast<char>(std::tolower(InChar));
-                });
-
-                if (Extension != ".png")
-                {
-                    continue;
-                }
-
-                FString FilePath = Entry.path().generic_string();
-                FString DisplayName = Entry.path().stem().string();
-
-                UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName);
-                if (!Texture)
-                {
-                    UE_LOG_WARNING("ActorDetailWidget: Failed to load billboard icon texture %s", FilePath.c_str());
-                    continue;
-                }
-
-                Options.push_back(FBillboardSpriteOption { DisplayName, FilePath, TObjectPtr(Texture) });
-            }
-        }
-        catch (const std::exception& Exception)
-        {
-            UE_LOG_ERROR("ActorDetailWidget: Failed to enumerate billboard icons: %s", Exception.what());
-            Options.clear();
-        }
-
-        std::sort(Options.begin(), Options.end(), [](const FBillboardSpriteOption& A, const FBillboardSpriteOption& B)
-        {
-            return A.DisplayName < B.DisplayName;
-        });
-    }
-
-    return Options;
-}
-}
 UActorDetailWidget::UActorDetailWidget()
 	: UWidget("Actor Detail Widget")
 {
+	if (!bAssetsLoaded) { LoadAssets(); }
+	UE_LOG("ActorDetailWidget: Initialized");
 }
 
 UActorDetailWidget::~UActorDetailWidget()
@@ -152,6 +80,95 @@ void UActorDetailWidget::RenderWidget()
 
 	// 컴포넌트 트리 렌더링
 	RenderComponentTree(SelectedActor);
+}
+
+void UActorDetailWidget::LoadAssets()
+{
+	if (bAssetsLoaded) { return; }
+
+	// 빌보드 아이콘 로드
+	const std::filesystem::path IconDirectory = std::filesystem::absolute(std::filesystem::path("Asset/Icon"));
+	if (std::filesystem::exists(IconDirectory))
+	{
+		UAssetManager& AssetManager = UAssetManager::GetInstance();
+		for (const auto& Entry : std::filesystem::directory_iterator(IconDirectory))
+		{
+			if (!Entry.is_regular_file() || Entry.path().extension() != ".png") continue;
+
+			FString FilePath = Entry.path().generic_string();
+			FString DisplayName = Entry.path().stem().string();
+
+			if (UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName))
+			{
+				BillboardSpriteOptions.push_back({ DisplayName, FilePath, TObjectPtr(Texture) });
+			}
+		}
+		std::sort(BillboardSpriteOptions.begin(), BillboardSpriteOptions.end(),
+			[](const FBillboardSpriteOption& A, const FBillboardSpriteOption& B) {
+				return A.DisplayName < B.DisplayName;
+			});
+	}
+
+	// 데칼 텍스처 로드
+	const std::filesystem::path DecalTextureDirectory = std::filesystem::absolute(std::filesystem::path("Asset/Texture/"));
+	if (std::filesystem::exists(DecalTextureDirectory))
+	{
+		UAssetManager& AssetManager = UAssetManager::GetInstance();
+		for (const auto& Entry : std::filesystem::directory_iterator(DecalTextureDirectory))
+		{
+			if (Entry.is_regular_file())
+			{
+				FString Extension = Entry.path().extension().string();
+				std::transform(Extension.begin(), Extension.end(), Extension.begin(),
+					[](unsigned char InChar) { return static_cast<char>(std::tolower(InChar)); });
+
+				if (Extension == ".png" || Extension == ".jpg" || Extension == ".jpeg" || Extension == ".dds" || Extension == ".tga")
+				{
+					FString FilePath = Entry.path().generic_string();
+					FString DisplayName = Entry.path().stem().string();
+
+					if (UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName))
+					{
+						DecalTextureOptions.push_back({ DisplayName, FilePath, TObjectPtr(Texture) });
+					}
+				}
+			}
+		}
+		std::sort(DecalTextureOptions.begin(), DecalTextureOptions.end(),
+			[](const FTextureOption& A, const FTextureOption& B) {
+				return A.DisplayName < B.DisplayName;
+			});
+	}
+
+	bAssetsLoaded = true;
+}
+
+void UActorDetailWidget::ReleaseAssets()
+{
+	// BillboardSpriteOptions에 있는 UTexture 객체들을 순회하며 메모리 해제
+	for (FBillboardSpriteOption& Option : BillboardSpriteOptions)
+	{
+		if (Option.Texture)
+		{
+			delete Option.Texture.Get();
+			Option.Texture = nullptr;
+		}
+	}
+	BillboardSpriteOptions.clear(); 
+
+	// DecalTextureOptions에 있는 UTexture 객체들을 순회하며 메모리 해제
+	for (FTextureOption& Option : DecalTextureOptions)
+	{
+		if (Option.Texture)
+		{
+			delete Option.Texture.Get();
+			Option.Texture = nullptr;
+		}
+	}
+	DecalTextureOptions.clear(); 
+
+	bAssetsLoaded = false; // 애셋이 해제되었음을 표시
+	UE_LOG("ActorDetailWidget: Released all static assets.");
 }
 
 void UActorDetailWidget::RenderActorHeader(TObjectPtr<AActor> InSelectedActor)
@@ -483,98 +500,6 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 			}
 		}
 	}
-	else if (InComponent->IsA(UBillboardComponent::StaticClass()))
-	{
-		UBillboardComponent* Billboard = Cast<UBillboardComponent>(InComponent);
-
-		auto GetTextureDisplayName = [](UTexture* InTexture) -> FString
-		{
-			if (!InTexture)
-			{
-				return "None";
-			}
-
-			FString DisplayName = InTexture->GetName().ToString();
-			if (!DisplayName.empty() && DisplayName.rfind("Object_", 0) != 0)
-			{
-				return DisplayName;
-			}
-
-			FString FilePath = InTexture->GetFilePath().ToString();
-			if (!FilePath.empty())
-			{
-				size_t LastSlash = FilePath.find_last_of("/\\");
-				FString FileName = (LastSlash != FString::npos) ? FilePath.substr(LastSlash + 1) : FilePath;
-
-				size_t LastDot = FileName.find_last_of('.');
-				if (LastDot != FString::npos)
-				{
-					FileName = FileName.substr(0, LastDot);
-				}
-
-				if (!FileName.empty())
-				{
-					return FileName;
-				}
-			}
-
-			return "Texture_" + std::to_string(InTexture->GetUUID());
-		};
-
-		UTexture* CurrentSprite = Billboard->GetSprite();
-		auto& SpriteOptions = GetBillboardSpriteOptions();
-		FString PreviewName = GetTextureDisplayName(CurrentSprite);
-
-		if (CurrentSprite)
-		{
-			const auto Found = std::find_if(SpriteOptions.begin(), SpriteOptions.end(), [CurrentSprite](const FBillboardSpriteOption& Option)
-			{
-				return Option.Texture.Get() == CurrentSprite;
-			});
-			if (Found != SpriteOptions.end())
-			{
-				PreviewName = Found->DisplayName;
-			}
-		}
-
-		if (SpriteOptions.empty())
-		{
-			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "No icon textures found under Engine/Asset/Icon");
-		}
-
-		if (ImGui::BeginCombo("Sprite", PreviewName.c_str()))
-		{
-			bool bNoneSelected = (CurrentSprite == nullptr);
-			if (ImGui::Selectable("None", bNoneSelected))
-			{
-				Billboard->SetSprite(nullptr);
-				CurrentSprite = nullptr;
-			}
-
-			if (bNoneSelected)
-			{
-				ImGui::SetItemDefaultFocus();
-			}
-
-			for (const FBillboardSpriteOption& Option : SpriteOptions)
-			{
-				bool bIsSelected = (Option.Texture.Get() == CurrentSprite);
-
-				if (ImGui::Selectable(Option.DisplayName.c_str(), bIsSelected))
-				{
-					Billboard->SetSprite(Option.Texture.Get());
-					CurrentSprite = Option.Texture.Get();
-				}
-
-				if (bIsSelected)
-				{
-					ImGui::SetItemDefaultFocus();
-				}
-			}
-
-			ImGui::EndCombo();
-		}
-	}
 	else if (InComponent->IsA(UStaticMeshComponent::StaticClass()))
 	{
 		UStaticMeshComponent* StaticMesh = Cast<UStaticMeshComponent>(InComponent);
@@ -582,6 +507,103 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 		{
 			StaticMeshWidget->SetTargetComponent(StaticMesh);
 			StaticMeshWidget->RenderWidget();
+		}
+	}
+	else if (InComponent->IsA(UBillboardComponent::StaticClass()))
+	{
+		UBillboardComponent* Billboard = Cast<UBillboardComponent>(InComponent);
+
+		auto GetTextureDisplayName = [](UTexture* InTexture) -> FString
+			{
+				if (!InTexture) return "None";
+
+				FString DisplayName = InTexture->GetName().ToString();
+				return "Texture_" + std::to_string(InTexture->GetUUID());
+			};
+
+		UTexture* CurrentSprite = Billboard->GetSprite();
+		FString PreviewName = GetTextureDisplayName(CurrentSprite);
+
+
+		if (CurrentSprite)
+		{
+			const auto Found = std::find_if(BillboardSpriteOptions.begin(),
+				BillboardSpriteOptions.end(), [CurrentSprite](const FBillboardSpriteOption& Option)
+				{
+					return Option.Texture.Get() == CurrentSprite;
+				});
+
+			if (Found != BillboardSpriteOptions.end())
+			{
+				PreviewName = Found->DisplayName;
+			}
+		}
+
+		if (BillboardSpriteOptions.empty())
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "No icon textures found under Engine/Asset/Icon");
+		}
+
+		if (ImGui::BeginCombo("Sprite", PreviewName.c_str()))
+		{
+			for (const FBillboardSpriteOption& Option : BillboardSpriteOptions)
+			{
+				bool bIsSelected = (Option.Texture.Get() == CurrentSprite);
+				if (ImGui::Selectable(Option.DisplayName.c_str(), bIsSelected))
+				{
+					Billboard->SetSprite(Option.Texture.Get());
+				}
+
+				if (bIsSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+	}
+	else if (InComponent->IsA(UDecalComponent::StaticClass()))
+	{
+		UDecalComponent* Decal = Cast<UDecalComponent>(InComponent);
+		UMaterial* CurrentMaterial = Decal->GetDecalMaterial();
+		UTexture* CurrentTexture = CurrentMaterial ? CurrentMaterial->GetDiffuseTexture() : nullptr;
+
+		ImGui::Text("Decal Texture");
+
+		FString PreviewName = CurrentTexture ? CurrentTexture->GetName().ToString() : "None";
+
+		if (DecalTextureOptions.empty())
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "No textures found in Asset/Texture/");
+		}
+
+		if (ImGui::BeginCombo("Texture", PreviewName.c_str()))
+		{
+			UAssetManager& AssetManager = UAssetManager::GetInstance();
+
+			// 'None' 선택 옵션 추가
+			if (ImGui::Selectable("None", CurrentTexture == nullptr))
+			{
+				// 텍스처가 없는 빈 머티리얼로 설정
+				UMaterial* EmptyMaterial = AssetManager.CreateMaterial(FName("None_DecalMaterial"));
+				Decal->SetDecalMaterial(EmptyMaterial);
+			}
+
+			// 멤버 변수인 m_DecalTextureOptions를 사용해야 합니다.
+			for (const FTextureOption& Option : DecalTextureOptions)
+			{
+				bool bIsSelected = (Option.Texture.Get() == CurrentTexture);
+				if (ImGui::Selectable(Option.DisplayName.c_str(), bIsSelected))
+				{
+					UMaterial* NewMaterial = AssetManager.CreateMaterial(Option.DisplayName, Option.FilePath);
+					Decal->SetDecalMaterial(NewMaterial);
+				}
+				if (bIsSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
 		}
 	}
 	else

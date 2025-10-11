@@ -2,6 +2,7 @@
 
 #include "ObjImporter.h"
 #include "Component/Mesh/Public/StaticMesh.h"
+#include "Texture/Public/Material.h"
 
 struct FAABB;
 
@@ -48,6 +49,12 @@ public:
 	ID3D11Buffer* CreateIndexBuffer(TArray<uint32> InIndices);
 	ID3D11Buffer* GetIndexBuffer(FName InObjPath);
 
+	// Material 관련 함수
+	UMaterial* CreateMaterial(const FName& InMaterialName, const FName& InTexturePath = FName::GetNone());
+	UMaterial* GetMaterial(const FName& InMaterialName);
+	void ReleaseMaterial(UMaterial* InMaterial);
+	bool HasMaterial(const FName& InMaterialName) const;
+
 	// Create Texture
 	static ID3D11ShaderResourceView* CreateTextureFromFile(const path& InFilePath);
 	static ID3D11ShaderResourceView* CreateTextureFromMemory(const void* InData, size_t InDataSize);
@@ -80,8 +87,12 @@ private:
 	TMap<FName, ID3D11Buffer*> StaticMeshVertexBuffers;
 	TMap<FName, ID3D11Buffer*> StaticMeshIndexBuffers;
 
+	// Material Resource
+	TMap<FName, std::unique_ptr<UMaterial>> MaterialCache;
+
 	// Release Functions
 	void ReleaseAllTextures();
+	void ReleaseAllMaterials();
 
 	// Helper Functions
 	FAABB CalculateAABB(const TArray<FNormalVertex>& Vertices);

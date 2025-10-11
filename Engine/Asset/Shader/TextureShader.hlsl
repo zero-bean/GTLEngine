@@ -94,11 +94,13 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 	//	float alpha = AlphaTexture.Sample(SamplerWrap, input.tex).r;
 	//	finalColor.a *= alpha;
 	//}
-	
+
 	//return finalColor;
 
 	float2 ScrollSpeed = float2(0.0f, 0.1f);
 	float2 UV = frac(input.tex + ScrollSpeed * Time);
 	float4 texColor = DiffuseTexture.Sample(SamplerWrap, UV);
+	if (texColor.a == 0.0f)
+		discard;
 	return texColor;
 }

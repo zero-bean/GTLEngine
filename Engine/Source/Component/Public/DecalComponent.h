@@ -19,6 +19,8 @@ public:
 	UMaterial* GetDecalMaterial() const;
 	FOBB* GetProjectionBox() const { return ProjectionBox; }
 
+	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
+
 private:
 	UMaterial* DecalMaterial;
 	FOBB* ProjectionBox;
