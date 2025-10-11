@@ -113,6 +113,7 @@ public:
 	void UpdateConstant(ID3D11Buffer* InBuffer, const T& InData, uint32 InSlot,
 		bool bBindToVertexShader, bool bBindToPixelShader)
 	{
+
 		if (!InBuffer) return;
 
 		// 1. 상수 버퍼의 메모리에 접근하여 데이터를 업데이트합니다.

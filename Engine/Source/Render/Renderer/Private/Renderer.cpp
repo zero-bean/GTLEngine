@@ -1045,7 +1045,7 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 
 	FRenderState BillboardRenderState = InBillboardComp->GetRenderState();
 	ID3D11RasterizerState* RasterizerState = GetRasterizerState(BillboardRenderState);
-	ID3D11DepthStencilState* DepthStencilState = DisableDepthWriteDepthStencilState;
+	// ID3D11DepthStencilState* DepthStencilState = DisableDepthWriteDepthStencilState;
 
 	if (!RasterizerState)
 	{
@@ -1057,7 +1057,7 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 		TextureInputLayout,
 		TextureVertexShader,
 		RasterizerState,
-		DepthStencilState,
+		DefaultDepthStencilState,
 		TexturePixelShader,
 		BillboardBlendState,
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
@@ -1065,7 +1065,8 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 	Pipeline->UpdatePipeline(PipelineInfo);
 
 	UpdateConstant(ConstantBufferModels, ModelMatrix, 0, true, false);
-	UpdateConstant(ConstantBufferModels, ConstantBufferViewProj, 1, true, false);
+	Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
+	//UpdateConstant(ConstantBufferViewProj, ConstantBufferViewProj, 1, true, false);
 
 	constexpr uint32 MATERIAL_FLAG_DIFFUSE_MAP = 1 << 0;
 	FMaterialConstants MaterialConstants = {};
