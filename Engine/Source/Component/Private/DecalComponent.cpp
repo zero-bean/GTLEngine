@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Component/Public/DecalComponent.h"
-#include "Texture/Public/Material.h" 
+#include "Texture/Public/Material.h"
 #include "Manager/Asset/Public/AssetManager.h"
 
 IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)

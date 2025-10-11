@@ -8,5 +8,7 @@ class USpotLightComponent : public ULightComponent
 	DECLARE_CLASS(USpotLightComponent, ULightComponent)
 public:
 	USpotLightComponent();
+	virtual ~USpotLightComponent();
+
 
 };
