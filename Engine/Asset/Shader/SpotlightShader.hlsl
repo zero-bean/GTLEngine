@@ -11,6 +11,11 @@ cbuffer ViewProjConstantBuffer : register(b1)
 	row_major float4x4 Projection;
 };
 
+cbuffer ColorConstantBuffer : register(b2)
+{
+	float4 LightColor;
+};
+
 cbuffer LightConstantBuffer : register(b3)
 {
 	row_major float4x4 LightInverseWorld; // 데칼의 월드 역행렬
@@ -46,40 +51,46 @@ PS_INPUT mainVS(VS_INPUT input)
 }
 
 float4 mainPS(PS_INPUT input) : SV_Target
-   {
-   	float3 lightForward = normalize(mul(float4(0, 0, -1, 0), LightWorld).xyz);
-   	// 1. Projector forward vector in world space (local -X)
-   	if (dot(input.WorldNormal, lightForward) >= 0.0f)
-   	{
+{
+	float3 lightForward = normalize(mul(float4(0, 0, -1, 0), LightWorld).xyz);
+	// 1. Projector forward vector in world space (local -Z)
+	if (dot(input.WorldNormal, lightForward) >= 0.0f)
+	{
    		discard;
-   	}
+	}
 
-   	// Transform fragment position into decal local space
-   	float3 localPos = mul(float4(input.WorldPos.xyz, 1.0f), LightInverseWorld).xyz;
+	// Transform fragment position into light local space
+	float3 localPos = mul(float4(input.WorldPos.xyz, 1.0f), LightInverseWorld).xyz;
 
-   	// Original cube bounds check to keep the local volume stable
-   	if (abs(localPos.x) > 0.5f || abs(localPos.y) > 0.5f || abs(localPos.z) > 0.5f)
-   	{
+	// Original cube bounds check to keep the local volume stable
+	if (abs(localPos.x) > 0.5f || abs(localPos.y) > 0.5f || abs(localPos.z) > 0.5f)
+	{
    		discard;
-   	}
+	}
 
-   	// Cone culling: base at local z = -0.5, tip at local z = +0.5
-   	const float coneHeight = 1.0f;      // length from -0.5 to +0.5 along local z
-   	const float baseRadius = 0.5f;      // radius at the base plane
-   	float depthFromTip = 0.5f - localPos.z; // distance from tip along -z
+	// Cone culling: base at local z = -0.5, tip at local z = +0.5
+	const float coneHeight = 1.0f;      // length from -0.5 to +0.5 along local z
+	const float baseRadius = 0.5f;      // radius at the base plane
+	float depthFromTip = 0.5f - localPos.z; // distance from tip along -z
 
-   	if (depthFromTip < 0.0f || depthFromTip > coneHeight)
-   	{
+	if (depthFromTip < 0.0f || depthFromTip > coneHeight)
+	{
    		discard;
-   	}
+	}
 
-   	float maxRadius = (depthFromTip / coneHeight) * baseRadius;
-   	float radius = length(localPos.xy);
+	float maxRadius = (depthFromTip / coneHeight) * baseRadius;
+	float radius = length(localPos.xy);
 
-   	if (radius > maxRadius)
-   	{
+	if (radius > maxRadius)
+	{
    		discard;
-   	}
+	}
 
-   	return float4(0.0f,0.0f,0.0f,0.0f);
-   }
+	float4 color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	if (LightColor)
+	{
+   		color = LightColor;
+	}
+
+	return color;
+}
