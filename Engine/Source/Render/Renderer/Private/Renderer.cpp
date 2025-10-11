@@ -377,7 +377,7 @@ void URenderer::CreateProjectionDecalShader()
 		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO; 
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
@@ -967,7 +967,7 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
             ndcMinY = std::min(ndcMinY, y);
             ndcMaxY = std::max(ndcMaxY, y);
         }
-		 
+
         if (!anyInFront) return false; // completely behind camera
 
         // Test overlap with the NDC clip rectangle [-1,1]^2
@@ -1081,6 +1081,8 @@ void URenderer::RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		// 3. 데칼의 월드 변환 역행렬을 계산하여 셰이더로 전달합니다.
 		FLightConstants LightData(Light->GetWorldTransformMatrix(), Light->GetWorldTransformMatrixInverse());
 		UpdateConstant(ConstantBufferSpotlight, LightData, 3, true, true);
+		FVector4 LightColor = Light->GetLightColor();
+		UpdateConstant(ConstantBufferColor, LightColor, 2, true, true);
 
 		// 데칼의 바운딩 볼륨을 가져옵니다.
 		const IBoundingVolume* LightBounds = Light->GetBoundingBox();
@@ -1711,7 +1713,7 @@ void URenderer::CreateBillboardResources()
 		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO; 
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 

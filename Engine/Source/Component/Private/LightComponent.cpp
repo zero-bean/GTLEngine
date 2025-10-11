@@ -4,3 +4,8 @@
 IMPLEMENT_CLASS(ULightComponent, UPrimitiveComponent)
 ULightComponent::ULightComponent()
 {}
+
+void ULightComponent::UpdateLightColor(FVector4 InColor)
+{
+	LightColor = InColor;
+}
