@@ -78,7 +78,7 @@ float4 mainPS(PS_INPUT input) : SV_Target
         abs(localPos.y) > 0.5f ||
         abs(localPos.z) > 0.5f)
 	{
-		//discard;
+		discard;
 	}
 
     // 3. 픽셀의 3D 위치를 X축에서 바라보고 2D 평면(YZ)에 투사하여 UV를 생성.
@@ -95,6 +95,6 @@ float4 mainPS(PS_INPUT input) : SV_Target
 
 	// 5. Alpha 값을 갱신한 뒤 반영합니다.
 	decalColor.a *= FadeAlpha;
-	
+
 	return decalColor;
 }
