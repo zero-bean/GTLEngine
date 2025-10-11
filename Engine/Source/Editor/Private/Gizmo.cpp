@@ -118,23 +118,24 @@ void UGizmo::RenderGizmo(UPipeline& InPipeline, AActor* Actor, UCamera* InCamera
 		LocalRot = bIsWorld ? FQuaternion::Identity() : FQuaternion::FromEuler(TargetActor->GetActorRotation());
 	}
 
-	// X축 (Forward) - 빨간색
-	FQuaternion RotX = LocalRot * FQuaternion::Identity();
-	P.Rotation = RotX.ToEuler();
-	P.Color = ColorFor(EGizmoDirection::Forward);
-	Renderer.RenderEditorPrimitive(InPipeline, P, RenderState);
+    // X축 (Forward) - 빨간색
+    // Arrow mesh is authored along +Z; rotate +90 deg about Y to align to +X, then apply LocalRot
+    FQuaternion RotX = LocalRot * FQuaternion::FromAxisAngle(FVector::RightVector(), +90.0f * (PI / 180.0f));
+    P.Rotation = RotX.ToEuler();
+    P.Color = ColorFor(EGizmoDirection::Forward);
+    Renderer.RenderEditorPrimitive(InPipeline, P, RenderState);
 
-	// Y축 (Right) - 초록색 (Z축 주위로 90도 회전)
-	FQuaternion RotY = LocalRot * FQuaternion::FromAxisAngle(FVector::UpVector(), 90.0f * (PI / 180.0f));
-	P.Rotation = RotY.ToEuler();
-	P.Color = ColorFor(EGizmoDirection::Right);
-	Renderer.RenderEditorPrimitive(InPipeline, P, RenderState);
+    // Y축 (Right) - 초록색: rotate -90 deg about X to align +Z -> +Y, then apply LocalRot
+    FQuaternion RotY = LocalRot * FQuaternion::FromAxisAngle(FVector::ForwardVector(), -90.0f * (PI / 180.0f));
+    P.Rotation = RotY.ToEuler();
+    P.Color = ColorFor(EGizmoDirection::Right);
+    Renderer.RenderEditorPrimitive(InPipeline, P, RenderState);
 
-	// Z축 (Up) - 파란색 (Y축 주위로 -90도 회전)
-	FQuaternion RotZ = LocalRot * FQuaternion::FromAxisAngle(FVector::RightVector(), -90.0f * (PI / 180.0f));
-	P.Rotation = RotZ.ToEuler();
-	P.Color = ColorFor(EGizmoDirection::Up);
-	Renderer.RenderEditorPrimitive(InPipeline, P, RenderState);
+    // Z축 (Up) - 파란색: mesh default already along +Z; just apply LocalRot
+    FQuaternion RotZ = LocalRot * FQuaternion::Identity();
+    P.Rotation = RotZ.ToEuler();
+    P.Color = ColorFor(EGizmoDirection::Up);
+    Renderer.RenderEditorPrimitive(InPipeline, P, RenderState);
 }
 
 void UGizmo::ChangeGizmoMode()
