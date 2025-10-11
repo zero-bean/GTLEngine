@@ -14,7 +14,7 @@ public:
 	float FadeInStartDelay = 0.f;		// 페이드 인 시작 전 대기 시간
 	float FadeDuration = 0.f;			// 페이드 아웃 완료까지 걸리는 시간
 	float FadeStartDelay = 0.f;			// 페이드 아웃 시작 전 대기 시간
-	float FadeAlpha = 0.f;				// 현재 알파값 (0 ~ 1)
+	float FadeAlpha = 1.f;				// 현재 알파값 (0 ~ 1)
 	float ElapsedFadeTime = 0.f;		// 현재 페이드 구간의 경과 시간
 	bool bIsFadingIn = false;			// 현재 페이드 인 중인가?
 	bool bIsFadingOut = false;			// 현재 페이드 아웃 중인가?

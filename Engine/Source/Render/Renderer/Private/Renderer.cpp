@@ -638,12 +638,15 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	}
 
 	// 2. 데칼의 시각용 큐브 라인을 렌더링합니다.
-	for (UPrimitiveComponent* PrimitiveComponent : Decals)
+	if (GEngine->GetCurrentLevel()->GetOwningWorld()->GetWorldType() == EWorldType::Editor)
 	{
-		FRenderState RenderState = PrimitiveComponent->GetRenderState();
-		ID3D11RasterizerState* LoadedRasterizerState = GetRasterizerState(RenderState);
+		for (UPrimitiveComponent* PrimitiveComponent : Decals)
+		{
+			FRenderState RenderState = PrimitiveComponent->GetRenderState();
+			ID3D11RasterizerState* LoadedRasterizerState = GetRasterizerState(RenderState);
 
-		RenderPrimitiveComponent(*Pipeline, PrimitiveComponent, LoadedRasterizerState, ConstantBufferModels, ConstantBufferColor, ConstantBufferMaterial);
+			RenderPrimitiveComponent(*Pipeline, PrimitiveComponent, LoadedRasterizerState, ConstantBufferModels, ConstantBufferColor, ConstantBufferMaterial);
+		}
 	}
 
 	// 3. 그 다음, 렌더링된 프리미티브 위에 데칼을 렌더링합니다.
