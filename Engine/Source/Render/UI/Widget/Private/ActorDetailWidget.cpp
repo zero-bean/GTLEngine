@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Render/UI/Widget/Public/ActorDetailWidget.h"
 #include "Editor/Public/EditorEngine.h"
 #include "Level/Public/Level.h"
@@ -23,7 +23,6 @@
 #include "Texture/Public/Texture.h"
 #include "Manager/BVH/Public/BVHManager.h"
 #include "Core/Public/Object.h"
-#include "Manager/Asset/Public/AssetManager.h"
 
 #include <algorithm>
 #include <cctype>
@@ -32,9 +31,13 @@
 
 #include "Component/Public/SpotLightComponent.h"
 
-TArray<FBillboardSpriteOption> UActorDetailWidget::BillboardSpriteOptions;
-TArray<FTextureOption> UActorDetailWidget::DecalTextureOptions;
 bool UActorDetailWidget::bAssetsLoaded = false;
+TArray<FTextureOption> UActorDetailWidget::BillboardSpriteOptions;
+TArray<FTextureOption> UActorDetailWidget::DecalTextureOptions;
+
+
+
+
 
 UActorDetailWidget::UActorDetailWidget()
 	: UWidget("Actor Detail Widget")
@@ -89,67 +92,15 @@ void UActorDetailWidget::LoadAssets()
 {
 	if (bAssetsLoaded) { return; }
 
-	// 빌보드 아이콘 로드
-	const std::filesystem::path IconDirectory = std::filesystem::absolute(std::filesystem::path("Asset/Icon"));
-	if (std::filesystem::exists(IconDirectory))
-	{
-		UAssetManager& AssetManager = UAssetManager::GetInstance();
-		for (const auto& Entry : std::filesystem::directory_iterator(IconDirectory))
-		{
-			if (!Entry.is_regular_file() || Entry.path().extension() != ".png") continue;
-
-			FString FilePath = Entry.path().generic_string();
-			FString DisplayName = Entry.path().stem().string();
-
-			if (UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName))
-			{
-				BillboardSpriteOptions.push_back({ DisplayName, FilePath, TObjectPtr(Texture) });
-			}
-		}
-		std::sort(BillboardSpriteOptions.begin(), BillboardSpriteOptions.end(),
-			[](const FBillboardSpriteOption& A, const FBillboardSpriteOption& B) {
-				return A.DisplayName < B.DisplayName;
-			});
-	}
-
-	// 데칼 텍스처 로드
-	const std::filesystem::path DecalTextureDirectory = std::filesystem::absolute(std::filesystem::path("Asset/Texture/"));
-	if (std::filesystem::exists(DecalTextureDirectory))
-	{
-		UAssetManager& AssetManager = UAssetManager::GetInstance();
-		for (const auto& Entry : std::filesystem::directory_iterator(DecalTextureDirectory))
-		{
-			if (Entry.is_regular_file())
-			{
-				FString Extension = Entry.path().extension().string();
-				std::transform(Extension.begin(), Extension.end(), Extension.begin(),
-					[](unsigned char InChar) { return static_cast<char>(std::tolower(InChar)); });
-
-				if (Extension == ".png" || Extension == ".jpg" || Extension == ".jpeg" || Extension == ".dds" || Extension == ".tga")
-				{
-					FString FilePath = Entry.path().generic_string();
-					FString DisplayName = Entry.path().stem().string();
-
-					if (UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName))
-					{
-						DecalTextureOptions.push_back({ DisplayName, FilePath, TObjectPtr(Texture) });
-					}
-				}
-			}
-		}
-		std::sort(DecalTextureOptions.begin(), DecalTextureOptions.end(),
-			[](const FTextureOption& A, const FTextureOption& B) {
-				return A.DisplayName < B.DisplayName;
-			});
-	}
-
+	BillboardSpriteOptions = UAssetManager::GetInstance().GetBillboardSpriteOptions();
+	DecalTextureOptions = UAssetManager::GetInstance().GetDecalTextureOptions();
 	bAssetsLoaded = true;
 }
 
 void UActorDetailWidget::ReleaseAssets()
 {
 	// BillboardSpriteOptions에 있는 UTexture 객체들을 순회하며 메모리 해제
-	for (FBillboardSpriteOption& Option : BillboardSpriteOptions)
+	for (FTextureOption& Option : BillboardSpriteOptions)
 	{
 		if (Option.Texture)
 		{
@@ -315,7 +266,11 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		}
 		if (ImGui::MenuItem("SpotLight Component"))
 		{
+			// jft
 			AddComponentToActor(new USpotLightComponent());
+			UBillboardComponent* Billboard = new UBillboardComponent();
+			Billboard->SetSprite(ELightType::Spotlight);
+			AddComponentToActor(std::move(Billboard));
 		}
 		ImGui::Separator();
 		if (ImGui::MenuItem("Cube Component"))
@@ -533,14 +488,14 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 		if (CurrentSprite)
 		{
 			const auto Found = std::find_if(BillboardSpriteOptions.begin(),
-				BillboardSpriteOptions.end(), [CurrentSprite](const FBillboardSpriteOption& Option)
+				BillboardSpriteOptions.end(), [CurrentSprite](const FTextureOption& Option)
 				{
 					return Option.Texture.Get() == CurrentSprite;
 				});
 
 			if (Found != BillboardSpriteOptions.end())
 			{
-				PreviewName = Found->DisplayName;
+				PreviewName = (*Found).DisplayName;
 			}
 		}
 
@@ -551,7 +506,7 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 
 		if (ImGui::BeginCombo("Sprite", PreviewName.c_str()))
 		{
-			for (const FBillboardSpriteOption& Option : BillboardSpriteOptions)
+			for (const FTextureOption& Option : BillboardSpriteOptions)
 			{
 				bool bIsSelected = (Option.Texture.Get() == CurrentSprite);
 				if (ImGui::Selectable(Option.DisplayName.c_str(), bIsSelected))

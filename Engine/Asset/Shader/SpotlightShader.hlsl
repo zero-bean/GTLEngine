@@ -49,7 +49,7 @@ float4 mainPS(PS_INPUT input) : SV_Target
    {
    	float3 lightForward = normalize(mul(float4(-1, 0, 0, 0), LightWorld).xyz);
    	// 1. Projector forward vector in world space (local -X)
-   	if (dot(input.WorldNormal, lightForward) > 0.0f)
+   	if (dot(input.WorldNormal, lightForward) >= 0.0f)
    	{
    		discard;
    	}

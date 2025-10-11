@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Manager/Asset/Public/AssetManager.h"
 
 #include "Render/Renderer/Public/Renderer.h"
@@ -128,6 +128,9 @@ void UAssetManager::Initialize()
 	ID3D11PixelShader* PixelShader;
 	URenderer::GetInstance().CreatePixelShader(L"Asset/Shader/BatchLinePS.hlsl", &PixelShader);
 	PixelShaders.emplace(EShaderType::BatchLine, PixelShader);
+
+	// jft Load Textures, Cache
+	LoadAssets();
 }
 
 void UAssetManager::Release()
@@ -164,6 +167,9 @@ void UAssetManager::Release()
 	// TMap.Empty()
 	VertexBuffers.clear();
 	IndexBuffers.clear();
+
+	BillboardSpriteOptions.clear();
+	DecalTextureOptions.clear();
 }
 
 /**
@@ -478,6 +484,68 @@ ID3D11InputLayout* UAssetManager::GetIputLayout(EShaderType Type)
 	return InputLayouts[Type];
 }
 
+// billboard cache
+TArray<FTextureOption> BillboardSpriteOptions;
+// decal cache
+TArray<FTextureOption> DecalTextureOptions;
+
+void UAssetManager::LoadAssets()
+{
+	// 빌보드 아이콘 로드
+	const std::filesystem::path IconDirectory = std::filesystem::absolute(std::filesystem::path("Asset/Icon"));
+	if (std::filesystem::exists(IconDirectory))
+	{
+		UAssetManager& AssetManager = UAssetManager::GetInstance();
+		for (const auto& Entry : std::filesystem::directory_iterator(IconDirectory))
+		{
+			if (!Entry.is_regular_file() || Entry.path().extension() != ".png") continue;
+
+			FString FilePath = Entry.path().generic_string();
+			FString DisplayName = Entry.path().stem().string();
+
+			if (UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName))
+			{
+				BillboardSpriteOptions.push_back({ DisplayName, FilePath, TObjectPtr(Texture) });
+			}
+		}
+		std::sort(BillboardSpriteOptions.begin(), BillboardSpriteOptions.end(),
+			[](const FTextureOption& A, const FTextureOption& B) {
+				return A.DisplayName < B.DisplayName;
+			});
+	}
+
+	// 데칼 텍스처 로드
+	const std::filesystem::path DecalTextureDirectory = std::filesystem::absolute(std::filesystem::path("Asset/Texture/"));
+	if (std::filesystem::exists(DecalTextureDirectory))
+	{
+		UAssetManager& AssetManager = UAssetManager::GetInstance();
+		for (const auto& Entry : std::filesystem::directory_iterator(DecalTextureDirectory))
+		{
+			if (Entry.is_regular_file())
+			{
+				FString Extension = Entry.path().extension().string();
+				std::transform(Extension.begin(), Extension.end(), Extension.begin(),
+					[](unsigned char InChar) { return static_cast<char>(std::tolower(InChar)); });
+
+				if (Extension == ".png" || Extension == ".jpg" || Extension == ".jpeg" || Extension == ".dds" || Extension == ".tga")
+				{
+					FString FilePath = Entry.path().generic_string();
+					FString DisplayName = Entry.path().stem().string();
+
+					if (UTexture* Texture = AssetManager.CreateTexture(FilePath, DisplayName))
+					{
+						DecalTextureOptions.push_back({ DisplayName, FilePath, TObjectPtr(Texture) });
+					}
+				}
+			}
+		}
+		std::sort(DecalTextureOptions.begin(), DecalTextureOptions.end(),
+			[](const FTextureOption& A, const FTextureOption& B) {
+				return A.DisplayName < B.DisplayName;
+			});
+	}
+}
+
 const FAABB& UAssetManager::GetAABB(EPrimitiveType InType)
 {
 	return AABBs[InType];
@@ -486,6 +554,16 @@ const FAABB& UAssetManager::GetAABB(EPrimitiveType InType)
 const FAABB& UAssetManager::GetStaticMeshAABB(FName InName)
 {
 	return StaticMeshAABBs[InName];
+}
+
+const TArray<FTextureOption>& UAssetManager::GetBillboardSpriteOptions() const
+{
+	return BillboardSpriteOptions;
+}
+
+const TArray<FTextureOption>& UAssetManager::GetDecalTextureOptions() const
+{
+	return DecalTextureOptions;
 }
 
 /**

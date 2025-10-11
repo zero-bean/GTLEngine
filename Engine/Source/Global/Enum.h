@@ -147,6 +147,11 @@ enum class EPrimitiveType : uint8
 };
 DECLARE_UINT8_ENUM_REFLECTION(EPrimitiveType)
 
+UENUM()
+enum class ELightType : uint8
+{
+	Spotlight,
+};
 /**
  * @brief RasterizerState Enum
  */
