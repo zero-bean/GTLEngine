@@ -11,9 +11,6 @@ IMPLEMENT_CLASS(AActor, UObject)
 
 AActor::AActor()
 {
-	// to do: primitive factory로 빌보드 생성
-	// BillBoardComponent = new UBillboardComponent(this, 5.0f);
-	// OwnedComponents.push_back(TObjectPtr<UBillboardComponent>(BillBoardComponent));
 }
 
 AActor::AActor(UObject* InOuter)

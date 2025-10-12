@@ -10,8 +10,11 @@ ASpotLightActor::ASpotLightActor()
 {
 	auto SpotLightComponent = CreateDefaultSubobject<USpotLightComponent>("SpotLightComponent");
 	SetRootComponent(SpotLightComponent);
+}
+
+void ASpotLightActor::BeginPlay()
+{
 	auto BillboardComponent = CreateDefaultSubobject<UBillboardComponent>("BillboardComponent");
 	BillboardComponent->SetSprite(ELightType::Spotlight);
-	
-	BillboardComponent->SetParentAttachment(SpotLightComponent);
+	BillboardComponent->SetParentAttachment(GetRootComponent());
 }

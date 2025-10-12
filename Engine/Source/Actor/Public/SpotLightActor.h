@@ -10,4 +10,6 @@ class ASpotLightActor : public ALightActor
 public:
 	ASpotLightActor();
 	virtual ~ASpotLightActor() = default;
+
+	void BeginPlay() override;
 };
