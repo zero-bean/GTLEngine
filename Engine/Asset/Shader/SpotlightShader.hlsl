@@ -80,5 +80,9 @@ float4 mainPS(PS_INPUT input) : SV_Target
    		discard;
 	}
 
-	return LightColor;
+	float t = saturate(radius / maxRadius);
+	float alpha = pow(1.0 - t, 0.9);
+	float4 OutColor = float4(LightColor.xyz, alpha);
+
+	return OutColor;
 }

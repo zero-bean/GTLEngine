@@ -70,6 +70,7 @@ public:
 	void CreateSpotlightShader();
 	void CreateConstantBuffer();
 	void CreateBillboardResources();
+	void CreateSpotlightResrouces();
 
 	// Release
 	void ReleaseConstantBuffer();

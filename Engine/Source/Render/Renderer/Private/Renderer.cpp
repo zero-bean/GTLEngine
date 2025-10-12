@@ -65,6 +65,7 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateSpotlightShader();
 	CreateConstantBuffer();
 	CreateBillboardResources();
+	CreateSpotlightResrouces();
 
 	// FontRenderer 초기화
 	FontRenderer = new UFontRenderer();
@@ -1719,6 +1720,28 @@ void URenderer::CreateBillboardResources()
 		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 		HRESULT ResultHandle = GetDevice()->CreateBlendState(&BlendDesc, &BillboardBlendState);
+		if (FAILED(ResultHandle))
+		{
+			UE_LOG_ERROR("Renderer: Failed to create billboard blend state (HRESULT: 0x%08lX)", ResultHandle);
+		}
+	}
+}
+
+void URenderer::CreateSpotlightResrouces()
+{
+	if (!SpotlightBlendState)
+	{
+		D3D11_BLEND_DESC BlendDesc = {};
+		BlendDesc.RenderTarget[0].BlendEnable = TRUE;
+		BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		HRESULT ResultHandle = GetDevice()->CreateBlendState(&BlendDesc, &SpotlightBlendState);
 		if (FAILED(ResultHandle))
 		{
 			UE_LOG_ERROR("Renderer: Failed to create billboard blend state (HRESULT: 0x%08lX)", ResultHandle);
