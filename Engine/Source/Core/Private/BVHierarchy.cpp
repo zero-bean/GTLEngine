@@ -554,15 +554,15 @@ void UBVHierarchy::TraverseForCulling(uint32 NodeIndex, FFrustumCull& InFrustum,
 			EFrustumTestResult Result = InFrustum.TestAABBWithPlane(CurrentBound, CurrentPlaneIndex);
 			// 완전히 바깥인 경우 return
 			// 더 이상 검사할 필요가 없음
-			if (Result == EFrustumTestResult::CompletelyOutside)
-			{
-				return;
-			}
-			else if (Result == EFrustumTestResult::Intersect)
-			{
+			// if (Result == EFrustumTestResult::CompletelyOutside)
+			// {
+			// 	return;
+			// }
+			// else if (Result == EFrustumTestResult::Intersect)
+			// {
 				OverallResult = EFrustumTestResult::Intersect;
 				ChildMask |= ToBaseType(PlaneMasks[static_cast<uint32>(CurrentPlaneIndex)]);
-			}
+			//}
 		}
 	}
 
@@ -582,11 +582,11 @@ void UBVHierarchy::TraverseForCulling(uint32 NodeIndex, FFrustumCull& InFrustum,
 		for (size_t i = Nodes[NodeIndex].Start; i < Count; i++)
 		{
 			FAABB TargetAABB = Primitives[i].Bounds;
-			if (InFrustum.IsInFrustum(TargetAABB) != EFrustumTestResult::CompletelyOutside &&
-				Primitives[i].Primitive->IsVisible())
-			{
-				OutVisibleComponents.push_back(Primitives[i].Primitive);
-			}
+			// if (InFrustum.IsInFrustum(TargetAABB) != EFrustumTestResult::CompletelyOutside &&
+			// 	Primitives[i].Primitive->IsVisible())
+			// {
+			 	OutVisibleComponents.push_back(Primitives[i].Primitive);
+			// }
 		}
 		return;
 	}
