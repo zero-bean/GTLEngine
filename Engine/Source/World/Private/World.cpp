@@ -88,6 +88,7 @@ void UWorld::ProcessInput()
 		if (NewDecal)
 		{
 			NewDecal->SetActorLocation(HitPoint);
+			NewDecal->SetActorScale3D(FVector(1.0f, 1.0f, 1.0f));
 		}
 	}
 }
