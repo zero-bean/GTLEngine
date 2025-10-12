@@ -3,9 +3,9 @@
   "PerspectiveCamera" : {
     "FOV" : [90.000000],
     "FarClip" : [1000.000000],
-    "Location" : [-12.617385, 24.652620, 39.193623],
+    "Location" : [-21.418863, 21.019958, 34.655479],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 24.100027, 159.099625]
+    "Rotation" : [0.000000, 21.450033, 172.999496]
   },
   "Primitives" : {
     "164" : {
@@ -187,27 +187,7 @@
       "RootComponentName" : "DecalComponent",
       "Type" : "Decal"
     },
-    "223" : {
-      "Components" : [{
-          "Brightness" : [0.000000, 0.000000, 0.000000, 0.000000],
-          "ClassName" : "USpotLightComponent",
-          "LightColor" : [0.995781, 0.728686, 0.214282, 1.000000],
-          "Location" : [-38.717880, 88.262253, 20.280699],
-          "Name" : "SpotLightComponent",
-          "Rotation" : [-15.900000, 18.500000, 0.000000],
-          "Scale" : [30.000000, 30.000000, 64.099998]
-        }, {
-          "ClassName" : "UBillboardComponent",
-          "Location" : [0.000000, 0.000000, 0.500000],
-          "Name" : "UBillboardComponent",
-          "ParentName" : "SpotLightComponent",
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [9.090000, 9.090000, 9.090000]
-        }],
-      "RootComponentName" : "SpotLightComponent",
-      "Type" : "SpotLight"
-    },
-    "361" : {
+    "228" : {
       "Components" : [{
           "ClassName" : "UStaticMeshComponent",
           "Location" : [-56.070644, 0.000000, 2.933593],
@@ -224,7 +204,7 @@
       "RootComponentName" : "StaticMeshComponent",
       "Type" : "StaticMeshComp"
     },
-    "484" : {
+    "231" : {
       "Components" : [{
           "ClassName" : "UDecalComponent",
           "DecalMaterialName" : "Object_208",

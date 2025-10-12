@@ -17,4 +17,5 @@ void ASpotLightActor::BeginPlay()
 	auto BillboardComponent = CreateDefaultSubobject<UBillboardComponent>("BillboardComponent");
 	BillboardComponent->SetSprite(ELightType::Spotlight);
 	BillboardComponent->SetParentAttachment(GetRootComponent());
+	BillboardComponent->SetRelativeLocation(FVector(0, 0, 0.5f));
 }

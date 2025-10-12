@@ -72,7 +72,7 @@ void UTargetActorTransformWidget::RenderWidget()
 		{
 			float UniformScale = EditScale.X;
 
-			if (ImGui::DragFloat("Scale", &UniformScale, 0.01f, 0.01f, 10.0f))
+			if (ImGui::DragFloat("Scale", &UniformScale, 0.01f, 0.01f, 50.0f))
 			{
 				EditScale = FVector(UniformScale, UniformScale, UniformScale);
 				bScaleChanged = true;
