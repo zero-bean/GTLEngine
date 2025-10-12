@@ -21,6 +21,7 @@
 #include "Global/Function.h"
 #include "Core/Public/ObjectIterator.h"
 #include "Texture/Public/Texture.h"
+#include "Texture/Public/TextureRenderProxy.h"
 #include "Core/Public/BVHierarchy.h"
 #include "Core/Public/Object.h"
 
@@ -570,6 +571,16 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 			}
 			ImGui::EndCombo();
 		}
+
+		if (CurrentSprite && CurrentSprite->GetRenderProxy())
+		{
+			if (ID3D11ShaderResourceView* TextureSRV = CurrentSprite->GetRenderProxy()->GetSRV())
+			{
+				ImGui::Spacing();
+				ImGui::Image((ImTextureID)TextureSRV, ImVec2(128, 128));
+
+			}
+		}
 	}
 	else if (InComponent->IsA(UDecalComponent::StaticClass()))
 	{
@@ -579,7 +590,26 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 
 		ImGui::Text("Decal Texture");
 
-		FString PreviewName = CurrentTexture ? CurrentTexture->GetName().ToString() : "None";
+		FString PreviewName = "None";
+		if (CurrentTexture)
+		{
+			const auto& Found = std::find_if(DecalTextureOptions.begin(), DecalTextureOptions.end(),
+				[CurrentTexture](const FTextureOption& Option)
+				{
+					// Option에 저장된 파일 경로와 현재 텍스처의 파일 경로를 비교
+					return Option.FilePath == CurrentTexture->GetFilePath().ToString();
+				});
+
+			if (Found != DecalTextureOptions.end())
+			{
+				PreviewName = (*Found).DisplayName;
+			}
+			else
+			{
+				// Fallback if texture is not in the cached list
+				PreviewName = CurrentTexture->GetName().ToString();
+			}
+		}
 
 		if (DecalTextureOptions.empty())
 		{
@@ -598,7 +628,6 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 				Decal->SetDecalMaterial(EmptyMaterial);
 			}
 
-			// 멤버 변수인 m_DecalTextureOptions를 사용해야 합니다.
 			for (const FTextureOption& Option : DecalTextureOptions)
 			{
 				bool bIsSelected = (Option.Texture.Get() == CurrentTexture);
@@ -613,6 +642,15 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 				}
 			}
 			ImGui::EndCombo();
+		}
+
+		if (CurrentTexture)
+		{
+			if (ID3D11ShaderResourceView* TextureId = CurrentTexture->GetRenderProxy()->GetSRV())
+			{
+				ImGui::Spacing();
+				ImGui::Image((ImTextureID)(intptr_t)TextureId, ImVec2(128, 128));
+			}
 		}
 
 		ImGui::Separator();

@@ -5,6 +5,7 @@
 #include "Core/Public/ObjectIterator.h"
 #include "Texture/Public/Material.h"
 #include "Texture/Public/Texture.h"
+#include "Texture/Public/TextureRenderProxy.h"
 
 IMPLEMENT_CLASS(UStaticMeshComponentWidget, UWidget)
 
@@ -91,23 +92,42 @@ void UStaticMeshComponentWidget::RenderMaterialSections()
 
 	ImGui::Text("Material Slots (%d)", static_cast<int>(MeshAsset->MaterialInfo.size()));
 
-	// 머티리얼 슬롯
+	// 머티리얼 슬롯을 순회합니다.
 	for (int32 SlotIndex = 0; SlotIndex < MeshAsset->MaterialInfo.size(); ++SlotIndex)
 	{
-		// 현재 할당된 Material 가져오기 (OverrideMaterials 우선)
+		// 현재 슬롯에 할당된 머티리얼을 가져옵니다.
 		UMaterial* CurrentMaterial = StaticMeshComponent->GetMaterial(SlotIndex);
-		FString PreviewName = CurrentMaterial ? GetMaterialDisplayName(CurrentMaterial) : "None";
+		FString PreviewName = GetMaterialDisplayName(CurrentMaterial);
 
-		// Material 정보 표시
 		ImGui::PushID(SlotIndex);
 
+		// 머티리얼 선택 콤보박스를 렌더링합니다.
 		std::string Label = "Element " + std::to_string(SlotIndex);
 		if (ImGui::BeginCombo(Label.c_str(), PreviewName.c_str()))
 		{
 			RenderAvailableMaterials(SlotIndex);
-
 			ImGui::EndCombo();
 		}
+
+		// --- 머티리얼의 텍스처 프리뷰를 렌더링하는 로직 ---
+		if (CurrentMaterial)
+		{
+			// 1. 머티리얼에서 Diffuse 텍스처를 가져옵니다.
+			UTexture* DiffuseTexture = CurrentMaterial->GetDiffuseTexture();
+
+			// 2. 텍스처와 렌더 프록시가 유효한지 확인합니다.
+			if (DiffuseTexture && DiffuseTexture->GetRenderProxy())
+			{
+				// 3. 렌더 프록시에서 실제 GPU 리소스(SRV)를 가져옵니다.
+				if (ID3D11ShaderResourceView* TextureSRV = DiffuseTexture->GetRenderProxy()->GetSRV())
+				{
+					ImGui::Spacing();
+					// 4. ImGui::Image를 사용해 프리뷰를 표시합니다.
+					ImGui::Image((ImTextureID)TextureSRV, ImVec2(128, 128));
+				}
+			}
+		}
+
 		ImGui::PopID();
 	}
 }
