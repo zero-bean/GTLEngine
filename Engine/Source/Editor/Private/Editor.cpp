@@ -68,9 +68,9 @@ void UEditor::Tick(float DeltaSeconds)
 	// 2. 활성 뷰포트의 카메라의 제어만 업데이트합니다.
 	if (UCamera* ActiveCamera = Viewport->GetActiveCamera())
 	{
-		// ✨ 만약 이동량이 있고, 직교 카메라라면 ViewportClient에 알립니다.
+		// 만약 이동량이 있고, 직교 카메라라면 ViewportClient에 알립니다.
 		const FVector MovementDelta = ActiveCamera->UpdateInput();
-		if (MovementDelta.LengthSquared() > 0.f && ActiveCamera->GetCameraType() == ECameraType::ECT_Orthographic)
+		if (MovementDelta.LengthSquared() > 0.f && ActiveCamera->GetCameraType() != EViewportCameraType::Perspective)
 		{
 			Viewport->UpdateOrthoFocusPointByDelta(MovementDelta);
 		}

@@ -62,7 +62,7 @@ void UGizmo::UpdateScale(UCamera* InCamera)
 	if (!TargetActor || !InCamera) { return; }
 
 	float Scale;
-	if (InCamera->GetCameraType() == ECameraType::ECT_Perspective)
+	if (InCamera->GetCameraType() == EViewportCameraType::Perspective)
 	{
 		float DistanceToCamera = (InCamera->GetLocation() - TargetActor->GetActorLocation()).Length();
 		Scale = DistanceToCamera * ScaleFactor;
@@ -84,7 +84,7 @@ void UGizmo::RenderGizmo(UPipeline& InPipeline, AActor* Actor, UCamera* InCamera
 	if (!TargetActor || !InCamera) { return; }
 
 	float RenderScale;
-	if (InCamera->GetCameraType() == ECameraType::ECT_Perspective)
+	if (InCamera->GetCameraType() == EViewportCameraType::Perspective)
 	{
 		float DistanceToCamera = (InCamera->GetLocation() - TargetActor->GetActorLocation()).Length();
 		RenderScale = DistanceToCamera * ScaleFactor;

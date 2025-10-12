@@ -340,7 +340,7 @@ void USceneHierarchyWidget::FocusOnActor(TObjectPtr<AActor> InActor)
 		CameraStartLocation[i] = Camera.GetLocation();
 		CameraStartRotation[i] = Camera.GetRotation();
 
-		if (Camera.GetCameraType() == ECameraType::ECT_Perspective)
+		if (Camera.GetCameraType() == EViewportCameraType::Perspective)
 		{
 			const float FovY = Camera.GetFovY();
 			const float HalfFovRadian = FVector::GetDegreeToRadian(FovY * 0.5f);
@@ -409,7 +409,7 @@ void USceneHierarchyWidget::UpdateCameraAnimation()
 		Camera.SetLocation(CurrentLocation);
 		Viewport->SetFocusPoint(CurrentLocation);
 
-		if (Camera.GetCameraType() == ECameraType::ECT_Perspective)
+		if (Camera.GetCameraType() == EViewportCameraType::Perspective)
 		{
 			FVector CurrentRotation = CameraStartRotation[Index] + (CameraTargetRotation[Index] - CameraStartRotation[Index]) * SmoothProgress;
 			Camera.SetRotation(CurrentRotation);

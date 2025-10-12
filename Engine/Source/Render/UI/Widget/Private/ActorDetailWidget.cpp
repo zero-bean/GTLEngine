@@ -279,7 +279,7 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 			Billboard->SetSprite(ELightType::Spotlight);
 			AddComponentToActor(std::move(Billboard));
 		}
-		ImGui::Separator();
+		ImGui::Separator(); 
 		if (ImGui::MenuItem("Cube Component"))
 		{
 			AddComponentToActor(new UCubeComponent());

@@ -10,7 +10,7 @@ UCamera::UCamera() :
 	ViewProjConstants(FViewProjConstants()),
 	RelativeLocation(FVector(-15.0f, 0.f, 10.0f)), RelativeRotation(FVector(0, 0, 0)),
 	FovY(90.f), Aspect(float(Render::INIT_SCREEN_WIDTH) / Render::INIT_SCREEN_HEIGHT),
-	NearZ(0.1f), FarZ(1000.0f), OrthoWidth(90.0f), CameraType(ECameraType::ECT_Perspective)
+	NearZ(0.1f), FarZ(1000.0f), OrthoWidth(90.0f), CameraType(EViewportCameraType::Perspective)
 {
 	CurrentMoveSpeed = UConfigManager::GetInstance().GetCameraSensitivity();
 }
@@ -30,52 +30,86 @@ FVector UCamera::UpdateInput()
 	 */
 	if (Input.IsKeyDown(EKeyInput::MouseRight))
 	{
-		/**
-		 * @brief W, A, S, D 는 각각 카메라의 상, 하, 좌, 우 이동을 담당합니다.
-		 */
 		FVector Direction = FVector::Zero();
+		const float WheelDelta = Input.GetMouseWheelDelta();
 
-		if (Input.IsKeyDown(EKeyInput::A)) { Direction += -Right; }
-		if (Input.IsKeyDown(EKeyInput::D)) { Direction += Right; }
-		if (Input.IsKeyDown(EKeyInput::W)) { Direction += Forward; }
-		if (Input.IsKeyDown(EKeyInput::S)) { Direction += -Forward; }
-		if (Input.IsKeyDown(EKeyInput::Q)) { Direction += -Up; }
-		if (Input.IsKeyDown(EKeyInput::E)) { Direction += Up; }
-		if (Direction.LengthSquared() > MATH_EPSILON)
+		switch (CameraType)
 		{
-			Direction.Normalize();
-		}
-		RelativeLocation += Direction * CurrentMoveSpeed * DT;
-		MovementDelta = Direction * CurrentMoveSpeed * DT;
+		case EViewportCameraType::Perspective:
+		{
+			if (Input.IsKeyDown(EKeyInput::A)) { Direction += -Right; }
+			if (Input.IsKeyDown(EKeyInput::D)) { Direction += Right; }
+			if (Input.IsKeyDown(EKeyInput::W)) { Direction += Forward; }
+			if (Input.IsKeyDown(EKeyInput::S)) { Direction += -Forward; }
+			if (Input.IsKeyDown(EKeyInput::Q)) { Direction += -Up; }
+			if (Input.IsKeyDown(EKeyInput::E)) { Direction += Up; }
 
-		// 오른쪽 마우스 버튼 + 마우스 휠로 카메라 이동속도 조절
-		float WheelDelta = Input.GetMouseWheelDelta();
-		if (WheelDelta != 0.0f)
-		{
-			// 휠 위로 돌리면 속도 증가, 아래로 돌리면 속도 감소
-			AdjustMoveSpeed(WheelDelta * SPEED_ADJUST_STEP);
-		}
+			if (Direction.LengthSquared() > MATH_EPSILON) { Direction.Normalize(); }
 
-		/**
-		* @brief 마우스 위치 변화량을 감지하여 카메라의 회전을 담당합니다.
-		* 원근 투영 모드를 적용한 카메라만 회전이 가능합니다.
-		*/
-		if (CameraType == ECameraType::ECT_Perspective)
-		{
+			RelativeLocation += Direction * CurrentMoveSpeed * DT;
+			MovementDelta = Direction * CurrentMoveSpeed * DT;
+
+			// 마우스 휠로 이동 속도 조절
+			if (WheelDelta != 0.f) { AdjustMoveSpeed(WheelDelta * SPEED_ADJUST_STEP); }
+
+			// 마우스 움직임으로 회전
 			const FVector MouseDelta = UInputManager::GetInstance().GetMouseDelta();
 			RelativeRotation.Z += MouseDelta.X * KeySensitivityDegPerPixel;
 			RelativeRotation.Y += MouseDelta.Y * KeySensitivityDegPerPixel;
-			MovementDelta = FVector::Zero(); // 원근 투영 모드는 반환할 필요가 없음
+			MovementDelta = FVector::Zero();
+
+			break;
+		}
+		// --- 직교 카메라는 월드 축 기준으로 2D 이동 및 줌 ---
+		case EViewportCameraType::Ortho_Top:
+		case EViewportCameraType::Ortho_Bottom:
+		{
+			// W/S: 월드 Z축, A/D: 월드 X축
+			if (Input.IsKeyDown(EKeyInput::A)) { Direction += FVector::LeftVector(); }
+			if (Input.IsKeyDown(EKeyInput::D)) { Direction += FVector::RightVector(); }
+			if (Input.IsKeyDown(EKeyInput::W)) { Direction += FVector::ForwardVector(); }
+			if (Input.IsKeyDown(EKeyInput::S)) { Direction += FVector::BackwardVector(); }
+			// Q, E는 사용하지 않음
+			break;
+		}
+		case EViewportCameraType::Ortho_Front:
+		case EViewportCameraType::Ortho_Back:
+		{
+			// W/S: 월드 Y축, A/D: 월드 X축
+			if (Input.IsKeyDown(EKeyInput::A)) { Direction += FVector::LeftVector(); }
+			if (Input.IsKeyDown(EKeyInput::D)) { Direction += FVector::RightVector(); }
+			if (Input.IsKeyDown(EKeyInput::W)) { Direction += FVector::UpVector(); }
+			if (Input.IsKeyDown(EKeyInput::S)) { Direction += FVector::DownVector(); }
+			break;
+		}
+		case EViewportCameraType::Ortho_Left:
+		case EViewportCameraType::Ortho_Right:
+		{
+			// W/S: 월드 Y축, A/D: 월드 Z축
+			if (Input.IsKeyDown(EKeyInput::A)) { Direction += FVector::BackwardVector(); }
+			if (Input.IsKeyDown(EKeyInput::D)) { Direction += FVector::ForwardVector(); }
+			if (Input.IsKeyDown(EKeyInput::W)) { Direction += FVector::UpVector(); }
+			if (Input.IsKeyDown(EKeyInput::S)) { Direction += FVector::DownVector(); }
+			break;
+		}
 		}
 
+		// 직교 뷰 공통 로직 (이동 및 줌)
+		if (CameraType != EViewportCameraType::Perspective)
+		{
+			if (Direction.LengthSquared() > MATH_EPSILON) { Direction.Normalize(); }
 
-		// Yaw 래핑(값이 무한히 커지지 않도록)
-		if (RelativeRotation.Z > 180.0f) RelativeRotation.Z -= 360.0f;
-		if (RelativeRotation.Z < -180.0f) RelativeRotation.Z += 360.0f;
+			const float OrthoMoveSpeed = CurrentMoveSpeed * (OrthoWidth / 90.0f);
+			RelativeLocation += Direction * OrthoMoveSpeed * DT;
+			MovementDelta = Direction * OrthoMoveSpeed * DT;
 
-		// Pitch 클램프(짐벌 플립 방지)
-		if (RelativeRotation.Y > 89.0f)  RelativeRotation.Y = 89.0f;
-		if (RelativeRotation.Y < -89.0f) RelativeRotation.Y = -89.0f;
+			if (WheelDelta != 0.f) 
+			{
+				OrthoWidth -= WheelDelta * (OrthoWidth * 0.1f);
+				if (OrthoWidth < MIN_ORTHO_WHEEL_WIDTH) { OrthoWidth = MIN_ORTHO_WHEEL_WIDTH; }
+				if (OrthoWidth > MAX_ORTHO_WHEEL_WIDTH) { OrthoWidth = MAX_ORTHO_WHEEL_WIDTH; }
+			}
+		}
 	}
 
 	return MovementDelta;
@@ -101,14 +135,13 @@ void UCamera::Update(const D3D11_VIEWPORT& InViewport)
 		SetAspect(InViewport.Width / InViewport.Height);
 	}
 
-	switch (CameraType)
+	if (CameraType == EViewportCameraType::Perspective)
 	{
-	case ECameraType::ECT_Perspective:
 		UpdateMatrixByPers();
-		break;
-	case ECameraType::ECT_Orthographic:
+	}
+	else 
+	{
 		UpdateMatrixByOrth();
-		break;
 	}
 }
 
@@ -189,7 +222,7 @@ const FViewProjConstants UCamera::GetFViewProjConstantsInverse() const
 	FMatrix T = FMatrix::TranslationMatrix(RelativeLocation);
 	Result.View = R * T;
 
-	if (CameraType == ECameraType::ECT_Orthographic)
+	if (CameraType != EViewportCameraType::Perspective)
 	{
 		const float OrthoHeight = OrthoWidth / Aspect;
 		const float Left = -OrthoWidth * 0.5f;
@@ -209,7 +242,7 @@ const FViewProjConstants UCamera::GetFViewProjConstantsInverse() const
 		P.Data[3][3] = 1.0f;
 		Result.Projection = P;
 	}
-	else if ((CameraType == ECameraType::ECT_Perspective))
+	else
 	{
 		const float FovRadian = FVector::GetDegreeToRadian(FovY);
 		const float F = 1.0f / std::tanf(FovRadian * 0.5f);
@@ -269,7 +302,7 @@ FRay UCamera::ConvertToWorldRay(float NdcX, float NdcY) const
 		ViewProjMatrix.View.Data[3][2],
 		ViewProjMatrix.View.Data[3][3]);
 
-	if (CameraType == ECameraType::ECT_Perspective)
+	if (CameraType == EViewportCameraType::Perspective)
 	{
 		FVector4 DirectionVector = WorldFar - CameraPosition;
 		DirectionVector.Normalize();
@@ -277,7 +310,7 @@ FRay UCamera::ConvertToWorldRay(float NdcX, float NdcY) const
 		Ray.Origin = CameraPosition;
 		Ray.Direction = DirectionVector;
 	}
-	else if (CameraType == ECameraType::ECT_Orthographic)
+	else
 	{
 		FVector4 DirectionVector = WorldFar - WorldNear;
 		DirectionVector.Normalize();

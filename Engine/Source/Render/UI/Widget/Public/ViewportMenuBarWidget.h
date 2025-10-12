@@ -18,7 +18,8 @@ public:
 	void SetEdtior(UEditor* InEditor) { Editor = InEditor; }
 
 private:
-	void RenderCameraControls(UCamera& InCamera); // 특정 카메라의 제어 UI를 렌더링하는 헬퍼 함수
+	// 특정 카메라의 제어 UI를 렌더링하는 헬퍼 함수
+	void RenderCameraControls(FViewportClient& InViewportClient);
 
 	FViewport* Viewport = nullptr; // 참조할 뷰포트 클라이언트 대상
 	UEditor* Editor = nullptr;

@@ -9,8 +9,6 @@ public:
 	void Initialize() override;
 	void Update() override;
 	void RenderWidget() override;
-	void SyncFromCamera(UCamera* InCamera);
-	void PushToCamera(UCamera* InCamera);
 
 	// Setter
 	void SetCamera(UCamera* InCamera, const int Index);

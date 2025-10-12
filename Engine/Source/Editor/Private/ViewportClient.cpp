@@ -14,15 +14,7 @@ void FViewportClient::ClearDepth(ID3D11DeviceContext* InContext, ID3D11DepthSten
 void FViewportClient::SetCameraType(EViewportCameraType InViewportCameraType)
 {
 	CameraType = InViewportCameraType;
-
-	if (CameraType == EViewportCameraType::Perspective)
-	{
-		Camera.SetCameraType(ECameraType::ECT_Perspective);
-	}
-	else
-	{
-		Camera.SetCameraType(ECameraType::ECT_Orthographic);
-	}
+	Camera.SetCameraType(InViewportCameraType);
 }
 
 void FViewportClient::SnapCameraToView(const FVector& InFocusPoint)

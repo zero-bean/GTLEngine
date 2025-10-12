@@ -4,9 +4,9 @@
 #include "Editor/Public/Camera.h"
 
 // Camera Mode
-static const char* CameraMode[] = {
-	"Perspective",
-	"Orthographic"
+static const char* GCameraModes[] =
+{
+	"Perspective", "Top", "Bottom", "Front", "Back", "Left", "Right"
 };
 
 UCameraControlWidget::UCameraControlWidget()
@@ -48,7 +48,9 @@ void UCameraControlWidget::RenderWidget()
 			float FarZ = Camera->GetFarZ();
 			float OrthoWidth = Camera->GetOrthoWidth();
 			float MoveSpeed = Camera->GetMoveSpeed();
-			int ModeIndex = (Camera->GetCameraType() == ECameraType::ECT_Perspective) ? 0 : 1;
+
+			EViewportCameraType currentCameraType = Camera->GetCameraType();
+			int CameraModeIndex = static_cast<int>(currentCameraType);
 
 			// --- UI 렌더링 및 상호작용 ---
 			if (ImGui::SliderFloat("Move Speed", &MoveSpeed, UCamera::MIN_SPEED, UCamera::MAX_SPEED, "%.1f"))
@@ -56,27 +58,30 @@ void UCameraControlWidget::RenderWidget()
 				Camera->SetMoveSpeed(MoveSpeed); // 변경 시 즉시 적용
 			}
 
-			if (ImGui::Combo("Mode", &ModeIndex, CameraMode, IM_ARRAYSIZE(CameraMode)))
+			if (ImGui::Combo("Mode", &CameraModeIndex, GCameraModes, IM_ARRAYSIZE(GCameraModes)))
 			{
-				Camera->SetCameraType(ModeIndex == 0 ? ECameraType::ECT_Perspective : ECameraType::ECT_Orthographic);
+				// 변경 시 즉시 카메라 타입 설정
+				Camera->SetCameraType(static_cast<EViewportCameraType>(CameraModeIndex));
 			}
 
 			ImGui::DragFloat3("Location", &Location.X, 0.05f);
-			ImGui::DragFloat3("Rotation", &Rotation.X, 0.1f);
+			if (currentCameraType == EViewportCameraType::Perspective)
+			{
+				ImGui::DragFloat3("Rotation", &Rotation.X, 0.1f);
+			}
 
 			bool bOpticsChanged = false;
-			if (ModeIndex == 0) // 원근 투영 
+			if (currentCameraType == EViewportCameraType::Perspective)
 			{
 				bOpticsChanged |= ImGui::SliderFloat("FOV", &FovY, 1.0f, 170.0f, "%.1f");
 				bOpticsChanged |= ImGui::DragFloat("Z Near", &NearZ, 0.01f, 0.0001f, 1e6f, "%.4f");
 				bOpticsChanged |= ImGui::DragFloat("Z Far", &FarZ, 0.1f, 0.001f, 1e7f, "%.3f");
 			}
-			else if (ModeIndex == 1) // 직교 투영
+			else 
 			{
 				bOpticsChanged |= ImGui::SliderFloat("OrthoWidth", &OrthoWidth, 1.0f, 150.0f, "%.1f");
 			}
 
-			// 변경된 값을 카메라에 다시 적용
 			if (bOpticsChanged)
 			{
 				Camera->SetFovY(FovY);
@@ -87,43 +92,6 @@ void UCameraControlWidget::RenderWidget()
 		}
 
 		ImGui::PopID();
-	}
-}
-
-void UCameraControlWidget::SyncFromCamera(UCamera* InCamera)
-{
-	if (!InCamera) { return; }
-
-	CameraModeIndex = (InCamera->GetCameraType() == ECameraType::ECT_Perspective) ? 0 : 1;
-	UiFovY = InCamera->GetFovY();
-	UiNearZ = InCamera->GetNearZ();
-	UiFarZ = InCamera->GetFarZ();
-}
-
-void UCameraControlWidget::PushToCamera(UCamera* InCamera)
-{
-	if (!InCamera) { return; }
-
-	// 카메라 모드 설정
-	InCamera->SetCameraType(CameraModeIndex == 0 ? ECameraType::ECT_Perspective : ECameraType::ECT_Orthographic);
-
-	// 카메라 파라미터 설정
-	UiNearZ = max(0.0001f, UiNearZ);
-	UiFarZ = max(UiNearZ + 0.0001f, UiFarZ);
-	UiFovY = min(170.0f, max(1.0f, UiFovY));
-
-	InCamera->SetNearZ(UiNearZ);
-	InCamera->SetFarZ(UiFarZ);
-	InCamera->SetFovY(UiFovY);
-
-	// 카메라 업데이트
-	if (CameraModeIndex == 0)
-	{
-		InCamera->UpdateMatrixByPers();
-	}
-	else
-	{
-		InCamera->UpdateMatrixByOrth();
 	}
 }
 
