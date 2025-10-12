@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "PrimitiveComponent.h"
 #include "Editor/Public/Camera.h"
 #include "Texture/Public/Texture.h"
@@ -24,6 +24,9 @@ public:
 
     void SetSprite(ELightType LightType);
     void SetSprite(UTexture* InTexture);
+
+	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
 private:
     FMatrix RTMatrix;

@@ -1,8 +1,10 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Component/Public/BillboardComponent.h"
-
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Manager/Asset/Public/AssetManager.h"
+#include "Texture/Public/TextureRenderProxy.h"
+#include "Utility/Public/JsonSerializer.h"
+#include <json.hpp>
 
 IMPLEMENT_CLASS(UBillboardComponent, UPrimitiveComponent)
 
@@ -42,6 +44,61 @@ void UBillboardComponent::SetSprite(ELightType LightType)
 void UBillboardComponent::SetSprite(UTexture* InTexture)
 {
     Sprite = InTexture;
+}
+
+UObject* UBillboardComponent::Duplicate(FObjectDuplicationParameters Parameters)
+{
+	auto DupObject = static_cast<UBillboardComponent*>(Super::Duplicate(Parameters));
+
+	DupObject->Sprite = Sprite;
+	DupObject->ZOffset = ZOffset;
+	DupObject->RTMatrix = RTMatrix;
+	DupObject->POwnerActor = POwnerActor;
+	DupObject->BillboardSpriteOptions = BillboardSpriteOptions;
+
+	return DupObject;
+}
+
+void UBillboardComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	// 부모 클래스의 Serialize 함수를 먼저 호출합니다.
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	// --- JSON 파일로부터 데이터를 불러올 때 ---
+	if (bInIsLoading)
+	{
+		FString TexturePath;
+		// "SpriteTexturePath" 키로 저장된 텍스처 경로를 읽어옵니다.
+		FJsonSerializer::ReadString(InOutHandle, "SpriteTexturePath", TexturePath, "", false);
+
+		// 텍스처 경로가 비어있지 않다면 에셋 매니저를 통해 텍스처를 로드합니다.
+		if (!TexturePath.empty())
+		{
+			UAssetManager& AssetManager = UAssetManager::GetInstance();
+			if (UTexture* LoadedTexture = AssetManager.CreateTexture(FName(TexturePath)))
+			{
+				SetSprite(LoadedTexture);
+			}
+		}
+
+		// "ZOffset" 키로 저장된 float 값을 읽어와 멤버 변수에 할당합니다.
+		FJsonSerializer::ReadFloat(InOutHandle, "ZOffset", ZOffset);
+	}
+	// --- 현재 데이터를 JSON 파일에 저장할 때 ---
+	else
+	{
+		// Sprite 텍스처가 유효한지 확인합니다.
+		if (Sprite)
+		{
+			// 텍스처의 파일 경로를 FString으로 가져옵니다.
+			const FString& TexturePath = Sprite->GetFilePath().ToString();
+			// "SpriteTexturePath" 라는 키로 텍스처 경로를 JSON에 저장합니다.
+			InOutHandle["SpriteTexturePath"] = TexturePath;
+		}
+
+		// ZOffset 값을 "ZOffset" 키로 JSON에 저장합니다.
+		InOutHandle["ZOffset"] = ZOffset;
+	}
 }
 
 void UBillboardComponent::UpdateRotationMatrix(const UCamera* InCamera)
