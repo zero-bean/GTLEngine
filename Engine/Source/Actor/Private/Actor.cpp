@@ -93,7 +93,6 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 							if (ParentComponent && ChildComponent)
 							{
 								ChildComponent->SetParentAttachment(ParentComponent);
-								ParentComponent->AddChild(ChildComponent);
 							}
 						}
 					}
