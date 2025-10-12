@@ -1082,6 +1082,8 @@ void URenderer::RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		// 3. 데칼의 월드 변환 역행렬을 계산하여 셰이더로 전달합니다.
 		FLightConstants LightData(Light->GetWorldTransformMatrix(), Light->GetWorldTransformMatrixInverse());
 		UpdateConstant(ConstantBufferSpotlight, LightData, 3, true, true);
+		FVector4 LightColor = Light->GetLightColor();
+		UpdateConstant(ConstantBufferColor, LightColor, 2, true, true);
 
 		// 데칼의 바운딩 볼륨을 가져옵니다.
 		const IBoundingVolume* LightBounds = Light->GetBoundingBox();

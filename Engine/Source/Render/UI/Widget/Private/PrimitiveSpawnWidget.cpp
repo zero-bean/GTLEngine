@@ -9,6 +9,7 @@
 #include "Actor/Public/SquareActor.h"
 #include "Actor/Public/TriangleActor.h"
 #include "Actor/Public/DecalActor.h"
+#include "Actor/Public/SpotLightActor.h"
 #include "Actor/Public/StaticMeshActor.h"
 #include "Component/Public/BillboardComponent.h"
 #include "Core/public/BVHierarchy.h"
@@ -37,14 +38,14 @@ void UPrimitiveSpawnWidget::RenderWidget()
 
 	// Primitive 타입 선택 DropDown
 	const char* PrimitiveTypes[] = {
-		"Sphere", "Cube", "Triangle", "Square", "StaticMesh", "Billboard", "Decal"
+		"Sphere", "Cube", "Triangle", "Square", "StaticMesh", "Billboard", "Decal", "SpotLight",
 	};
 	int TypeNumber = static_cast<int>(SelectedPrimitiveType) - 1;
 
 	ImGui::Text("Primitive Type:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120);
-	ImGui::Combo("##PrimitiveType", &TypeNumber, PrimitiveTypes, 7);
+	ImGui::Combo("##PrimitiveType", &TypeNumber, PrimitiveTypes, 8);
 	SelectedPrimitiveType = static_cast<EPrimitiveType>(TypeNumber + 1);
 
 	// Spawn 버튼과 개수 입력
@@ -168,6 +169,9 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 			break;
 		case (EPrimitiveType::Decal):
 			NewActor = CurrentLevel->SpawnActorToLevel(ADecalActor::StaticClass());
+			break;
+		case (EPrimitiveType::Spotlight):
+			NewActor = CurrentLevel->SpawnActorToLevel(ASpotLightActor::StaticClass());
 			break;
 		default:
 			break;
