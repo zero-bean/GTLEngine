@@ -48,7 +48,9 @@ private:
 	void InitializeLayout();
 	void UpdateLayout();
 
-	void ProcessMouseInput(ULevel* InLevel);
+	void ProcessInput(ULevel* InLevel);
+	void ProcessGizmoDrag(UCamera* CurrentCamera, FRay WorldRay);
+
 	TArray<UPrimitiveComponent*> FindCandidatePrimitives(ULevel* InLevel);
 
 	// 모든 기즈모 드래그 함수가 ActiveCamera를 받도록 통일
@@ -84,7 +86,7 @@ private:
 	EViewportLayoutState ViewportLayoutState = EViewportLayoutState::Multi;
 	EViewportLayoutState TargetViewportLayoutState = EViewportLayoutState::Multi;
 	float AnimationStartTime = 0.0f;
-	float AnimationDuration = 0.2f; 
+	float AnimationDuration = 0.2f;
 	float SourceRootRatio = 0.5f;
 	float SourceLeftRatio = 0.5f;
 	float SourceRightRatio = 0.5f;

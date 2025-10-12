@@ -105,7 +105,7 @@ void UEditor::Tick(float DeltaSeconds)
 
 	BatchLines.UpdateVertexBuffer();
 
-	ProcessMouseInput(GEngine->GetCurrentLevel());
+	ProcessInput(GEngine->GetCurrentLevel());
 
 	UpdateLayout();
 }
@@ -334,8 +334,14 @@ void UEditor::UpdateLayout()
 	if (UInputManager::GetInstance().IsKeyReleased(EKeyInput::MouseLeft)) { DraggedSplitter = nullptr; }
 }
 
-void UEditor::ProcessMouseInput(ULevel* InLevel)
+void UEditor::ProcessInput(ULevel* InLevel)
 {
+	// PIE 중에는 피킹 및 기즈모 상호작용 비활성화
+	if (GEngine->IsPIEActive())
+	{
+		return;
+	}
+
 	// 선택된 뷰포트의 정보들을 가져옵니다.
 	FViewport* ViewportClient = URenderer::GetInstance().GetViewportClient();
 	FViewportClient* CurrentViewport = nullptr;
@@ -354,126 +360,125 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 	TObjectPtr<AActor> ActorPicked = InLevel->GetSelectedActor();
 	UPrimitiveComponent* PrimitiveCollided = nullptr;
 
-	// PIE 중에는 피킹 및 기즈모 상호작용 비활성화
-	if (!GEngine->IsPIEActive())
+	const UInputManager& InputManager = UInputManager::GetInstance();
+	const FVector& MousePos = InputManager.GetMousePosition();
+	const D3D11_VIEWPORT& ViewportInfo = CurrentViewport->GetViewportInfo();
+
+	const float NdcX = ((MousePos.X - ViewportInfo.TopLeftX) / ViewportInfo.Width) * 2.0f - 1.0f;
+	const float NdcY = -(((MousePos.Y - ViewportInfo.TopLeftY) / ViewportInfo.Height) * 2.0f - 1.0f);
+
+	FRay WorldRay = CurrentCamera->ConvertToWorldRay(NdcX, NdcY);
+
+	static EGizmoDirection PreviousGizmoDirection = EGizmoDirection::None;
+	FVector CollisionPoint;
+	float ActorDistance = -1;
+
+	if (ActorPicked)
 	{
-		if (ActorPicked)
+		// 피킹 전 현재 카메라에 맞는 기즈모 스케일 업데이트
+		Gizmo.UpdateScale(CurrentCamera);
+	}
+
+	if (InputManager.IsKeyPressed(EKeyInput::Tab))
+	{
+		Gizmo.IsWorldMode() ? Gizmo.SetLocal() : Gizmo.SetWorld();
+	}
+	if (InputManager.IsKeyPressed(EKeyInput::Space))
+	{
+		Gizmo.ChangeGizmoMode();
+	}
+	if (InputManager.IsKeyReleased(EKeyInput::MouseLeft))
+	{
+		const bool bWasDragging = Gizmo.IsDragging();
+		Gizmo.EndDrag();
+		if (bWasDragging && Gizmo.GetSelectedActor())
 		{
-			// 피킹 전 현재 카메라에 맞는 기즈모 스케일 업데이트
-			Gizmo.UpdateScale(CurrentCamera);
+			UBVHierarchy::GetInstance().Refit();
 		}
+		// 드래그가 끝나면 선택된 뷰포트를 비활성화 합니다.
+		InteractionViewport = nullptr;
+	}
 
-		const UInputManager& InputManager = UInputManager::GetInstance();
-		const FVector& MousePos = InputManager.GetMousePosition();
-		const D3D11_VIEWPORT& ViewportInfo = CurrentViewport->GetViewportInfo();
+	if (Gizmo.IsDragging() && Gizmo.GetSelectedActor())
+	{
+		ProcessGizmoDrag(CurrentCamera, WorldRay);
+		return;
+	}
 
-		const float NdcX = ((MousePos.X - ViewportInfo.TopLeftX) / ViewportInfo.Width) * 2.0f - 1.0f;
-		const float NdcY = -(((MousePos.Y - ViewportInfo.TopLeftY) / ViewportInfo.Height) * 2.0f - 1.0f);
+	if (InLevel->GetSelectedActor() && Gizmo.HasActor())
+	{
+		ObjectPicker.PickGizmo(CurrentCamera, WorldRay, Gizmo, CollisionPoint);
+	}
+	else
+	{
+		Gizmo.SetGizmoDirection(EGizmoDirection::None);
+	}
 
-		FRay WorldRay = CurrentCamera->ConvertToWorldRay(NdcX, NdcY);
+	const TArray<TObjectPtr<UPrimitiveComponent>>& Candidates =
+		GEngine->GetCurrentLevel()->GetLevelPrimitiveComponents();
 
-		static EGizmoDirection PreviousGizmoDirection = EGizmoDirection::None;
-		FVector CollisionPoint;
-		float ActorDistance = -1;
-
-		if (InputManager.IsKeyPressed(EKeyInput::Tab))
+	if (!ImGui::GetIO().WantCaptureMouse && InputManager.IsKeyPressed(EKeyInput::MouseLeft))
+	{
+		if (GEngine->GetCurrentLevel()->GetShowFlags() & EEngineShowFlags::SF_Primitives)
 		{
-			Gizmo.IsWorldMode() ? Gizmo.SetLocal() : Gizmo.SetWorld();
-		}
-		if (InputManager.IsKeyPressed(EKeyInput::Space))
-		{
-			Gizmo.ChangeGizmoMode();
-		}
-		if (InputManager.IsKeyReleased(EKeyInput::MouseLeft))
-		{
-			const bool bWasDragging = Gizmo.IsDragging();
-			Gizmo.EndDrag();
-			if (bWasDragging && Gizmo.GetSelectedActor())
-			{
-				UBVHierarchy::GetInstance().Refit();
-			}
-			// 드래그가 끝나면 선택된 뷰포트를 비활성화 합니다.
-			InteractionViewport = nullptr;
-		}
+			UStatOverlay::GetInstance().NumPickingAttempts++;
+			FScopeCycleCounter PickCounter;
 
-		if (Gizmo.IsDragging() && Gizmo.GetSelectedActor())
-		{
-			switch (Gizmo.GetGizmoMode())
-			{
-			case EGizmoMode::Translate:
-			{
-				FVector GizmoDragLocation = GetGizmoDragLocation(CurrentCamera, WorldRay);
-				Gizmo.SetLocation(GizmoDragLocation);
-				break;
-			}
-			case EGizmoMode::Rotate:
-			{
-				FVector GizmoDragRotation = GetGizmoDragRotation(CurrentCamera, WorldRay);
-				Gizmo.SetActorRotation(GizmoDragRotation);
-				break;
-			}
-			case EGizmoMode::Scale:
-			{
-				FVector GizmoDragScale = GetGizmoDragScale(CurrentCamera, WorldRay);
-				Gizmo.SetActorScale(GizmoDragScale);
-			}
-			}
-		}
-		else
-		{
-			if (InLevel->GetSelectedActor() && Gizmo.HasActor())
-			{
-				ObjectPicker.PickGizmo(CurrentCamera, WorldRay, Gizmo, CollisionPoint);
-			}
-			else
-			{
-				Gizmo.SetGizmoDirection(EGizmoDirection::None);
-			}
+			PrimitiveCollided = ObjectPicker.PickPrimitive(WorldRay, Candidates, &ActorDistance);
+			ActorPicked = PrimitiveCollided ? PrimitiveCollided->GetOwner() : nullptr;
 
-			const TArray<TObjectPtr<UPrimitiveComponent>>& Candidates =
-				GEngine->GetCurrentLevel()->GetLevelPrimitiveComponents();
-
-			if (!ImGui::GetIO().WantCaptureMouse && InputManager.IsKeyPressed(EKeyInput::MouseLeft))
-			{
-				if (GEngine->GetCurrentLevel()->GetShowFlags() & EEngineShowFlags::SF_Primitives)
-				{
-					UStatOverlay::GetInstance().NumPickingAttempts++;
-					FScopeCycleCounter PickCounter;
-
-					PrimitiveCollided = ObjectPicker.PickPrimitive(WorldRay, Candidates, &ActorDistance);
-					ActorPicked = PrimitiveCollided ? PrimitiveCollided->GetOwner() : nullptr;
-
-					double Time = PickCounter.Finish();
-					UStatOverlay::GetInstance().LastPickingTime = Time;
-					UStatOverlay::GetInstance().CumulativePickingTime += Time;
-				}
-			}
-
-			if (Gizmo.GetGizmoDirection() == EGizmoDirection::None)
-			{
-				InLevel->SetSelectedActor(ActorPicked);
-				if (PreviousGizmoDirection != EGizmoDirection::None)
-				{
-					Gizmo.OnMouseRelease(PreviousGizmoDirection);
-				}
-			}
-			else
-			{
-				PreviousGizmoDirection = Gizmo.GetGizmoDirection();
-				if (InputManager.IsKeyPressed(EKeyInput::MouseLeft))
-				{
-					Gizmo.OnMouseDragStart(CollisionPoint);
-					// 드래그가 활성화하면 뷰포트를 고정합니다.
-					InteractionViewport = CurrentViewport;
-				}
-				else
-				{
-					Gizmo.OnMouseHovering();
-				}
-			}
+			double Time = PickCounter.Finish();
+			UStatOverlay::GetInstance().LastPickingTime = Time;
+			UStatOverlay::GetInstance().CumulativePickingTime += Time;
 		}
 	}
 
+	if (Gizmo.GetGizmoDirection() == EGizmoDirection::None)
+	{
+		InLevel->SetSelectedActor(ActorPicked);
+		if (PreviousGizmoDirection != EGizmoDirection::None)
+		{
+			Gizmo.OnMouseRelease(PreviousGizmoDirection);
+		}
+	}
+	else
+	{
+		PreviousGizmoDirection = Gizmo.GetGizmoDirection();
+		if (InputManager.IsKeyPressed(EKeyInput::MouseLeft))
+		{
+			Gizmo.OnMouseDragStart(CollisionPoint);
+			// 드래그가 활성화하면 뷰포트를 고정합니다.
+			InteractionViewport = CurrentViewport;
+		}
+		else
+		{
+			Gizmo.OnMouseHovering();
+		}
+	}
+}
+
+void UEditor::ProcessGizmoDrag(UCamera* CurrentCamera, FRay WorldRay)
+{
+	switch (Gizmo.GetGizmoMode())
+	{
+	case EGizmoMode::Translate:
+		{
+			FVector GizmoDragLocation = GetGizmoDragLocation(CurrentCamera, WorldRay);
+			Gizmo.SetLocation(GizmoDragLocation);
+			break;
+		}
+	case EGizmoMode::Rotate:
+		{
+			FVector GizmoDragRotation = GetGizmoDragRotation(CurrentCamera, WorldRay);
+			Gizmo.SetActorRotation(GizmoDragRotation);
+			break;
+		}
+	case EGizmoMode::Scale:
+		{
+			FVector GizmoDragScale = GetGizmoDragScale(CurrentCamera, WorldRay);
+			Gizmo.SetActorScale(GizmoDragScale);
+		}
+	}
 }
 
 FVector UEditor::GetGizmoDragLocation(UCamera* InActiveCamera, FRay& WorldRay)

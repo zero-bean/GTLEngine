@@ -49,7 +49,8 @@ public:
 
 	void AddComponent(TObjectPtr<UActorComponent> InComponent);
 	void AddComponent(TObjectPtr<UActorComponent> InComponent, TObjectPtr<USceneComponent> InParent);
-	void RemoveComponent(TObjectPtr<UActorComponent> Component);
+    void RemoveComponent(TObjectPtr<UActorComponent> Component);
+    void MarkComponentForRemoval(TObjectPtr<UActorComponent> Component);
 
 	bool IsActorTickEnabled() const { return bIsActorTickEnabled; }
 	void SetActorTickEnabled(bool bInActorTickEnabled) { bIsActorTickEnabled = bInActorTickEnabled; }
@@ -80,8 +81,10 @@ public:
 	}
 
 private:
-	TObjectPtr<USceneComponent> RootComponent = nullptr;
-	TArray<TObjectPtr<UActorComponent>> OwnedComponents;
+    TObjectPtr<USceneComponent> RootComponent = nullptr;
+    TArray<TObjectPtr<UActorComponent>> OwnedComponents;
+
+    TArray<TObjectPtr<UActorComponent>> ComponentsPendingRemoval;
 
 	bool bIsActorTickEnabled = false;
 	bool bTickInEditor = false;

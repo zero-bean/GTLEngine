@@ -74,4 +74,8 @@ private:
 	void SwitchToLevel(ULevel* InNewLevel);
 	static path GetLevelDirectory();
 	static path GenerateLevelFilePath(const FString& InLevelName);
+
+	void ProcessInput();
+
+	bool bSpawnDecalOnClick = true;
 };

@@ -7,6 +7,9 @@
 #include <json.hpp>
 #include <filesystem>
 
+#include "Editor/Public/EditorEngine.h"
+#include "Actor/Public/Actor.h"
+
 IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
 
 UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
@@ -14,7 +17,7 @@ UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
 	UAssetManager& AssetManager = UAssetManager::GetInstance();
 	UAssetManager& ResourceManager = UAssetManager::GetInstance();
 
-	DecalMaterial = AssetManager.CreateMaterial(FName("recovery_256x"), FName("Asset/Texture/recovery_256x.png"));
+	DecalMaterial = AssetManager.CreateMaterial(FName("bullet-hole"), FName("Asset/Texture/bullet-hole.png"));
 
 	Type = EPrimitiveType::Decal;
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
@@ -43,10 +46,29 @@ UDecalComponent::~UDecalComponent()
 
 void UDecalComponent::TickComponent(float DeltaSeconds)
 {
-	// 페이드 인 & 아웃 업데이트
-	FadeProperty.Update(DeltaSeconds);
-
     UpdateProjectionFromWorldTransform();
+
+    // 페이드 인 & 아웃 업데이트
+    if (FadeProperty.Update(DeltaSeconds))
+    {
+        if (FadeProperty.bDestroyedAfterFade && FadeProperty.bFadeCompleted)
+        {
+            // Defer deletion to avoid iterator invalidation during ticking
+            if (GetOwner()->GetRootComponent() == this)
+            {
+                // Root component: schedule actor for deletion on the level
+                if (GEngine && GEngine->GetCurrentLevel())
+                {
+                    GEngine->GetCurrentLevel()->MarkActorForDeletion(GetOwner());
+                }
+            }
+            else
+            {
+                // Non-root component: ask owner to remove after it finishes ticking
+                GetOwner()->MarkComponentForRemoval(this);
+            }
+        }
+    }
 }
 
 void UDecalComponent::StartFadeIn(float Duration, float Delay, EFadeStyle InFadeStyle)

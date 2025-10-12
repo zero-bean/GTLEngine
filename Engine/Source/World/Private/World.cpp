@@ -7,6 +7,14 @@
 #include "World/Public/World.h"
 #include <json.hpp>
 
+#include "Actor/Public/DecalActor.h"
+#include "Core/Public/BVHierarchy.h"
+#include "Editor/Public/Viewport.h"
+#include "Manager/Input/Public/InputManager.h"
+#include "Render/Renderer/Public/Renderer.h"
+#include "Component/Public/DecalComponent.h"
+#include "Editor/Public/EditorEngine.h"
+
 using JSON = json::JSON;
 
 IMPLEMENT_CLASS(UWorld, UObject)
@@ -27,6 +35,60 @@ void UWorld::Tick(float DeltaSeconds)
 	{
 		// UE_LOG("%s", to_string(WorldType).c_str());
 		Level->Tick(DeltaSeconds);
+		ProcessInput();
+	}
+}
+
+void UWorld::ProcessInput()
+{
+	if (!GEngine->IsPIEActive())
+	{
+		return;
+	}
+
+	// 선택된 뷰포트의 정보들을 가져옵니다.
+	FViewport* ViewportClient = URenderer::GetInstance().GetViewportClient();
+	FViewportClient* CurrentViewport = ViewportClient->GetActiveViewportClient();
+	UCamera* CurrentCamera = nullptr;
+
+	// 처리할 영역이 존재하지 않으면 진행을 중단합니다.
+	if (CurrentViewport == nullptr) { return; }
+
+	CurrentCamera = &CurrentViewport->Camera;
+
+	const UInputManager& InputManager = UInputManager::GetInstance();
+	const FVector& MousePos = InputManager.GetMousePosition();
+	const D3D11_VIEWPORT& ViewportInfo = CurrentViewport->GetViewportInfo();
+
+	const float NdcX = ((MousePos.X - ViewportInfo.TopLeftX) / ViewportInfo.Width) * 2.0f - 1.0f;
+	const float NdcY = -(((MousePos.Y - ViewportInfo.TopLeftY) / ViewportInfo.Height) * 2.0f - 1.0f);
+
+	FRay WorldRay = CurrentCamera->ConvertToWorldRay(NdcX, NdcY);
+
+	if (InputManager.IsKeyPressed(EKeyInput::F3))
+	{
+		bSpawnDecalOnClick = !bSpawnDecalOnClick;
+	}
+
+	if (ImGui::GetIO().WantCaptureMouse || !InputManager.IsKeyPressed(EKeyInput::MouseLeft)) return;
+	if (!bSpawnDecalOnClick) return;
+
+	UPrimitiveComponent* HitComp = nullptr;
+	float HitT = FLT_MAX;
+	if (UBVHierarchy::GetInstance().Raycast(WorldRay, HitComp, HitT) && HitComp)
+	{
+		// Compute hit point in world
+		FVector RayOrigin(WorldRay.Origin.X, WorldRay.Origin.Y, WorldRay.Origin.Z);
+		FVector RayDir(WorldRay.Direction.X, WorldRay.Direction.Y, WorldRay.Direction.Z);
+		FVector HitPoint = RayOrigin + RayDir * HitT;
+
+		// Spawn a Decal actor at hit
+		ADecalActor* NewDecal = Cast<ADecalActor>(Level->SpawnActorToLevel(ADecalActor::StaticClass()));
+		NewDecal->GetDecalComponent()->StartFadeOut(2.0f, 5.0f, true);
+		if (NewDecal)
+		{
+			NewDecal->SetActorLocation(HitPoint);
+		}
 	}
 }
 
