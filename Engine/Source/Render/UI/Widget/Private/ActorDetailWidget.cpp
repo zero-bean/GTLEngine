@@ -660,6 +660,14 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 			// 컴포넌트로부터 페이드 속성에 대한 참조를 직접 가져옵니다.
 			FDecalFadeProperty& FadeProps = Decal->GetFadeProperty();
 
+			// Fade Style 콤보박스 추가
+			const char* StyleItems[] = { "Standard", "Wipe Left to Right", "Dissolve", "Iris" };
+			int CurrentStyle = static_cast<int>(FadeProps.FadeStyle);
+			if (ImGui::Combo("Fade Style", &CurrentStyle, StyleItems, IM_ARRAYSIZE(StyleItems)))
+			{
+				FadeProps.FadeStyle = static_cast<EFadeStyle>(CurrentStyle);
+			}
+
 			ImGui::PushItemWidth(120.f); // UI 정렬을 위해 너비 조절
 
 			ImGui::DragFloat("Fade In Duration", &FadeProps.FadeInDuration, 0.01f, 0.0f, 30.0f, "%.2f s");
@@ -678,12 +686,12 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 			// 페이드 효과를 테스트하기 위한 버튼
 			if (ImGui::Button("Start Fade In"))
 			{
-				Decal->StartFadeIn(FadeProps.FadeInDuration, FadeProps.FadeInStartDelay);
+				Decal->StartFadeIn(FadeProps.FadeInDuration, FadeProps.FadeInStartDelay, FadeProps.FadeStyle);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Start Fade Out"))
 			{
-				Decal->StartFadeOut(FadeProps.FadeDuration, FadeProps.FadeStartDelay, FadeProps.bDestroyedAfterFade);
+				Decal->StartFadeOut(FadeProps.FadeDuration, FadeProps.FadeStartDelay, FadeProps.bDestroyedAfterFade, FadeProps.FadeStyle);
 			}
 
 			ImGui::Separator();

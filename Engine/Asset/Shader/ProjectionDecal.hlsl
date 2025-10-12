@@ -24,8 +24,9 @@ cbuffer DecalConstantBuffer : register(b3)
 {
 	row_major float4x4 DecalInverseWorld; // 데칼의 월드 역행렬
 	row_major float4x4 DecalWorld;
-	float FadeAlpha;					  // Fade in & out
-	float3 padding;
+	float FadeProgress;				      // Fade progress (0-1)
+	uint  FadeStyle;			          // 0:Standard, 1:WipeLtoR, 2:Dissolve, 3:Iris
+	float2 padding;
 };
 
 struct VS_INPUT
@@ -58,6 +59,12 @@ PS_INPUT mainVS(VS_INPUT input)
 	return output;
 }
 
+// UV 좌표로부터 무작위처럼 보이는 값을 생성하는 해시 함수
+float hash(float2 p)
+{
+    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
 float4 mainPS(PS_INPUT input) : SV_Target
 {
     // 1. 프로젝션 데칼의 투사 방향을 로컬 X축의 반대 방향으로 가정하고, 월드 공간으로 변환.
@@ -82,7 +89,7 @@ float4 mainPS(PS_INPUT input) : SV_Target
 	}
 
     // 3. 픽셀의 3D 위치를 X축에서 바라보고 2D 평면(YZ)에 투사하여 UV를 생성.
-	float2 decalUV = localPos.yz * float2(1, -1) + 0.5f;
+	float2 decalUV = localPos.yz * float2(-1, -1) + 0.5f;
 
     // 4. 필터링을 통과한 픽셀에, 계산된 데칼 UV로 텍스처 색상을 출력.
 	float4 decalColor = DiffuseTexture.Sample(DefaultSampler, decalUV);
@@ -93,8 +100,42 @@ float4 mainPS(PS_INPUT input) : SV_Target
 		discard;
 	}
 
-	// 5. Alpha 값을 갱신한 뒤 반영합니다.
-	decalColor.a *= FadeAlpha;
+	// 5. FadeStyle에 따라 다른 효과를 적용합니다. 
+	float softness = 0.1f; // 경계선의 부드러움 정도
+
+	// 진행도를 스케일링하여 0과 1 경계에서 softness를 위한 공간을 확보합니다.
+	float scaledProgress = FadeProgress * (1.0f + softness);
+
+	switch (FadeStyle)
+	{
+		case 0: // Standard Alpha Fade
+			decalColor.a *= FadeProgress;
+			break;
+		case 1: // Wipe Left to Right
+		{
+			float threshold = decalUV.x;
+			float t = saturate((scaledProgress - threshold) / softness);
+			decalColor.a *= t * t * (3.0f - 2.0f * t);
+			break;
+		}
+		case 2: // Procedural Random Dissolve
+		{
+			float threshold = hash(decalUV);
+			float t = saturate((scaledProgress - threshold) / softness);
+			decalColor.a *= t * t * (3.0f - 2.0f * t);
+			break;
+		}
+		case 3: // Iris
+		{
+			float threshold = distance(decalUV, float2(0.5, 0.5)) * 1.414f;
+			float t = saturate((scaledProgress - threshold) / softness);
+			decalColor.a *= t * t * (3.0f - 2.0f * t);
+			break;
+		}
+	}
+
+	// 최종 알파 값이 거의 없으면 픽셀을 버립니다.
+	clip(decalColor.a - 0.001f);
 
 	return decalColor;
 }

@@ -1008,7 +1008,7 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 
 		// 3. 데칼의 월드 변환 역행렬을 계산하여 셰이더로 전달합니다.
 		FDecalConstants DecalData(Decal->GetWorldTransformMatrix(), Decal->GetWorldTransformMatrixInverse(),
-			Decal->GetFadeAlpha());
+			Decal->GetFadeAlpha(), Decal->GetFadeStyle());
 		UpdateConstant(ConstantBufferProjectionDecal, DecalData, 3, true, true);
 
 
