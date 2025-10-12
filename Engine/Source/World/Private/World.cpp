@@ -87,10 +87,7 @@ void UWorld::ProcessInput()
 		NewDecal->GetDecalComponent()->StartFadeOut(2.0f, 5.0f, true);
 		if (NewDecal)
 		{
-			FMatrix ViewMatrix = CurrentCamera->GetFViewProjConstantsInverse().View;
-
 			NewDecal->SetActorLocation(HitPoint);
-			NewDecal->SetActorRotation(FVector(ViewMatrix.Data[0][0], ViewMatrix.Data[1][1], ViewMatrix.Data[2][2]));
 		}
 	}
 }
