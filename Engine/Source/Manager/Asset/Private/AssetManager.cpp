@@ -739,14 +739,21 @@ ID3D11ShaderResourceView* UAssetManager::CreateTextureFromFile(const path& InFil
 		}
 		else
 		{
-			// 기타 포맷은 WICTextureLoader 사용 (PNG, JPG, BMP, TIFF 등)
-			ResultHandle = DirectX::CreateWICTextureFromFile(
-				Device,
-				DeviceContext,
-				InFilePath.c_str(),
-				nullptr, // 텍스처 리소스는 필요 없음
-				&TextureSRV
-			);
+            // 기타 포맷은 WICTextureLoader 사용 (PNG, JPG, BMP, TIFF 등)
+            // sRGB 강제 적용하여 감마 보정된 샘플링을 보장
+            ResultHandle = DirectX::CreateWICTextureFromFileEx(
+                Device,
+                DeviceContext,
+                InFilePath.c_str(),
+                0,                            // maxsize
+                D3D11_USAGE_DEFAULT,          // usage
+                D3D11_BIND_SHADER_RESOURCE,   // bind
+                0,                            // cpuAccess
+                0,                            // misc
+                DirectX::WIC_LOADER_FORCE_SRGB | DirectX::WIC_LOADER_FORCE_RGBA32,
+                nullptr,                      // 텍스처 리소스는 필요 없음
+                &TextureSRV
+            );
 
 			if (SUCCEEDED(ResultHandle))
 			{
@@ -827,15 +834,22 @@ ID3D11ShaderResourceView* UAssetManager::CreateTextureFromMemory(const void* InD
 		}
 		else
 		{
-			// 기타 포맷은 WICTextureLoader 사용 (PNG, JPG, BMP, TIFF 등)
-			ResultHandle = DirectX::CreateWICTextureFromMemory(
-				Device,
-				DeviceContext,
-				static_cast<const uint8*>(InData),
-				InDataSize,
-				nullptr, // 텍스처 리소스는 필요 없음
-				&TextureSRV
-			);
+            // 기타 포맷은 WICTextureLoader 사용 (PNG, JPG, BMP, TIFF 등)
+            // sRGB 강제 적용하여 감마 보정된 샘플링을 보장
+            ResultHandle = DirectX::CreateWICTextureFromMemoryEx(
+                Device,
+                DeviceContext,
+                static_cast<const uint8*>(InData),
+                InDataSize,
+                0,                            // maxsize
+                D3D11_USAGE_DEFAULT,
+                D3D11_BIND_SHADER_RESOURCE,
+                0,
+                0,
+                DirectX::WIC_LOADER_FORCE_SRGB | DirectX::WIC_LOADER_FORCE_RGBA32,
+                nullptr,                      // 텍스처 리소스는 필요 없음
+                &TextureSRV
+            );
 
 			if (SUCCEEDED(ResultHandle))
 			{
