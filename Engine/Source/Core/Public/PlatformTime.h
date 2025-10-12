@@ -11,19 +11,19 @@
 
 만약 마지막에 매크로 안 달면, Scope 내 시간이 자동 측정된다.
 */
-#ifdef _DEBUG
+// #ifdef _DEBUG
 #define TIME_PROFILE(Key)\
 FScopeCycleCounter Key##Counter(#Key);
-#else
-#define TIME_PROFILE(Key)
-#endif
+// #else
+// #define TIME_PROFILE(Key)
+// #endif
 
-#ifdef _DEVELOP
+// #ifdef _DEVELOP
 #define TIME_PROFILE_END(Key)\
 Key##Counter.Finish();
-#else
-#define TIME_PROFILE_END(Key)
-#endif
+// #else
+// #define TIME_PROFILE_END(Key)
+// #endif
 
 class FWindowsPlatformTime
 {

@@ -89,7 +89,7 @@
       "Components" : [{
           "ClassName" : "UDecalComponent",
           "DecalMaterialName" : "Object_190",
-          "DecalMaterialTexturePath" : "C:/Users/Jungle/Documents/GTL-week6/Engine/Asset/Texture/lets-focus-poster.jpg",
+          "DecalMaterialTexturePath" : "Asset/Texture/lets-focus-poster.jpg",
           "Location" : [-65.548592, 29.426510, 38.115608],
           "Name" : "DecalComponent",
           "Rotation" : [11.279255, 0.000000, 0.000000],
@@ -113,7 +113,7 @@
       "Components" : [{
           "ClassName" : "UDecalComponent",
           "DecalMaterialName" : "Object_198",
-          "DecalMaterialTexturePath" : "C:/Users/Jungle/Documents/GTL-week6/Engine/Asset/Texture/recovery_256x.png",
+          "DecalMaterialTexturePath" : "Asset/Texture/recovery_256x.png",
           "Location" : [-71.810799, 18.976614, 24.615335],
           "Name" : "DecalComponent",
           "Rotation" : [0.911926, 0.000000, 0.000000],
@@ -126,7 +126,7 @@
       "Components" : [{
           "ClassName" : "UDecalComponent",
           "DecalMaterialName" : "Object_203",
-          "DecalMaterialTexturePath" : "C:/Users/Jungle/Documents/GTL-week6/Engine/Asset/Texture/snoopy-poster1.jpg",
+          "DecalMaterialTexturePath" : "Asset/Texture/snoopy-poster1.jpg",
           "Location" : [-71.810799, 44.984463, 24.209505],
           "Name" : "DecalComponent",
           "Rotation" : [1.017124, 0.000000, 0.000000],
@@ -139,7 +139,7 @@
       "Components" : [{
           "ClassName" : "UDecalComponent",
           "DecalMaterialName" : "Object_208",
-          "DecalMaterialTexturePath" : "C:/Users/Jungle/Documents/GTL-week6/Engine/Asset/Texture/snoopy-poster2.jpg",
+          "DecalMaterialTexturePath" : "Asset/Texture/snoopy-poster2.jpg",
           "Location" : [-53.937721, -33.752953, 36.042229],
           "Name" : "DecalComponent",
           "Rotation" : [-17.689528, 0.000001, 84.468102],
@@ -152,7 +152,7 @@
       "Components" : [{
           "ClassName" : "UDecalComponent",
           "DecalMaterialName" : "Object_213",
-          "DecalMaterialTexturePath" : "C:/Users/Jungle/Documents/GTL-week6/Engine/Asset/Texture/handprint.png",
+          "DecalMaterialTexturePath" : "Asset/Texture/handprint.png",
           "Location" : [-54.041779, 51.770191, 14.579029],
           "Name" : "DecalComponent",
           "Rotation" : [-11.368226, -6.617573, -92.010429],
@@ -165,7 +165,7 @@
       "Components" : [{
           "ClassName" : "UDecalComponent",
           "DecalMaterialName" : "Object_218",
-          "DecalMaterialTexturePath" : "C:/Users/Jungle/Documents/GTL-week6/Engine/Asset/Texture/silly-goose-poster.jpg",
+          "DecalMaterialTexturePath" : "Asset/Texture/silly-goose-poster.jpg",
           "Location" : [-71.810799, 47.270935, 41.944733],
           "Name" : "DecalComponent",
           "Rotation" : [-11.600000, 0.000000, 0.000000],
@@ -178,7 +178,7 @@
       "Components" : [{
           "ClassName" : "UDecalComponent",
           "DecalMaterialName" : "Object_208",
-          "DecalMaterialTexturePath" : "C:/Users/Jungle/Documents/GTL-week6/Engine/Asset/Texture/snoopy-poster2.jpg",
+          "DecalMaterialTexturePath" : "Asset/Texture/snoopy-poster2.jpg",
           "Location" : [-48.041153, 2.403751, 10.232634],
           "Name" : "DecalComponent",
           "Rotation" : [-17.689528, 0.000000, 0.000000],
@@ -208,7 +208,7 @@
       "Components" : [{
           "ClassName" : "UDecalComponent",
           "DecalMaterialName" : "Object_208",
-          "DecalMaterialTexturePath" : "C:/Users/Jungle/Documents/GTL-week6/Engine/Asset/Texture/snoopy-poster2.jpg",
+          "DecalMaterialTexturePath" : "Asset/Texture/snoopy-poster2.jpg",
           "Location" : [-71.810799, 34.385014, 19.473061],
           "Name" : "DecalComponent",
           "Rotation" : [-17.689528, 0.000000, 0.000000],
