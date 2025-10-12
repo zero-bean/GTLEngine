@@ -78,24 +78,35 @@ void UEditor::Tick(float DeltaSeconds)
 
 	if (AActor* SelectedActor = GEngine->GetCurrentLevel()->GetSelectedActor())
 	{
-		for (const auto& Component : SelectedActor->GetOwnedComponents())
+		uint64 ShowFlags = GEngine->GetCurrentLevel()->GetShowFlags();
+		const bool bWantsBounds = (ShowFlags & EEngineShowFlags::SF_Primitives) && (ShowFlags & EEngineShowFlags::SF_Bounds);
+
+		bool bDrewBounds = false;
+		if (bWantsBounds)
 		{
-			if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(Component))
+			for (const auto& Component : SelectedActor->GetOwnedComponents())
 			{
-				FVector WorldMin, WorldMax;
-				PrimitiveComponent->GetWorldAABB(WorldMin, WorldMax);
-
-				uint64 ShowFlags = GEngine->GetCurrentLevel()->GetShowFlags();
-
-				if ((ShowFlags & EEngineShowFlags::SF_Primitives) && (ShowFlags & EEngineShowFlags::SF_Bounds))
+				if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(Component))
 				{
+					EPrimitiveType PrimType = PrimitiveComponent->GetPrimitiveType();
+					// Skip bounding box rendering for billboard/text components
+					if (PrimType == EPrimitiveType::Billboard || PrimType == EPrimitiveType::TextRender)
+					{
+						continue;
+					}
+
+					FVector WorldMin, WorldMax;
+					PrimitiveComponent->GetWorldAABB(WorldMin, WorldMax);
 					BatchLines.UpdateBoundingBoxVertices(FAABB(WorldMin, WorldMax));
-				}
-				else
-				{
-					BatchLines.UpdateBoundingBoxVertices(FAABB({ 0.0f,0.0f,0.0f }, { 0.0f, 0.0f, 0.0f }));
+					bDrewBounds = true;
+					break; // draw once for a selected actor
 				}
 			}
+		}
+
+		if (!bDrewBounds)
+		{
+			BatchLines.DisableRenderBoundingBox();
 		}
 	}
 	else
