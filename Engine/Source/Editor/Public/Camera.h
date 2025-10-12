@@ -3,11 +3,33 @@
 class UConfigManager;
 
 struct FViewProperties;
-enum class ECameraType
+
+enum class EViewportCameraType : uint8_t
 {
-	ECT_Orthographic,
-	ECT_Perspective
+	Perspective,
+	Ortho_Top,
+	Ortho_Bottom,
+	Ortho_Front,
+	Ortho_Back,
+	Ortho_Left,
+	Ortho_Right
 };
+
+// EViewportType을 문자열로 변환하는 헬퍼 함수
+inline const char* ClientCameraTypeToString(EViewportCameraType InType)
+{
+	switch (InType)
+	{
+	case EViewportCameraType::Perspective:   return "Perspective";
+	case EViewportCameraType::Ortho_Top:     return "Top";
+	case EViewportCameraType::Ortho_Bottom:  return "Bottom";
+	case EViewportCameraType::Ortho_Front:   return "Front";
+	case EViewportCameraType::Ortho_Back:    return "Back";
+	case EViewportCameraType::Ortho_Left:    return "Left";
+	case EViewportCameraType::Ortho_Right:   return "Right";
+	default:                                 return "Unknown";
+	}
+}
 
 class UCamera : public UObject
 {
@@ -15,11 +37,13 @@ class UCamera : public UObject
 	DECLARE_CLASS(UCamera, UObject)
 
 public:
-	// Camera Speed Constants
+	// Camera Settings Constants
 	static constexpr float MIN_SPEED = 10.0f;
-	static constexpr float MAX_SPEED = 70.0f;
-	static constexpr float DEFAULT_SPEED = 20.0f;
-	static constexpr float SPEED_ADJUST_STEP = 1.0f;
+	static constexpr float MAX_SPEED = 200.0f;
+	static constexpr float DEFAULT_SPEED = 100.0f;
+	static constexpr float SPEED_ADJUST_STEP = 2.5f;
+	static constexpr float MIN_ORTHO_WHEEL_WIDTH = 1.0f;
+	static constexpr float MAX_ORTHO_WHEEL_WIDTH = 5000.0f;
 
 	UCamera();
 	~UCamera() override;
@@ -44,7 +68,7 @@ public:
 	void SetNearZ(const float InOtherNearZ) { NearZ = InOtherNearZ; }
 	void SetFarZ(const float InOtherFarZ) { FarZ = InOtherFarZ; }
 	void SetOrthoWidth(const float InOrthoWidth) { OrthoWidth = InOrthoWidth; }
-	void SetCameraType(const ECameraType InCameraType) { CameraType = InCameraType; }
+	void SetCameraType(const EViewportCameraType InCameraType) { CameraType = InCameraType; }
 
 	/**
 	 * @brief Getter
@@ -66,7 +90,7 @@ public:
 	float GetNearZ() const { return NearZ; }
 	float GetFarZ() const { return FarZ; }
 	float GetOrthoWidth() const { return OrthoWidth; }
-	ECameraType GetCameraType() const { return CameraType; }
+	EViewportCameraType GetCameraType() const { return CameraType; }
 
 	// Camera Movement Speed Control
 	float GetMoveSpeed() const { return CurrentMoveSpeed; }
@@ -103,8 +127,7 @@ private:
 	float NearZ = {};
 	float FarZ = {};
 	float OrthoWidth = {};
-	ECameraType CameraType = {};
-
+	EViewportCameraType CameraType = EViewportCameraType::Perspective;
 
 	// Dynamic Movement Speed
 	float CurrentMoveSpeed = DEFAULT_SPEED;

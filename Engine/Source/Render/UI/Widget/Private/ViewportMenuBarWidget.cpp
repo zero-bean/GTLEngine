@@ -20,6 +20,11 @@ const ImVec4 FrameBgHovered = ImVec4(pow(0.25f, 2.2f), pow(0.25f, 2.2f), pow(0.2
 const ImVec4 SliderGrab = ImVec4(pow(0.6f, 2.2f), pow(0.6f, 2.2f), pow(0.6f, 2.2f), 1.00f);
 const ImVec4 SliderGrabActive = ImVec4(pow(0.8f, 2.2f), pow(0.8f, 2.2f), pow(0.8f, 2.2f), 1.00f);
 
+static const char* GCameraModes[] =
+{
+	"Perspective", "Top", "Bottom", "Front", "Back", "Left", "Right"
+};
+
 UViewportMenuBarWidget::~UViewportMenuBarWidget()
 {
 	Viewport = nullptr;
@@ -110,7 +115,7 @@ void UViewportMenuBarWidget::RenderWidget()
 			}
 			if (ImGui::BeginPopup("CameraSettingsPopup"))
 			{
-				RenderCameraControls(ViewportClient.Camera);
+				RenderCameraControls(ViewportClient);
 				ImGui::EndPopup();
 			}
 
@@ -164,9 +169,9 @@ void UViewportMenuBarWidget::RenderWidget()
 	}
 }
 
-void UViewportMenuBarWidget::RenderCameraControls(UCamera& InCamera)
+void UViewportMenuBarWidget::RenderCameraControls(FViewportClient& InViewportClient)
 {
-	// --- UI를 그리기 직전에 항상 카메라로부터 최신 값을 가져옵니다 ---
+	UCamera& InCamera = InViewportClient.Camera;
 	auto& Location = InCamera.GetLocation();
 	auto& Rotation = InCamera.GetRotation();
 	float FovY = InCamera.GetFovY();
@@ -174,9 +179,9 @@ void UViewportMenuBarWidget::RenderCameraControls(UCamera& InCamera)
 	float FarZ = InCamera.GetFarZ();
 	float OrthoWidth = InCamera.GetOrthoWidth();
 	float MoveSpeed = InCamera.GetMoveSpeed();
-	int ModeIndex = (InCamera.GetCameraType() == ECameraType::ECT_Perspective) ? 0 : 1;
-	static const char* CameraMode[] = { "Perspective", "Orthographic" };
 
+	EViewportCameraType CurrentCameraType = InCamera.GetCameraType();
+	int CameraModeIndex = static_cast<int>(CurrentCameraType);
 
 	ImGui::Text("Camera Properties");
 	ImGui::Separator();
@@ -184,25 +189,43 @@ void UViewportMenuBarWidget::RenderCameraControls(UCamera& InCamera)
 	// --- UI 렌더링 및 상호작용 ---
 	if (ImGui::SliderFloat("Move Speed", &MoveSpeed, UCamera::MIN_SPEED, UCamera::MAX_SPEED, "%.1f"))
 	{
-		InCamera.SetMoveSpeed(MoveSpeed); // 변경 시 즉시 적용
+		InCamera.SetMoveSpeed(MoveSpeed);
 	}
 
-	ImGui::DragFloat3("Location", &Location.X, 0.05f);
-	ImGui::DragFloat3("Rotation", &Rotation.X, 0.1f);
+	// 카메라 모드를 직접 변경할 수 있는 콤보박스
+	if (ImGui::Combo("Mode", &CameraModeIndex, GCameraModes, IM_ARRAYSIZE(GCameraModes)))
+	{
+		InViewportClient.SetCameraType(static_cast<EViewportCameraType>(CameraModeIndex));
+
+		// 변경 사항을 즉시 뷰에 반영하기 위해 업데이트 함수를 호출합니다.
+		if (Viewport)
+		{
+			Viewport->UpdateAllViewportClientCameras();
+		}
+
+		CurrentCameraType = InViewportClient.GetCameraType();
+	}
+
+	// 변경: 원근 뷰일 때만 회전 컨트롤을 표시하여 UX 개선
+	if (CurrentCameraType == EViewportCameraType::Perspective)
+	{
+		ImGui::DragFloat3("Location", &Location.X, 0.05f);
+		ImGui::DragFloat3("Rotation", &Rotation.X, 0.1f);
+	}
 
 	bool bOpticsChanged = false;
-	if (ModeIndex == 0) // 원근 투영 
+
+	if (CurrentCameraType == EViewportCameraType::Perspective)
 	{
 		bOpticsChanged |= ImGui::SliderFloat("FOV", &FovY, 1.0f, 170.0f, "%.1f");
 		bOpticsChanged |= ImGui::DragFloat("Z Near", &NearZ, 0.01f, 0.0001f, 1e6f, "%.4f");
 		bOpticsChanged |= ImGui::DragFloat("Z Far", &FarZ, 0.1f, 0.001f, 1e7f, "%.3f");
 	}
-	else if (ModeIndex == 1) // 직교 투영
+	else
 	{
 		bOpticsChanged |= ImGui::SliderFloat("OrthoWidth", &OrthoWidth, 1.0f, 150.0f, "%.1f");
 	}
 
-	// 변경된 값을 카메라에 다시 적용
 	if (bOpticsChanged)
 	{
 		InCamera.SetFovY(FovY);
