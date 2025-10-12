@@ -495,20 +495,30 @@ void ULevel::SetSelectedActor(AActor* InActor)
 // Level에서 Actor 제거하는 함수
 bool ULevel::DestroyActor(AActor* InActor)
 {
-	if (!InActor)
-	{
-		return false;
-	}
+    if (!InActor)
+    {
+        return false;
+    }
 
-	// Actors 리스트에서 제거
-	for (auto Iterator = Actors.begin(); Iterator != Actors.end(); ++Iterator)
-	{
-		if (*Iterator == InActor)
-		{
-			Actors.erase(Iterator);
-			break;
-		}
-	}
+    // Remove any primitive components of this actor from level caches/BVH
+    for (const auto& Comp : InActor->GetOwnedComponents())
+    {
+        if (!(Comp->GetComponentType() >= EComponentType::Primitive)) continue;
+        if (TObjectPtr<UPrimitiveComponent> Prim = Cast<UPrimitiveComponent>(Comp))
+        {
+            RemoveLevelPrimitiveComponent(Prim);
+        }
+    }
+
+    // Actors 리스트에서 제거
+    for (auto Iterator = Actors.begin(); Iterator != Actors.end(); ++Iterator)
+    {
+        if (*Iterator == InActor)
+        {
+            Actors.erase(Iterator);
+            break;
+        }
+    }
 
 	// Remove Actor Selection
 	if (SelectedActor == InActor)

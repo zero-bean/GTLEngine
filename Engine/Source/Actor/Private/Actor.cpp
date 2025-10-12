@@ -255,7 +255,7 @@ void AActor::RemoveComponent(TObjectPtr<UActorComponent> Component)
 
 	if (USceneComponent* SceneComponentToRemove = Cast<USceneComponent>(Component))
 	{
-		// 1. 부모와 자식 목록의 *복사본*을 가져옵니다. 
+		// 1. 부모와 자식 목록의 *복사본*을 가져옵니다.
 		USceneComponent* Parent = SceneComponentToRemove->GetParentAttachment();
 		TArray<USceneComponent*> ChildrenToReparent = SceneComponentToRemove->GetChildren();
 
@@ -281,15 +281,46 @@ void AActor::RemoveComponent(TObjectPtr<UActorComponent> Component)
 	Component = nullptr;
 }
 
+void AActor::MarkComponentForRemoval(TObjectPtr<UActorComponent> Component)
+{
+    if (!Component)
+    {
+        return;
+    }
+    for (const auto& Pending : ComponentsPendingRemoval)
+    {
+        if (Pending == Component)
+        {
+            return;
+        }
+    }
+    ComponentsPendingRemoval.push_back(Component);
+}
+
 void AActor::Tick(float DeltaSeconds)
 {
-	for (auto& Component : OwnedComponents)
-	{
-		if (Component)
-		{
-			Component->TickComponent(DeltaSeconds);
-		}
-	}
+    for (auto& Component : OwnedComponents)
+    {
+        if (Component)
+        {
+            Component->TickComponent(DeltaSeconds);
+        }
+    }
+
+    // Safely process any component removals requested during ticking
+    if (!ComponentsPendingRemoval.empty())
+    {
+        // Make a copy in case RemoveComponent triggers other changes
+        TArray<TObjectPtr<UActorComponent>> ToRemove = ComponentsPendingRemoval;
+        ComponentsPendingRemoval.clear();
+        for (auto& Comp : ToRemove)
+        {
+            if (Comp)
+            {
+                RemoveComponent(Comp);
+            }
+        }
+    }
 
 	static float TotalTime = 0.0f;
 	static FVector OriginLocation = GetActorLocation();
