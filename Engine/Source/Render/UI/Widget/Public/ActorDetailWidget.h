@@ -32,7 +32,6 @@ public:
 	static void ReleaseAssets();
 
 private:
-	TObjectPtr<UActorComponent> SelectedComponent;
 	bool bIsRenamingActor = false;
 	char ActorNameBuffer[256] = {};
 
@@ -50,8 +49,9 @@ private:
 	// Helper functions
 	void RenderActorHeader(TObjectPtr<AActor> InSelectedActor);
 	void RenderComponentTree(TObjectPtr<AActor> InSelectedActor);
-	void RenderHierarchyNode(USceneComponent* InComponent, TSet<UActorComponent*>& OutRenderedComponents);
-	void RenderFlatNode(UActorComponent* InComponent);
+	void RenderHierarchyNode(USceneComponent* InComponent,
+		TSet<UActorComponent*>& OutRenderedComponents, TObjectPtr<AActor> InSelectedActor);
+	void RenderFlatNode(UActorComponent* InComponent, TObjectPtr<AActor> InSelectedActor);
 	void RenderComponentDetails(TObjectPtr<UActorComponent> InComponent);
 
 	// 이름 변경 함수

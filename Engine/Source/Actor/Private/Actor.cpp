@@ -279,6 +279,8 @@ void AActor::RemoveComponent(TObjectPtr<UActorComponent> Component)
 	Component->SetOwner(nullptr);
 	delete Component.Get();
 	Component = nullptr;
+
+	SelectedComponent = RootComponent;
 }
 
 void AActor::MarkComponentForRemoval(TObjectPtr<UActorComponent> Component)

@@ -215,6 +215,7 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 	USceneComponent* RootSceneComponentRaw = InSelectedActor->GetRootComponent();
 	TObjectPtr<USceneComponent> RootSceneComponent = TObjectPtr(RootSceneComponentRaw);
 	TObjectPtr<UActorComponent> RootAsActorComponent = Cast<UActorComponent>(RootSceneComponent);
+	TObjectPtr<UActorComponent> SelectedComponent = InSelectedActor->GetSelectedComponent();
 
 	ImGui::Text("Components (%d)", static_cast<int>(Components.size()));
 	ImGui::SameLine();
@@ -280,7 +281,7 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 			Billboard->SetSprite(ELightType::Spotlight);
 			AddComponentToActor(std::move(Billboard));
 		}
-		ImGui::Separator(); 
+		ImGui::Separator();
 		if (ImGui::MenuItem("Cube Component"))
 		{
 			AddComponentToActor(new UCubeComponent());
@@ -315,7 +316,7 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 			RemoveMessageTimer = 2.0f;
 		}
 		else
-		{ 
+		{
 			InSelectedActor->RemoveComponent(SelectedComponent);
 			SelectedComponent = RootAsActorComponent;
 			return;
@@ -350,7 +351,7 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 	// 1. 루트 컴포넌트부터 시작하여 전체 계층 구조를 재귀적으로 렌더링
 	if (RootComponentRaw)
 	{
-		RenderHierarchyNode(RootComponentRaw, RenderedComponents);
+		RenderHierarchyNode(RootComponentRaw, RenderedComponents, InSelectedActor);
 	}
 
 	// 2. 계층 구조에 포함되지 않은 나머지 컴포넌트들을 렌더링
@@ -358,7 +359,7 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 	{
 		if (Component && RenderedComponents.find(Component.Get()) == RenderedComponents.end())
 		{
-			RenderFlatNode(Component.Get());
+			RenderFlatNode(Component.Get(), InSelectedActor);
 		}
 	}
 
@@ -375,7 +376,8 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
  * @param InSceneComponent 렌더링할 SceneComponent
  * @param OutRenderedComponents 렌더링된 컴포넌트를 추적하기 위한 set
  */
-void UActorDetailWidget::RenderHierarchyNode(USceneComponent* InSceneComponent, TSet<UActorComponent*>& OutRenderedComponents)
+void UActorDetailWidget::RenderHierarchyNode(USceneComponent* InSceneComponent,
+	TSet<UActorComponent*>& OutRenderedComponents, TObjectPtr<AActor> InSelectedActor)
 {
 	if (!InSceneComponent) return;
 
@@ -402,7 +404,7 @@ void UActorDetailWidget::RenderHierarchyNode(USceneComponent* InSceneComponent, 
 	{
 		NodeFlags |= ImGuiTreeNodeFlags_Leaf; // 자식이 없으면 Leaf 노드로 처리
 	}
-	if (SelectedComponent.Get() == InSceneComponent)
+	if (InSelectedActor->GetSelectedComponent() == InSceneComponent)
 	{
 		NodeFlags |= ImGuiTreeNodeFlags_Selected;
 	}
@@ -424,7 +426,7 @@ void UActorDetailWidget::RenderHierarchyNode(USceneComponent* InSceneComponent, 
 	// 클릭 시 선택 처리
 	if (ImGui::IsItemClicked())
 	{
-		SelectedComponent = InSceneComponent;
+		InSelectedActor->SetSelectedComponent(InSceneComponent);
 	}
 
 	// 툴팁 표시
@@ -448,7 +450,7 @@ void UActorDetailWidget::RenderHierarchyNode(USceneComponent* InSceneComponent, 
 	{
 		for (USceneComponent* Child : Children)
 		{
-			RenderHierarchyNode(Child, OutRenderedComponents);
+			RenderHierarchyNode(Child, OutRenderedComponents, InSelectedActor);
 		}
 		ImGui::TreePop(); // 현재 노드를 닫음
 	}
@@ -458,12 +460,12 @@ void UActorDetailWidget::RenderHierarchyNode(USceneComponent* InSceneComponent, 
  * @brief 계층 구조에 속하지 않는 일반 컴포넌트를 렌더링하는 함수
  * @param InComponent 렌더링할 ActorComponent
  */
-void UActorDetailWidget::RenderFlatNode(UActorComponent* InComponent)
+void UActorDetailWidget::RenderFlatNode(UActorComponent* InComponent, TObjectPtr<AActor> InSelectedActor)
 {
 	if (!InComponent) return;
 
 	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-	if (SelectedComponent.Get() == InComponent)
+	if (InSelectedActor->GetSelectedComponent() == InComponent)
 	{
 		NodeFlags |= ImGuiTreeNodeFlags_Selected;
 	}
@@ -474,7 +476,7 @@ void UActorDetailWidget::RenderFlatNode(UActorComponent* InComponent)
 
 	if (ImGui::IsItemClicked())
 	{
-		SelectedComponent = InComponent;
+		InSelectedActor->SetSelectedComponent(InComponent);
 	}
 
 	if (ImGui::IsItemHovered())

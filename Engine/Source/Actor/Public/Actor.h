@@ -58,6 +58,9 @@ public:
 	bool IsTickInEditor() const { return bTickInEditor; }
 	void SetTickInEditor(bool InTickInEditor) { bTickInEditor = InTickInEditor; }
 
+	UActorComponent* GetSelectedComponent() const { return SelectedComponent.Get(); }
+	void SetSelectedComponent(UActorComponent* InComponent) { SelectedComponent = InComponent; }
+
 	template <class T>
 	T* CreateDefaultSubobject(const FName& InName)
 	{
@@ -82,6 +85,7 @@ public:
 
 private:
     TObjectPtr<USceneComponent> RootComponent = nullptr;
+	TObjectPtr<UActorComponent> SelectedComponent = RootComponent;
     TArray<TObjectPtr<UActorComponent>> OwnedComponents;
 
     TArray<TObjectPtr<UActorComponent>> ComponentsPendingRemoval;
