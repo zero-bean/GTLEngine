@@ -100,7 +100,7 @@ float4 mainPS(PS_INPUT input) : SV_Target
 		discard;
 	}
 
-	// 5. FadeStyle에 따라 다른 효과를 적용합니다. 
+	// 5. FadeStyle에 따라 다른 효과를 적용합니다.
 	float softness = 0.1f; // 경계선의 부드러움 정도
 
 	// 진행도를 스케일링하여 0과 1 경계에서 softness를 위한 공간을 확보합니다.
@@ -134,8 +134,12 @@ float4 mainPS(PS_INPUT input) : SV_Target
 		}
 	}
 
-	// 최종 알파 값이 거의 없으면 픽셀을 버립니다.
-	clip(decalColor.a - 0.001f);
+    // Edge hardening to avoid fringe: suppress very low-alpha samples smoothly
+    float edge = saturate((decalColor.a - 0.05f) / 0.05f); // 0 at 0.05, 1 at 0.10
+    decalColor.a *= edge;
+    clip(decalColor.a - 0.001f);
 
-	return decalColor;
+    // Premultiply to avoid white wash with standard alpha blending
+    decalColor.rgb *= decalColor.a;
+    return decalColor;
 }
