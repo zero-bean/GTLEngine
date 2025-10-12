@@ -12,7 +12,6 @@ ASpotLightActor::ASpotLightActor()
 	SetRootComponent(SpotLightComponent);
 	auto BillboardComponent = CreateDefaultSubobject<UBillboardComponent>("BillboardComponent");
 	BillboardComponent->SetSprite(ELightType::Spotlight);
-
-	SpotLightComponent->AddChild(BillboardComponent);
+	
 	BillboardComponent->SetParentAttachment(SpotLightComponent);
 }
