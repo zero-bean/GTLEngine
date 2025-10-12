@@ -9,6 +9,8 @@
 #include "Component/Public/LineComponent.h"
 #include "Component/Public/SceneComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
+#include "Component/Public/SpotLightComponent.h"
+#include "Component/Public/LightComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Actor/Public/CubeActor.h"
 #include "Actor/Public/SphereActor.h"
@@ -17,6 +19,8 @@
 #include "Actor/Public/TriangleActor.h"
 #include "Actor/Public/BillboardActor.h"
 #include "Actor/Public/DecalActor.h"
+#include "Actor/Public/SpotLightActor.h"
+#include "Actor/Public/LightActor.h"
 
 // 하드 코딩으로 구현
 FString FActorTypeMapper::ActorToType(UClass* InClass)
@@ -50,6 +54,14 @@ FString FActorTypeMapper::ActorToType(UClass* InClass)
 	else if (TypeName == ABillboardActor::StaticClass()->GetClassTypeName())
 	{
 		return "BillBoard";
+	}
+	else if (TypeName == ALightActor::StaticClass()->GetClassTypeName())
+	{
+		return "Light";
+	}
+	else if (TypeName == ASpotLightActor::StaticClass()->GetClassTypeName())
+	{
+		return "SpotLight";
 	}
 }
 
@@ -86,6 +98,14 @@ UClass* FActorTypeMapper::TypeToActor(const FString& InTypeString)
 	else if (InTypeString == "BillBoard")
 	{
 		NewActorClass = ABillboardActor::StaticClass();
+	}
+	else if (InTypeString == "Light")
+	{
+		NewActorClass = ALightActor::StaticClass();
+	}
+	else if (InTypeString == "SpotLight")
+	{
+		NewActorClass = ASpotLightActor::StaticClass();
 	}
 
 	return NewActorClass;

@@ -11,10 +11,14 @@ class ULightComponent : public UPrimitiveComponent
 public:
 	ULightComponent();
 
-	void UpdateBrightness();
+	void UpdateBrightness() {}
 	void UpdateLightColor(FVector4 InColor);
 
 	FVector4 GetLightColor() { return LightColor; }
+
+	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+
 protected:
 	FVector4 Brightness;
 	FVector4 LightColor;

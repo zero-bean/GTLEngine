@@ -1,0 +1,168 @@
+{
+  "NextUUID" : 0,
+  "PerspectiveCamera" : {
+    "FOV" : [90.000000],
+    "FarClip" : [1000.000000],
+    "Location" : [-31.847658, 62.653297, 49.272518],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 52.100143, 78.300034]
+  },
+  "Primitives" : {
+    "160" : {
+      "Components" : [{
+          "ClassName" : "UCubeComponent",
+          "Location" : [122.992928, -30.118408, 26.192457],
+          "Name" : "CubeComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [2.000000, 50.000000, 50.000000]
+        }],
+      "RootComponentName" : "CubeComponent",
+      "Type" : "Cube"
+    },
+    "163" : {
+      "Components" : [{
+          "ClassName" : "UCubeComponent",
+          "Location" : [122.992928, 33.664894, 26.192457],
+          "Name" : "CubeComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [2.000000, 50.000000, 50.000000]
+        }],
+      "RootComponentName" : "CubeComponent",
+      "Type" : "Cube"
+    },
+    "166" : {
+      "Components" : [{
+          "ClassName" : "UCubeComponent",
+          "Location" : [122.992928, 96.529129, 26.192457],
+          "Name" : "CubeComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [2.000000, 50.000000, 50.000000]
+        }],
+      "RootComponentName" : "CubeComponent",
+      "Type" : "Cube"
+    },
+    "169" : {
+      "Components" : [{
+          "ClassName" : "UCubeComponent",
+          "Location" : [122.992928, -96.825752, 26.192457],
+          "Name" : "CubeComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [2.000000, 50.000000, 50.000000]
+        }],
+      "RootComponentName" : "CubeComponent",
+      "Type" : "Cube"
+    },
+    "172" : {
+      "Components" : [{
+          "ClassName" : "UCubeComponent",
+          "Location" : [-95.000000, -100.000000, 22.000000],
+          "Name" : "CubeComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [25.000000, 25.000000, 25.000000]
+        }],
+      "RootComponentName" : "CubeComponent",
+      "Type" : "Cube"
+    },
+    "175" : {
+      "Components" : [{
+          "ClassName" : "UCubeComponent",
+          "Location" : [-95.000000, -100.000000, 52.000000],
+          "Name" : "CubeComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [25.000000, 25.000000, 25.000000]
+        }],
+      "RootComponentName" : "CubeComponent",
+      "Type" : "Cube"
+    },
+    "178" : {
+      "Components" : [{
+          "ClassName" : "UCubeComponent",
+          "Location" : [-65.000000, -100.000000, 22.000000],
+          "Name" : "CubeComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [25.000000, 25.000000, 25.000000]
+        }],
+      "RootComponentName" : "CubeComponent",
+      "Type" : "Cube"
+    },
+    "181" : {
+      "Components" : [{
+          "ClassName" : "UCubeComponent",
+          "Location" : [-65.000000, -100.000000, 52.000000],
+          "Name" : "CubeComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [25.000000, 25.000000, 25.000000]
+        }],
+      "RootComponentName" : "CubeComponent",
+      "Type" : "Cube"
+    },
+    "184" : {
+      "Components" : [{
+          "ClassName" : "UCubeComponent",
+          "Location" : [-53.256889, 75.134293, 46.974846],
+          "Name" : "CubeComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [15.000000, 15.000000, 60.000000]
+        }],
+      "RootComponentName" : "CubeComponent",
+      "Type" : "Cube"
+    },
+    "187" : {
+      "Components" : [{
+          "ClassName" : "UCubeComponent",
+          "Location" : [-53.256889, 75.134293, 12.351299],
+          "Name" : "CubeComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [50.000000, 50.000000, 10.000000]
+        }],
+      "RootComponentName" : "CubeComponent",
+      "Type" : "Cube"
+    },
+    "190" : {
+      "Components" : [{
+          "Brightness" : [0.000000, 0.000000, 0.000000, 1.000000],
+          "ClassName" : "USpotLightComponent",
+          "LightColor" : [0.502110, 0.027542, 0.027542, 1.000000],
+          "Location" : [-25.913801, 96.815575, 21.894341],
+          "Name" : "SpotLightComponent",
+          "Rotation" : [0.000000, 51.586803, 0.000000],
+          "Scale" : [33.000000, 33.000000, 55.000000]
+        }, {
+          "ClassName" : "UBillboardComponent",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "BillboardComponent",
+          "ParentName" : "SpotLightComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [0.300000, 0.300000, 0.300000]
+        }],
+      "RootComponentName" : "SpotLightComponent",
+      "Type" : "SpotLight"
+    },
+    "195" : {
+      "Components" : [{
+          "Brightness" : [0.000000, 0.000000, 0.000000, 1.000000],
+          "ClassName" : "USpotLightComponent",
+          "LightColor" : [0.005501, 0.016365, 0.434599, 1.000000],
+          "Location" : [-25.913801, 72.136780, 21.894341],
+          "Name" : "SpotLightComponent",
+          "Rotation" : [0.000000, 51.586803, 0.000000],
+          "Scale" : [33.000000, 33.000000, 55.000000]
+        }, {
+          "ClassName" : "UBillboardComponent",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "BillboardComponent",
+          "ParentName" : "SpotLightComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [0.300000, 0.300000, 0.300000]
+        }, {
+          "ClassName" : "UBillboardComponent",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "BillboardComponent",
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [0.300000, 0.300000, 0.300000]
+        }],
+      "RootComponentName" : "SpotLightComponent",
+      "Type" : "SpotLight"
+    }
+  }
+}

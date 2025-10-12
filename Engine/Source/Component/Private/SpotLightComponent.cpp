@@ -2,8 +2,7 @@
 #include "Component/Public/SpotLightComponent.h"
 #include "Manager/Asset/Public/AssetManager.h"
 
-IMPLEMENT_CLASS(USpotLightComponent, UPrimitiveComponent)
-
+IMPLEMENT_CLASS(USpotLightComponent, ULightComponent)
 
 USpotLightComponent::USpotLightComponent()
 {
@@ -26,10 +25,14 @@ USpotLightComponent::USpotLightComponent()
 	RenderState.FillMode = EFillMode::Solid;
 }
 
-
 UObject* USpotLightComponent::Duplicate(FObjectDuplicationParameters Parameters)
 {
 	auto DupObject = static_cast<USpotLightComponent*>(Super::Duplicate(Parameters));
 
 	return DupObject;
+}
+
+void USpotLightComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
 }

@@ -11,7 +11,8 @@ public:
 	virtual ~USpotLightComponent() = default;
 
 	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
-	FMatrix GetLightWorldMatrix(); // scale 값은 영향 안 미친다.
-	FMatrix GetLightInverseWorldMatrix();
+	FMatrix GetLightWorldMatrix() {} // scale 값은 영향 안 미친다.
+	FMatrix GetLightInverseWorldMatrix() {}
 };
