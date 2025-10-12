@@ -7,6 +7,14 @@ using JSON = json::JSON;
 
 class UMaterial;
 
+enum class EFadeStyle : uint8
+{
+	Standard,
+	WipeLeftToRight,
+	Dissolve,
+	Iris
+};
+
 struct FDecalFadeProperty
 {
 public:
@@ -20,22 +28,25 @@ public:
 	bool bIsFadingOut = false;			// 현재 페이드 아웃 중인가?
 	bool bFadeCompleted = false;		// 전체 페이드 사이클 완료 여부
 	bool bDestroyedAfterFade = false;	// 페이드 아웃 완료 후 제거 여부
+	EFadeStyle FadeStyle = EFadeStyle::Standard; // 페이드 비주얼 스타일
 
-	void StartFadeIn()
+	void StartFadeIn(EFadeStyle InFadeStyle = EFadeStyle::Standard)
 	{
 		bIsFadingIn = true;
 		bIsFadingOut = false;
 		bFadeCompleted = false;
 		FadeAlpha = 0.f;
 		ElapsedFadeTime = -FadeInStartDelay;
+		FadeStyle = InFadeStyle;
 	}
 
-	void StartFadeOut()
+	void StartFadeOut(EFadeStyle InFadeStyle = EFadeStyle::Standard)
 	{
 		bIsFadingOut = true;
 		bIsFadingIn = false;
 		FadeAlpha = 1.f;
 		ElapsedFadeTime = -FadeStartDelay;
+		FadeStyle = InFadeStyle;
 	}
 
 	// 매 프레임 갱신 (DeltaTime 단위로)
@@ -85,9 +96,10 @@ public:
 	/* *
 	 * @brief 페이드 제어 및 상태 확인을 위한 public 함수들
 	 */
-	void StartFadeIn(float Duration, float Delay = 0.f);
-	void StartFadeOut(float Duration, float Delay = 0.f, bool bDestroyOwner = false);
+	void StartFadeIn(float Duration, float Delay = 0.f, EFadeStyle InFadeStyle = EFadeStyle::Standard);
+	void StartFadeOut(float Duration, float Delay = 0.f, bool bDestroyOwner = false, EFadeStyle InFadeStyle = EFadeStyle::Standard);
 	float GetFadeAlpha() const { return FadeProperty.FadeAlpha; }
+	uint32 GetFadeStyle() const { return static_cast<uint32>(FadeProperty.FadeStyle); }
 	bool IsFadeCompleted() const { return FadeProperty.bFadeCompleted; }
 	FDecalFadeProperty& GetFadeProperty() { return FadeProperty; }
 

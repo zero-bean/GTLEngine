@@ -49,19 +49,19 @@ void UDecalComponent::TickComponent(float DeltaSeconds)
     UpdateProjectionFromWorldTransform();
 }
 
-void UDecalComponent::StartFadeIn(float Duration, float Delay)
+void UDecalComponent::StartFadeIn(float Duration, float Delay, EFadeStyle InFadeStyle)
 {
 	FadeProperty.FadeInDuration = Duration;
 	FadeProperty.FadeInStartDelay = Delay;
-	FadeProperty.StartFadeIn();
+	FadeProperty.StartFadeIn(InFadeStyle);
 }
 
-void UDecalComponent::StartFadeOut(float Duration, float Delay, bool bDestroyOwner)
+void UDecalComponent::StartFadeOut(float Duration, float Delay, bool bDestroyOwner, EFadeStyle InFadeStyle)
 {
 	FadeProperty.FadeDuration = Duration;
 	FadeProperty.FadeStartDelay = Delay;
 	FadeProperty.bDestroyedAfterFade = bDestroyOwner;
-	FadeProperty.StartFadeOut();
+	FadeProperty.StartFadeOut(InFadeStyle);
 }
 
 void UDecalComponent::SetDecalMaterial(UMaterial* InMaterial)
