@@ -65,17 +65,8 @@ FVector UCamera::UpdateInput()
 			const FVector MouseDelta = UInputManager::GetInstance().GetMouseDelta();
 			RelativeRotation.Z += MouseDelta.X * KeySensitivityDegPerPixel;
 			RelativeRotation.Y += MouseDelta.Y * KeySensitivityDegPerPixel;
-			MovementDelta = FVector::Zero(); // 원근 투영 모드는 반환할 필요가 없음
+			MovementDelta = FVector::Zero(); 
 		}
-
-
-		// Yaw 래핑(값이 무한히 커지지 않도록)
-		if (RelativeRotation.Z > 180.0f) RelativeRotation.Z -= 360.0f;
-		if (RelativeRotation.Z < -180.0f) RelativeRotation.Z += 360.0f;
-
-		// Pitch 클램프(짐벌 플립 방지)
-		if (RelativeRotation.Y > 89.0f)  RelativeRotation.Y = 89.0f;
-		if (RelativeRotation.Y < -89.0f) RelativeRotation.Y = -89.0f;
 	}
 
 	return MovementDelta;
