@@ -79,6 +79,35 @@ D3D11_PRIMITIVE_TOPOLOGY UPrimitiveComponent::GetTopology() const
 void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
 {
 	if (!BoundingBox)	return;
+	if (Type == EPrimitiveType::Billboard || Type == EPrimitiveType::TextRender)
+	{
+		const FMatrix& WorldTransform = GetWorldTransformMatrix();
+		const FVector WorldLocation(
+			WorldTransform.Data[3][0],
+			WorldTransform.Data[3][1],
+			WorldTransform.Data[3][2]
+		);
+
+        // Estimate world-scale half extents by transforming local half-axis points
+        // (w=1 to pick up translation, then subtract center).
+        const FVector4 LocalHalfX(0.1f, 0.0f, 0.0f, 1.0f);
+        const FVector4 LocalHalfY(0.0f, 0.1f, 0.0f, 1.0f);
+        const FVector4 LocalHalfZ(0.0f, 0.0f, 0.1f, 1.0f);
+        const FVector4 WorldHalfX4 = LocalHalfX * WorldTransform;
+        const FVector4 WorldHalfY4 = LocalHalfY * WorldTransform;
+        const FVector4 WorldHalfZ4 = LocalHalfZ * WorldTransform;
+        const FVector WorldHalfX(WorldHalfX4.X, WorldHalfX4.Y, WorldHalfX4.Z);
+        const FVector WorldHalfY(WorldHalfY4.X, WorldHalfY4.Y, WorldHalfY4.Z);
+        const FVector WorldHalfZ(WorldHalfZ4.X, WorldHalfZ4.Y, WorldHalfZ4.Z);
+        const float HalfWidth  = (WorldHalfX - WorldLocation).Length();
+        const float HalfHeight = (WorldHalfY - WorldLocation).Length();
+        const float HalfDepth  = (WorldHalfZ - WorldLocation).Length();
+
+        const FVector Extents(HalfWidth, HalfHeight, HalfDepth);
+        OutMin = WorldLocation - Extents;
+        OutMax = WorldLocation + Extents;
+        return;
+    }
 
 	if (BoundingBox->GetType() == EBoundingVolumeType::AABB)
 	{

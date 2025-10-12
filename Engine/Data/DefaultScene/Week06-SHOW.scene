@@ -3,9 +3,9 @@
   "PerspectiveCamera" : {
     "FOV" : [90.000000],
     "FarClip" : [1000.000000],
-    "Location" : [7.288013, 56.885040, 44.095287],
+    "Location" : [-12.617385, 24.652620, 39.193623],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 26.700006, 165.900253]
+    "Rotation" : [0.000000, 24.100027, 159.099625]
   },
   "Primitives" : {
     "164" : {
@@ -179,7 +179,7 @@
           "ClassName" : "UDecalComponent",
           "DecalMaterialName" : "Object_208",
           "DecalMaterialTexturePath" : "C:/Users/Jungle/Documents/GTL-week6/Engine/Asset/Texture/snoopy-poster2.jpg",
-          "Location" : [-71.810799, 34.385014, 19.473061],
+          "Location" : [-48.041153, 2.403751, 10.232634],
           "Name" : "DecalComponent",
           "Rotation" : [-17.689528, 0.000000, 0.000000],
           "Scale" : [10.000000, 10.000000, 12.400000]
@@ -187,7 +187,7 @@
       "RootComponentName" : "DecalComponent",
       "Type" : "Decal"
     },
-    "253" : {
+    "223" : {
       "Components" : [{
           "Brightness" : [0.000000, 0.000000, 0.000000, 0.000000],
           "ClassName" : "USpotLightComponent",
@@ -198,14 +198,44 @@
           "Scale" : [30.000000, 30.000000, 64.099998]
         }, {
           "ClassName" : "UBillboardComponent",
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Name" : "BillboardComponent",
+          "Location" : [0.000000, 0.000000, 0.500000],
+          "Name" : "UBillboardComponent",
           "ParentName" : "SpotLightComponent",
           "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [6.410000, 6.410000, 6.410000]
+          "Scale" : [9.090000, 9.090000, 9.090000]
         }],
       "RootComponentName" : "SpotLightComponent",
       "Type" : "SpotLight"
+    },
+    "361" : {
+      "Components" : [{
+          "ClassName" : "UStaticMeshComponent",
+          "Location" : [-56.070644, 0.000000, 2.933593],
+          "Name" : "StaticMeshComponent",
+          "ObjStaticMeshAsset" : "Data/hamburger/hamburger.obj",
+          "OverrideMaterial" : {
+            "0" : {
+              "Path" : "Data/hamburger/hamburger.pawn.top.jpg"
+            }
+          },
+          "Rotation" : [89.953484, 0.000000, 0.000000],
+          "Scale" : [1.104221, 1.104221, 1.104221]
+        }],
+      "RootComponentName" : "StaticMeshComponent",
+      "Type" : "StaticMeshComp"
+    },
+    "484" : {
+      "Components" : [{
+          "ClassName" : "UDecalComponent",
+          "DecalMaterialName" : "Object_208",
+          "DecalMaterialTexturePath" : "C:/Users/Jungle/Documents/GTL-week6/Engine/Asset/Texture/snoopy-poster2.jpg",
+          "Location" : [-71.810799, 34.385014, 19.473061],
+          "Name" : "DecalComponent",
+          "Rotation" : [-17.689528, 0.000000, 0.000000],
+          "Scale" : [10.000000, 10.000000, 12.400000]
+        }],
+      "RootComponentName" : "DecalComponent",
+      "Type" : "Decal"
     }
   }
 }
