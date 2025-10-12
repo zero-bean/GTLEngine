@@ -1,185 +1,47 @@
-﻿# 🚀 최적화 게임잼 하이라이트
+﻿# 이번 주 구현 사항 요약 (Decal 집중)
 
-우리 엔진이 120fps를 유지하면서도 에디터 조작(예: 피킹)이 부드럽게 돌아가도록 만든 핵심 최적화들을 정리했습니다.
+아래 항목들은 이번 주에 추가/개선한 데칼(Decal) 관련 기능들입니다. 에디터/PIE에서 바로 써볼 수 있도록 사용법도 함께 정리했습니다.
 
----
+## 구현 목록
+- 데칼 액터/컴포넌트 체계
+  - `ADecalActor` + `UDecalComponent` 구성으로 씬에 배치/관리
+  - 머티리얼(텍스처) 지정, 페이드 인/아웃, 투명도 등 렌더 파라미터 제어
+- 데칼 최적화: BVH, SAT
+  - BVH 기반 레이캐스트/프러스텀 컬링으로 빠른 피킹/가시성 테스트
+  - 데칼 프로젝션 시 충돌 후보를 OBB(AABB)와 SAT 테스트로 축소해 과연산 방지
+- 다양한 페이드 애니메이션 옵션
+  - `StartFadeIn(Duration, Delay)` / `StartFadeOut(Duration, Delay, bDestroyOwner)`
+  - 지연 시작, 페이드 시간, 페이드 완료 시 자동 삭제 옵션 지원
+- 데칼을 이용한 스포트라이트(Spotlight) 연출
+  - 프로젝션 데칼 파이프라인을 활용해 텍스처/마스크 기반의 라이트 효과 구현
+- PIE 모드: 클릭한 지점에 총알구멍 데칼 생성 + 자동 Fade out & 삭제
+  - 화면에서 클릭(레이캐스트)된 표면에 데칼 액터 스폰
+  - 페이드 아웃 완료 시 컴포넌트 또는 액터를 안전하게 제거(지연 삭제)
 
-## 🎯 목표
+## 빠른 사용법
+- 씬에 데칼 배치
+  - 에디터에서 액터 추가: “Decal Actor” 생성 → 위치/회전/스케일 조정
+  - 머티리얼(텍스처) 선택은 Actor Detail 패널에서 지정
+- 페이드 애니메이션
+  - Detail 패널에서 페이드 파라미터(지연, 지속시간, 완료 시 삭제)를 설정
+  - 코드 제어: `UDecalComponent::StartFadeIn/Out(...)` 호출
+- 스포트라이트 데칼
+  - 스포트라이트용 텍스처(마스크) 머티리얼을 데칼에 지정해 라이트 효과 연출
+- 총알구멍(PIE 전용)
+  - PIE 실행 후, 화면을 클릭하면 레이캐스트 히트 지점에 데칼 액터 생성
+  - 생성 즉시 페이드 아웃 타이머가 시작되고, 완료 시 자동 삭제
 
-- 📈 무거운 씬에서도 에디터 프레임 레이트 향상
-- 🎯 레이 피킹 비용을 쿼리당 0.01ms 이하로 단축
-- 🧪 게임잼 진행 중에도 워크플로가 안정적으로 유지되도록 관리
+## 성능 & 안정성 메모
+- BVH 가속
+  - 레이캐스트: BVH를 통해 최근접 프리미티브를 O(log N) 수준으로 조회
+  - 프러스텀 컬링: 화면 밖 프리미티브/데칼은 초기 단계에서 배제
+- SAT/OBB 테스트
+  - 데칼 프로젝션 시 화면 후보 프리미티브와의 교차 판정을 보수적으로 최적화
+- 안전한 삭제(지연 삭제)
+  - 페이드 완료 시 즉시 삭제하지 않고, 다음 틱에서 안전하게 제거
+  - 컴포넌트 제거도 액터 틱 종료 후 일괄 처리해 이터레이터 무효화 방지
 
----
-
-## 🧭 씬 탐색 & 선택
-
-### 🌳 계층형 피킹
-
-- ✅ **월드 BVH**: 프리미티브 전역에 동적 BVH를 구축해 레이 쿼리의 광범위 탐색을 가속.
-- 🧱 **삼각형 BVH**: 각 스태틱 메시는 삼각형 단위 계층을 사전 구축하여 리프에서만 정밀 테스트.
-- 🔄 **로컬 레이 테스트**: 월드→모델 변환과 메시 포인터를 캐싱해, 히트마다 행렬 곱 없이 모델 공간에서 테스트 수행.
-
-#### 🔧 핵심 코드 스니펫
-
-```cpp
-struct FBVHPrimitive
-{
-    FVector Center;
-    FAABB Bounds;
-    FMatrix WorldToModel;
-    UPrimitiveComponent* Primitive = nullptr;
-    EPrimitiveType PrimitiveType = EPrimitiveType::Cube;
-    UStaticMesh* StaticMesh = nullptr;
-};
-```
-
-### 🔍 프러스텀 컬링
-
-- ✂️ 오브젝트 경계를 뷰 프러스텀과 먼저 교차 테스트.
-- 🪟 렌더러와 BVH가 실제로 볼 수 있는 프리미티브만 처리.
-
-### 🧱 오클루전 컬링
-
-- 🧊 깊이 히어라키/오클루전 버퍼로 가려진 지오메트리를 조기 배제.
-- ⛏️ 드로우 콜과 BVH가 탐색해야 할 프리미티브 수를 동시에 감축.
-
-#### 🔧 핵심 코드 스니펫
-
-```cpp
-bool UBVHManager::Raycast(const FRay& InRay, UPrimitiveComponent*& HitComponent, float& HitT) const
-{
-    HitComponent = nullptr;
-    if (RootIndex < 0 || Nodes.empty())
-    {
-        return false;
-    }
-
-    HitT = FLT_MAX;
-    int hitIndex = -1;
-
-    RaycastIterative(InRay, HitT, hitIndex);
-    if (hitIndex == -1)
-    {
-        return false;
-    }
-
-    HitComponent = Primitives[hitIndex].Primitive;
-    return true;
-}
-```
-
----
-
-## 🧮 지오메트리 LOD
-
-### 🔻 QEM(Quadratic Error Metric)
-
-- 🧠 QEM 기반 메시 단순화로 LOD 생성.
-- 🔀 거리 기반 LOD 전환으로 최소한의 이질감만으로 버텍스 수를 크게 감소.
-- 📉 렌더링과 충돌/피킹 모두에서 거리 기준으로 저해상도 메시를 활용.
-
-#### 🔧 핵심 코드 스니펫
-
-```cpp
-void FQemSimplifier::BuildLodChain(float targetError)
-{
-    while (!Heap.empty() && CurrentError() < targetError)
-    {
-        const FCollapseEdge edge = Heap.pop();
-        if (IsValid(edge))
-        {
-            Collapse(edge);
-        }
-    }
-}
-```
-
----
-
-## 🧵 멀티스레드 파이프라인
-
-- 🧵 컬링, BVH 리핏, 스트리밍을 작업 단위로 나눠 병렬 처리.
-- 📦 버퍼 업로드, 메시 BVH 빌드, 삼각형 쿼리를 가능한 범위에서 워커 스레드로 이전.
-- 🔄 메인 스레드는 프레임 표시와 입력 처리에 집중하도록 유지.
-
-#### 🔧 핵심 코드 스니펫
-
-```cpp
-ThreadPool.Enqueue([this]()
-{
-    FBVHBuildTask task;
-    while (BuildQueue.TryPop(task))
-    {
-        task.Execute();
-    }
-});
-```
-
----
-
-## 🧠 수학 & SIMD
-
-- 🌀 **SIMD 범용 적용**: 레이/AABB, 벡터 연산(내적·외적·길이), 삼각형 교차 등 핵심 수학 루틴 최적화.
-- ❌ **행렬 곱 최소화**: 프리미티브별 월드→모델 변환을 캐싱하고, 레이를 한 번만 변환한 뒤 재활용.
-
-#### 🔧 핵심 코드 스니펫
-
-```cpp
-FORCEINLINE bool FAABB::RaycastHit(const FRay& Ray, float* OutDistance) const
-{
-    __m128 origin = _mm_set_ps(0.f, Ray.Origin.Z, Ray.Origin.Y, Ray.Origin.X);
-    __m128 dir    = _mm_set_ps(0.f, Ray.Direction.Z, Ray.Direction.Y, Ray.Direction.X);
-    __m128 minv   = _mm_set_ps(0.f, Min.Z, Min.Y, Min.X);
-    __m128 maxv   = _mm_set_ps(0.f, Max.Z, Max.Y, Max.X);
-
-    __m128 invDir = _mm_div_ps(_mm_set1_ps(1.0f), dir);
-    __m128 t1     = _mm_mul_ps(_mm_sub_ps(minv, origin), invDir);
-    __m128 t2     = _mm_mul_ps(_mm_sub_ps(maxv, origin), invDir);
-
-    __m128 tmin = _mm_min_ps(t1, t2);
-    __m128 tmax = _mm_max_ps(t1, t2);
-
-    float near = std::max(std::max(tmin.m128_f32[0], tmin.m128_f32[1]), tmin.m128_f32[2]);
-    float far  = std::min(std::min(tmax.m128_f32[0], tmax.m128_f32[1]), tmax.m128_f32[2]);
-
-    if (near > far || far < 0.f)
-    {
-        return false;
-    }
-
-    if (OutDistance)
-    {
-        *OutDistance = near > 0.f ? near : far;
-    }
-    return true;
-}
-```
-
----
-
-## 🔧 기타 미세 조정
-
-- 🔄 드래그 후 BVH 리핏으로 전체 재빌드 없이 바운드를 최신 상태로 유지.
-- 🗂️ TArray 참조와 const-correct API로 불필요한 복사를 제거.
-- 🧹 정렬된 배열·짧은 스택 등 캐시 친화적 자료구조로 트래버설 효율 향상.
-
----
-
-## 📊 결과 스냅샷
-
-- 🕹️ **피킹**: 캐시 적용 후 스태틱 메시 피킹이 ~0.007ms 수준으로 단축.
-- 🖥️ **렌더 루프**: 컬링 + LOD + 멀티스레드 조합으로 안정적인 프레임 타임 확보.
-- 🔁 **작업 효율**: 대규모 씬에서도 에디터 응답성 유지.
-
----
-
-## 🗺️ 다음 단계
-
-- 🧪 SIMD가 집중된 루틴에 대한 추가 프로파일링.
-- 🧩 비메시 프리미티브를 위한 하이브리드 히트 테스트 개선.
-- ⚙️ I/O 및 빌드를 겹칠 수 있도록 멀티스레드 스케줄링 재조정.
-
----
-
-✨ 게임잼에서 함께 해 주셔서 감사합니다! 앞으로도 엔진을 계속 발전시켜 나갑시다.
+## 디버그/통계
+- 콘솔 `stat decal`
+  - “Decal : X.XXXms, Decals : N” 형식으로 데칼 렌더링 누적시간과 총 개수 표시
+  - FPS/메모리 오버레이와 함께 On/Off 가능
