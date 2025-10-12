@@ -5,6 +5,9 @@
 #include "Manager/Time/Public/TimeManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
+#include "Editor/Public/EditorEngine.h"
+#include "Actor/Public/Actor.h"
+#include "Component/Public/DecalComponent.h"
 
 #include "Core/Public/ScopeCycleCounter.h"
 IMPLEMENT_SINGLETON_CLASS_BASE(UStatOverlay)
@@ -160,7 +163,12 @@ void UStatOverlay::RenderDecal()
 
 	FString Key = "Decal";
 	FTimeProfile Value = FScopeCycleCounter::GetTimeProfile(Key);
-	FString Text = Key + Value.GetConstChar();
+    // Fetch cached total decals in the current level (scene)
+    int TotalDecals = (GEngine && GEngine->GetCurrentLevel()) ? static_cast<int>(GEngine->GetCurrentLevel()->GetDecalCount()) : 0;
+
+    char Buffer[128];
+    snprintf(Buffer, sizeof(Buffer), " : %.3fms, Decals : %d", Value.Milliseconds, TotalDecals);
+	FString Text = Key + Buffer;
 	RenderText(Text, OverlayX, OverlayY+OffsetY, 1.0f, 0.0f, 1.0f);
 
 	FScopeCycleCounter::TimeProfileInit();

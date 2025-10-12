@@ -73,6 +73,9 @@ public:
 		return LevelPrimitiveComponents;
 	}
 
+	// Cached totals
+	uint32 GetDecalCount() const { return DecalCount; }
+
 	TArray<TObjectPtr<UPrimitiveComponent>> GetVisiblePrimitiveComponents(UCamera* InCamera);
 
 	void AddLevelPrimitiveComponentsInActor(AActor* Actor);
@@ -131,6 +134,9 @@ private:
 	// LOD Update System
 	float LODUpdateFrameCounter = 0.f;
 	static constexpr float LOD_UPDATE_INTERVAL = 0.2f; // 0.2초 마다 업데이트
+
+	// Cached primitive counters (kept in sync on add/remove/rebuild)
+	uint32 DecalCount = 0;
 
 	/**
 	 * @brief Level에서 Actor를 실질적으로 제거하는 함수

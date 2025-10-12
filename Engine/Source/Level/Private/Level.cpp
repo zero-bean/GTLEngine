@@ -236,6 +236,7 @@ void ULevel::Cleanup()
 	// 3. 모든 액터 객체가 삭제되었으므로, 포인터를 담고 있던 컨테이너들을 비웁니다.
 	ActorsToDelete.clear();
 	LevelPrimitiveComponents.clear();
+	DecalCount = 0;
 
 	// 4. 선택된 액터 참조를 안전하게 해제합니다.
 	SelectedActor = nullptr;
@@ -246,6 +247,7 @@ void ULevel::Cleanup()
 void ULevel::InitializeActorsInLevel()
 {
 	LevelPrimitiveComponents.clear();
+	DecalCount = 0;
 	for (auto& Actor : Actors)
 	{
 		if (Actor)
@@ -367,6 +369,12 @@ void ULevel::AddLevelPrimitiveComponentsInActor(AActor* Actor)
 			continue;
 		}
 
+		// Update cached counters regardless of show flags
+		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Decal)
+		{
+			++DecalCount;
+		}
+
 		/* 3가지 경우 존재.
 		1: primitive show flag가 꺼져 있으면, 도형, 빌보드 모두 렌더링 안함.
 		2: primitive show flag가 켜져 있고, billboard show flag가 켜져 있으면, 도형, 빌보드 모두 렌더링
@@ -403,6 +411,12 @@ void ULevel::AddLevelPrimitiveComponent(TObjectPtr<UPrimitiveComponent> InPrimit
 
 	LevelPrimitiveComponents.push_back(InPrimitiveComponent);
 
+	// Maintain cached counters
+	if (InPrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Decal)
+	{
+		++DecalCount;
+	}
+
 	TArray<FBVHPrimitive> BVHPrimitives;
 	UBVHierarchy::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
 	UBVHierarchy::GetInstance().Build(BVHPrimitives);
@@ -418,6 +432,12 @@ void ULevel::RemoveLevelPrimitiveComponent(TObjectPtr<UPrimitiveComponent> InPri
 	LevelPrimitiveComponents.erase(
 		std::remove(LevelPrimitiveComponents.begin(), LevelPrimitiveComponents.end(), InPrimitiveComponent),
 		LevelPrimitiveComponents.end());
+
+	// Maintain cached counters
+	if (InPrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Decal)
+	{
+		if (DecalCount > 0) { --DecalCount; }
+	}
 
 	TArray<FBVHPrimitive> BVHPrimitives;
 	UBVHierarchy::GetInstance().ConvertComponentsToBVHPrimitives(LevelPrimitiveComponents, BVHPrimitives);
