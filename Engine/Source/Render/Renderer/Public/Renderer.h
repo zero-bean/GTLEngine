@@ -17,9 +17,9 @@ class UStaticMeshComponent;
 class UTextRenderComponent;
 class UDecalComponent;
 class USpotLightComponent;
+class UFireBallComponent;
 class AActor;
 class AGizmo;
-class UEditor;
 class UFontRenderer;
 class FViewport;
 class UCamera;
@@ -62,7 +62,6 @@ public:
 	void Release();
 
 	// Initialize
-	void CreateRasterizerState();
 	void CreateDepthStencilState();
 	void CreateDefaultShader();
 	void CreateTextureShader();
@@ -71,6 +70,7 @@ public:
 	void CreateConstantBuffer();
 	void CreateBillboardResources();
 	void CreateSpotlightResrouces();
+	void CreateFireBallShader();
 
 	// Release
 	void ReleaseConstantBuffer();
@@ -81,6 +81,7 @@ public:
 	void ReleaseTextureShader();
 	void ReleaseProjectionDecalShader();
 	void ReleaseSpotlightShader();
+	void ReleaseFireBallShader();
 
 	// Render
 	void Tick(float DeltaSeconds);
@@ -98,6 +99,8 @@ public:
 	void RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<UDecalComponent>>& InDecals,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 	void RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<USpotLightComponent>>& InSpotlights,
+		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
+	void RenderFireBalls(UCamera* InCurrentCamera, const TArray<TObjectPtr<UFireBallComponent>>& InFireBalls,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
@@ -181,6 +184,7 @@ private:
 	ID3D11Buffer* ConstantBufferMaterial = nullptr;
 	ID3D11Buffer* ConstantBufferProjectionDecal = nullptr;
 	ID3D11Buffer* ConstantBufferSpotlight = nullptr;
+	ID3D11Buffer* ConstantBufferFireBall = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -205,6 +209,11 @@ private:
 	ID3D11PixelShader* SpotlightPixelShader = nullptr;
 	ID3D11InputLayout* SpotlightInputLayout = nullptr;
 	ID3D11BlendState* SpotlightBlendState = nullptr;
+
+	ID3D11VertexShader* FireBallVertexShader = nullptr;
+	ID3D11PixelShader* FireBallPixelShader = nullptr;
+	ID3D11InputLayout* FireBallInputLayout = nullptr;
+	ID3D11BlendState* FireBallBlendState = nullptr;
 
 	uint32 Stride = 0;
 

@@ -34,7 +34,12 @@
     <FxCompile Include="Asset\Shader\ProjectionDecal.hlsl">
       <Filter>Asset\Shader</Filter>
     </FxCompile>
-    <FxCompile Include="Asset\Shader\SpotlightShader.hlsl" />
+    <FxCompile Include="Asset\Shader\FireBallShader.hlsl">
+      <Filter>Asset\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="Asset\Shader\SpotlightShader.hlsl">
+      <Filter>Asset\Shader</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -386,6 +391,11 @@
       <Filter>Source\Component\Private</Filter>
     </ClCompile>
     <ClCompile Include="Source\Component\Private\SpotLightComponent.cpp">
+      <Filter>Source\Component\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Actor\Private\LightActor.cpp" />
+    <ClCompile Include="Source\Actor\Private\SpotLightActor.cpp" />
+    <ClCompile Include="Source\Component\Private\FireBallComponent.cpp">
       <Filter>Source\Component\Private</Filter>
     </ClCompile>
   </ItemGroup>
@@ -785,6 +795,11 @@
       <Filter>Source\Component\Public</Filter>
     </ClInclude>
     <ClInclude Include="Source\Component\Public\SpotLightComponent.h">
+      <Filter>Source\Component\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Actor\Public\LightActor.h" />
+    <ClInclude Include="Source\Actor\Public\SpotLightActor.h" />
+    <ClInclude Include="Source\Component\Public\FireBallComponent.h">
       <Filter>Source\Component\Public</Filter>
     </ClInclude>
   </ItemGroup>

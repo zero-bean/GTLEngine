@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Manager/Asset/Public/AssetManager.h"
 
 #include "Render/Renderer/Public/Renderer.h"
@@ -222,8 +222,10 @@ void UAssetManager::LoadAllObjStaticMesh()
 	FObjImporter::Configuration Config;
 	Config.bFlipWindingOrder = false;
 	Config.bIsBinaryEnabled = true;
-	Config.bUVToUEBasis = true;
 	Config.bPositionToUEBasis = true;
+	Config.bNormalToUEBasis = true;
+	Config.bUVToUEBasis = true;
+	
 
 	TArray<float> ReductionRatios = { 0.5f, 0.25f };
 

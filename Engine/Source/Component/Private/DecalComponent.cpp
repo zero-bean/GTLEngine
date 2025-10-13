@@ -15,22 +15,21 @@ IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
 UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
 {
 	UAssetManager& AssetManager = UAssetManager::GetInstance();
-	UAssetManager& ResourceManager = UAssetManager::GetInstance();
 
 	DecalMaterial = AssetManager.CreateMaterial(FName("bullet-hole"), FName("Asset/Texture/bullet-hole.png"));
 
 	Type = EPrimitiveType::Decal;
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 
-	Vertices = ResourceManager.GetVertexData(Type);
-	VertexBuffer = ResourceManager.GetVertexbuffer(Type);
-	NumVertices = ResourceManager.GetNumVertices(Type);
+	Vertices = AssetManager.GetVertexData(Type);
+	VertexBuffer = AssetManager.GetVertexbuffer(Type);
+	NumVertices = AssetManager.GetNumVertices(Type);
 
-	Indices = ResourceManager.GetIndexData(Type);
-	IndexBuffer = ResourceManager.GetIndexbuffer(Type);
-	NumIndices = ResourceManager.GetNumIndices(Type);
+	Indices = AssetManager.GetIndexData(Type);
+	IndexBuffer = AssetManager.GetIndexbuffer(Type);
+	NumIndices = AssetManager.GetNumIndices(Type);
 
-	BoundingBox = &ResourceManager.GetAABB(Type);
+	BoundingBox = &AssetManager.GetAABB(Type);
 
 	// 렌더링 상태를 와이어프레임으로 설정 (DecalActor 생성자에서 가져옴)
 	RenderState.FillMode = EFillMode::Solid;
