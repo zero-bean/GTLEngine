@@ -56,7 +56,7 @@ void UDeviceResources::CreateDeviceAndSwapChain(HWND InWindowHandle)
 
 	// Direct3D 장치와 스왑 체인을 생성
 	HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
-	                                           D3D11_CREATE_DEVICE_BGRA_SUPPORT, 
+	                                           D3D11_CREATE_DEVICE_BGRA_SUPPORT,
 	                                           //D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
 	                                           featurelevels, ARRAYSIZE(featurelevels), D3D11_SDK_VERSION,
 	                                           &SwapChainDescription, &SwapChain, &Device, nullptr, &DeviceContext);
@@ -176,6 +176,20 @@ void UDeviceResources::CreateDepthBuffer()
 	ShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	ShaderResourceViewDesc.Texture2D.MipLevels = 1;
 	Device->CreateShaderResourceView(DepthBuffer, &ShaderResourceViewDesc, &DepthShaderResourceView);
+
+	D3D11_SAMPLER_DESC sd = {};
+	sd.Filter         = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	sd.AddressU       = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sd.AddressV       = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sd.AddressW       = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sd.MipLODBias     = 0.0f;
+	sd.MaxAnisotropy  = 1;
+	sd.ComparisonFunc = D3D11_COMPARISON_NEVER; // 일반 SRV 읽기
+	sd.BorderColor[0] = sd.BorderColor[1] = sd.BorderColor[2] = sd.BorderColor[3] = 0.0f;
+	sd.MinLOD         = 0.0f;
+	sd.MaxLOD         = D3D11_FLOAT32_MAX;
+
+	Device->CreateSamplerState(&sd, &DepthSamplerState);
 }
 
 void UDeviceResources::ReleaseDepthBuffer()
@@ -189,6 +203,11 @@ void UDeviceResources::ReleaseDepthBuffer()
 	{
 		DepthBuffer->Release();
 		DepthBuffer = nullptr;
+	}
+	if (DepthSamplerState)
+	{
+		DepthSamplerState->Release();
+		DepthSamplerState = nullptr;
 	}
 	if (DepthShaderResourceView)
 	{

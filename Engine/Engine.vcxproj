@@ -456,6 +456,9 @@
     <ClInclude Include="Source\World\Public\World.h" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Asset\Shader\SceneDepthShader.hlsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

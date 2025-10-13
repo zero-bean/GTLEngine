@@ -62,25 +62,32 @@ public:
 	void Release();
 
 	// Initialize
+	void CreateConstantBuffer();
 	void CreateRasterizerState();
 	void CreateDepthStencilState();
+
+	void CreateBillboardResources();
+	void CreateSpotlightResources();
+
 	void CreateDefaultShader();
 	void CreateTextureShader();
 	void CreateProjectionDecalShader();
 	void CreateSpotlightShader();
-	void CreateConstantBuffer();
-	void CreateBillboardResources();
-	void CreateSpotlightResrouces();
+	void CreateSceneDepthViewModeShader();
 
 	// Release
 	void ReleaseConstantBuffer();
-	void ReleaseDefaultShader();
-	void ReleaseDepthStencilState();
 	void ReleaseRasterizerState();
+	void ReleaseDepthStencilState();
+
 	void ReleaseBillboardResources();
+	void ReleaseSpotlightResources();
+
+	void ReleaseDefaultShader();
 	void ReleaseTextureShader();
 	void ReleaseProjectionDecalShader();
 	void ReleaseSpotlightShader();
+	void ReleaseSceneDepthViewModeShader();
 
 	// Render
 	void Tick(float DeltaSeconds);
@@ -99,6 +106,7 @@ public:
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 	void RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<USpotLightComponent>>& InSpotlights,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
+	void RenderSceneDepthView(UCamera* InCurrentCamera);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
 
@@ -181,6 +189,7 @@ private:
 	ID3D11Buffer* ConstantBufferMaterial = nullptr;
 	ID3D11Buffer* ConstantBufferProjectionDecal = nullptr;
 	ID3D11Buffer* ConstantBufferSpotlight = nullptr;
+	ID3D11Buffer* ConstantBufferDepth = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -205,6 +214,9 @@ private:
 	ID3D11PixelShader* SpotlightPixelShader = nullptr;
 	ID3D11InputLayout* SpotlightInputLayout = nullptr;
 	ID3D11BlendState* SpotlightBlendState = nullptr;
+
+	ID3D11VertexShader* SceneDepthVertexShader = nullptr;
+	ID3D11PixelShader* SceneDepthPixelShader= nullptr;;
 
 	uint32 Stride = 0;
 
@@ -246,6 +258,9 @@ private:
 
 	bool bIsFirstPass = true;
 	bool bOcclusionCulling = true;
+
+	// jft
+	bool bIsSceneDepth = true;
 
 	constexpr static size_t NUM_WORKER_THREADS = 4;
 
