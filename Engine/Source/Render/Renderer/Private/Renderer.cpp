@@ -557,7 +557,9 @@ void URenderer::Tick(float DeltaSeconds)
 	}
 
     // Apply post-process (FXAA) before UI so UI remains crisp
-    if (bFXAAEnabled && FXAA && GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth)
+    if (bFXAAEnabled && FXAA
+    	&& GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth
+    	&& GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth2D)
     {
         FXAA->Apply(Pipeline, ViewportClient, DisabledDepthStencilState, ClearColor);
     }
@@ -1276,13 +1278,13 @@ void URenderer::RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* In
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
 	{
 		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-		FDepthConstants DepthData(1, 0.1f, 150.0f, 0.8f, Color);
+		FDepthConstants DepthData(1, 0.1f, 500.0f, 0.8f, Color);
 		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
 	}
 	else
 	{
 		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-		FDepthConstants DepthData(0, 0.1f, 150.0f, 0.8f, Color);
+		FDepthConstants DepthData(0, 0.1f, 500.0f, 0.8f, Color);
 		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
 	}
 
@@ -1469,13 +1471,13 @@ void URenderer::RenderPrimitiveDefault(UPipeline& InPipeline, UPrimitiveComponen
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
 	{
 		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-		FDepthConstants DepthData(1, 0.1f, 150.0f, 0.8f, Color);
+		FDepthConstants DepthData(1, 0.1f, 500.0f, 0.8f, Color);
 		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
 	}
 	else
 	{
 		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-		FDepthConstants DepthData(0, 0.1f, 150.0f, 0.8f, Color);
+		FDepthConstants DepthData(0, 0.1f, 500.0f, 0.8f, Color);
 		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
 	}
 
