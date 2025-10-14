@@ -226,12 +226,12 @@ const FVector& AActor::GetActorScale3D() const
 	return RootComponent->GetRelativeScale3D();
 }
 
-void AActor::AddComponent(TObjectPtr<UActorComponent> InComponent)
+void AActor::AddSceneComponent(TObjectPtr<UActorComponent> InComponent)
 {
-	AddComponent(InComponent, RootComponent);
+	AddSceneComponent(InComponent, RootComponent);
 }
 
-void AActor::AddComponent(TObjectPtr<UActorComponent> InComponent, TObjectPtr<USceneComponent> InParent)
+void AActor::AddSceneComponent(TObjectPtr<UActorComponent> InComponent, TObjectPtr<USceneComponent> InParent)
 {
 	if (!InComponent || !RootComponent) { return; }
 
@@ -243,6 +243,17 @@ void AActor::AddComponent(TObjectPtr<UActorComponent> InComponent, TObjectPtr<US
 
 	TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(InComponent);
 	GEngine->GetCurrentLevel()->AddLevelPrimitiveComponent(PrimitiveComponent);
+}
+
+void AActor::AddActorComponent(TObjectPtr<UActorComponent> InComponent)
+{
+	if (!InComponent)
+	{
+		return;
+	}
+
+	InComponent->SetOwner(this);
+	OwnedComponents.push_back(InComponent);
 }
 
 void AActor::RemoveComponent(TObjectPtr<UActorComponent> Component)
@@ -328,8 +339,23 @@ void AActor::Tick(float DeltaSeconds)
 
 void AActor::BeginPlay()
 {
+    // Ensure components receive BeginPlay before ticking
+    for (auto& Component : OwnedComponents)
+    {
+        if (Component)
+        {
+            Component->BeginPlay();
+        }
+    }
 }
 
 void AActor::EndPlay()
 {
+    for (auto& Component : OwnedComponents)
+    {
+        if (Component)
+        {
+            Component->EndPlay();
+        }
+    }
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "Component/Public/ActorComponent.h"
+#include "Global/Quaternion.h"
 
 namespace json { class JSON; }
 using JSON = json::JSON;
@@ -22,8 +23,11 @@ public:
 
 	void MarkAsDirty();
 
+	void MoveComponent(const FVector& Delta, const FQuaternion& NewRotation);
+
 	void SetRelativeLocation(const FVector& Location);
 	void SetRelativeRotation(const FVector& Rotation);
+	void SetRelativeRotation(const FQuaternion& Rotation);
 	void SetRelativeScale3D(const FVector& Scale);
 	void SetUniformScale(bool bIsUniform);
 
@@ -39,6 +43,8 @@ public:
 	const TArray<USceneComponent*>& GetChildren() const;
 
 	USceneComponent* GetParentAttachment() { return ParentAttachment; }
+
+	FVector ComponentVelocity;
 
 private:
 	mutable bool bIsTransformDirty = true;
