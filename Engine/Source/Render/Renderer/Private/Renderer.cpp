@@ -566,7 +566,9 @@ void URenderer::Tick(float DeltaSeconds)
 void URenderer::RenderBegin() const
 {
 	auto* RenderTargetView = DeviceResources->GetRenderTargetView();
-	GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
+	float DepthClearColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+	// GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
+	GetDeviceContext()->ClearRenderTargetView(RenderTargetView, DepthClearColor);
 	auto* DepthStencilView = DeviceResources->GetDepthStencilView();
 	GetDeviceContext()->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
