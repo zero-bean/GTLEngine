@@ -17,6 +17,7 @@ UDecalComponent::UDecalComponent() : DecalMaterial(nullptr)
 	UAssetManager& AssetManager = UAssetManager::GetInstance();
 
 	DecalMaterial = AssetManager.CreateMaterial(FName("bullet-hole"), FName("Asset/Texture/bullet-hole.png"));
+	SetName("DecalComponent");
 
 	Type = EPrimitiveType::Decal;
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;

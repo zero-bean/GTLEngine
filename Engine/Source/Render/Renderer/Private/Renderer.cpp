@@ -1553,6 +1553,10 @@ void URenderer::RenderPrimitiveDefault(UPipeline& InPipeline, UPrimitiveComponen
     };
     InPipeline.UpdatePipeline(PipelineInfo);
 
+	ID3D11ShaderResourceView* const pSRV[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
+	InPipeline.GetDeviceContext()->PSSetShaderResources(0, 5, pSRV);
+	ID3D11SamplerState* const pSamplers[5] = { nullptr };
+	InPipeline.GetDeviceContext()->PSSetSamplers(0, 5, pSamplers);
     // Update pipeline buffers
 	UpdateConstant(InConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true, false);
 	// [수정] 새로운 UpdateConstantBuffer 함수 사용 (색상은 슬롯 2번)

@@ -8,7 +8,6 @@ using JSON = json::JSON;
 
 struct FObjectDuplicationParameters;
 
-
 /** StaticDuplicateObject()와 관련 함수에서 사용되는 Enum */
 namespace EDuplicateMode
 {
@@ -36,7 +35,7 @@ public:
 	virtual ~UObject();
 
 	// 2. 가상 함수 (인터페이스)
-	virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle) {};
+	virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle);
 
 	/** @brief UObject 계층을 타고 재귀적으로 UObject에서 상속 받는 클래스를 복제한다. */
 	virtual UObject* Duplicate(FObjectDuplicationParameters Parameters);
@@ -67,6 +66,12 @@ public:
 	void SetName(const FName& InName) { Name = InName; }
 	void SetOuter(UObject* InObject);
 	void SetDisplayName(const FString& InName) const { Name.SetDisplayName(InName); }
+
+protected:
+	/**
+	 * @brief Duplicate 과정에서 복제 오브젝트의 이름 생성용 함수
+	 */
+	std::string GenerateDuplicatedObjectName(const FName& OriginalName, const uint32& NewUUID);
 
 private:
 	void PropagateMemoryChange(uint64 InBytesDelta, uint32 InCountDelta);
