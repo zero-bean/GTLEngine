@@ -764,7 +764,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth2D)
 	{
-		RenderSceneDepthView(InCurrentCamera);
+		RenderSceneDepthView(InCurrentCamera, InViewportClient);
 	}
 	else if (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth)
 	{
@@ -1182,7 +1182,7 @@ void URenderer::RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 	}
 }
 
-void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera)
+void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient)
 {
 	FRenderState SceneDepthState = {};
 	SceneDepthState.CullMode = ECullMode::Front;
@@ -1212,11 +1212,23 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera)
 	FMatrix ViewProj  = View * Proj;
 	FMatrix InvVP     = ViewProj.Inverse();
 
-	// row-major 사용 중이면 업로드 전에 전치
 	SceneDepthData.InvViewProj  = InvVP;
 	SceneDepthData.CameraPosWS  = Cam->GetLocation();
 	SceneDepthData.NearZ        = Cam->GetNearZ();
 	SceneDepthData.FarZ         = Cam->GetFarZ();
+
+	const D3D11_VIEWPORT& FullViewport = DeviceResources->GetViewportInfo();
+	const D3D11_VIEWPORT& SubViewport  = InViewportClient.GetViewportInfo();
+
+	const float InvFullWidth  = FullViewport.Width  > 0.0f ? 1.0f / FullViewport.Width  : 0.0f;
+	const float InvFullHeight = FullViewport.Height > 0.0f ? 1.0f / FullViewport.Height : 0.0f;
+
+	SceneDepthData.ViewportRect = FVector4(
+		SubViewport.TopLeftX * InvFullWidth,
+		SubViewport.TopLeftY * InvFullHeight,
+		SubViewport.Width    * InvFullWidth,
+		SubViewport.Height   * InvFullHeight
+	);
 
 	UpdateConstant(ConstantBufferDepth2D, SceneDepthData, 0, true, true);
 
@@ -1225,6 +1237,8 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera)
 
 	ID3D11RenderTargetView* Targets[1] = { CurrentRTV };
 	GetDeviceContext()->OMSetRenderTargets(1, Targets, nullptr);
+
+	InViewportClient.Apply(GetDeviceContext());
 
 	// Bind SRV, Sampler
 	ID3D11ShaderResourceView* depthSRV = DeviceResources->GetDetphShaderResourceView();

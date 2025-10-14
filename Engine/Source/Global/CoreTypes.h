@@ -65,10 +65,10 @@ struct FDepthConstants2D
 {
 	FMatrix InvViewProj;
 	FVector CameraPosWS;
-	float   _pad0;
 	float   NearZ;
+	FVector4 ViewportRect; // xy: top-left offset (normalized), zw: size (normalized)
 	float   FarZ;
-	float   _pad1[2];
+	float   Padding[3];
 };
 
 struct FDepthConstants
