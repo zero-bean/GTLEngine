@@ -68,6 +68,7 @@ public:
 	void CreateTextureShader();
 	void CreateProjectionDecalShader();
 	void CreateSpotlightShader();
+	void CreateFXAAResources();
 	void CreateConstantBuffer();
 	void CreateBillboardResources();
 	void CreateSpotlightResrouces();
@@ -81,12 +82,14 @@ public:
 	void ReleaseTextureShader();
 	void ReleaseProjectionDecalShader();
 	void ReleaseSpotlightShader();
+	void ReleaseFXAAResources();
 
 	// Render
 	void Tick(float DeltaSeconds);
 	void RenderBegin() const;
 	void RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewportClient);
 	void RenderEnd() const;
+	void ApplyFXAA();
 	void RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* InMeshComp, ID3D11RasterizerState* InRasterizerState, ID3D11Buffer* InConstantBufferModels, ID3D11Buffer* InConstantBufferMaterial);
 	void RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* InCurrentCamera);
 	void RenderText(UTextRenderComponent* InBillBoardComp, UCamera* InCurrentCamera);
@@ -155,10 +158,12 @@ public:
 	FViewport* GetViewportClient() const { return ViewportClient; }
 	bool GetIsResizing() const { return bIsResizing; }
 	bool GetOcclusionCullingEnabled() const { return bOcclusionCulling; }
+	bool GetFXAAEnabled() const { return bFXAAEnabled; }
 
 	void SetIsResizing(bool isResizing) { bIsResizing = isResizing; }
 	void SetOcclusionCullingEnabled(bool bEnabled) { bOcclusionCulling = bEnabled; }
 	void ResetOcclusionCullingState() { bIsFirstPass = true; }
+    void SetFXAAEnabled(bool bEnabled) { bFXAAEnabled = bEnabled; }
 
 private:
 	void PerformOcclusionCulling(UCamera* InCurrentCamera, const TArray<TObjectPtr<UPrimitiveComponent>>& InPrimitiveComponents);
@@ -181,6 +186,7 @@ private:
 	ID3D11Buffer* ConstantBufferMaterial = nullptr;
 	ID3D11Buffer* ConstantBufferProjectionDecal = nullptr;
 	ID3D11Buffer* ConstantBufferSpotlight = nullptr;
+	ID3D11Buffer* ConstantBufferFXAA = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -205,6 +211,14 @@ private:
 	ID3D11PixelShader* SpotlightPixelShader = nullptr;
 	ID3D11InputLayout* SpotlightInputLayout = nullptr;
 	ID3D11BlendState* SpotlightBlendState = nullptr;
+
+	// FXAA resources
+	ID3D11Texture2D* FXAASceneTexture = nullptr;
+	ID3D11RenderTargetView* FXAASceneRTV = nullptr;
+	ID3D11ShaderResourceView* FXAASceneSRV = nullptr;
+	ID3D11VertexShader* FXAAVertexShader = nullptr;
+	ID3D11PixelShader* FXAAPixelShader = nullptr;
+	ID3D11SamplerState* FXAASampler = nullptr;
 
 	uint32 Stride = 0;
 
@@ -246,6 +260,7 @@ private:
 
 	bool bIsFirstPass = true;
 	bool bOcclusionCulling = true;
+	bool bFXAAEnabled = true;
 
 	constexpr static size_t NUM_WORKER_THREADS = 4;
 
