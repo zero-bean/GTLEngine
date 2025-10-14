@@ -520,6 +520,40 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 	{
 		URotatingMovementComponent* RotatingComp = Cast<URotatingMovementComponent>(InComponent);
 
+		// Target (Updated) Component picker
+		if (AActor* Owner = RotatingComp->GetOwner())
+		{
+			const TArray<TObjectPtr<UActorComponent>>& AllComps = Owner->GetOwnedComponents();
+			// Build a list of scene components
+			TArray<USceneComponent*> SceneComps;
+			for (const auto& C : AllComps)
+			{
+				if (auto* SC = Cast<USceneComponent>(C.Get())) { SceneComps.push_back(SC); }
+			}
+
+			int currentIndex = -1;
+			for (int i = 0; i < (int)SceneComps.size(); ++i)
+			{
+				if (SceneComps[i] == RotatingComp->UpdatedComponent.Get()) { currentIndex = i; break; }
+			}
+
+			FString preview = currentIndex >= 0 ? SceneComps[currentIndex]->GetName().ToString() : FString("<none>");
+			if (ImGui::BeginCombo("Updated Component", preview.c_str()))
+			{
+				for (int i = 0; i < (int)SceneComps.size(); ++i)
+				{
+					bool selected = (i == currentIndex);
+					FString item = SceneComps[i]->GetName().ToString();
+					if (ImGui::Selectable(item.c_str(), selected))
+					{
+						RotatingComp->SetUpdatedComponent(SceneComps[i]);
+						currentIndex = i;
+					}
+				}
+				ImGui::EndCombo();
+			}
+		}
+
 		FVector RelativeRotation = RotatingComp->RotationRate;
 		float RotationArr[3] = { RelativeRotation.X, RelativeRotation.Y, RelativeRotation.Z };
 		if (ImGui::DragFloat3("Rotation Rate", RotationArr, 0.1f))
