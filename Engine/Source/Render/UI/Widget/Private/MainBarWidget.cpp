@@ -241,6 +241,11 @@ void UMainBarWidget::RenderViewMenu()
 			EditorInstance->SetViewMode(EViewModeIndex::VMI_Wireframe);
 			UE_LOG("MainBarWidget: ViewMode를 Wireframe으로 변경");
 		}
+		if (ImGui::MenuItem("Z버퍼 씬 뎁스(ZBffer Scene Depth)", nullptr, bIsWireframe) && !bIsWireframe)
+		{
+			EditorInstance->SetViewMode(EViewModeIndex::VMI_SceneDepth);
+			UE_LOG("MainBarWidget: ViewMode를 SceneDepth로 변경");
+		}
 
 		ImGui::EndMenu();
 	}

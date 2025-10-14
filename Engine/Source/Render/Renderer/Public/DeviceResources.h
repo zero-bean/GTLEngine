@@ -25,6 +25,7 @@ public:
 	IDXGISwapChain* GetSwapChain() const { return SwapChain; }
 	ID3D11RenderTargetView* GetRenderTargetView() const { return FrameBufferRTV; }
 	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
+	ID3D11SamplerState* GetDepthSamplerState() const { return DepthSamplerState; }
 	ID3D11ShaderResourceView* GetDetphShaderResourceView() const { return DepthShaderResourceView; }
 	ID3D11ShaderResourceView* GetPreviousFrameDepthSRV() const { return PreviousFrameDepthSRV; }
 	void CopyDepthSRVToPreviousFrameSRV();
@@ -46,6 +47,7 @@ private:
 
 	ID3D11Texture2D* DepthBuffer = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
+	ID3D11SamplerState* DepthSamplerState = nullptr;
 	ID3D11ShaderResourceView* DepthShaderResourceView = nullptr;
 	ID3D11ShaderResourceView* PreviousFrameDepthSRV = nullptr;
 

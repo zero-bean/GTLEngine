@@ -63,9 +63,10 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateTextureShader();
 	CreateProjectionDecalShader();
 	CreateSpotlightShader();
+	CreateSceneDepthViewModeShader();
 	CreateConstantBuffer();
 	CreateBillboardResources();
-	CreateSpotlightResrouces();
+	CreateSpotlightResources();
 
 	// FontRenderer 초기화
 	FontRenderer = new UFontRenderer();
@@ -154,6 +155,7 @@ void URenderer::Release()
 	ReleaseDepthStencilState();
 	ReleaseRasterizerState();
 	ReleaseBillboardResources();
+	ReleaseSpotlightResources();
 	ReleaseTextureShader();
 	ReleaseProjectionDecalShader();
 
@@ -422,6 +424,27 @@ void URenderer::CreateSpotlightShader()
 	SpotLightPSBlob->Release();
 }
 
+void URenderer::CreateSceneDepthViewModeShader()
+{
+	ID3DBlob* SceneDepthVSBlob;
+	ID3DBlob* SceneDepthPSBlob;
+
+	D3DCompileFromFile(L"Asset/Shader/SceneDepthShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&SceneDepthVSBlob, nullptr);
+
+	GetDevice()->CreateVertexShader(SceneDepthVSBlob->GetBufferPointer(),
+		SceneDepthVSBlob->GetBufferSize(), nullptr, &SceneDepthVertexShader);
+
+	D3DCompileFromFile(L"Asset/Shader/SceneDepthShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&SceneDepthPSBlob, nullptr);
+
+	GetDevice()->CreatePixelShader(SceneDepthPSBlob->GetBufferPointer(),
+		SceneDepthPSBlob->GetBufferSize(), nullptr, &SceneDepthPixelShader);
+
+	SceneDepthVSBlob->Release();
+	SceneDepthPSBlob->Release();
+}
+
 /**
  * @brief 래스터라이저 상태를 해제하는 함수
  */
@@ -439,6 +462,14 @@ void URenderer::ReleaseBillboardResources()
 	SafeRelease(BillboardVertexBuffer);
 	SafeRelease(BillboardIndexBuffer);
 	SafeRelease(BillboardBlendState);
+}
+
+void URenderer::ReleaseSpotlightResources()
+{
+	SafeRelease(SpotlightVertexShader);
+	SafeRelease(SpotlightPixelShader);
+	SafeRelease(SpotlightInputLayout);
+	SafeRelease(SpotlightBlendState);
 }
 
 void URenderer::ReleaseTextureShader()
@@ -463,6 +494,13 @@ void URenderer::ReleaseSpotlightShader()
 	SafeRelease(SpotlightBlendState);
 	SafeRelease(SpotlightPixelShader);
 }
+
+void URenderer::ReleaseSceneDepthViewModeShader()
+{
+	SafeRelease(SceneDepthVertexShader);
+	SafeRelease(SceneDepthPixelShader);
+}
+
 /**
  * @brief Shader Release
  */
@@ -702,22 +740,29 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		RenderPrimitiveComponent(*Pipeline, PrimitiveComponent, LoadedRasterizerState, ConstantBufferModels, ConstantBufferColor, ConstantBufferMaterial);
 	}
 
-	// 3. 그 다음, 렌더링된 프리미티브 위에 데칼을 렌더링합니다.
-	RenderDecals(InCurrentCamera, Decals, PrimitivesToRenderByDecals);
-	RenderLights(InCurrentCamera, SpotLights, PrimitivesToRenderByDecals);
 
-
-	for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
+	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
 	{
-		if (BillboardComponent)
-		{
-			RenderBillboard(BillboardComponent.Get(), InCurrentCamera);
-		}
+		RenderSceneDepthView(InCurrentCamera);
 	}
-
-	if (TextRender)
+	else
 	{
-		RenderText(TextRender, InCurrentCamera);
+		// 3. 그 다음, 렌더링된 프리미티브 위에 데칼을 렌더링합니다.
+		RenderDecals(InCurrentCamera, Decals, PrimitivesToRenderByDecals);
+		RenderLights(InCurrentCamera, SpotLights, PrimitivesToRenderByDecals);
+
+		for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
+		{
+			if (BillboardComponent)
+			{
+				RenderBillboard(BillboardComponent.Get(), InCurrentCamera);
+			}
+		}
+
+		if (TextRender)
+		{
+			RenderText(TextRender, InCurrentCamera);
+		}
 	}
 }
 
@@ -1052,7 +1097,6 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 	}
 }
 
-//jft
 void URenderer::RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<USpotLightComponent>>& InSpotlights,
 	const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives)
 {
@@ -1072,15 +1116,13 @@ void URenderer::RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		SpotlightBlendState,
 	};
 
-	// 2. 모든 데칼 컴포넌트에 대해 반복합니다.
 	for (USpotLightComponent* Light : InSpotlights)
 	{
-		// 데칼이 보이지 않거나 바운딩 볼륨이 없으면 건너뜁니다.
 		if (!Light) { continue; }
 
 		Pipeline->UpdatePipeline(PipelineInfo);
 
-		// 3. 데칼의 월드 변환 역행렬을 계산하여 셰이더로 전달합니다.
+		// 월드 변환 역행렬을 계산하여 셰이더로 전달
 		FLightConstants LightData(Light->GetWorldTransformMatrix(), Light->GetWorldTransformMatrixInverse());
 		UpdateConstant(ConstantBufferSpotlight, LightData, 3, true, true);
 		FVector4 LightColor = Light->GetLightColor();
@@ -1119,6 +1161,69 @@ void URenderer::RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 			}
 		}
 	}
+}
+
+void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera)
+{
+	FRenderState SceneDepthState = {};
+	SceneDepthState.CullMode = ECullMode::Front;
+	SceneDepthState.FillMode = EFillMode::Solid;
+
+	// Pipeline 정보 구성
+	FPipelineInfo PipelineInfo = {
+		nullptr,
+		SceneDepthVertexShader,
+		GetRasterizerState(SceneDepthState),
+		DisabledDepthStencilState,
+		SceneDepthPixelShader,
+		nullptr,
+		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	};
+
+	Pipeline->UpdatePipeline(PipelineInfo);
+
+	// constant buffer update
+	FDepthConstants SceneDepthData{};
+
+	// 1) InvViewProj 계산
+	UCamera* Cam = InCurrentCamera;
+	const FViewProjConstants& VP = Cam->GetFViewProjConstants();
+	FMatrix View      = VP.View;
+	FMatrix Proj      = VP.Projection;
+	FMatrix ViewProj  = View * Proj;
+	FMatrix InvVP     = ViewProj.Inverse();
+
+	// row-major 사용 중이면 업로드 전에 전치
+	SceneDepthData.InvViewProj  = InvVP;
+	SceneDepthData.CameraPosWS  = Cam->GetLocation();
+	SceneDepthData.NearZ        = Cam->GetNearZ();
+	SceneDepthData.FarZ         = Cam->GetFarZ();
+
+	UpdateConstant(ConstantBufferDepth, SceneDepthData, 0, true, true);
+
+	ID3D11RenderTargetView* CurrentRTV = DeviceResources->GetRenderTargetView();
+	ID3D11DepthStencilView* CurrentDSV = DeviceResources->GetDepthStencilView();
+
+	ID3D11RenderTargetView* Targets[1] = { CurrentRTV };
+	GetDeviceContext()->OMSetRenderTargets(1, Targets, nullptr);
+
+	// Bind SRV, Sampler
+	ID3D11ShaderResourceView* depthSRV = DeviceResources->GetDetphShaderResourceView();
+
+	Pipeline->SetTexture(0, false, depthSRV);
+	Pipeline->SetSamplerState(0, false, DeviceResources->GetDepthSamplerState());
+
+	Pipeline->SetVertexBuffer(nullptr, 0);
+	Pipeline->SetIndexBuffer(nullptr, 0);
+
+	Pipeline->Draw(3, 0);
+
+	//  depth SRV 언바인드
+	ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+	GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
+
+	Targets[0] = CurrentRTV;
+	GetDeviceContext()->OMSetRenderTargets(1, Targets, CurrentDSV);
 }
 
 /**
@@ -1649,14 +1754,23 @@ void URenderer::CreateConstantBuffer()
 	}
 
 	{
-		// jft : material size 아님!
 		D3D11_BUFFER_DESC SpotlightConstantBufferDescription = {};
-		SpotlightConstantBufferDescription.ByteWidth = sizeof(FMaterial) + 0xf & 0xfffffff0;
+		SpotlightConstantBufferDescription.ByteWidth = sizeof(FLightConstants) + 0xf & 0xfffffff0;
 		SpotlightConstantBufferDescription.Usage = D3D11_USAGE_DYNAMIC; // 매 프레임 CPU에서 업데이트
 		SpotlightConstantBufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		SpotlightConstantBufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 		GetDevice()->CreateBuffer(&SpotlightConstantBufferDescription, nullptr, &ConstantBufferSpotlight);
+	}
+
+	{
+		D3D11_BUFFER_DESC desc = {};
+		desc.ByteWidth      = (sizeof(FDepthConstants) + 0xF) & ~0xF; // 16바이트 맞춤
+		desc.Usage          = D3D11_USAGE_DYNAMIC;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
+
+		GetDevice()->CreateBuffer(&desc, nullptr, &ConstantBufferDepth);
 	}
 }
 
@@ -1727,7 +1841,7 @@ void URenderer::CreateBillboardResources()
 	}
 }
 
-void URenderer::CreateSpotlightResrouces()
+void URenderer::CreateSpotlightResources()
 {
 	if (!SpotlightBlendState)
 	{
@@ -1761,6 +1875,7 @@ void URenderer::ReleaseConstantBuffer()
 	SafeRelease(ConstantBufferProjectionDecal);
 	SafeRelease(ConstantBufferBatchLine);
 	SafeRelease(ConstantBufferSpotlight);
+	SafeRelease(ConstantBufferDepth);
 }
 
 bool URenderer::UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const
