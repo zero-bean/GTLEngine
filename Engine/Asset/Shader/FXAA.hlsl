@@ -29,7 +29,7 @@ VSOut VS(uint vid : SV_VertexID)
 float Luma(float3 rgb)
 {
     // Rec. 601
-    return dot(rgb, float3(0.299, 0.587, 0.114));
+    return dot(rgb, float3(0.2126, 0.7152, 0.0722));
 }
 
 float4 PS(VSOut i) : SV_Target
@@ -43,6 +43,7 @@ float4 PS(VSOut i) : SV_Target
     // Sample neighborhood
     float3 rgbM = SceneTex.Sample(LinearClamp, uv).rgb;
     float lumaM = Luma(rgbM);
+
     float lumaN = Luma(SceneTex.Sample(LinearClamp, uv + float2(0, -rcp.y)).rgb);
     float lumaS = Luma(SceneTex.Sample(LinearClamp, uv + float2(0,  rcp.y)).rgb);
     float lumaW = Luma(SceneTex.Sample(LinearClamp, uv + float2(-rcp.x, 0)).rgb);
@@ -58,20 +59,26 @@ float4 PS(VSOut i) : SV_Target
         return float4(rgbM, 1.0);
     }
 
-    // Edge direction
-    float2 dir;
-    dir.x = -((lumaW + lumaE) - 2.0 * lumaM);
-    dir.y = -((lumaN + lumaS) - 2.0 * lumaM);
+	// --- Diagonal luma for tangent direction (classic FXAA 3.x) ---
+	float lNW = Luma(SceneTex.Sample(LinearClamp, uv + float2(-rcp.x, -rcp.y)).rgb);
+	float lNE = Luma(SceneTex.Sample(LinearClamp, uv + float2( rcp.x, -rcp.y)).rgb);
+	float lSW = Luma(SceneTex.Sample(LinearClamp, uv + float2(-rcp.x,  rcp.y)).rgb);
+	float lSE = Luma(SceneTex.Sample(LinearClamp, uv + float2( rcp.x,  rcp.y)).rgb);
+
+	// This estimates the **edge tangent** (not the normal).
+	float2 dir;
+	dir.x = -((lNW + lNE) - (lSW + lSE));
+	dir.y =  ((lNW + lSW) - (lNE + lSE));
 
     float dirReduce = max((lumaN + lumaS + lumaW + lumaE) * (0.25 * 1/8), 0.0004);
     float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
-	dir = saturate(dir * rcpDirMin) * rcp;
-	// dir *= rcpDirMin;                 // scale by inverse smallest axis + reduce
-	// float len = length(dir);
-	// if (len > 0.0)
-	// 	dir *= (min(8.0, len) / len); // cap search to ~8 texels total span
-	//
-	// dir *= rcp;
+	// dir = saturate(dir * rcpDirMin) * rcp;
+	dir *= rcpDirMin;                 // scale by inverse smallest axis + reduce
+	float len = length(dir);
+	if (len > 0.0)
+		dir *= (min(5.0, len) / len); // cap search to ~8 texels total span
+
+	dir *= rcp;
 
     // Two taps along the edge
     float3 rgbA = 0.5 * (
@@ -85,5 +92,6 @@ float4 PS(VSOut i) : SV_Target
     float lumaB = Luma(rgbB);
     // Choose between A and B to avoid over-blurring
     float3 result = (lumaB < lumaMin || lumaB > lumaMax) ? rgbA : rgbB;
+	// float3 result = rgbA;
     return float4(result, 1.0);
 }
