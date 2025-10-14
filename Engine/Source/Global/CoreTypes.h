@@ -61,6 +61,16 @@ private:
 	FLightConstants() = delete;
 };
 
+struct FDepthConstants
+{
+	FMatrix InvViewProj;
+	FVector CameraPosWS;
+	float   _pad0;
+	float   NearZ;
+	float   FarZ;
+	float   _pad1[2];
+};
+
 struct FModelConstants
 {
 	FModelConstants(const FMatrix& InWorld, const FMatrix& InWorldInverseTranspose)
