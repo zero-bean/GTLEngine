@@ -779,8 +779,8 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	}
 	else if (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth)
 	{
-		RenderDecals(InCurrentCamera, Decals, PrimitivesToRenderByDecals);
-		RenderLights(InCurrentCamera, SpotLights, PrimitivesToRenderByDecals);
+		RenderDecals(InCurrentCamera, Decals, PrimitivesToPostUpdate);
+		RenderLights(InCurrentCamera, SpotLights, PrimitivesToPostUpdate);
 	}
 	for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
 	{
@@ -1256,6 +1256,7 @@ void URenderer::RenderFireBalls(UCamera* InCurrentCamera, const TArray<TObjectPt
 			}
 		}
 	}
+}
 
 void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient)
 {
@@ -1993,7 +1994,7 @@ void URenderer::CreateBillboardResources()
 	}
 }
 
-void URenderer::CreateSpotlightResources()
+void URenderer::CreateSpotlightResrouces()
 {
 	if (!SpotlightBlendState)
 	{

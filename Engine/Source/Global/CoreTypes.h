@@ -71,7 +71,7 @@ struct FFireBallConstants
 	float Intensity;
 	float RadiusFallOff;
 	float Padding[2]; // 16바이트 정렬을 위한 패딩
-}
+};
 
 struct FDepthConstants2D
 {

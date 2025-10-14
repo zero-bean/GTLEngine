@@ -63,10 +63,6 @@ public:
 
 	// Initialize
 	void CreateDepthStencilState();
-
-	void CreateBillboardResources();
-	void CreateSpotlightResources();
-
 	void CreateDefaultShader();
 	void CreateTextureShader();
 	void CreateProjectionDecalShader();

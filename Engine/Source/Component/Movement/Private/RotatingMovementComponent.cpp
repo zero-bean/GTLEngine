@@ -2,6 +2,7 @@
 #include "Component/Movement/Public/RotatingMovementComponent.h"
 #include "Utility/Public/JsonSerializer.h"
 #include "Global/Matrix.h"
+
 IMPLEMENT_CLASS(URotatingMovementComponent, UMovementComponent)
 
 void URotatingMovementComponent::TickComponent(float DeltaSeconds)
