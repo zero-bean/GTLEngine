@@ -33,6 +33,7 @@
 
 #include "Component/Movement/Public/RotatingMovementComponent.h"
 #include "Component/Movement/Public/MovementComponent.h"
+#include "Component/Movement/Public/ProjectileMovementComponent.h"
 
 bool UActorDetailWidget::bAssetsLoaded = false;
 TArray<FTextureOption> UActorDetailWidget::BillboardSpriteOptions;
@@ -329,10 +330,12 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 			AddComponentToActor(RotatingMovementComp);
 			RotatingMovementComp->SetUpdatedComponent(InSelectedActor->GetRootComponent());
 		}
-		// if (ImGui::MenuItem("Projectile Movement Component"))
-		// {
-		// 	AddComponentToActor(new UProjectileMovementComponent());
-		// }
+		if (ImGui::MenuItem("Projectile Movement Component"))
+		{
+			UProjectileMovementComponent* ProjectileMovementComp = new UProjectileMovementComponent();
+			AddComponentToActor(ProjectileMovementComp);
+			ProjectileMovementComp->SetUpdatedComponent(InSelectedActor->GetRootComponent());
+		}
 
 		ImGui::EndPopup();
 	}
@@ -575,6 +578,57 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 		if (ImGui::DragFloat3("Pivot Translation", PivotArr, 0.1f))
 		{
 			RotatingComp->PivotTranslation = FVector(PivotArr[0], PivotArr[1], PivotArr[2]);
+		}
+	}
+	else if (InComponent->IsA(UProjectileMovementComponent::StaticClass()))
+	{
+		UProjectileMovementComponent* ProjectileComp = Cast<UProjectileMovementComponent>(InComponent);
+
+		if (AActor* Owner = ProjectileComp->GetOwner())
+		{
+			const TArray<TObjectPtr<UActorComponent>>& AllComps = Owner->GetOwnedComponents();
+			// Build a list of scene components
+			TArray<USceneComponent*> SceneComps;
+			for (const auto& C : AllComps)
+			{
+				if (auto* SC = Cast<USceneComponent>(C.Get())) { SceneComps.push_back(SC); }
+			}
+
+			int currentIndex = -1;
+			for (int i = 0; i < (int)SceneComps.size(); ++i)
+			{
+				if (SceneComps[i] == ProjectileComp->UpdatedComponent.Get()) { currentIndex = i; break; }
+			}
+
+			FString preview = currentIndex >= 0 ? SceneComps[currentIndex]->GetName().ToString() : FString("<none>");
+			if (ImGui::BeginCombo("Updated Component", preview.c_str()))
+			{
+				for (int i = 0; i < (int)SceneComps.size(); ++i)
+				{
+					bool selected = (i == currentIndex);
+					FString item = SceneComps[i]->GetName().ToString();
+					if (ImGui::Selectable(item.c_str(), selected))
+					{
+						ProjectileComp->SetUpdatedComponent(SceneComps[i]);
+						currentIndex = i;
+					}
+				}
+				ImGui::EndCombo();
+			}
+		}
+
+		FVector Velocity = ProjectileComp->Velocity;
+		float VelocityArr[3] = { Velocity.X, Velocity.Y, Velocity.Z };
+		if (ImGui::DragFloat3("Initial Velocity", VelocityArr, 0.1f))
+		{
+			ProjectileComp->Velocity = FVector(VelocityArr[0], VelocityArr[1], VelocityArr[2]);
+		}
+
+		FVector ProjectileGravity = ProjectileComp->ProjectileGravity;
+		float GravityArr[3] = { ProjectileGravity.X, ProjectileGravity.Y, ProjectileGravity.Z };
+		if (ImGui::DragFloat3("Gravity Direction", GravityArr, 0.1f))
+		{
+			ProjectileComp->ProjectileGravity = FVector(GravityArr[0], GravityArr[1], GravityArr[2]);
 		}
 	}
 	else if (InComponent->IsA(UTextRenderComponent::StaticClass()))
