@@ -61,7 +61,7 @@ private:
 	FLightConstants() = delete;
 };
 
-struct FDepthConstants
+struct FDepthConstants2D
 {
 	FMatrix InvViewProj;
 	FVector CameraPosWS;
@@ -69,6 +69,27 @@ struct FDepthConstants
 	float   NearZ;
 	float   FarZ;
 	float   _pad1[2];
+};
+
+struct FDepthConstants
+{
+	FDepthConstants(unsigned int InDebugMode,
+				float InNearD,
+				float InFarD,
+				float InGamma,
+				const float InTotalColor[4])
+	: DebugMode(InDebugMode)
+	, NearD(InNearD)
+	, FarD(InFarD)
+	, Gamma(InGamma)
+	{
+		std::memcpy(TotalColor, InTotalColor, sizeof(TotalColor));
+	}
+	unsigned int DebugMode;
+	float NearD;
+	float FarD;
+	float Gamma;
+	float TotalColor[4];
 };
 
 struct FModelConstants

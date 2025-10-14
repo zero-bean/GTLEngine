@@ -21,6 +21,15 @@ cbuffer MaterialConstants : register(b2)
 	float Time;
 };
 
+cbuffer DebugParams : register(b3)
+{
+	uint  DebugMode;     // 1 is SceneDepth
+	float NearD;
+	float FarD;
+	float Gamma;
+	float4 TotalColor;
+}
+
 Texture2D DiffuseTexture : register(t0);	// map_Kd
 Texture2D AmbientTexture : register(t1);	// map_Ka
 Texture2D SpecularTexture : register(t2);	// map_Ks
@@ -50,6 +59,7 @@ struct PS_INPUT
 	float4 position : SV_POSITION;	// Transformed position to pass to the pixel shader
 	float3 normal : TEXCOORD0;
 	float2 tex : TEXCOORD1;
+	float distWS : TEXCOORD2;
 };
 
 PS_INPUT mainVS(VS_INPUT input)
@@ -58,10 +68,19 @@ PS_INPUT mainVS(VS_INPUT input)
 
 	float4 tmp = input.position;
 	tmp = mul(tmp, world);
+	if (DebugMode == 1)
+	{
+		float3 Pos = tmp.xyz;
+		float3x3 R = (float3x3)View;        // 상단-좌측 3x3
+		float3  t  = View[3].xyz;           // 마지막 행 (row)
+		float3  CameraPosWS = mul(-t, transpose(R)); // p = -t * R^T
+		output.distWS = distance(Pos, CameraPosWS);
+	}
+
 	tmp = mul(tmp, View);
 	tmp = mul(tmp, Projection);
 	output.position = tmp;
-	//output.normal = normalize(mul(float4(input.normal, 0.0f), world).xyz);
+	// output.normal = normalize(mul(float4(input.normal, 0.0f), world).xyz);
 	output.tex = input.tex;
 
 	return output;
@@ -69,38 +88,18 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-	//float4 finalColor = float4(0.f, 0.f, 0.f, 1.f);
-
-	//// Base diffuse color
-	//float4 diffuseColor = Kd;
-	//if (MaterialFlags & HAS_DIFFUSE_MAP)
-	//{
-	//	diffuseColor *= DiffuseTexture.Sample(SamplerWrap, input.tex);
-	//}
-
-	//// Ambient contribution
-	//float4 ambientColor = Ka;
-	//if (MaterialFlags & HAS_AMBIENT_MAP)
-	//{
-	//	ambientColor *= AmbientTexture.Sample(SamplerWrap, input.tex);
-	//}
-
-	//finalColor.rgb = diffuseColor.rgb + ambientColor.rgb;
-
-	//// Alpha handling
-	//finalColor.a = D;
-	//if (MaterialFlags & HAS_ALPHA_MAP)
-	//{
-	//	float alpha = AlphaTexture.Sample(SamplerWrap, input.tex).r;
-	//	finalColor.a *= alpha;
-	//}
-
-	//return finalColor;
-
 	float2 ScrollSpeed = float2(0.0f, 0.1f);
 	float2 UV = frac(input.tex + ScrollSpeed * Time);
 	float4 texColor = DiffuseTexture.Sample(SamplerWrap, UV);
 	if (texColor.a == 0.0f)
 		discard;
+
+	if (DebugMode == 1)
+	{
+		float Depth = input.distWS /FarD;
+		float depthVis = pow(Depth, Gamma);
+		texColor = float4(depthVis, depthVis, depthVis, 1.0f);
+	}
+
 	return texColor;
 }
