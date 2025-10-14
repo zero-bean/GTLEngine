@@ -353,7 +353,20 @@ void UEditor::ProcessInput(ULevel* InLevel)
 		return;
 	}
 
-	// 선택된 뷰포트의 정보들을 가져옵니다.
+    // 선택 상태와 기즈모 대상 동기화 (선택 변경/삭제 시 드래그 안전 종료)
+    AActor* Sel = InLevel ? InLevel->GetSelectedActor() : nullptr;
+    if (Gizmo.GetSelectedActor() != Sel)
+    {
+        // If selection changed while dragging (e.g., deleted), end drag first
+        if (!Sel && Gizmo.IsDragging())
+        {
+            Gizmo.EndDrag();
+            Gizmo.SetGizmoDirection(EGizmoDirection::None);
+        }
+        Gizmo.SetTargetActor(Sel);
+    }
+
+    // 선택된 뷰포트의 정보들을 가져옵니다.
 	FViewport* ViewportClient = URenderer::GetInstance().GetViewportClient();
 	FViewportClient* CurrentViewport = nullptr;
 	UCamera* CurrentCamera = nullptr;
