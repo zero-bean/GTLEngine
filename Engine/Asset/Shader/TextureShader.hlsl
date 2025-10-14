@@ -21,6 +21,14 @@ cbuffer MaterialConstants : register(b2)
 	float Time;
 };
 
+cbuffer DebugParams : register(b3)
+{
+	uint  DebugMode;     // 1 is SceneDepth
+	float NearD;
+	float FarD;
+	float Gamma;
+	float4 TotalColor;
+}
 
 Texture2D DiffuseTexture : register(t0);	// map_Kd
 Texture2D AmbientTexture : register(t1);	// map_Ka
@@ -60,12 +68,14 @@ PS_INPUT mainVS(VS_INPUT input)
 
 	float4 tmp = input.position;
 	tmp = mul(tmp, world);
-	float3 Pos = tmp.xyz;
-
-	float3x3 R = (float3x3)View;        // 상단-좌측 3x3
-	float3  t  = View[3].xyz;           // 마지막 행 (row)
-	float3  CameraPosWS = mul(-t, transpose(R)); // p = -t * R^T
-	output.distWS = distance(Pos, CameraPosWS);
+	if (DebugMode == 1)
+	{
+		float3 Pos = tmp.xyz;
+		float3x3 R = (float3x3)View;        // 상단-좌측 3x3
+		float3  t  = View[3].xyz;           // 마지막 행 (row)
+		float3  CameraPosWS = mul(-t, transpose(R)); // p = -t * R^T
+		output.distWS = distance(Pos, CameraPosWS);
+	}
 
 	tmp = mul(tmp, View);
 	tmp = mul(tmp, Projection);
@@ -84,7 +94,12 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 	if (texColor.a == 0.0f)
 		discard;
 
-	float Depth = input.distWS /200.0f;
-	texColor = float4(Depth, Depth, Depth, 1.0f);
+	if (DebugMode == 1)
+	{
+		float Depth = input.distWS /FarD;
+		float depthVis = pow(Depth, Gamma);
+		texColor = float4(depthVis, depthVis, depthVis, 1.0f);
+	}
+
 	return texColor;
 }

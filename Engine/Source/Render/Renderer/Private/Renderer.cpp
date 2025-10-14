@@ -566,9 +566,14 @@ void URenderer::Tick(float DeltaSeconds)
 void URenderer::RenderBegin() const
 {
 	auto* RenderTargetView = DeviceResources->GetRenderTargetView();
-	float DepthClearColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-	// GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
-	GetDeviceContext()->ClearRenderTargetView(RenderTargetView, DepthClearColor);
+	GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
+
+	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
+	{
+		float DepthClearColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		GetDeviceContext()->ClearRenderTargetView(DeviceResources->GetRenderTargetView(), DepthClearColor);
+	}
+
 	auto* DepthStencilView = DeviceResources->GetDepthStencilView();
 	GetDeviceContext()->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
@@ -743,28 +748,26 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	}
 
 
-	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
+	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth2D)
 	{
 		RenderSceneDepthView(InCurrentCamera);
 	}
-	else
+	else if (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth)
 	{
-		// 3. 그 다음, 렌더링된 프리미티브 위에 데칼을 렌더링합니다.
 		RenderDecals(InCurrentCamera, Decals, PrimitivesToRenderByDecals);
 		RenderLights(InCurrentCamera, SpotLights, PrimitivesToRenderByDecals);
-
-		for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
+	}
+	for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
+	{
+		if (BillboardComponent)
 		{
-			if (BillboardComponent)
-			{
-				RenderBillboard(BillboardComponent.Get(), InCurrentCamera);
-			}
+			RenderBillboard(BillboardComponent.Get(), InCurrentCamera);
 		}
+	}
 
-		if (TextRender)
-		{
-			RenderText(TextRender, InCurrentCamera);
-		}
+	if (TextRender)
+	{
+		RenderText(TextRender, InCurrentCamera);
 	}
 }
 
@@ -1185,7 +1188,7 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera)
 	Pipeline->UpdatePipeline(PipelineInfo);
 
 	// constant buffer update
-	FDepthConstants SceneDepthData{};
+	FDepthConstants2D SceneDepthData{};
 
 	// 1) InvViewProj 계산
 	UCamera* Cam = InCurrentCamera;
@@ -1201,7 +1204,7 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera)
 	SceneDepthData.NearZ        = Cam->GetNearZ();
 	SceneDepthData.FarZ         = Cam->GetFarZ();
 
-	UpdateConstant(ConstantBufferDepth, SceneDepthData, 0, true, true);
+	UpdateConstant(ConstantBufferDepth2D, SceneDepthData, 0, true, true);
 
 	ID3D11RenderTargetView* CurrentRTV = DeviceResources->GetRenderTargetView();
 	ID3D11DepthStencilView* CurrentDSV = DeviceResources->GetDepthStencilView();
@@ -1257,6 +1260,19 @@ void URenderer::RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* In
     InPipeline.UpdatePipeline(PipelineInfo);
 
 	UpdateConstant(InConstantBufferModels, InMeshComp->GetWorldTransformMatrix(), 0, true, false);
+
+	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
+	{
+		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		FDepthConstants DepthData(1, 0.1f, 150.0f, 0.8f, Color);
+		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
+	}
+	else
+	{
+		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		FDepthConstants DepthData(0, 0.1f, 150.0f, 0.8f, Color);
+		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
+	}
 
     InPipeline.SetVertexBuffer(InMeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
     InPipeline.SetIndexBuffer(InMeshComp->GetIndexBuffer(), 0);
@@ -1438,6 +1454,18 @@ void URenderer::RenderPrimitiveDefault(UPipeline& InPipeline, UPrimitiveComponen
 	// [수정] 새로운 UpdateConstantBuffer 함수 사용 (색상은 슬롯 2번)
 	UpdateConstant(InConstantBufferColor, InPrimitiveComp->GetColor(), 2, false, true);
 
+	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
+	{
+		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		FDepthConstants DepthData(1, 0.1f, 150.0f, 0.8f, Color);
+		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
+	}
+	else
+	{
+		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		FDepthConstants DepthData(0, 0.1f, 150.0f, 0.8f, Color);
+		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
+	}
 
     // Bind vertex buffer
     InPipeline.SetVertexBuffer(InPrimitiveComp->GetVertexBuffer(), Stride);
@@ -1767,6 +1795,16 @@ void URenderer::CreateConstantBuffer()
 
 	{
 		D3D11_BUFFER_DESC desc = {};
+		desc.ByteWidth      = (sizeof(FDepthConstants2D) + 0xF) & ~0xF; // 16바이트 맞춤
+		desc.Usage          = D3D11_USAGE_DYNAMIC;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
+
+		GetDevice()->CreateBuffer(&desc, nullptr, &ConstantBufferDepth2D);
+	}
+
+	{
+		D3D11_BUFFER_DESC desc = {};
 		desc.ByteWidth      = (sizeof(FDepthConstants) + 0xF) & ~0xF; // 16바이트 맞춤
 		desc.Usage          = D3D11_USAGE_DYNAMIC;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -1878,6 +1916,7 @@ void URenderer::ReleaseConstantBuffer()
 	SafeRelease(ConstantBufferBatchLine);
 	SafeRelease(ConstantBufferSpotlight);
 	SafeRelease(ConstantBufferDepth);
+	SafeRelease(ConstantBufferDepth2D);
 }
 
 bool URenderer::UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const

@@ -14,6 +14,15 @@ cbuffer PerFrame : register(b2)
 	float4 totalColor;
 };
 
+cbuffer DebugParams : register(b3)
+{
+	uint  DebugMode;     // 1 is SceneDepth
+	float NearD;
+	float FarD;
+	float Gamma;
+	float4 TotalColor;
+}
+
 struct VS_INPUT
 {
     float4 position : POSITION;		// Input position from vertex buffer
@@ -32,15 +41,17 @@ PS_INPUT mainVS(VS_INPUT input)
     PS_INPUT output;
 	float4 tmp = input.position;
     tmp = mul(tmp, world);
-	float3 Pos = tmp.xyz;
+	if (DebugMode == 1)
+	{
+		float3 Pos = tmp.xyz;
+		float3x3 R = (float3x3)View;        // 상단-좌측 3x3
+		float3  t  = View[3].xyz;           // 마지막 행 (row)
+		float3  CameraPosWS = mul(-t, transpose(R)); // p = -t * R^T
+		output.distWS = distance(Pos, CameraPosWS);
+	}
 
     tmp = mul(tmp, View);
     tmp = mul(tmp, Projection);
-
-	float3x3 R = (float3x3)View;        // 상단-좌측 3x3
-	float3  t  = View[3].xyz;           // 마지막 행 (row)
-	float3  CameraPosWS = mul(-t, transpose(R)); // p = -t * R^T
-	output.distWS = distance(Pos, CameraPosWS);
 
 	output.position = tmp;
     output.color = input.color;
@@ -52,8 +63,12 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 {
 	float4 finalColor = lerp(input.color, totalColor, totalColor.a);
 
-	float Depth = input.distWS /200.0f;
-	finalColor = float4(Depth, Depth, Depth, 1.0f);
+	if (DebugMode == 1)
+	{
+		float Depth = input.distWS /FarD;
+		float depthVis = pow(Depth, Gamma);
+		finalColor = float4(depthVis, depthVis, depthVis, 1.0f);
+	}
 
 	return finalColor;
 }

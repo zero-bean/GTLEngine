@@ -189,7 +189,9 @@ private:
 	ID3D11Buffer* ConstantBufferMaterial = nullptr;
 	ID3D11Buffer* ConstantBufferProjectionDecal = nullptr;
 	ID3D11Buffer* ConstantBufferSpotlight = nullptr;
+	ID3D11Buffer* ConstantBufferDepth2D = nullptr;
 	ID3D11Buffer* ConstantBufferDepth = nullptr;
+
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
