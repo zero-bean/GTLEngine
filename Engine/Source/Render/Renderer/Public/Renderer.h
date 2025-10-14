@@ -259,7 +259,6 @@ private:
 	bool bIsFirstPass = true;
 	bool bOcclusionCulling = true;
 
-	// jft
 	bool bIsSceneDepth = true;
 
 	constexpr static size_t NUM_WORKER_THREADS = 4;

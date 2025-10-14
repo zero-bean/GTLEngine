@@ -741,7 +741,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	}
 
 
-	if (bIsSceneDepth)
+	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
 	{
 		RenderSceneDepthView(InCurrentCamera);
 	}
@@ -1166,7 +1166,7 @@ void URenderer::RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera)
 {
 	FRenderState SceneDepthState = {};
-	SceneDepthState.CullMode = ECullMode::Back;
+	SceneDepthState.CullMode = ECullMode::Front;
 	SceneDepthState.FillMode = EFillMode::Solid;
 
 	// Pipeline 정보 구성
@@ -1201,7 +1201,6 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera)
 
 	UpdateConstant(ConstantBufferDepth, SceneDepthData, 0, true, true);
 
-
 	ID3D11RenderTargetView* CurrentRTV = DeviceResources->GetRenderTargetView();
 	ID3D11DepthStencilView* CurrentDSV = DeviceResources->GetDepthStencilView();
 
@@ -1210,6 +1209,7 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera)
 
 	// Bind SRV, Sampler
 	ID3D11ShaderResourceView* depthSRV = DeviceResources->GetDetphShaderResourceView();
+
 	Pipeline->SetTexture(0, false, depthSRV);
 	Pipeline->SetSamplerState(0, false, DeviceResources->GetDepthSamplerState());
 
