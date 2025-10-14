@@ -61,6 +61,18 @@ private:
 	FLightConstants() = delete;
 };
 
+struct FFireBallConstants
+{
+	// alignas(16) 때문에 크기가 16바이트인 FVector 대신 익명 구조체 사용
+	struct { float X, Y, Z; } WorldPosition;
+	float Radius;
+
+	FVector4 Color;
+	float Intensity;
+	float RadiusFallOff;
+	float Padding[2]; // 16바이트 정렬을 위한 패딩
+}
+
 struct FDepthConstants2D
 {
 	FMatrix  InvViewProj;
@@ -186,4 +198,17 @@ struct FRect
 
 	float GetRight() const { return Left + Width; }
 	float GetBottom() const { return Top + Height; }
+};
+
+struct FLinearColor
+{
+	FVector4 Color = FVector4::ZeroVector();
+
+	/**
+	 * @brief 다른 LinearColor의 값을 자신에게 대입하는 오버로딩 연산자
+	 */
+	void operator=(const FLinearColor& InColor)
+	{
+		Color = InColor.Color;
+	}
 };

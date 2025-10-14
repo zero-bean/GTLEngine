@@ -7,6 +7,7 @@
 #include "Component/Public/DecalComponent.h"
 #include "Component/Public/SpotLightComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Component/Public/FireBallComponent.h"
 #include "Core/Public/BVHierarchy.h"
 #include "Editor/Public/Editor.h"
 #include "Editor/Public/EditorEngine.h"
@@ -57,8 +58,6 @@ void URenderer::Init(HWND InWindowHandle)
 	Pipeline = new UPipeline(GetDeviceContext());
 	ViewportClient = new FViewport();
 
-	// 래스터라이저 상태 생성
-	CreateRasterizerState();
 	CreateDepthStencilState();
 	CreateDefaultShader();
 	CreateTextureShader();
@@ -67,7 +66,8 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateSceneDepthViewModeShader();
 	CreateConstantBuffer();
 	CreateBillboardResources();
-	CreateSpotlightResources();
+	CreateSpotlightResrouces();
+	CreateFireBallShader();
     FXAA = new UFXAAPass();
     FXAA->Initialize(DeviceResources);
 
@@ -160,8 +160,10 @@ void URenderer::Release()
 	ReleaseBillboardResources();
 	ReleaseSpotlightResources();
 	ReleaseTextureShader();
-    ReleaseProjectionDecalShader();
-    if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
+	ReleaseProjectionDecalShader();
+	ReleaseFireBallShader();
+
+  if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
 
 	SafeDelete(ViewportClient);
 
@@ -226,14 +228,6 @@ void URenderer::Release()
 	}
 	CommandLists.clear();
 #endif
-}
-
-/**
- * @brief 래스터라이저 상태를 생성하는 함수
- */
-void URenderer::CreateRasterizerState()
-{
-	// 현재 따로 생성하지 않음
 }
 
 /**
@@ -499,6 +493,14 @@ void URenderer::ReleaseSpotlightShader()
 	SafeRelease(SpotlightPixelShader);
 }
 
+void URenderer::ReleaseFireBallShader()
+{
+	SafeRelease(FireBallInputLayout);
+	SafeRelease(FireBallVertexShader);
+	SafeRelease(FireBallPixelShader);
+	SafeRelease(FireBallBlendState);
+}
+
 void URenderer::ReleaseSceneDepthViewModeShader()
 {
 	SafeRelease(SceneDepthVertexShader);
@@ -680,7 +682,8 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	TArray<TObjectPtr<UBillboardComponent>> Billboards;
 	TArray<TObjectPtr<UDecalComponent>> Decals;
 	TArray<TObjectPtr<USpotLightComponent>> SpotLights;
-	TArray<TObjectPtr<UPrimitiveComponent>> PrimitivesToRenderByDecals;
+	TArray<TObjectPtr<UPrimitiveComponent>> PrimitivesToPostUpdate;
+	TArray<TObjectPtr<UFireBallComponent>> FireBalls;
 
 	for (size_t i = 0; i < InPrimitiveComponents.size(); ++i)
 	{
@@ -720,14 +723,18 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		{
 			Decals.push_back(Cast<UDecalComponent>(PrimitiveComponent));
 		}
+		else if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::FireBall)
+		{
+			FireBalls.push_back(Cast<UFireBallComponent>(PrimitiveComponent));
+		}
 		else
 		{
-			PrimitivesToRenderByDecals.push_back(PrimitiveComponent);
+			PrimitivesToPostUpdate.push_back(PrimitiveComponent);
 		}
 	}
 
 	// 1. 먼저 일반 프리미티브들(StaticMesh 등)을 렌더링합니다.
-	for (UPrimitiveComponent* PrimitiveComponent : PrimitivesToRenderByDecals)
+	for (UPrimitiveComponent* PrimitiveComponent : PrimitivesToPostUpdate)
 	{
 		FRenderState RenderState = PrimitiveComponent->GetRenderState();
 		const EViewModeIndex ViewMode = GEngine->GetEditor()->GetViewMode();
@@ -761,6 +768,10 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		RenderPrimitiveComponent(*Pipeline, PrimitiveComponent, LoadedRasterizerState, ConstantBufferModels, ConstantBufferColor, ConstantBufferMaterial);
 	}
 
+	// 3. 그 다음, 렌더링된 프리미티브 위에 데칼을 렌더링합니다.
+	RenderDecals(InCurrentCamera, Decals, PrimitivesToPostUpdate);
+	RenderLights(InCurrentCamera, SpotLights, PrimitivesToPostUpdate);
+	RenderFireBalls(InCurrentCamera, FireBalls, PrimitivesToPostUpdate);
 
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth2D)
 	{
@@ -1181,6 +1192,70 @@ void URenderer::RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 		}
 	}
 }
+
+void URenderer::RenderFireBalls(UCamera* InCurrentCamera, const TArray<TObjectPtr<UFireBallComponent>>& InFireBalls, const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives)
+{
+	if (InFireBalls.empty()) { return; }
+
+	// 1. 파이프라인을 FireBall 렌더링용으로 설정
+	FRenderState FireBallRenderState = {};
+	FireBallRenderState.CullMode = ECullMode::Back;
+	FireBallRenderState.FillMode = EFillMode::Solid;
+
+	FPipelineInfo PipelineInfo = {
+		FireBallInputLayout,
+		FireBallVertexShader,
+		GetRasterizerState(FireBallRenderState),
+		DisableDepthWriteDepthStencilState,
+		FireBallPixelShader,
+		FireBallBlendState, // Additive Blending
+	};
+
+	// 2. 모든 파이어볼 컴포넌트에 대해 반복
+	for (UFireBallComponent* FireBall : InFireBalls)
+	{
+		if (!FireBall) { continue; }
+
+		Pipeline->UpdatePipeline(PipelineInfo);
+
+		// 3. 파이어볼 데이터를 셰이더로 전달
+		FFireBallConstants FireBallData;
+		const FVector& WorldLocation = FireBall->GetWorldLocation();
+		FireBallData.WorldPosition = { WorldLocation.X, WorldLocation.Y, WorldLocation.Z };
+
+		FireBallData.Radius = FireBall->GetRadius();
+		FireBallData.Color = FireBall->GetLinearColor().Color;
+		FireBallData.Intensity = FireBall->GetIntensity();
+		FireBallData.RadiusFallOff = FireBall->GetRadiusFallOff();
+		UpdateConstant(ConstantBufferFireBall, FireBallData, 4, true, true);
+
+		const IBoundingVolume* FireBallBounds = FireBall->GetBoundingBox();
+
+		// 4. 파이어볼 경계 볼륨과 교차하는 프리미티브들을 다시 렌더링
+		for (UPrimitiveComponent* Primitive : InVisiblePrimitives)
+		{
+			if (!Primitive || !Primitive->GetBoundingBox() || Primitive->IsA(UDecalComponent::StaticClass())) { continue; }
+
+			if (FireBallBounds->Intersects(*Primitive->GetBoundingBox()))
+			{
+				// 5. 교차하는 프리미티브를 파이어볼 셰이더로 다시 그립니다.
+				FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
+					Primitive->GetWorldTransformMatrixInverse().Transpose());
+				UpdateConstant(ConstantBufferModels, ModelConstants, 0, true, false);
+
+				Pipeline->SetVertexBuffer(Primitive->GetVertexBuffer(), sizeof(FNormalVertex));
+				if (Primitive->GetIndexBuffer() && Primitive->GetNumIndices() > 0)
+				{
+					Pipeline->SetIndexBuffer(Primitive->GetIndexBuffer(), 0);
+					Pipeline->DrawIndexed(Primitive->GetNumIndices(), 0, 0);
+				}
+				else
+				{
+					Pipeline->Draw(Primitive->GetNumVertices(), 0);
+				}
+			}
+		}
+	}
 
 void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient)
 {
@@ -1824,6 +1899,13 @@ void URenderer::CreateConstantBuffer()
 	}
 
 	{
+		D3D11_BUFFER_DESC FireBallConstantBufferDescription = {};
+		FireBallConstantBufferDescription.ByteWidth = sizeof(FFireBallConstants) + 0xf & 0xfffffff0;
+		FireBallConstantBufferDescription.Usage = D3D11_USAGE_DYNAMIC;
+		FireBallConstantBufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		FireBallConstantBufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		GetDevice()->CreateBuffer(&FireBallConstantBufferDescription, nullptr, &ConstantBufferFireBall);
+    
 		D3D11_BUFFER_DESC desc = {};
 		desc.ByteWidth      = (sizeof(FDepthConstants2D) + 0xF) & ~0xF; // 16바이트 맞춤
 		desc.Usage          = D3D11_USAGE_DYNAMIC;
@@ -1933,6 +2015,47 @@ void URenderer::CreateSpotlightResources()
 	}
 }
 
+void URenderer::CreateFireBallShader()
+{
+	ID3DBlob* FireBallVSBlob;
+	ID3DBlob* FireBallPSBlob;
+
+	D3DCompileFromFile(L"Asset/Shader/FireBallShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &FireBallVSBlob, nullptr);
+	GetDevice()->CreateVertexShader(FireBallVSBlob->GetBufferPointer(), FireBallVSBlob->GetBufferSize(), nullptr, &FireBallVertexShader);
+
+	D3DCompileFromFile(L"Asset/Shader/FireBallShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &FireBallPSBlob, nullptr);
+	GetDevice()->CreatePixelShader(FireBallPSBlob->GetBufferPointer(), FireBallPSBlob->GetBufferSize(), nullptr, &FireBallPixelShader);
+
+	// InputLayout은 보통 동일합니다.
+	D3D11_INPUT_ELEMENT_DESC FireBallLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FNormalVertex, Position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FNormalVertex, Normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FNormalVertex, Color), D3D11_INPUT_PER_VERTEX_DATA, 0	},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FNormalVertex, TexCoord), D3D11_INPUT_PER_VERTEX_DATA, 0	}
+	};
+	GetDevice()->CreateInputLayout(FireBallLayout, ARRAYSIZE(FireBallLayout), FireBallVSBlob->GetBufferPointer(), FireBallVSBlob->GetBufferSize(), &FireBallInputLayout);
+
+	FireBallVSBlob->Release();
+	FireBallPSBlob->Release();
+
+	if (!FireBallBlendState)
+	{
+		D3D11_BLEND_DESC BlendDesc = {};
+		BlendDesc.RenderTarget[0].BlendEnable = TRUE;
+		BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;       // 원본색 기여도 1
+		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;      // 대상색 기여도 1
+		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;    // 두 색을 더함
+		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		GetDevice()->CreateBlendState(&BlendDesc, &FireBallBlendState);
+	}
+
+}
+
 /**
  * @brief 상수 버퍼 소멸 함수
  */
@@ -1945,6 +2068,7 @@ void URenderer::ReleaseConstantBuffer()
 	SafeRelease(ConstantBufferProjectionDecal);
 	SafeRelease(ConstantBufferBatchLine);
 	SafeRelease(ConstantBufferSpotlight);
+	SafeRelease(ConstantBufferFireBall);
 	SafeRelease(ConstantBufferDepth);
 	SafeRelease(ConstantBufferDepth2D);
 }
@@ -1996,7 +2120,7 @@ ID3D11RasterizerState* URenderer::GetRasterizerState(const FRenderState& InRende
 	RasterizerDesc.FillMode = FillMode;
 	RasterizerDesc.CullMode = CullMode;
 	RasterizerDesc.FrontCounterClockwise = TRUE;
-	RasterizerDesc.DepthClipEnable = TRUE; // ✅ 근/원거리 평면 클리핑 활성화 (핵심)
+	RasterizerDesc.DepthClipEnable = TRUE; 
 
 	HRESULT ResultHandle = GetDevice()->CreateRasterizerState(&RasterizerDesc, &RasterizerState);
 

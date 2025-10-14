@@ -12,6 +12,7 @@
 #include "Component/Public/LineComponent.h"
 #include "Component/Public/DecalComponent.h"
 #include "Component/Public/SpotLightComponent.h"
+#include "Component/Public/FireBallComponent.h"
 #include "Component/Mesh/Public/CubeComponent.h"
 #include "Component/Mesh/Public/SphereComponent.h"
 #include "Component/Mesh/Public/SquareComponent.h"
@@ -287,6 +288,14 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 			UBillboardComponent* Billboard = new UBillboardComponent();
 			Billboard->SetSprite(ELightType::Spotlight);
 			AddComponentToActor(std::move(Billboard));
+		}
+		if (ImGui::MenuItem("FireBall Component"))
+		{
+			AddComponentToActor(new UFireBallComponent());
+			UBillboardComponent* Billboard = new UBillboardComponent();
+			Billboard->SetSprite(ELightType::Spotlight);
+			AddComponentToActor(Billboard);
+			InSelectedActor->SetActorTickEnabled(true);
 		}
 
 		ImGui::Separator();
@@ -796,6 +805,41 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 			Spot->UpdateLightColor(FVector4(ColorRGBA[0], ColorRGBA[1], ColorRGBA[2], 1.0f));
 		}
 		ImGui::Separator();
+	}
+	else if (InComponent->IsA(UFireBallComponent::StaticClass()))
+	{
+		UFireBallComponent* FireBall = Cast<UFireBallComponent>(InComponent);
+		ImGui::Text("FireBall Properties");
+
+		// 1. Color (색상)
+		FLinearColor CurrentColor = FireBall->GetLinearColor();
+		FVector4 Color = FireBall->GetColor();
+		float ColorRGB[4] = { Color.X, Color.Y, Color.Z, Color.W};
+		if (ImGui::ColorEdit4("Color", ColorRGB))
+		{
+			FireBall->SetColor({ ColorRGB[0], ColorRGB[1], ColorRGB[2], ColorRGB[3] });
+		}
+
+		// 2. Intensity (빛의 세기)
+		float Intensity = FireBall->GetIntensity();
+		if (ImGui::DragFloat("Intensity", &Intensity, 0.1f, 0.0f, 100.0f))
+		{
+			FireBall->SetIntensity(Intensity);
+		}
+
+		// 3. Radius (반경)
+		float Radius = FireBall->GetRadius();
+		if (ImGui::DragFloat("Radius", &Radius, 0.1f, 0.1f, 1000.0f))
+		{
+			FireBall->SetRadius(Radius);
+		}
+
+		// 4. RadiusFallOff (감쇠 시작 지점)
+		float RadiusFallOff = FireBall->GetRadiusFallOff();
+		if (ImGui::DragFloat("Radius FallOff", &RadiusFallOff, 0.01f, 0.0f, 1.0f))
+		{
+			FireBall->SetRadiusFallOff(RadiusFallOff);
+		}
 	}
 	else
 	{

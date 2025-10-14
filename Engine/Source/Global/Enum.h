@@ -136,6 +136,7 @@ enum class EPrimitiveType : uint8
 	Billboard,
 	Decal,
 	Spotlight,
+	FireBall,
 	Torus,
 	Arrow,
 	CubeArrow,

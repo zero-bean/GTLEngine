@@ -92,6 +92,6 @@ private:
 
     TArray<TObjectPtr<UActorComponent>> ComponentsPendingRemoval;
 
-	bool bIsActorTickEnabled = false;
+	bool bIsActorTickEnabled = true;
 	bool bTickInEditor = false;
 };
