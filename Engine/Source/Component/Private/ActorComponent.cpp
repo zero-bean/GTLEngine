@@ -23,18 +23,6 @@ UActorComponent::~UActorComponent()
 void UActorComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
 	Super::Serialize(bInIsLoading, InOutHandle);
-
-	if (bInIsLoading)
-	{
-		if (InOutHandle.hasKey("Name"))
-		{
-			SetName(FName(InOutHandle["Name"].ToString()));
-		}
-	}
-	else
-	{
-		InOutHandle["Name"] = GetName().ToString();
-	}
 }
 
 UObject* UActorComponent::Duplicate(FObjectDuplicationParameters Parameters)
