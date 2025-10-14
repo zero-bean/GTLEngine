@@ -94,6 +94,7 @@ public:
 	void RenderBegin() const;
 	void RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewportClient);
 	void RenderEnd() const;
+
 	void RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* InMeshComp, ID3D11RasterizerState* InRasterizerState, ID3D11Buffer* InConstantBufferModels, ID3D11Buffer* InConstantBufferMaterial);
 	void RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* InCurrentCamera);
 	void RenderText(UTextRenderComponent* InBillBoardComp, UCamera* InCurrentCamera);
@@ -163,10 +164,12 @@ public:
 	FViewport* GetViewportClient() const { return ViewportClient; }
 	bool GetIsResizing() const { return bIsResizing; }
 	bool GetOcclusionCullingEnabled() const { return bOcclusionCulling; }
+	bool GetFXAAEnabled() const { return bFXAAEnabled; }
 
 	void SetIsResizing(bool isResizing) { bIsResizing = isResizing; }
 	void SetOcclusionCullingEnabled(bool bEnabled) { bOcclusionCulling = bEnabled; }
 	void ResetOcclusionCullingState() { bIsFirstPass = true; }
+    void SetFXAAEnabled(bool bEnabled) { bFXAAEnabled = bEnabled; }
 
 private:
 	void PerformOcclusionCulling(UCamera* InCurrentCamera, const TArray<TObjectPtr<UPrimitiveComponent>>& InPrimitiveComponents);
@@ -218,6 +221,8 @@ private:
 	ID3D11VertexShader* SceneDepthVertexShader = nullptr;
 	ID3D11PixelShader* SceneDepthPixelShader= nullptr;;
 
+	class UFXAAPass* FXAA = nullptr;
+
 	uint32 Stride = 0;
 
 	FViewport* ViewportClient = nullptr;
@@ -258,6 +263,7 @@ private:
 
 	bool bIsFirstPass = true;
 	bool bOcclusionCulling = true;
+	bool bFXAAEnabled = true;
 
 	bool bIsSceneDepth = true;
 

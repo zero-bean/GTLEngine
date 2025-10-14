@@ -22,6 +22,7 @@
 #include "Source/Component/Mesh/Public/StaticMesh.h"
 
 #include "Render/Renderer/Public/OcclusionRenderer.h"
+#include "Render/Renderer/Public/FXAAPass.h"
 #include "Physics/Public/AABB.h"
 
 #include "Core/Public/ScopeCycleCounter.h"
@@ -62,11 +63,13 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateDefaultShader();
 	CreateTextureShader();
 	CreateProjectionDecalShader();
-	CreateSpotlightShader();
+    CreateSpotlightShader();
 	CreateSceneDepthViewModeShader();
 	CreateConstantBuffer();
 	CreateBillboardResources();
 	CreateSpotlightResources();
+    FXAA = new UFXAAPass();
+    FXAA->Initialize(DeviceResources);
 
 	// FontRenderer 초기화
 	FontRenderer = new UFontRenderer();
@@ -157,7 +160,8 @@ void URenderer::Release()
 	ReleaseBillboardResources();
 	ReleaseSpotlightResources();
 	ReleaseTextureShader();
-	ReleaseProjectionDecalShader();
+    ReleaseProjectionDecalShader();
+    if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
 
 	SafeDelete(ViewportClient);
 
@@ -552,6 +556,12 @@ void URenderer::Tick(float DeltaSeconds)
 		GEngine->GetEditor()->RenderEditor(*Pipeline, CurrentCamera);
 	}
 
+    // Apply post-process (FXAA) before UI so UI remains crisp
+    if (bFXAAEnabled && FXAA && GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth)
+    {
+        FXAA->Apply(Pipeline, ViewportClient, DisabledDepthStencilState, ClearColor);
+    }
+
 	// 최상위 에디터/GUI는 프레임에 1회만
 	UUIManager::GetInstance().Render();
 	UStatOverlay::GetInstance().Render();
@@ -565,7 +575,9 @@ void URenderer::Tick(float DeltaSeconds)
  */
 void URenderer::RenderBegin() const
 {
-	auto* RenderTargetView = DeviceResources->GetRenderTargetView();
+    // Render scene into FXAA scene color target when enabled and not in SceneDepth view mode
+    const bool bUseFXAAPath = bFXAAEnabled && FXAA && (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth);
+    ID3D11RenderTargetView* RenderTargetView = bUseFXAAPath ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
 	GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
 	auto* DepthStencilView = DeviceResources->GetDepthStencilView();
 	GetDeviceContext()->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -625,7 +637,7 @@ void URenderer::PerformOcclusionCulling(UCamera* InCurrentCamera, const TArray<T
 		OcclusionRenderer.OcclusionTest(GetDevice(), GetDeviceContext())
 	);
 
-	ID3D11RenderTargetView* RTV = DeviceResources->GetRenderTargetView();
+	ID3D11RenderTargetView* RTV = (bFXAAEnabled && FXAA && (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth) && FXAA->GetSceneRTV()) ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
 	GetDeviceContext()->OMSetRenderTargets(1, &RTV, DeviceResources->GetDepthStencilView());
 }
 
@@ -795,7 +807,7 @@ void URenderer::RenderLevel_MultiThreaded(UCamera* InCurrentCamera, FViewportCli
 			UPipeline ThreadPipeline(DeferredContext);
 			InViewportClient.Apply(DeferredContext);
 
-			auto* RTV = DeviceResources->GetRenderTargetView();
+			auto* RTV = (bFXAAEnabled && FXAA && (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth) && FXAA->GetSceneRTV()) ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
 			auto* DSV = DeviceResources->GetDepthStencilView();
 			DeferredContext->OMSetRenderTargets(1, &RTV, DSV);
 			ThreadPipeline.SetConstantBuffer(1, true, ConstantBufferViewProj);
@@ -1580,9 +1592,11 @@ void URenderer::OnResize(uint32 InWidth, uint32 InHeight)
 	UStatOverlay::GetInstance().PreResize();
 
 	DeviceResources->OnWindowSizeChanged(InWidth, InHeight);
+	// Recreate FXAA render target to match new size
+	if (FXAA) FXAA->OnResize();
 
 	// 새로운 렌더 타겟 바인딩
-	auto* RenderTargetView = DeviceResources->GetRenderTargetView();
+	auto* RenderTargetView = (bFXAAEnabled && FXAA && (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth) && FXAA->GetSceneRTV()) ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
 	ID3D11RenderTargetView* RenderTargetViews[] = { RenderTargetView };
 	GetDeviceContext()->OMSetRenderTargets(1, RenderTargetViews, DeviceResources->GetDepthStencilView());
 	UStatOverlay::GetInstance().OnResize();

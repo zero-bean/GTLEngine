@@ -415,6 +415,22 @@ void UMainBarWidget::RenderGraphicsMenu()
 				break;
 		}
 
+		ImGui::Separator();
+
+		// FXAA toggle
+		{
+			URenderer& RendererInstance = URenderer::GetInstance();
+			bool bFXAA = RendererInstance.GetFXAAEnabled();
+			if (ImGui::Checkbox("FXAA (Fast Approximate AA)", &bFXAA))
+			{
+				RendererInstance.SetFXAAEnabled(bFXAA);
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip(bFXAA ? "Disable screen-space AA (sharper UI)" : "Enable FXAA (reduce edges aliasing)");
+			}
+		}
+
 		ImGui::EndMenu();
 	}
 }
