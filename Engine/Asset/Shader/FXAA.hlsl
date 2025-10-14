@@ -70,7 +70,7 @@ float4 PS(VSOut i) : SV_Target
 	dir.x = -((lNW + lNE) - (lSW + lSE));
 	dir.y =  ((lNW + lSW) - (lNE + lSE));
 
-    float dirReduce = max((lumaN + lumaS + lumaW + lumaE) * (0.25 * 1/8), 0.0004);
+    float dirReduce = max((lumaN + lumaS + lumaW + lumaE) * (0.25 * 1/8), 1/128.0f);
     float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
 	// dir = saturate(dir * rcpDirMin) * rcp;
 	dir *= rcpDirMin;                 // scale by inverse smallest axis + reduce

@@ -318,6 +318,7 @@
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
     <ClInclude Include="Source\Component\Movement\Public\MovementComponent.h" />
+    <ClInclude Include="Source\Component\Movement\Public\ProjectileMovementComponent.h" />
     <ClInclude Include="Source\Component\Movement\Public\RotatingMovementComponent.h" />
     <ClInclude Include="Source\Component\Public\ActorComponent.h" />
     <ClInclude Include="Source\Component\Public\BillboardComponent.h" />
@@ -489,6 +490,7 @@
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
     <ClCompile Include="Source\Component\Movement\Private\MovementComponent.cpp" />
+    <ClCompile Include="Source\Component\Movement\Private\ProjectileMovementComponent.cpp" />
     <ClCompile Include="Source\Component\Movement\Private\RotatingMovementComponent.cpp" />
     <ClCompile Include="Source\Component\Private\ActorComponent.cpp" />
     <ClCompile Include="Source\Component\Private\BillboardComponent.cpp" />
