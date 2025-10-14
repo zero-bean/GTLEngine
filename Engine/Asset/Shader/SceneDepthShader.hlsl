@@ -1,11 +1,9 @@
 cbuffer DepthConstants : register(b0)
 {
 	row_major float4x4 InvViewProj;
-	float3 CameraPosWS;
-	float NearZ;
-	float4 ViewportRect; // xy: top-left offset, zw: size (normalized 0-1)
-	float FarZ;
-	float3 Padding;
+	float4 CameraPosWSAndNear; // xyz: camera position, w: near clip
+	float4 ViewportRect;        // xy: normalized top-left, zw: normalized size
+	float4 FarAndPadding;       // x: far clip, yzw: padding
 }
 
 Texture2D DepthTexture : register(t0);
@@ -39,7 +37,7 @@ float LinearEyeDistance(float2 localUV)
 
 	float4 world = mul(clip, InvViewProj);
 	world /= world.w;
-	return distance(world.xyz, CameraPosWS);
+	return distance(world.xyz, CameraPosWSAndNear.xyz);
 }
 
 PS_INPUT mainVS(VS_INPUT input)
@@ -48,7 +46,7 @@ PS_INPUT mainVS(VS_INPUT input)
 
 	// 풀스크린 삼각형
 	float2 uv = float2((input.vertexID << 1) & 2, input.vertexID & 2);
-	output.tex = uv * 0.5f;
+	output.tex = uv;// * 0.5f;
 	output.position = float4(uv * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
 
 	return output;

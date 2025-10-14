@@ -1212,10 +1212,10 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportCl
 	FMatrix ViewProj  = View * Proj;
 	FMatrix InvVP     = ViewProj.Inverse();
 
-	SceneDepthData.InvViewProj  = InvVP;
-	SceneDepthData.CameraPosWS  = Cam->GetLocation();
-	SceneDepthData.NearZ        = Cam->GetNearZ();
-	SceneDepthData.FarZ         = Cam->GetFarZ();
+	SceneDepthData.InvViewProj = InvVP;
+	const FVector CameraPos = Cam->GetLocation();
+	SceneDepthData.CameraPosWSAndNear = FVector4(CameraPos.X, CameraPos.Y, CameraPos.Z, Cam->GetNearZ());
+	SceneDepthData.FarAndPadding = FVector4(Cam->GetFarZ(), 0.0f, 0.0f, 0.0f);
 
 	const D3D11_VIEWPORT& FullViewport = DeviceResources->GetViewportInfo();
 	const D3D11_VIEWPORT& SubViewport  = InViewportClient.GetViewportInfo();
