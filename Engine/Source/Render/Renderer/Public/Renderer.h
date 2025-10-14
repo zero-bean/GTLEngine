@@ -200,7 +200,6 @@ private:
 	ID3D11Buffer* ConstantBufferHeightFog = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
-	mutable bool bSceneColorTargetActive = false;
 
 	ID3D11VertexShader* DefaultVertexShader = nullptr;
 	ID3D11PixelShader* DefaultPixelShader = nullptr;
@@ -213,6 +212,7 @@ private:
 	ID3D11Buffer* BillboardVertexBuffer = nullptr;
 	ID3D11Buffer* BillboardIndexBuffer = nullptr;
 	ID3D11BlendState* BillboardBlendState = nullptr;
+	ID3D11BlendState* HeightFogBlendState = nullptr;
 
 	ID3D11VertexShader* ProjectionDecalVertexShader = nullptr;
 	ID3D11PixelShader* ProjectionDecalPixelShader = nullptr;

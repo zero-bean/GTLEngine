@@ -472,6 +472,25 @@ void URenderer::CreateHeightFogShader()
 
 	HeightFogVSBlob->Release();
 	HeightFogPSBlob->Release();
+
+	if (!HeightFogBlendState)
+	{
+		D3D11_BLEND_DESC BlendDesc = {};
+		BlendDesc.RenderTarget[0].BlendEnable = TRUE;
+		BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		HRESULT hr = GetDevice()->CreateBlendState(&BlendDesc, &HeightFogBlendState);
+		if (FAILED(hr))
+		{
+			UE_LOG_ERROR("Renderer: Failed to create height fog blend state (HRESULT: 0x%08lX)", hr);
+		}
+	}
 }
 
 /**
@@ -534,6 +553,7 @@ void URenderer::ReleaseHeightFogShader()
 {
 	SafeRelease(HeightFogVertexShader);
 	SafeRelease(HeightFogPixelShader);
+	SafeRelease(HeightFogBlendState);
 }
 
 /**
@@ -564,36 +584,10 @@ void URenderer::Tick(float DeltaSeconds)
 {
 	RenderBegin();
 	// FViewportClient로부터 모든 뷰포트를 가져옵니다.
-	const EViewModeIndex CurrentViewMode = GEngine->GetEditor()->GetViewMode();
-	const bool bSceneDepthView = (CurrentViewMode == EViewModeIndex::VMI_SceneDepth) || (CurrentViewMode == EViewModeIndex::VMI_SceneDepth2D);
-	const bool bSupportsHeightFog = !bSceneDepthView && !(bFXAAEnabled && FXAA) && HeightFogVertexShader && HeightFogPixelShader;
 	for (FViewportClient& ViewportClient : ViewportClient->GetViewports())
 	{
 		// 0. 현재 뷰포트가 닫혀있다면 렌더링을 하지 않습니다.
 		if (ViewportClient.GetViewportInfo().Width < 1.0f || ViewportClient.GetViewportInfo().Height < 1.0f) { continue; }
-
-		if (bSupportsHeightFog)
-		{
-			ID3D11RenderTargetView* SceneRTV = DeviceResources->GetSceneColorRenderTargetView();
-			if (SceneRTV)
-			{
-				GetDeviceContext()->OMSetRenderTargets(1, &SceneRTV, DeviceResources->GetDepthStencilView());
-				GetDeviceContext()->ClearRenderTargetView(SceneRTV, ClearColor);
-				bSceneColorTargetActive = true;
-			}
-			else
-			{
-				ID3D11RenderTargetView* DefaultRTV = DeviceResources->GetRenderTargetView();
-				GetDeviceContext()->OMSetRenderTargets(1, &DefaultRTV, DeviceResources->GetDepthStencilView());
-				bSceneColorTargetActive = false;
-			}
-		}
-		else
-		{
-			ID3D11RenderTargetView* DefaultRTV = DeviceResources->GetRenderTargetView();
-			GetDeviceContext()->OMSetRenderTargets(1, &DefaultRTV, DeviceResources->GetDepthStencilView());
-			bSceneColorTargetActive = false;
-		}
 
 		// 1. 현재 뷰포트의 영역을 설정합니다.
 		ViewportClient.Apply(GetDeviceContext());
@@ -634,7 +628,6 @@ void URenderer::Tick(float DeltaSeconds)
  */
 void URenderer::RenderBegin() const
 {
-	bSceneColorTargetActive = false;
 	// Render scene into FXAA scene color target when enabled and not in SceneDepth view mode
 	const bool bUseFXAAPath = bFXAAEnabled && FXAA && (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth);
 	ID3D11RenderTargetView* RenderTargetView = bUseFXAAPath ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
@@ -1320,20 +1313,24 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportCl
 
 void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient)
 {
-	if (!bSceneColorTargetActive)
-	{
-		return;
-	}
-
 	const EViewModeIndex ViewMode = GEngine->GetEditor()->GetViewMode();
 	if (ViewMode == EViewModeIndex::VMI_SceneDepth || ViewMode == EViewModeIndex::VMI_SceneDepth2D)
 	{
 		return;
 	}
 
-	ID3D11ShaderResourceView* SceneColorSRV = DeviceResources->GetColorShaderResourceView();
+	if (bFXAAEnabled && FXAA)
+	{
+		return;
+	}
+
+	if (!HeightFogVertexShader || !HeightFogPixelShader || !ConstantBufferHeightFog)
+	{
+		return;
+	}
+
 	ID3D11ShaderResourceView* DepthSRV = DeviceResources->GetDetphShaderResourceView();
-	if (!SceneColorSRV || !DepthSRV)
+	if (!DepthSRV)
 	{
 		return;
 	}
@@ -1348,7 +1345,7 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 		GetRasterizerState(HeightFogState),
 		DisabledDepthStencilState,
 		HeightFogPixelShader,
-		nullptr,
+		HeightFogBlendState,
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
 	};
 
@@ -1391,23 +1388,19 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 	UpdateConstant(ConstantBufferHeightFog, HeightFogData, 1, false, true);
 
 	ID3D11RenderTargetView* FrameRTV = DeviceResources->GetRenderTargetView();
-	GetDeviceContext()->OMSetRenderTargets(1, &FrameRTV, nullptr);
+	ID3D11DepthStencilView* DepthDSV = DeviceResources->GetDepthStencilView();
+	GetDeviceContext()->OMSetRenderTargets(1, &FrameRTV, DepthDSV);
 	InViewportClient.Apply(GetDeviceContext());
 
-	Pipeline->SetTexture(0, false, SceneColorSRV);
-	Pipeline->SetTexture(1, false, DepthSRV);
+	Pipeline->SetTexture(0, false, DepthSRV);
 	Pipeline->SetSamplerState(0, false, DeviceResources->GetDepthSamplerState());
 
 	Pipeline->SetVertexBuffer(nullptr, 0);
 	Pipeline->SetIndexBuffer(nullptr, 0);
 	Pipeline->Draw(3, 0);
 
-	ID3D11ShaderResourceView* NullSRVs[2] = { nullptr, nullptr };
-	GetDeviceContext()->PSSetShaderResources(0, 2, NullSRVs);
-
-	ID3D11RenderTargetView* rtvs[] = { FrameRTV };
-	GetDeviceContext()->OMSetRenderTargets(1, rtvs, DeviceResources->GetDepthStencilView());
-	bSceneColorTargetActive = false;
+	ID3D11ShaderResourceView* NullSRV = nullptr;
+	GetDeviceContext()->PSSetShaderResources(0, 1, &NullSRV);
 }
 
 /**
