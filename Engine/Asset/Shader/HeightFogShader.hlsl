@@ -49,7 +49,8 @@ float2 LinearEyeDistance(float2 localUV)
 	float depth01 = DepthTexture.SampleLevel(SamplerPoint, uv, 0).r;
 
 	float2 ndcXY = uv * 2.0f - 1.0f; // -1 ~ 1
-	float4 clip = float4(ndcXY, depth01, 1.0f);
+	float zClip = depth01 * 2.0f - 1.0f;
+	float4 clip = float4(ndcXY, zClip, 1.0f);
 
 	float4 world = mul(clip, InvViewProj);
 	world /= world.w; // clip에서 w를 1로 줬으므로, 임의로 world에서 w를 나눠야한다.
@@ -66,7 +67,7 @@ PS_INPUT mainVS(VS_INPUT input)
 
 	// 풀스크린 삼각형
 	float2 uv = float2((input.vertexID << 1) & 2, input.vertexID & 2); // 00 02 20
-	output.tex = uv;
+	output.tex = uv;// * 0.5f;
 	output.position = float4(uv * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f); //-11 -13 -31
 
 	return output;
@@ -81,14 +82,14 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 	float depth01 = DepthTexture.SampleLevel(SamplerPoint, GetFullUV(input.tex), 0).r;
 	if (depth01 >= 0.9999f) {
 		// 하늘은 별도 처리: 안개 0 또는 멀리로 간주
-		return SceneColorTex.Sample(SamplerPoint, input.tex);
+		return SceneColorTex.Sample(SamplerPoint, GetFullUV(input.tex));
 	}
 
 	// 거리 컷인/컷오프
 	float depth = max(0.0f, WorldDepth - StartDistance);
 	if (FogCutoffDistance > 0.0f && WorldDepth > FogCutoffDistance)
 	{
-		float4 SceneColor = SceneColorTex.Sample(SamplerPoint, input.tex);
+		float4 SceneColor = SceneColorTex.Sample(SamplerPoint, GetFullUV(input.tex));
 		return SceneColor; // 또는 Alpha=0
 	}
 
@@ -99,7 +100,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 	float T = exp(-Sigma*depth);
 	float Alpha = saturate(min(1.0f - T, FogMaxOpacity));
 
-	float4 SceneColor = SceneColorTex.Sample(SamplerPoint, input.tex);
+	float4 SceneColor = SceneColorTex.Sample(SamplerPoint, GetFullUV(input.tex));
 	float4 OutColor = lerp(SceneColor, FogInscatteringColor , Alpha);
-	return OutColor;
+	return SceneColor;
 }

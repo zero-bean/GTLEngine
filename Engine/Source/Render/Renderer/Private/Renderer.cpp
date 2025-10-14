@@ -462,13 +462,13 @@ void URenderer::CreateHeightFogShader()
 		&HeightFogVSBlob, nullptr);
 
 	GetDevice()->CreateVertexShader(HeightFogVSBlob->GetBufferPointer(),
-		HeightFogVSBlob->GetBufferSize(), nullptr, &SceneDepthVertexShader);
+		HeightFogVSBlob->GetBufferSize(), nullptr, &HeightFogVertexShader);
 
 	D3DCompileFromFile(L"Asset/Shader/HeightFogShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
 		&HeightFogPSBlob, nullptr);
 
 	GetDevice()->CreatePixelShader(HeightFogPSBlob->GetBufferPointer(),
-		HeightFogPSBlob->GetBufferSize(), nullptr, &SceneDepthPixelShader);
+		HeightFogPSBlob->GetBufferSize(), nullptr, &HeightFogPixelShader);
 
 	HeightFogVSBlob->Release();
 	HeightFogPSBlob->Release();
@@ -532,8 +532,8 @@ void URenderer::ReleaseSceneDepthViewModeShader()
 
 void URenderer::ReleaseHeightFogShader()
 {
-	SafeRelease(SceneDepthVertexShader);
-	SafeRelease(SceneDepthPixelShader);
+	SafeRelease(HeightFogVertexShader);
+	SafeRelease(HeightFogPixelShader);
 }
 
 /**
@@ -564,10 +564,36 @@ void URenderer::Tick(float DeltaSeconds)
 {
 	RenderBegin();
 	// FViewportClient로부터 모든 뷰포트를 가져옵니다.
+	const EViewModeIndex CurrentViewMode = GEngine->GetEditor()->GetViewMode();
+	const bool bSceneDepthView = (CurrentViewMode == EViewModeIndex::VMI_SceneDepth) || (CurrentViewMode == EViewModeIndex::VMI_SceneDepth2D);
+	const bool bSupportsHeightFog = !bSceneDepthView && !(bFXAAEnabled && FXAA) && HeightFogVertexShader && HeightFogPixelShader;
 	for (FViewportClient& ViewportClient : ViewportClient->GetViewports())
 	{
 		// 0. 현재 뷰포트가 닫혀있다면 렌더링을 하지 않습니다.
 		if (ViewportClient.GetViewportInfo().Width < 1.0f || ViewportClient.GetViewportInfo().Height < 1.0f) { continue; }
+
+		if (bSupportsHeightFog)
+		{
+			ID3D11RenderTargetView* SceneRTV = DeviceResources->GetSceneColorRenderTargetView();
+			if (SceneRTV)
+			{
+				GetDeviceContext()->OMSetRenderTargets(1, &SceneRTV, DeviceResources->GetDepthStencilView());
+				GetDeviceContext()->ClearRenderTargetView(SceneRTV, ClearColor);
+				bSceneColorTargetActive = true;
+			}
+			else
+			{
+				ID3D11RenderTargetView* DefaultRTV = DeviceResources->GetRenderTargetView();
+				GetDeviceContext()->OMSetRenderTargets(1, &DefaultRTV, DeviceResources->GetDepthStencilView());
+				bSceneColorTargetActive = false;
+			}
+		}
+		else
+		{
+			ID3D11RenderTargetView* DefaultRTV = DeviceResources->GetRenderTargetView();
+			GetDeviceContext()->OMSetRenderTargets(1, &DefaultRTV, DeviceResources->GetDepthStencilView());
+			bSceneColorTargetActive = false;
+		}
 
 		// 1. 현재 뷰포트의 영역을 설정합니다.
 		ViewportClient.Apply(GetDeviceContext());
@@ -608,9 +634,10 @@ void URenderer::Tick(float DeltaSeconds)
  */
 void URenderer::RenderBegin() const
 {
-    // Render scene into FXAA scene color target when enabled and not in SceneDepth view mode
-    const bool bUseFXAAPath = bFXAAEnabled && FXAA && (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth);
-    ID3D11RenderTargetView* RenderTargetView = bUseFXAAPath ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
+	bSceneColorTargetActive = false;
+	// Render scene into FXAA scene color target when enabled and not in SceneDepth view mode
+	const bool bUseFXAAPath = bFXAAEnabled && FXAA && (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth);
+	ID3D11RenderTargetView* RenderTargetView = bUseFXAAPath ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
 	GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
 
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
@@ -1293,11 +1320,28 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportCl
 
 void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient)
 {
+	if (!bSceneColorTargetActive)
+	{
+		return;
+	}
+
+	const EViewModeIndex ViewMode = GEngine->GetEditor()->GetViewMode();
+	if (ViewMode == EViewModeIndex::VMI_SceneDepth || ViewMode == EViewModeIndex::VMI_SceneDepth2D)
+	{
+		return;
+	}
+
+	ID3D11ShaderResourceView* SceneColorSRV = DeviceResources->GetColorShaderResourceView();
+	ID3D11ShaderResourceView* DepthSRV = DeviceResources->GetDetphShaderResourceView();
+	if (!SceneColorSRV || !DepthSRV)
+	{
+		return;
+	}
+
 	FRenderState HeightFogState = {};
 	HeightFogState.CullMode = ECullMode::None;
 	HeightFogState.FillMode = EFillMode::Solid;
 
-	// Pipeline 정보 구성
 	FPipelineInfo PipelineInfo = {
 		nullptr,
 		HeightFogVertexShader,
@@ -1310,28 +1354,21 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 
 	Pipeline->UpdatePipeline(PipelineInfo);
 
-	// constant buffer update
 	FullscreenDepthConstants SceneDepthData{};
-
-	// 1) InvViewProj 계산
 	UCamera* Cam = InCurrentCamera;
 	const FViewProjConstants& VP = Cam->GetFViewProjConstants();
 	FMatrix View      = VP.View;
 	FMatrix Proj      = VP.Projection;
 	FMatrix ViewProj  = View * Proj;
-	FMatrix InvVP     = ViewProj.Inverse();
-
-	SceneDepthData.InvViewProj = InvVP;
+	SceneDepthData.InvViewProj = ViewProj.Inverse();
 	const FVector CameraPos = Cam->GetLocation();
 	SceneDepthData.CameraPosWSAndNear = FVector4(CameraPos.X, CameraPos.Y, CameraPos.Z, Cam->GetNearZ());
 	SceneDepthData.FarAndPadding = FVector4(Cam->GetFarZ(), 0.0f, 0.0f, 0.0f);
 
 	const D3D11_VIEWPORT& FullViewport = DeviceResources->GetViewportInfo();
 	const D3D11_VIEWPORT& SubViewport  = InViewportClient.GetViewportInfo();
-
 	const float InvFullWidth  = FullViewport.Width  > 0.0f ? 1.0f / FullViewport.Width  : 0.0f;
 	const float InvFullHeight = FullViewport.Height > 0.0f ? 1.0f / FullViewport.Height : 0.0f;
-
 	SceneDepthData.ViewportRect = FVector4(
 		SubViewport.TopLeftX * InvFullWidth,
 		SubViewport.TopLeftY * InvFullHeight,
@@ -1339,9 +1376,9 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 		SubViewport.Height   * InvFullHeight
 	);
 
-	UpdateConstant(ConstantBufferDepth, SceneDepthData, 0, true, true);
+	UpdateConstant(ConstantBufferDepth2D, SceneDepthData, 0, true, true);
 
-	float Color[4] = {0.0f, 1.0f, 1.0f, 1.0f};
+	float FogColor[4] = { 0.0f, 1.0f, 1.0f, 1.0f };
 	FHeightFogConstants HeightFogData(
 		1.0f,
 		1.0f,
@@ -1349,48 +1386,28 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 		100.0f,
 		1.0f,
 		50.0f,
-		Color
-		);
+		FogColor
+	);
+	UpdateConstant(ConstantBufferHeightFog, HeightFogData, 1, false, true);
 
-	UpdateConstant(ConstantBufferHeightFog, HeightFogData, 0, false, true);
-
-	ID3D11RenderTargetView* CurrentRTV = DeviceResources->GetRenderTargetView();
-	ID3D11DepthStencilView* CurrentDSV = DeviceResources->GetDepthStencilView();
-
-	ID3D11RenderTargetView* Targets[1] = { CurrentRTV };
-	GetDeviceContext()->OMSetRenderTargets(1, Targets, nullptr);
-
+	ID3D11RenderTargetView* FrameRTV = DeviceResources->GetRenderTargetView();
+	GetDeviceContext()->OMSetRenderTargets(1, &FrameRTV, nullptr);
 	InViewportClient.Apply(GetDeviceContext());
 
-	// Bind SRV, Sampler
-	ID3D11DepthStencilView* depthSRV = DeviceResources->GetDepthStencilView();
-	ID3D11RenderTargetView* colorRTV[] = { DeviceResources->GetSceneColorRenderTargetView() };
-	GetDeviceContext()->OMSetRenderTargets(1, colorRTV, depthSRV);
-
-	ID3D11ShaderResourceView* colorSRV = DeviceResources->GetColorShaderResourceView();
-	Pipeline->SetTexture(0, false, DeviceResources->GetColorShaderResourceView());
-	Pipeline->SetTexture(1, false, DeviceResources->GetDetphShaderResourceView());
-
-	ID3D11RenderTargetView* frameRTV[] = { DeviceResources->GetRenderTargetView() };
-	GetDeviceContext()->OMSetRenderTargets(1, frameRTV, nullptr);
-
-	ID3D11ShaderResourceView* nullSRVs[2] = { nullptr, nullptr };
-	Pipeline->SetTexture(0, false, nullSRVs[0]);
-	Pipeline->SetTexture(1, false, nullSRVs[1]);
-
+	Pipeline->SetTexture(0, false, SceneColorSRV);
+	Pipeline->SetTexture(1, false, DepthSRV);
 	Pipeline->SetSamplerState(0, false, DeviceResources->GetDepthSamplerState());
 
 	Pipeline->SetVertexBuffer(nullptr, 0);
 	Pipeline->SetIndexBuffer(nullptr, 0);
-
 	Pipeline->Draw(3, 0);
 
-	//  depth SRV 언바인드
-	ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
-	GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
+	ID3D11ShaderResourceView* NullSRVs[2] = { nullptr, nullptr };
+	GetDeviceContext()->PSSetShaderResources(0, 2, NullSRVs);
 
-	Targets[0] = CurrentRTV;
-	GetDeviceContext()->OMSetRenderTargets(1, Targets, CurrentDSV);
+	ID3D11RenderTargetView* rtvs[] = { FrameRTV };
+	GetDeviceContext()->OMSetRenderTargets(1, rtvs, DeviceResources->GetDepthStencilView());
+	bSceneColorTargetActive = false;
 }
 
 /**
