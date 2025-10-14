@@ -13,4 +13,6 @@ public:
 	FVector RotationRate;
 
 	void TickComponent(float DeltaSeconds) override;
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
 };
