@@ -66,10 +66,9 @@ public:
 	void CreateDepthStencilState();
 	void CreateDefaultShader();
 	void CreateTextureShader();
-	void CreateProjectionDecalShader();
-	void CreateSpotlightShader();
-	void CreateFXAAResources();
-	void CreateConstantBuffer();
+    void CreateProjectionDecalShader();
+    void CreateSpotlightShader();
+    void CreateConstantBuffer();
 	void CreateBillboardResources();
 	void CreateSpotlightResrouces();
 
@@ -81,15 +80,14 @@ public:
 	void ReleaseBillboardResources();
 	void ReleaseTextureShader();
 	void ReleaseProjectionDecalShader();
-	void ReleaseSpotlightShader();
-	void ReleaseFXAAResources();
+    void ReleaseSpotlightShader();
 
 	// Render
 	void Tick(float DeltaSeconds);
 	void RenderBegin() const;
 	void RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewportClient);
 	void RenderEnd() const;
-	void ApplyFXAA();
+
 	void RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* InMeshComp, ID3D11RasterizerState* InRasterizerState, ID3D11Buffer* InConstantBufferModels, ID3D11Buffer* InConstantBufferMaterial);
 	void RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* InCurrentCamera);
 	void RenderText(UTextRenderComponent* InBillBoardComp, UCamera* InCurrentCamera);
@@ -186,7 +184,6 @@ private:
 	ID3D11Buffer* ConstantBufferMaterial = nullptr;
 	ID3D11Buffer* ConstantBufferProjectionDecal = nullptr;
 	ID3D11Buffer* ConstantBufferSpotlight = nullptr;
-	ID3D11Buffer* ConstantBufferFXAA = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -212,13 +209,7 @@ private:
 	ID3D11InputLayout* SpotlightInputLayout = nullptr;
 	ID3D11BlendState* SpotlightBlendState = nullptr;
 
-	// FXAA resources
-	ID3D11Texture2D* FXAASceneTexture = nullptr;
-	ID3D11RenderTargetView* FXAASceneRTV = nullptr;
-	ID3D11ShaderResourceView* FXAASceneSRV = nullptr;
-	ID3D11VertexShader* FXAAVertexShader = nullptr;
-	ID3D11PixelShader* FXAAPixelShader = nullptr;
-	ID3D11SamplerState* FXAASampler = nullptr;
+    class UFXAAPass* FXAA = nullptr;
 
 	uint32 Stride = 0;
 

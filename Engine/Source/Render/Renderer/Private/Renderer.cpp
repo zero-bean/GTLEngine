@@ -22,17 +22,13 @@
 #include "Source/Component/Mesh/Public/StaticMesh.h"
 
 #include "Render/Renderer/Public/OcclusionRenderer.h"
+#include "Render/Renderer/Public/FXAAPass.h"
 #include "Physics/Public/AABB.h"
 
 #include "Core/Public/ScopeCycleCounter.h"
 
 #include "cpp-thread-pool/thread_pool.h"
 
-// FXAA constant layout for per-viewport sub-rect
-struct FFXAAConstants
-{
-    FVector4 ViewportRect; // xy: offset (norm), zw: scale (norm)
-};
 
 #ifdef _
 #define PROFILE_SCOPE(name, expr) \
@@ -68,8 +64,9 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateDefaultShader();
 	CreateTextureShader();
 	CreateProjectionDecalShader();
-	CreateSpotlightShader();
-	CreateFXAAResources();
+    CreateSpotlightShader();
+    FXAA = new UFXAAPass();
+    FXAA->Initialize(DeviceResources);
 	CreateConstantBuffer();
 	CreateBillboardResources();
 	CreateSpotlightResrouces();
@@ -162,8 +159,8 @@ void URenderer::Release()
 	ReleaseRasterizerState();
 	ReleaseBillboardResources();
 	ReleaseTextureShader();
-	ReleaseProjectionDecalShader();
-	ReleaseFXAAResources();
+    ReleaseProjectionDecalShader();
+    if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
 
 	SafeDelete(ViewportClient);
 
@@ -522,8 +519,11 @@ void URenderer::Tick(float DeltaSeconds)
 		GEngine->GetEditor()->RenderEditor(*Pipeline, CurrentCamera);
 	}
 
-	// Apply post-process (FXAA) before UI so UI remains crisp
-	ApplyFXAA();
+    // Apply post-process (FXAA) before UI so UI remains crisp
+    if (bFXAAEnabled && FXAA)
+    {
+        FXAA->Apply(Pipeline, ViewportClient, DisabledDepthStencilState, ClearColor);
+    }
 
 	// 최상위 에디터/GUI는 프레임에 1회만
 	UUIManager::GetInstance().Render();
@@ -539,7 +539,7 @@ void URenderer::Tick(float DeltaSeconds)
 void URenderer::RenderBegin() const
 {
 	// Render scene into FXAA scene color target instead of back buffer when enabled
-	ID3D11RenderTargetView* RenderTargetView = (bFXAAEnabled && FXAASceneRTV) ? FXAASceneRTV : DeviceResources->GetRenderTargetView();
+    ID3D11RenderTargetView* RenderTargetView = (bFXAAEnabled && FXAA && FXAA->GetSceneRTV()) ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
 	GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
 	auto* DepthStencilView = DeviceResources->GetDepthStencilView();
 	GetDeviceContext()->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -548,140 +548,6 @@ void URenderer::RenderBegin() const
 
 	GetDeviceContext()->OMSetRenderTargets(1, rtvs, DeviceResources->GetDepthStencilView());
 	DeviceResources->UpdateViewport();
-}
-
-void URenderer::CreateFXAAResources()
-{
-	// Create offscreen scene color texture (RTV + SRV)
-	if (!GetDevice() || !GetDeviceContext()) return;
-
-	// Use the active viewport size to avoid zero-size textures when the swap chain was created with 0x0
-	const D3D11_VIEWPORT vp = DeviceResources->GetViewportInfo();
-	const UINT texWidth = static_cast<UINT>(std::max(1.0f, vp.Width));
-	const UINT texHeight = static_cast<UINT>(std::max(1.0f, vp.Height));
-
-	// Match backbuffer channel order to avoid unnecessary swizzles
-	D3D11_TEXTURE2D_DESC texDesc = {};
-	texDesc.Width = texWidth;
-	texDesc.Height = texHeight;
-	texDesc.MipLevels = 1;
-	texDesc.ArraySize = 1;
-	texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // linear; backbuffer RTV is _SRGB on present
-	texDesc.SampleDesc.Count = 1;
-	texDesc.Usage = D3D11_USAGE_DEFAULT;
-	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-	HRESULT hr = GetDevice()->CreateTexture2D(&texDesc, nullptr, &FXAASceneTexture);
-	if (SUCCEEDED(hr) && FXAASceneTexture)
-	{
-		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-		rtvDesc.Format = texDesc.Format;
-		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-		GetDevice()->CreateRenderTargetView(FXAASceneTexture, &rtvDesc, &FXAASceneRTV);
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = texDesc.Format;
-		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = 1;
-		GetDevice()->CreateShaderResourceView(FXAASceneTexture, &srvDesc, &FXAASceneSRV);
-	}
-
-	// Create linear clamp sampler
-	if (!FXAASampler)
-	{
-		D3D11_SAMPLER_DESC sampDesc = {};
-		sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		sampDesc.MaxAnisotropy = 1;
-		sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-		sampDesc.MinLOD = 0;
-		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-		GetDevice()->CreateSamplerState(&sampDesc, &FXAASampler);
-	}
-
-	// Compile shaders (log failures for easier debugging)
-	ID3DBlob* vs = nullptr; ID3DBlob* ps = nullptr; ID3DBlob* err = nullptr;
-	HRESULT hrVS = D3DCompileFromFile(L"Asset/Shader/FXAA.hlsl", nullptr, nullptr, "VS", "vs_5_0", 0, 0, &vs, &err);
-	if (FAILED(hrVS) && err) { OutputDebugStringA((char*)err->GetBufferPointer()); err->Release(); err = nullptr; }
-	HRESULT hrPS = D3DCompileFromFile(L"Asset/Shader/FXAA.hlsl", nullptr, nullptr, "PS", "ps_5_0", 0, 0, &ps, &err);
-	if (FAILED(hrPS) && err) { OutputDebugStringA((char*)err->GetBufferPointer()); err->Release(); err = nullptr; }
-	if (vs) { GetDevice()->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, &FXAAVertexShader); vs->Release(); }
-	if (ps) { GetDevice()->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, &FXAAPixelShader); ps->Release(); }
-}
-
-void URenderer::ReleaseFXAAResources()
-{
-	if (FXAAPixelShader) { FXAAPixelShader->Release(); FXAAPixelShader = nullptr; }
-	if (FXAAVertexShader) { FXAAVertexShader->Release(); FXAAVertexShader = nullptr; }
-	if (FXAASampler) { FXAASampler->Release(); FXAASampler = nullptr; }
-	if (FXAASceneSRV) { FXAASceneSRV->Release(); FXAASceneSRV = nullptr; }
-	if (FXAASceneRTV) { FXAASceneRTV->Release(); FXAASceneRTV = nullptr; }
-	if (FXAASceneTexture) { FXAASceneTexture->Release(); FXAASceneTexture = nullptr; }
-}
-
-void URenderer::ApplyFXAA()
-{
-	if (!bFXAAEnabled) return;
-	if (!FXAASceneSRV || !FXAAPixelShader || !FXAAVertexShader) return;
-
-	// Bind backbuffer as render target
-	ID3D11RenderTargetView* backRTV = DeviceResources->GetRenderTargetView();
-	GetDeviceContext()->OMSetRenderTargets(1, &backRTV, nullptr);
-
-	// Clear backbuffer once; we will draw into each viewport region
-	GetDeviceContext()->ClearRenderTargetView(backRTV, ClearColor);
-
-	// Setup pipeline for fullscreen triangle (no input layout / no VB)
-	FRenderState rs = {};
-	rs.CullMode = ECullMode::None;
-	rs.FillMode = EFillMode::Solid;
-	FPipelineInfo p = {
-		nullptr,                    // InputLayout (none)
-		FXAAVertexShader,           // VS
-		GetRasterizerState(rs),     // RS
-		DisabledDepthStencilState,  // no depth test
-		FXAAPixelShader,            // PS
-		nullptr,                    // BlendState
-		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
-	};
-	Pipeline->UpdatePipeline(p);
-
-	Pipeline->SetTexture(0, false, FXAASceneSRV);
-	Pipeline->SetSamplerState(0, false, FXAASampler);
-
-
-	// Compute normalization from the offscreen texture size (matches DeviceResources viewport)
-	const D3D11_VIEWPORT& FullVP = DeviceResources->GetViewportInfo();
-	const float invW = (FullVP.Width > 0.0f) ? (1.0f / FullVP.Width) : 1.0f;
-	const float invH = (FullVP.Height > 0.0f) ? (1.0f / FullVP.Height) : 1.0f;
-
-	// For each viewport, draw a fullscreen triangle limited by D3D viewport, sampling only that sub-rect
-	if (ViewportClient)
-	{
-		TArray<FViewportClient>& Clients = ViewportClient->GetViewports();
-		for (FViewportClient& VC : Clients)
-		{
-			const D3D11_VIEWPORT& VP = VC.GetViewportInfo();
-			if (VP.Width < 1.0f || VP.Height < 1.0f) { continue; }
-
-			// Set current viewport
-			VC.Apply(GetDeviceContext());
-
-			// Update FXAA params for this viewport
-			FFXAAConstants Params;
-			Params.ViewportRect = FVector4(VP.TopLeftX * invW, VP.TopLeftY * invH, VP.Width * invW, VP.Height * invH);
-			UpdateConstant(ConstantBufferFXAA, Params, 0, false, true);
-
-			// Draw (fullscreen triangle over this viewport region)
-			Pipeline->Draw(3, 0);
-		}
-	}
-
-	// Unbind SRV to avoid hazards (unbind t0)
-	ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
-	GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
 }
 
 /**
@@ -733,7 +599,7 @@ void URenderer::PerformOcclusionCulling(UCamera* InCurrentCamera, const TArray<T
 		OcclusionRenderer.OcclusionTest(GetDevice(), GetDeviceContext())
 	);
 
-	ID3D11RenderTargetView* RTV = (bFXAAEnabled && FXAASceneRTV) ? FXAASceneRTV : DeviceResources->GetRenderTargetView();
+	ID3D11RenderTargetView* RTV = (bFXAAEnabled && FXAA && FXAA->GetSceneRTV()) ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
 	GetDeviceContext()->OMSetRenderTargets(1, &RTV, DeviceResources->GetDepthStencilView());
 }
 
@@ -896,7 +762,7 @@ void URenderer::RenderLevel_MultiThreaded(UCamera* InCurrentCamera, FViewportCli
 			UPipeline ThreadPipeline(DeferredContext);
 			InViewportClient.Apply(DeferredContext);
 
-			auto* RTV = (bFXAAEnabled && FXAASceneRTV) ? FXAASceneRTV : DeviceResources->GetRenderTargetView();
+			auto* RTV = (bFXAAEnabled && FXAA && FXAA->GetSceneRTV()) ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
 			auto* DSV = DeviceResources->GetDepthStencilView();
 			DeferredContext->OMSetRenderTargets(1, &RTV, DSV);
 			ThreadPipeline.SetConstantBuffer(1, true, ConstantBufferViewProj);
@@ -1621,13 +1487,11 @@ void URenderer::OnResize(uint32 InWidth, uint32 InHeight)
 	UStatOverlay::GetInstance().PreResize();
 
 	DeviceResources->OnWindowSizeChanged(InWidth, InHeight);
-
 	// Recreate FXAA render target to match new size
-	ReleaseFXAAResources();
-	CreateFXAAResources();
+	if (FXAA) FXAA->OnResize();
 
 	// 새로운 렌더 타겟 바인딩
-	auto* RenderTargetView = (bFXAAEnabled && FXAASceneRTV) ? FXAASceneRTV : DeviceResources->GetRenderTargetView();
+	auto* RenderTargetView = (bFXAAEnabled && FXAA && FXAA->GetSceneRTV()) ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
 	ID3D11RenderTargetView* RenderTargetViews[] = { RenderTargetView };
 	GetDeviceContext()->OMSetRenderTargets(1, RenderTargetViews, DeviceResources->GetDepthStencilView());
 	UStatOverlay::GetInstance().OnResize();
@@ -1808,16 +1672,6 @@ void URenderer::CreateConstantBuffer()
 
 		GetDevice()->CreateBuffer(&SpotlightConstantBufferDescription, nullptr, &ConstantBufferSpotlight);
 	}
-
-	// FXAA params buffer (Slot 0 in PS during FXAA pass)
-	{
-		D3D11_BUFFER_DESC FXAAConstantBufferDesc = {};
-		FXAAConstantBufferDesc.ByteWidth = sizeof(FFXAAConstants) + 0xf & 0xfffffff0;
-		FXAAConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-		FXAAConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		FXAAConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		GetDevice()->CreateBuffer(&FXAAConstantBufferDesc, nullptr, &ConstantBufferFXAA);
-	}
 }
 
 void URenderer::CreateBillboardResources()
@@ -1921,7 +1775,6 @@ void URenderer::ReleaseConstantBuffer()
 	SafeRelease(ConstantBufferProjectionDecal);
 	SafeRelease(ConstantBufferBatchLine);
 	SafeRelease(ConstantBufferSpotlight);
-	SafeRelease(ConstantBufferFXAA);
 }
 
 bool URenderer::UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const

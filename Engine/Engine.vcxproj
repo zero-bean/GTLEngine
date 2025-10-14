@@ -454,6 +454,7 @@
     <ClInclude Include="Source\Utility\Public\JsonSerializer.h" />
     <ClInclude Include="Source\Utility\Public\UELogParser.h" />
     <ClInclude Include="Source\World\Public\World.h" />
+    <ClInclude Include="Source\Render\Renderer\Public\FXAAPass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -603,6 +604,7 @@
     <ClCompile Include="Source\Utility\Private\FileDialog.cpp" />
     <ClCompile Include="Source\Utility\Private\UELogParser.cpp" />
     <ClCompile Include="Source\World\Private\World.cpp" />
+    <ClCompile Include="Source\Render\Renderer\Private\FXAAPass.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
