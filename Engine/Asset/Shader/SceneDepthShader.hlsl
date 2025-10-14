@@ -1,4 +1,4 @@
-cbuffer DepthConstants : register(b0)
+cbuffer FullscreenDepthConstants : register(b0)
 {
 	row_major float4x4 InvViewProj;
 	float4 CameraPosWSAndNear; // xyz: camera position, w: near clip
@@ -31,9 +31,8 @@ float LinearEyeDistance(float2 localUV)
 	float2 uv = GetFullUV(localUV);
 	float depth01 = DepthTexture.SampleLevel(SamplerPoint, uv, 0).r;
 
-	float2 ndcXY = uv * 2.0f - 1.0f;
-	float zClip = depth01 * 2.0f - 1.0f;
-	float4 clip = float4(ndcXY, zClip, 1.0f);
+	float2 ndcXY = uv * 2.0f - 1.0f; // -1 ~ 1
+	float4 clip = float4(ndcXY, depth01, 1.0f);
 
 	float4 world = mul(clip, InvViewProj);
 	world /= world.w;

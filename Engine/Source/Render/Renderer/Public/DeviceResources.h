@@ -15,6 +15,8 @@ public:
 	void ReleaseFrameBuffer();
 	void CreateDepthBuffer();
 	void ReleaseDepthBuffer();
+	void CreateSceneColorTargets();
+	void ReleaseSceneColorTargets();
 
 	// Direct2D/DirectWrite
 	void CreateFactories();
@@ -28,6 +30,11 @@ public:
 	ID3D11SamplerState* GetDepthSamplerState() const { return DepthSamplerState; }
 	ID3D11ShaderResourceView* GetDetphShaderResourceView() const { return DepthShaderResourceView; }
 	ID3D11ShaderResourceView* GetPreviousFrameDepthSRV() const { return PreviousFrameDepthSRV; }
+
+	ID3D11Texture2D*           GetSceneColorTexture()  const { return SceneColorTex; }
+	ID3D11RenderTargetView*    GetSceneColorRenderTargetView()  const { return SceneColorRTV; }
+	ID3D11ShaderResourceView* GetColorShaderResourceView() const { return SceneColorSRV; }
+
 	void CopyDepthSRVToPreviousFrameSRV();
 	const D3D11_VIEWPORT& GetViewportInfo() const { return ViewportInfo; }
 	void UpdateViewport(float InMenuBarHeight = 0.f);
@@ -44,6 +51,10 @@ private:
 
 	ID3D11Texture2D* FrameBuffer = nullptr;
 	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
+
+	ID3D11Texture2D* SceneColorTex = nullptr;
+	ID3D11RenderTargetView* SceneColorRTV = nullptr;
+	ID3D11ShaderResourceView* SceneColorSRV = nullptr;
 
 	ID3D11Texture2D* DepthBuffer = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;

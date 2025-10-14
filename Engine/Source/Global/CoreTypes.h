@@ -13,6 +13,34 @@
 //	uint32 BoundingBoxStartIndex; // 인덱스 버퍼에서, 바운딩박스가 시작되는 인덱스
 //};
 
+struct FModelConstants
+{
+	FModelConstants(const FMatrix& InWorld, const FMatrix& InWorldInverseTranspose)
+	{
+		World = InWorld;
+		WorldInverseTranspose = InWorldInverseTranspose;
+	}
+
+	FMatrix World;
+	FMatrix WorldInverseTranspose;
+
+private:
+	// 사용하기 불편하다면 지워도 상관없습니다. (25.10.07 PYB)
+	FModelConstants() = delete;
+};
+
+struct FMaterialConstants
+{
+	FVector4 Ka;
+	FVector4 Kd;
+	FVector4 Ks;
+	float Ns;
+	float Ni;
+	float D;
+	uint32 MaterialFlags;
+	float Time; // Time in seconds
+};
+
 struct FViewProjConstants
 {
 	FViewProjConstants()
@@ -61,7 +89,7 @@ private:
 	FLightConstants() = delete;
 };
 
-struct FDepthConstants2D
+struct FullscreenDepthConstants
 {
 	FMatrix  InvViewProj;
 	FVector4 CameraPosWSAndNear;  // xyz: camera position, w: near clip
@@ -90,33 +118,43 @@ struct FDepthConstants
 	float TotalColor[4];
 };
 
-struct FModelConstants
+struct FHeightFogConstants
 {
-	FModelConstants(const FMatrix& InWorld, const FMatrix& InWorldInverseTranspose)
+	FHeightFogConstants(float InFogDensity,
+						float InFogHeightFalloff,
+						float InStartDistance,
+						float InFogCutoffDistance,
+						float InFogMaxOpacity,
+						float InFogHeight,
+						const float InFogInscatteringColor[4])
+		: FogDensity(InFogDensity)
+		, FogHeightFalloff(InFogHeightFalloff)
+		, StartDistance(InStartDistance)
+		, FogCutoffDistance(InFogCutoffDistance)
+		, FogMaxOpacity(InFogMaxOpacity)
+		, FogHeight(InFogHeight)
+		, _Pad0(0.0f)
+		, _Pad1(0.0f)
 	{
-		World = InWorld;
-		WorldInverseTranspose = InWorldInverseTranspose;
+		std::memcpy(FogInscatteringColor, InFogInscatteringColor, sizeof(FogInscatteringColor));
 	}
 
-	FMatrix World;
-	FMatrix WorldInverseTranspose;
+	// [Row0]
+	float FogDensity;          // x
+	float FogHeightFalloff;    // y
+	float StartDistance;       // z
+	float FogCutoffDistance;   // w
 
-private:
-	// 사용하기 불편하다면 지워도 상관없습니다. (25.10.07 PYB)
-	FModelConstants() = delete;
+	// [Row1]
+	float FogMaxOpacity;       // x
+	float FogHeight;           // y
+	float _Pad0;               // z (padding)
+	float _Pad1;               // w (padding)
+
+	// [Row2]
+	float FogInscatteringColor[4]; // rgba (linear/HDR)
 };
 
-struct FMaterialConstants
-{
-	FVector4 Ka;
-	FVector4 Kd;
-	FVector4 Ks;
-	float Ns;
-	float Ni;
-	float D;
-	uint32 MaterialFlags;
-	float Time; // Time in seconds
-};
 
 struct FVertex
 {

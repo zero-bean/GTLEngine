@@ -22,6 +22,7 @@ void UDeviceResources::Create(HWND InWindowHandle)
 	CreateDeviceAndSwapChain(InWindowHandle);
 	CreateFrameBuffer();
 	CreateDepthBuffer();
+	CreateSceneColorTargets();
 	CreateFactories();
 }
 
@@ -30,6 +31,7 @@ void UDeviceResources::Release()
 	ReleaseFactories();
 	ReleaseFrameBuffer();
 	ReleaseDepthBuffer();
+	ReleaseSceneColorTargets();
 	ReleaseDeviceAndSwapChain();
 }
 
@@ -221,6 +223,58 @@ void UDeviceResources::ReleaseDepthBuffer()
 	}
 }
 
+void UDeviceResources::CreateSceneColorTargets()
+{
+    DXGI_SWAP_CHAIN_DESC scd = {};
+    SwapChain->GetDesc(&scd);
+    UINT w = scd.BufferDesc.Width  ? scd.BufferDesc.Width  : Width;
+    UINT h = scd.BufferDesc.Height ? scd.BufferDesc.Height : Height;
+
+    // 혹시 남아있으면 먼저 정리
+    ReleaseSceneColorTargets();
+
+    // HDR/Linear 오프스크린 컬러 텍스처
+    D3D11_TEXTURE2D_DESC td = {};
+    td.Width              = std::max(1u, w);
+    td.Height             = std::max(1u, h);
+    td.MipLevels          = 1;
+    td.ArraySize          = 1;
+    td.Format             = DXGI_FORMAT_R16G16B16A16_FLOAT;        // HDR/Linear
+    td.SampleDesc.Count   = 1;                                     // 포스트용은 non-MSAA 권장
+    td.SampleDesc.Quality = 0;
+    td.Usage              = D3D11_USAGE_DEFAULT;
+    td.BindFlags          = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    td.CPUAccessFlags     = 0;
+    td.MiscFlags          = 0;
+
+    HRESULT hr = Device->CreateTexture2D(&td, nullptr, &SceneColorTex);
+    if (FAILED(hr)) { assert(!"CreateTexture2D(SceneColorTex) failed"); return; }
+
+    // RTV
+    D3D11_RENDER_TARGET_VIEW_DESC rtv = {};
+    rtv.Format        = td.Format;
+    rtv.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+    rtv.Texture2D.MipSlice = 0;
+    hr = Device->CreateRenderTargetView(SceneColorTex, &rtv, &SceneColorRTV);
+    if (FAILED(hr)) { assert(!"CreateRenderTargetView(SceneColorRTV) failed"); return; }
+
+    // SRV
+    D3D11_SHADER_RESOURCE_VIEW_DESC srv = {};
+    srv.Format                    = td.Format;
+    srv.ViewDimension             = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srv.Texture2D.MostDetailedMip = 0;
+    srv.Texture2D.MipLevels       = 1;
+    hr = Device->CreateShaderResourceView(SceneColorTex, &srv, &SceneColorSRV);
+    if (FAILED(hr)) { assert(!"CreateShaderResourceView(SceneColorSRV) failed"); return; }
+}
+
+void UDeviceResources::ReleaseSceneColorTargets()
+{
+    if (SceneColorSRV) { SceneColorSRV->Release(); SceneColorSRV = nullptr; }
+    if (SceneColorRTV) { SceneColorRTV->Release(); SceneColorRTV = nullptr; }
+    if (SceneColorTex) { SceneColorTex->Release(); SceneColorTex = nullptr; }
+}
+
 void UDeviceResources::UpdateViewport(float InMenuBarHeight)
 {
 	DXGI_SWAP_CHAIN_DESC SwapChainDescription = {};
@@ -296,6 +350,7 @@ void UDeviceResources::OnWindowSizeChanged(uint32 InWidth, uint32 InHeight)
 	// Release all outstanding references to the swap chain's buffers.
 	ReleaseFrameBuffer();
 	ReleaseDepthBuffer();
+	ReleaseSceneColorTargets();
 
 	// Clear the render target and depth stencil views from the device context
 	// to ensure no lingering references prevent ResizeBuffers from succeeding.
@@ -317,6 +372,7 @@ void UDeviceResources::OnWindowSizeChanged(uint32 InWidth, uint32 InHeight)
 	// Recreate the render target view and depth stencil view.
 	CreateFrameBuffer();
 	CreateDepthBuffer();
+	CreateSceneColorTargets();
 
 	// Update the viewport to match the new dimensions.
 	UpdateViewport();

@@ -74,6 +74,7 @@ public:
 	void CreateProjectionDecalShader();
 	void CreateSpotlightShader();
 	void CreateSceneDepthViewModeShader();
+	void CreateHeightFogShader();
 
 	// Release
 	void ReleaseConstantBuffer();
@@ -88,6 +89,7 @@ public:
 	void ReleaseProjectionDecalShader();
 	void ReleaseSpotlightShader();
 	void ReleaseSceneDepthViewModeShader();
+	void ReleaseHeightFogShader();
 
 	// Render
 	void Tick(float DeltaSeconds);
@@ -108,6 +110,7 @@ public:
 	void RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<USpotLightComponent>>& InSpotlights,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 	void RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient);
+	void RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
 
@@ -194,7 +197,7 @@ private:
 	ID3D11Buffer* ConstantBufferSpotlight = nullptr;
 	ID3D11Buffer* ConstantBufferDepth2D = nullptr;
 	ID3D11Buffer* ConstantBufferDepth = nullptr;
-
+	ID3D11Buffer* ConstantBufferHeightFog = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -221,7 +224,10 @@ private:
 	ID3D11BlendState* SpotlightBlendState = nullptr;
 
 	ID3D11VertexShader* SceneDepthVertexShader = nullptr;
-	ID3D11PixelShader* SceneDepthPixelShader= nullptr;;
+	ID3D11PixelShader* SceneDepthPixelShader= nullptr;
+
+	ID3D11VertexShader* HeightFogVertexShader = nullptr;
+	ID3D11PixelShader* HeightFogPixelShader= nullptr;
 
 	class UFXAAPass* FXAA = nullptr;
 

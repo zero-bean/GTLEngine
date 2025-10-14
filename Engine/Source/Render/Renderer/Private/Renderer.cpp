@@ -68,6 +68,7 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateConstantBuffer();
 	CreateBillboardResources();
 	CreateSpotlightResources();
+	CreateHeightFogShader();
     FXAA = new UFXAAPass();
     FXAA->Initialize(DeviceResources);
 
@@ -161,6 +162,9 @@ void URenderer::Release()
 	ReleaseSpotlightResources();
 	ReleaseTextureShader();
     ReleaseProjectionDecalShader();
+	ReleaseSceneDepthViewModeShader();
+	ReleaseHeightFogShader();
+
     if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
 
 	SafeDelete(ViewportClient);
@@ -449,6 +453,27 @@ void URenderer::CreateSceneDepthViewModeShader()
 	SceneDepthPSBlob->Release();
 }
 
+void URenderer::CreateHeightFogShader()
+{
+	ID3DBlob* HeightFogVSBlob;
+	ID3DBlob* HeightFogPSBlob;
+
+	D3DCompileFromFile(L"Asset/Shader/HeightFogShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&HeightFogVSBlob, nullptr);
+
+	GetDevice()->CreateVertexShader(HeightFogVSBlob->GetBufferPointer(),
+		HeightFogVSBlob->GetBufferSize(), nullptr, &SceneDepthVertexShader);
+
+	D3DCompileFromFile(L"Asset/Shader/HeightFogShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&HeightFogPSBlob, nullptr);
+
+	GetDevice()->CreatePixelShader(HeightFogPSBlob->GetBufferPointer(),
+		HeightFogPSBlob->GetBufferSize(), nullptr, &SceneDepthPixelShader);
+
+	HeightFogVSBlob->Release();
+	HeightFogPSBlob->Release();
+}
+
 /**
  * @brief 래스터라이저 상태를 해제하는 함수
  */
@@ -500,6 +525,12 @@ void URenderer::ReleaseSpotlightShader()
 }
 
 void URenderer::ReleaseSceneDepthViewModeShader()
+{
+	SafeRelease(SceneDepthVertexShader);
+	SafeRelease(SceneDepthPixelShader);
+}
+
+void URenderer::ReleaseHeightFogShader()
 {
 	SafeRelease(SceneDepthVertexShader);
 	SafeRelease(SceneDepthPixelShader);
@@ -771,6 +802,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		RenderDecals(InCurrentCamera, Decals, PrimitivesToRenderByDecals);
 		RenderLights(InCurrentCamera, SpotLights, PrimitivesToRenderByDecals);
 	}
+	RenderHeightFog(InCurrentCamera, InViewportClient);
 	for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
 	{
 		if (BillboardComponent)
@@ -1202,7 +1234,7 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportCl
 	Pipeline->UpdatePipeline(PipelineInfo);
 
 	// constant buffer update
-	FDepthConstants2D SceneDepthData{};
+	FullscreenDepthConstants SceneDepthData{};
 
 	// 1) InvViewProj 계산
 	UCamera* Cam = InCurrentCamera;
@@ -1244,6 +1276,108 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportCl
 	ID3D11ShaderResourceView* depthSRV = DeviceResources->GetDetphShaderResourceView();
 
 	Pipeline->SetTexture(0, false, depthSRV);
+	Pipeline->SetSamplerState(0, false, DeviceResources->GetDepthSamplerState());
+
+	Pipeline->SetVertexBuffer(nullptr, 0);
+	Pipeline->SetIndexBuffer(nullptr, 0);
+
+	Pipeline->Draw(3, 0);
+
+	//  depth SRV 언바인드
+	ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+	GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
+
+	Targets[0] = CurrentRTV;
+	GetDeviceContext()->OMSetRenderTargets(1, Targets, CurrentDSV);
+}
+
+void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient)
+{
+	FRenderState HeightFogState = {};
+	HeightFogState.CullMode = ECullMode::None;
+	HeightFogState.FillMode = EFillMode::Solid;
+
+	// Pipeline 정보 구성
+	FPipelineInfo PipelineInfo = {
+		nullptr,
+		HeightFogVertexShader,
+		GetRasterizerState(HeightFogState),
+		DisabledDepthStencilState,
+		HeightFogPixelShader,
+		nullptr,
+		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	};
+
+	Pipeline->UpdatePipeline(PipelineInfo);
+
+	// constant buffer update
+	FullscreenDepthConstants SceneDepthData{};
+
+	// 1) InvViewProj 계산
+	UCamera* Cam = InCurrentCamera;
+	const FViewProjConstants& VP = Cam->GetFViewProjConstants();
+	FMatrix View      = VP.View;
+	FMatrix Proj      = VP.Projection;
+	FMatrix ViewProj  = View * Proj;
+	FMatrix InvVP     = ViewProj.Inverse();
+
+	SceneDepthData.InvViewProj = InvVP;
+	const FVector CameraPos = Cam->GetLocation();
+	SceneDepthData.CameraPosWSAndNear = FVector4(CameraPos.X, CameraPos.Y, CameraPos.Z, Cam->GetNearZ());
+	SceneDepthData.FarAndPadding = FVector4(Cam->GetFarZ(), 0.0f, 0.0f, 0.0f);
+
+	const D3D11_VIEWPORT& FullViewport = DeviceResources->GetViewportInfo();
+	const D3D11_VIEWPORT& SubViewport  = InViewportClient.GetViewportInfo();
+
+	const float InvFullWidth  = FullViewport.Width  > 0.0f ? 1.0f / FullViewport.Width  : 0.0f;
+	const float InvFullHeight = FullViewport.Height > 0.0f ? 1.0f / FullViewport.Height : 0.0f;
+
+	SceneDepthData.ViewportRect = FVector4(
+		SubViewport.TopLeftX * InvFullWidth,
+		SubViewport.TopLeftY * InvFullHeight,
+		SubViewport.Width    * InvFullWidth,
+		SubViewport.Height   * InvFullHeight
+	);
+
+	UpdateConstant(ConstantBufferDepth, SceneDepthData, 0, true, true);
+
+	float Color[4] = {0.0f, 1.0f, 1.0f, 1.0f};
+	FHeightFogConstants HeightFogData(
+		1.0f,
+		1.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		50.0f,
+		Color
+		);
+
+	UpdateConstant(ConstantBufferHeightFog, HeightFogData, 0, false, true);
+
+	ID3D11RenderTargetView* CurrentRTV = DeviceResources->GetRenderTargetView();
+	ID3D11DepthStencilView* CurrentDSV = DeviceResources->GetDepthStencilView();
+
+	ID3D11RenderTargetView* Targets[1] = { CurrentRTV };
+	GetDeviceContext()->OMSetRenderTargets(1, Targets, nullptr);
+
+	InViewportClient.Apply(GetDeviceContext());
+
+	// Bind SRV, Sampler
+	ID3D11DepthStencilView* depthSRV = DeviceResources->GetDepthStencilView();
+	ID3D11RenderTargetView* colorRTV[] = { DeviceResources->GetSceneColorRenderTargetView() };
+	GetDeviceContext()->OMSetRenderTargets(1, colorRTV, depthSRV);
+
+	ID3D11ShaderResourceView* colorSRV = DeviceResources->GetColorShaderResourceView();
+	Pipeline->SetTexture(0, false, DeviceResources->GetColorShaderResourceView());
+	Pipeline->SetTexture(1, false, DeviceResources->GetDetphShaderResourceView());
+
+	ID3D11RenderTargetView* frameRTV[] = { DeviceResources->GetRenderTargetView() };
+	GetDeviceContext()->OMSetRenderTargets(1, frameRTV, nullptr);
+
+	ID3D11ShaderResourceView* nullSRVs[2] = { nullptr, nullptr };
+	Pipeline->SetTexture(0, false, nullSRVs[0]);
+	Pipeline->SetTexture(1, false, nullSRVs[1]);
+
 	Pipeline->SetSamplerState(0, false, DeviceResources->GetDepthSamplerState());
 
 	Pipeline->SetVertexBuffer(nullptr, 0);
@@ -1825,7 +1959,7 @@ void URenderer::CreateConstantBuffer()
 
 	{
 		D3D11_BUFFER_DESC desc = {};
-		desc.ByteWidth      = (sizeof(FDepthConstants2D) + 0xF) & ~0xF; // 16바이트 맞춤
+		desc.ByteWidth      = (sizeof(FullscreenDepthConstants) + 0xF) & ~0xF; // 16바이트 맞춤
 		desc.Usage          = D3D11_USAGE_DYNAMIC;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		desc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
@@ -1841,6 +1975,16 @@ void URenderer::CreateConstantBuffer()
 		desc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
 
 		GetDevice()->CreateBuffer(&desc, nullptr, &ConstantBufferDepth);
+	}
+
+	{
+		D3D11_BUFFER_DESC desc = {};
+		desc.ByteWidth      = (sizeof(FHeightFogConstants) + 0xF) & ~0xF; // 16바이트 맞춤
+		desc.Usage          = D3D11_USAGE_DYNAMIC;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
+
+		GetDevice()->CreateBuffer(&desc, nullptr, &ConstantBufferHeightFog);
 	}
 }
 
@@ -1947,6 +2091,7 @@ void URenderer::ReleaseConstantBuffer()
 	SafeRelease(ConstantBufferSpotlight);
 	SafeRelease(ConstantBufferDepth);
 	SafeRelease(ConstantBufferDepth2D);
+	SafeRelease(ConstantBufferHeightFog);
 }
 
 bool URenderer::UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const
