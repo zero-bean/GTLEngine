@@ -397,6 +397,8 @@
     <ClCompile Include="Source\Actor\Private\SpotLightActor.cpp" />
     <ClCompile Include="Source\Component\Private\FireBallComponent.cpp">
       <Filter>Source\Component\Private</Filter>
+    <ClCompile Include="Source\Render\Renderer\Private\FXAAPass.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -801,6 +803,8 @@
     <ClInclude Include="Source\Actor\Public\SpotLightActor.h" />
     <ClInclude Include="Source\Component\Public\FireBallComponent.h">
       <Filter>Source\Component\Public</Filter>
+    <ClInclude Include="Source\Render\Renderer\Public\FXAAPass.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

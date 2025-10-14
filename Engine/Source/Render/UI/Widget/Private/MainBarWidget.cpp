@@ -241,6 +241,16 @@ void UMainBarWidget::RenderViewMenu()
 			EditorInstance->SetViewMode(EViewModeIndex::VMI_Wireframe);
 			UE_LOG("MainBarWidget: ViewMode를 Wireframe으로 변경");
 		}
+		if (ImGui::MenuItem("Z버퍼 씬 뎁스(ZBffer Scene Depth)", nullptr, bIsWireframe) && !bIsWireframe)
+		{
+			EditorInstance->SetViewMode(EViewModeIndex::VMI_SceneDepth2D);
+			UE_LOG("MainBarWidget: ViewMode를 Zbuffer SceneDepth로 변경");
+		}
+		if (ImGui::MenuItem("씬 뎁스(Scene Depth)", nullptr, bIsWireframe) && !bIsWireframe)
+		{
+			EditorInstance->SetViewMode(EViewModeIndex::VMI_SceneDepth);
+			UE_LOG("MainBarWidget: ViewMode를 SceneDepth로 변경");
+		}
 
 		ImGui::EndMenu();
 	}
@@ -408,6 +418,22 @@ void UMainBarWidget::RenderGraphicsMenu()
 			case 3:
 				ImGui::Text("현재 설정: 낮음 - LOD2만 표시 (최저 품질)");
 				break;
+		}
+
+		ImGui::Separator();
+
+		// FXAA toggle
+		{
+			URenderer& RendererInstance = URenderer::GetInstance();
+			bool bFXAA = RendererInstance.GetFXAAEnabled();
+			if (ImGui::Checkbox("FXAA (Fast Approximate AA)", &bFXAA))
+			{
+				RendererInstance.SetFXAAEnabled(bFXAA);
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip(bFXAA ? "Disable screen-space AA (sharper UI)" : "Enable FXAA (reduce edges aliasing)");
+			}
 		}
 
 		ImGui::EndMenu();

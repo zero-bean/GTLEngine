@@ -63,6 +63,10 @@ public:
 
 	// Initialize
 	void CreateDepthStencilState();
+
+	void CreateBillboardResources();
+	void CreateSpotlightResources();
+
 	void CreateDefaultShader();
 	void CreateTextureShader();
 	void CreateProjectionDecalShader();
@@ -71,23 +75,29 @@ public:
 	void CreateBillboardResources();
 	void CreateSpotlightResrouces();
 	void CreateFireBallShader();
+	void CreateSceneDepthViewModeShader();
 
 	// Release
 	void ReleaseConstantBuffer();
-	void ReleaseDefaultShader();
-	void ReleaseDepthStencilState();
 	void ReleaseRasterizerState();
+	void ReleaseDepthStencilState();
+
 	void ReleaseBillboardResources();
+	void ReleaseSpotlightResources();
+
+	void ReleaseDefaultShader();
 	void ReleaseTextureShader();
 	void ReleaseProjectionDecalShader();
 	void ReleaseSpotlightShader();
 	void ReleaseFireBallShader();
+	void ReleaseSceneDepthViewModeShader();
 
 	// Render
 	void Tick(float DeltaSeconds);
 	void RenderBegin() const;
 	void RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewportClient);
 	void RenderEnd() const;
+
 	void RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* InMeshComp, ID3D11RasterizerState* InRasterizerState, ID3D11Buffer* InConstantBufferModels, ID3D11Buffer* InConstantBufferMaterial);
 	void RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* InCurrentCamera);
 	void RenderText(UTextRenderComponent* InBillBoardComp, UCamera* InCurrentCamera);
@@ -102,6 +112,7 @@ public:
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 	void RenderFireBalls(UCamera* InCurrentCamera, const TArray<TObjectPtr<UFireBallComponent>>& InFireBalls,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
+	void RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
 
@@ -158,10 +169,12 @@ public:
 	FViewport* GetViewportClient() const { return ViewportClient; }
 	bool GetIsResizing() const { return bIsResizing; }
 	bool GetOcclusionCullingEnabled() const { return bOcclusionCulling; }
+	bool GetFXAAEnabled() const { return bFXAAEnabled; }
 
 	void SetIsResizing(bool isResizing) { bIsResizing = isResizing; }
 	void SetOcclusionCullingEnabled(bool bEnabled) { bOcclusionCulling = bEnabled; }
 	void ResetOcclusionCullingState() { bIsFirstPass = true; }
+    void SetFXAAEnabled(bool bEnabled) { bFXAAEnabled = bEnabled; }
 
 private:
 	void PerformOcclusionCulling(UCamera* InCurrentCamera, const TArray<TObjectPtr<UPrimitiveComponent>>& InPrimitiveComponents);
@@ -185,6 +198,8 @@ private:
 	ID3D11Buffer* ConstantBufferProjectionDecal = nullptr;
 	ID3D11Buffer* ConstantBufferSpotlight = nullptr;
 	ID3D11Buffer* ConstantBufferFireBall = nullptr;
+	ID3D11Buffer* ConstantBufferDepth2D = nullptr;
+	ID3D11Buffer* ConstantBufferDepth = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -214,6 +229,11 @@ private:
 	ID3D11PixelShader* FireBallPixelShader = nullptr;
 	ID3D11InputLayout* FireBallInputLayout = nullptr;
 	ID3D11BlendState* FireBallBlendState = nullptr;
+  
+	ID3D11VertexShader* SceneDepthVertexShader = nullptr;
+	ID3D11PixelShader* SceneDepthPixelShader= nullptr;;
+
+	class UFXAAPass* FXAA = nullptr;
 
 	uint32 Stride = 0;
 
@@ -255,6 +275,9 @@ private:
 
 	bool bIsFirstPass = true;
 	bool bOcclusionCulling = true;
+	bool bFXAAEnabled = true;
+
+	bool bIsSceneDepth = true;
 
 	constexpr static size_t NUM_WORKER_THREADS = 4;
 

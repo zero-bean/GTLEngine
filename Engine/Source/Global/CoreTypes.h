@@ -71,6 +71,35 @@ struct FFireBallConstants
 	float Intensity;
 	float RadiusFallOff;
 	float Padding[2]; // 16바이트 정렬을 위한 패딩
+}
+
+struct FDepthConstants2D
+{
+	FMatrix  InvViewProj;
+	FVector4 CameraPosWSAndNear;  // xyz: camera position, w: near clip
+	FVector4 ViewportRect;        // xy: normalized top-left, zw: normalized size
+	FVector4 FarAndPadding;       // x: far clip, yzw: padding
+};
+
+struct FDepthConstants
+{
+	FDepthConstants(unsigned int InDebugMode,
+				float InNearD,
+				float InFarD,
+				float InGamma,
+				const float InTotalColor[4])
+	: DebugMode(InDebugMode)
+	, NearD(InNearD)
+	, FarD(InFarD)
+	, Gamma(InGamma)
+	{
+		std::memcpy(TotalColor, InTotalColor, sizeof(TotalColor));
+	}
+	unsigned int DebugMode;
+	float NearD;
+	float FarD;
+	float Gamma;
+	float TotalColor[4];
 };
 
 struct FModelConstants

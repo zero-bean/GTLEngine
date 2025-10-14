@@ -157,6 +157,13 @@ void USceneComponent::MarkAsDirty()
 	}
 }
 
+void USceneComponent::MoveComponent(const FVector& Delta, const FQuaternion& NewRotation)
+{
+	RelativeLocation += Delta;
+	RelativeRotation = NewRotation.ToEuler();
+	MarkAsDirty();
+}
+
 void USceneComponent::SetRelativeLocation(const FVector& Location)
 {
 	RelativeLocation = Location;
@@ -168,6 +175,12 @@ void USceneComponent::SetRelativeRotation(const FVector& Rotation)
 	RelativeRotation = Rotation;
 	MarkAsDirty();
 }
+
+void USceneComponent::SetRelativeRotation(const FQuaternion& Rotation)
+{
+	RelativeRotation = Rotation.ToEuler();
+}
+
 void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 {
 	FVector ActualScale = Scale;
