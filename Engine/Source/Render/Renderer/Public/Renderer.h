@@ -107,7 +107,7 @@ public:
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 	void RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<USpotLightComponent>>& InSpotlights,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
-	void RenderSceneDepthView(UCamera* InCurrentCamera);
+	void RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
 

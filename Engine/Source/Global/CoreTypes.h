@@ -63,12 +63,10 @@ private:
 
 struct FDepthConstants2D
 {
-	FMatrix InvViewProj;
-	FVector CameraPosWS;
-	float   _pad0;
-	float   NearZ;
-	float   FarZ;
-	float   _pad1[2];
+	FMatrix  InvViewProj;
+	FVector4 CameraPosWSAndNear;  // xyz: camera position, w: near clip
+	FVector4 ViewportRect;        // xy: normalized top-left, zw: normalized size
+	FVector4 FarAndPadding;       // x: far clip, yzw: padding
 };
 
 struct FDepthConstants

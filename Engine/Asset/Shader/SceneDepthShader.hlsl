@@ -1,11 +1,9 @@
 cbuffer DepthConstants : register(b0)
 {
 	row_major float4x4 InvViewProj;
-	float3 CameraPosWS;
-	float _pad0;
-	float NearZ;
-	float FarZ;
-	float2 _pad1;
+	float4 CameraPosWSAndNear; // xyz: camera position, w: near clip
+	float4 ViewportRect;        // xy: normalized top-left, zw: normalized size
+	float4 FarAndPadding;       // x: far clip, yzw: padding
 }
 
 Texture2D DepthTexture : register(t0);
@@ -22,19 +20,24 @@ struct PS_INPUT
 	float2 tex : TEXCOORD0;
 };
 
-// 선형 거리(카메라→표면)
-float LinearEyeDistance(float2 uv)
+float2 GetFullUV(float2 localUV)
 {
-	float depth01 = DepthTexture.SampleLevel(SamplerPoint, uv, 0).r;
-	// D3Dxy(-1...1)z(0..1)->NDC(-1..1)
+	return ViewportRect.xy + localUV * ViewportRect.zw;
+}
 
-	float2 ndcXY = uv * 2.0f - 1.0f;   // -1..1
-	float zClip = depth01*2-1;
-	float4 clip  = float4(ndcXY, depth01, 1.0f); // z는 0..1 그대로
+// 선형 거리(카메라→표면)
+float LinearEyeDistance(float2 localUV)
+{
+	float2 uv = GetFullUV(localUV);
+	float depth01 = DepthTexture.SampleLevel(SamplerPoint, uv, 0).r;
+
+	float2 ndcXY = uv * 2.0f - 1.0f;
+	float zClip = depth01 * 2.0f - 1.0f;
+	float4 clip = float4(ndcXY, zClip, 1.0f);
 
 	float4 world = mul(clip, InvViewProj);
 	world /= world.w;
-	return distance(world.xyz, CameraPosWS);
+	return distance(world.xyz, CameraPosWSAndNear.xyz);
 }
 
 PS_INPUT mainVS(VS_INPUT input)
@@ -43,7 +46,7 @@ PS_INPUT mainVS(VS_INPUT input)
 
 	// 풀스크린 삼각형
 	float2 uv = float2((input.vertexID << 1) & 2, input.vertexID & 2);
-	output.tex = uv;
+	output.tex = uv;// * 0.5f;
 	output.position = float4(uv * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
 
 	return output;
