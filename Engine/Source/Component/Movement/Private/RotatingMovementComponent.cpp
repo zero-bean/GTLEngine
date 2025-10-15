@@ -32,7 +32,7 @@ void URotatingMovementComponent::TickComponent(float DeltaSeconds)
 
 	const FVector OldPivot = FMatrix::VectorMultiply(PivotTranslation, Rold);
 	const FVector NewPivot = FMatrix::VectorMultiply(PivotTranslation, Rnew);
-	const FVector DeltaLocation = (NewPivot - OldPivot);
+	const FVector DeltaLocation = OldPivot - NewPivot;
 
 	UpdatedComponent->SetRelativeLocation(UpdatedComponent->GetRelativeLocation() + DeltaLocation);
 	UpdatedComponent->SetRelativeRotation(NewEulerDeg);
