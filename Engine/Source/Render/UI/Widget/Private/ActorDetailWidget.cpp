@@ -862,7 +862,7 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 		}
 
 		float Density = FogConstants.FogDensity;
-		ImGui::DragFloat("Density", &Density, 0.0001f, 0.0f, 1.0f, "%.2f s");
+		ImGui::DragFloat("Density", &Density, 0.00001f, 0.0f, 0.1f, "%.5f s");
 		Fog->SetFogDensity(Density);
 
 		float HeightFalloff = FogConstants.FogHeightFalloff;
@@ -936,6 +936,13 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 		if (ImGui::DragFloat("Radius FallOff", &RadiusFallOff, 0.01f, 0.0f, 1.0f))
 		{
 			FireBall->SetRadiusFallOff(RadiusFallOff);
+		}
+
+		// 5. Enable Shadows (그림자 활성화)
+		bool bShadowsEnabled = FireBall->IsShadowsEnabled();
+		if (ImGui::Checkbox("Enable Shadows", &bShadowsEnabled))
+		{
+			FireBall->SetShadowsEnabled(bShadowsEnabled);
 		}
 	}
     else if (InComponent->IsA(UPrimitiveComponent::StaticClass()))

@@ -70,6 +70,7 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateSpotlightResrouces();
 	CreateFireBallShader();
 	CreateHeightFogShader();
+	CreateShadowProjectionShader();
     FXAA = new UFXAAPass();
     FXAA->Initialize(DeviceResources);
 
@@ -165,6 +166,7 @@ void URenderer::Release()
 	ReleaseProjectionDecalShader();
 	ReleaseSceneDepthViewModeShader();
 	ReleaseHeightFogShader();
+	ReleaseShadowProjectionShader();
 
 	if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
 
@@ -486,6 +488,31 @@ void URenderer::CreateHeightFogShader()
 	}
 }
 
+void URenderer::CreateShadowProjectionShader()
+{
+	ID3DBlob* VSBlob;
+	ID3DBlob* PSBlob;
+
+	D3DCompileFromFile(L"Asset/Shader/ShadowProjectionShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VSBlob, nullptr);
+	GetDevice()->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &ShadowProjectionVertexShader);
+
+	D3DCompileFromFile(L"Asset/Shader/ShadowProjectionShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PSBlob, nullptr);
+	GetDevice()->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &ShadowProjectionPixelShader);
+
+	// InputLayout은 보통 동일합니다.
+	D3D11_INPUT_ELEMENT_DESC Layout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FNormalVertex, Position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FNormalVertex, Normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FNormalVertex, Color), D3D11_INPUT_PER_VERTEX_DATA, 0	},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FNormalVertex, TexCoord), D3D11_INPUT_PER_VERTEX_DATA, 0	}
+	};
+	GetDevice()->CreateInputLayout(Layout, ARRAYSIZE(Layout), VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), &ShadowProjectionInputLayout);
+
+	VSBlob->Release();
+	PSBlob->Release();
+}
+
 /**
  * @brief 래스터라이저 상태를 해제하는 함수
  */
@@ -555,6 +582,13 @@ void URenderer::ReleaseHeightFogShader()
 	SafeRelease(HeightFogVertexShader);
 	SafeRelease(HeightFogPixelShader);
 	SafeRelease(HeightFogBlendState);
+}
+
+void URenderer::ReleaseShadowProjectionShader()
+{
+	SafeRelease(ShadowProjectionInputLayout);
+	SafeRelease(ShadowProjectionVertexShader);
+	SafeRelease(ShadowProjectionPixelShader);
 }
 
 /**
@@ -1174,6 +1208,7 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 			if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
 			if (Primitive->IsA(UDecalComponent::StaticClass())) { continue; }
 			if (Primitive->IsA(USpotLightComponent::StaticClass())) { continue; }
+			if (Primitive->IsA(UFireBallComponent::StaticClass())) { continue; };
 
 			// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
 			FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
@@ -1290,7 +1325,6 @@ void URenderer::RenderFireBalls(UCamera* InCurrentCamera, const TArray<TObjectPt
 		FFireBallConstants FireBallData;
 		const FVector& WorldLocation = FireBall->GetWorldLocation();
 		FireBallData.WorldPosition = { WorldLocation.X, WorldLocation.Y, WorldLocation.Z };
-
 		FireBallData.Radius = FireBall->GetRadius();
 		FireBallData.Color = FireBall->GetLinearColor().Color;
 		FireBallData.Intensity = FireBall->GetIntensity();
@@ -1298,28 +1332,74 @@ void URenderer::RenderFireBalls(UCamera* InCurrentCamera, const TArray<TObjectPt
 		UpdateConstant(ConstantBufferFireBall, FireBallData, 4, true, true);
 
 		const IBoundingVolume* FireBallBounds = FireBall->GetBoundingBox();
+		FVector FireBallPosition = FireBall->GetWorldLocation();
 
 		// 4. 파이어볼 경계 볼륨과 교차하는 프리미티브들을 다시 렌더링
-		for (UPrimitiveComponent* Primitive : InVisiblePrimitives)
+		for (UPrimitiveComponent* ReceiverPrimitive : InVisiblePrimitives)
 		{
-			if (!Primitive || !Primitive->GetBoundingBox() || Primitive->IsA(UDecalComponent::StaticClass())) { continue; }
+			if (!ReceiverPrimitive || !ReceiverPrimitive->GetBoundingBox() || ReceiverPrimitive->IsA(UDecalComponent::StaticClass())) { continue; }
 
-			if (FireBallBounds->Intersects(*Primitive->GetBoundingBox()))
+			if (FireBallBounds->Intersects(*ReceiverPrimitive->GetBoundingBox()))
 			{
-				// 5. 교차하는 프리미티브를 파이어볼 셰이더로 다시 그립니다.
-				FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
-					Primitive->GetWorldTransformMatrixInverse().Transpose());
-				UpdateConstant(ConstantBufferModels, ModelConstants, 0, true, false);
+				UPrimitiveComponent* OccluderPrimitive = nullptr;
 
-				Pipeline->SetVertexBuffer(Primitive->GetVertexBuffer(), sizeof(FNormalVertex));
-				if (Primitive->GetIndexBuffer() && Primitive->GetNumIndices() > 0)
+				// Case A. 대상에게 장애물이 존재한다면
+				if (FireBall->IsShadowsEnabled() && FireBall->IsOccluded(ReceiverPrimitive, OccluderPrimitive))
 				{
-					Pipeline->SetIndexBuffer(Primitive->GetIndexBuffer(), 0);
-					Pipeline->DrawIndexed(Primitive->GetNumIndices(), 0, 0);
+					FPipelineInfo ShadowPipelineInfo = {
+						ShadowProjectionInputLayout,         // 그림자 셰이더용 Input Layout
+						ShadowProjectionVertexShader,        // 그림자 Vertex Shader
+						GetRasterizerState(FireBallRenderState), // 기존 렌더링과 동일한 Rasterizer 상태
+						DisableDepthWriteDepthStencilState,  // 깊이 쓰기를 비활성화하는 Depth-Stencil 상태
+						ShadowProjectionPixelShader,         // 그림자 Pixel Shader
+						FireBallBlendState                   // 기존 렌더링과 동일한 Additive Blend 상태
+					};
+					Pipeline->UpdatePipeline(ShadowPipelineInfo);
+
+					// 수신자(Receiver) 정보 바인딩
+					FModelConstants ReceiverConstants(ReceiverPrimitive->GetWorldTransformMatrix(), ReceiverPrimitive->GetWorldTransformMatrixInverse().Transpose());
+					UpdateConstant(ConstantBufferModels, ReceiverConstants, 0, true, false);
+
+					// 장애물(Occluder) 정보 바인딩 (IsOccluded 함수를 통해 얻어온 OccluderPrimitive 사용)
+					FVector OccluderScale = OccluderPrimitive->GetRelativeScale3D();
+					FOccluderConstants OccluderData(
+						OccluderPrimitive->GetWorldTransformMatrix(),
+						OccluderPrimitive->GetWorldTransformMatrixInverse(),
+						OccluderScale
+					);
+					UpdateConstant(ConstantBufferOccluder, OccluderData, 5, true, true);
+
+					// 수신자 렌더링
+					Pipeline->SetVertexBuffer(ReceiverPrimitive->GetVertexBuffer(), sizeof(FNormalVertex));
+					if (ReceiverPrimitive->GetIndexBuffer() && ReceiverPrimitive->GetNumIndices() > 0)
+					{
+						Pipeline->SetIndexBuffer(ReceiverPrimitive->GetIndexBuffer(), 0);
+						Pipeline->DrawIndexed(ReceiverPrimitive->GetNumIndices(), 0, 0);
+					}
+					else
+					{
+						Pipeline->Draw(ReceiverPrimitive->GetNumVertices(), 0);
+					}
 				}
 				else
 				{
-					Pipeline->Draw(Primitive->GetNumVertices(), 0);
+					Pipeline->UpdatePipeline(PipelineInfo); // 기존 FireBall 셰이더 파이프라인
+
+					FModelConstants ModelConstants(ReceiverPrimitive->GetWorldTransformMatrix(),
+						ReceiverPrimitive->GetWorldTransformMatrixInverse().Transpose());
+					UpdateConstant(ConstantBufferModels, ModelConstants, 0, true, false);
+
+					// 기존과 동일하게 프리미티브 렌더링
+					Pipeline->SetVertexBuffer(ReceiverPrimitive->GetVertexBuffer(), sizeof(FNormalVertex));
+					if (ReceiverPrimitive->GetIndexBuffer() && ReceiverPrimitive->GetNumIndices() > 0)
+					{
+						Pipeline->SetIndexBuffer(ReceiverPrimitive->GetIndexBuffer(), 0);
+						Pipeline->DrawIndexed(ReceiverPrimitive->GetNumIndices(), 0, 0);
+					}
+					else
+					{
+						Pipeline->Draw(ReceiverPrimitive->GetNumVertices(), 0);
+					}
 				}
 			}
 		}
@@ -1510,6 +1590,16 @@ void URenderer::RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* In
 
 	UpdateConstant(InConstantBufferModels, InMeshComp->GetWorldTransformMatrix(), 0, true, false);
 
+    const bool bIsSelected = (GEngine->GetCurrentLevel() && InMeshComp->GetOwner() == GEngine->GetCurrentLevel()->GetSelectedActor());
+    FVector4 C = InMeshComp->GetColor();
+    if (bIsSelected)
+    {
+    	C.X = 1.0f;
+    	C.Y = 1.0f;
+    	C.Z = 1.0f;
+        C.W = 1.0f;
+    }
+
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
 	{
 		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -1518,7 +1608,7 @@ void URenderer::RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* In
 	}
 	else
 	{
-		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		float Color[4] = { C.X, C.Y, C.Z, C.W};
 		FDepthConstants DepthData(0, 0.1f, 500.0f, 0.8f, Color);
 		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
 	}
@@ -1650,6 +1740,21 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 	MaterialConstants.D = 1.0f;
     UpdateConstant(ConstantBufferMaterial, MaterialConstants, 2, false, true);
 
+	{
+		const bool bIsDepthView = (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth);
+		const bool bIsSelected = (GEngine->GetCurrentLevel() && InBillboardComp->GetOwner() == GEngine->GetCurrentLevel()->GetSelectedActor());
+		FVector4 C = InBillboardComp->GetColor();
+		if (bIsSelected)
+		{
+			C.X *= 1.2f;
+			C.Y *= 1.2f;
+			C.Z *= 1.2f;
+		}
+		float Color[4] = { C.X, C.Y, C.Z, C.W};
+		FDepthConstants DepthData(bIsDepthView ? 1u : 0u, 0.1f, 500.0f, 0.8f, Color);
+		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
+	}
+
 	Pipeline->SetTexture(0, false, RenderProxy->GetSRV());
 	Pipeline->SetSamplerState(0, false, RenderProxy->GetSampler());
 
@@ -1705,7 +1810,17 @@ void URenderer::RenderPrimitiveDefault(UPipeline& InPipeline, UPrimitiveComponen
     // Update pipeline buffers
 	UpdateConstant(InConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true, false);
 	// [수정] 새로운 UpdateConstantBuffer 함수 사용 (색상은 슬롯 2번)
-	UpdateConstant(InConstantBufferColor, InPrimitiveComp->GetColor(), 2, false, true);
+	// UpdateConstant(InConstantBufferColor, InPrimitiveComp->GetColor(), 2, false, true);
+    {
+		FVector4 C = InPrimitiveComp->GetColor();
+    	if (GEngine->GetCurrentLevel() && InPrimitiveComp->GetOwner() == GEngine->GetCurrentLevel()->GetSelectedActor())
+    	{
+    		C.X *= 1.2f;
+    		C.Y *= 1.2f;
+    		C.Z *= 1.2f;
+    	}
+    	UpdateConstant(InConstantBufferColor, C, 2, false, true);
+    }
 
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
 	{
@@ -2084,6 +2199,15 @@ void URenderer::CreateConstantBuffer()
 
 		GetDevice()->CreateBuffer(&desc, nullptr, &ConstantBufferHeightFog);
 	}
+
+	{
+		D3D11_BUFFER_DESC desc = {};
+		desc.ByteWidth = sizeof(FMatrix) * 2 + 0xf & 0xfffffff0; // World, InverseWorld 행렬 2개
+		desc.Usage = D3D11_USAGE_DYNAMIC;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		GetDevice()->CreateBuffer(&desc, nullptr, &ConstantBufferOccluder);
+	}
 }
 
 void URenderer::CreateBillboardResources()
@@ -2232,6 +2356,7 @@ void URenderer::ReleaseConstantBuffer()
 	SafeRelease(ConstantBufferDepth);
 	SafeRelease(ConstantBufferDepth2D);
 	SafeRelease(ConstantBufferHeightFog);
+	SafeRelease(ConstantBufferOccluder);
 }
 
 bool URenderer::UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const

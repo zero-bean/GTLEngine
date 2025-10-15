@@ -42,7 +42,7 @@ public:
 
 private:
 	bool bEnabled = true;
-	float FogDensity = 1.0f;
+	float FogDensity = 0.05f;
 	float FogHeightFalloff = 1.0f;
 	float StartDistance = 0.0f;
 	float FogCutoffDistance = 100.0f;
