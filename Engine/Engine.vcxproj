@@ -320,6 +320,7 @@
     <ClInclude Include="Source\Component\Public\ActorComponent.h" />
     <ClInclude Include="Source\Component\Public\BillboardComponent.h" />
     <ClInclude Include="Source\Component\Public\DecalComponent.h" />
+    <ClInclude Include="Source\Component\Public\HeightFogComponent.h" />
     <ClInclude Include="Source\Component\Public\LightComponent.h" />
     <ClInclude Include="Source\Component\Public\SpotLightComponent.h" />
     <ClInclude Include="Source\Component\Public\TextRenderComponent.h" />
@@ -491,6 +492,7 @@
     <ClCompile Include="Source\Component\Private\ActorComponent.cpp" />
     <ClCompile Include="Source\Component\Private\BillboardComponent.cpp" />
     <ClCompile Include="Source\Component\Private\DecalComponent.cpp" />
+    <ClCompile Include="Source\Component\Private\HeightFogComponent.cpp" />
     <ClCompile Include="Source\Component\Private\LightComponent.cpp" />
     <ClCompile Include="Source\Component\Private\SpotLightComponent.cpp" />
     <ClCompile Include="Source\Component\Private\TextRenderComponent.cpp" />
