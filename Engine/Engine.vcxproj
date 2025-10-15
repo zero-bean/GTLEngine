@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -324,6 +324,7 @@
     <ClInclude Include="Source\Component\Public\BillboardComponent.h" />
     <ClInclude Include="Source\Component\Public\DecalComponent.h" />
     <ClInclude Include="Source\Component\Public\FireBallComponent.h" />
+    <ClInclude Include="Source\Component\Public\HeightFogComponent.h" />
     <ClInclude Include="Source\Component\Public\LightComponent.h" />
     <ClInclude Include="Source\Component\Public\SpotLightComponent.h" />
     <ClInclude Include="Source\Component\Public\TextRenderComponent.h" />
@@ -464,6 +465,9 @@
     <Content Include="Asset\Shader\SceneDepthShader.hlsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Asset\Shader\HeightFogShader.hlsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -496,6 +500,7 @@
     <ClCompile Include="Source\Component\Private\BillboardComponent.cpp" />
     <ClCompile Include="Source\Component\Private\DecalComponent.cpp" />
     <ClCompile Include="Source\Component\Private\FireBallComponent.cpp" />
+    <ClCompile Include="Source\Component\Private\HeightFogComponent.cpp" />
     <ClCompile Include="Source\Component\Private\LightComponent.cpp" />
     <ClCompile Include="Source\Component\Private\SpotLightComponent.cpp" />
     <ClCompile Include="Source\Component\Private\TextRenderComponent.cpp" />

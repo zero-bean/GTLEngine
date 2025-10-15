@@ -31,6 +31,8 @@
 #include <exception>
 #include <filesystem>
 
+#include "Component/Public/HeightFogComponent.h"
+
 #include "Component/Movement/Public/RotatingMovementComponent.h"
 #include "Component/Movement/Public/MovementComponent.h"
 #include "Component/Movement/Public/ProjectileMovementComponent.h"
@@ -284,7 +286,6 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		}
 		if (ImGui::MenuItem("SpotLight Component"))
 		{
-			// jft
 			AddComponentToActor(new USpotLightComponent());
 			UBillboardComponent* Billboard = new UBillboardComponent();
 			Billboard->SetSprite(ELightType::Spotlight);
@@ -296,6 +297,10 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 			InSelectedActor->SetActorTickEnabled(true);
 		}
 
+		if (ImGui::MenuItem("HeightFog Component"))
+		{
+			AddComponentToActor(new UHeightFogComponent());
+		}
 		ImGui::Separator();
 
 		if (ImGui::MenuItem("Cube Component"))
@@ -919,6 +924,46 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
             UE_LOG("new color: %f, %f, %f, %f", NewColor.X, NewColor.Y, NewColor.Z, NewColor.W);
         }
     }
+	else if (InComponent->IsA(UHeightFogComponent::StaticClass()))
+	{
+		UHeightFogComponent* Fog = Cast<UHeightFogComponent>(InComponent);
+		ImGui::Text("Height Fog");
+
+		FHeightFogConstants FogConstants = Fog->BuildFogConstants();
+		FVector4 Cur = Fog->GetFogInscatteringColor(); // 꼭 Linear/HDR!
+		float ColorRGBA[4] = { Cur.X, Cur.Y, Cur.Z, Cur.W };
+
+		if (ImGui::ColorEdit3("Color", ColorRGBA, ImGuiColorEditFlags_Float))
+		{
+			Fog->SetFogInscatteringColor(FVector4(ColorRGBA[0], ColorRGBA[1], ColorRGBA[2], 1.0f));
+		}
+
+		float Density = FogConstants.FogDensity;
+		ImGui::DragFloat("Density", &Density, 0.01f, 0.0f, 1.0f, "%.2f s");
+		Fog->SetFogDensity(Density);
+
+		float HeightFalloff = FogConstants.FogHeightFalloff;
+		ImGui::DragFloat("HeightFalloff", &HeightFalloff, 0.01f, -100.0f, 100.0f, "%.2f s");
+		Fog->SetFogHeightFalloff(HeightFalloff);
+
+		float StartDistance = FogConstants.StartDistance;
+		ImGui::DragFloat("StartDistance", &StartDistance, 0.01f, 0.0f, 1000.0f, "%.2f s");
+		Fog->SetStartDistance(StartDistance);
+
+		float FogCutoffDistance = FogConstants.FogCutoffDistance;
+		ImGui::DragFloat("FogCutoffDistance", &FogCutoffDistance, 0.01f, 0.0f, 1000.0f, "%.2f s");
+		Fog->SetFogCutoffDistance(FogCutoffDistance);
+
+		float FogMaxOpacity = FogConstants.FogMaxOpacity;
+		ImGui::DragFloat("FogMaxOpacity", &FogMaxOpacity, 0.01f, 0.0f, 1.0f, "%.2f s");
+		Fog->SetFogMaxOpacity(FogMaxOpacity);
+
+		float FogHeight = FogConstants.FogHeight;
+		ImGui::DragFloat("FogHeight", &FogHeight, 0.01f, 0.0f, 1000.0f, "%.2f s");
+		Fog->SetFogHeight(FogHeight);
+
+		ImGui::Separator();
+	}
 	else
 	{
 		ImGui::TextColored(ImVec4(0.6f,0.6f,0.6f,1.0f), "No detail view for this component type.");

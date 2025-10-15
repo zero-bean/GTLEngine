@@ -8,6 +8,7 @@
 #include "Component/Public/SpotLightComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Component/Public/FireBallComponent.h"
+#include "Component/Public/HeightFogComponent.h"
 #include "Core/Public/BVHierarchy.h"
 #include "Editor/Public/Editor.h"
 #include "Editor/Public/EditorEngine.h"
@@ -68,6 +69,7 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateBillboardResources();
 	CreateSpotlightResrouces();
 	CreateFireBallShader();
+	CreateHeightFogShader();
     FXAA = new UFXAAPass();
     FXAA->Initialize(DeviceResources);
 
@@ -160,8 +162,11 @@ void URenderer::Release()
 	ReleaseBillboardResources();
 	ReleaseSpotlightResources();
 	ReleaseTextureShader();
-	ReleaseProjectionDecalShader();
-	ReleaseFireBallShader();
+    ReleaseProjectionDecalShader();
+	ReleaseSceneDepthViewModeShader();
+	ReleaseHeightFogShader();
+
+    if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
 
   if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
 
@@ -443,6 +448,46 @@ void URenderer::CreateSceneDepthViewModeShader()
 	SceneDepthPSBlob->Release();
 }
 
+void URenderer::CreateHeightFogShader()
+{
+	ID3DBlob* HeightFogVSBlob;
+	ID3DBlob* HeightFogPSBlob;
+
+	D3DCompileFromFile(L"Asset/Shader/HeightFogShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0,
+		&HeightFogVSBlob, nullptr);
+
+	GetDevice()->CreateVertexShader(HeightFogVSBlob->GetBufferPointer(),
+		HeightFogVSBlob->GetBufferSize(), nullptr, &HeightFogVertexShader);
+
+	D3DCompileFromFile(L"Asset/Shader/HeightFogShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0,
+		&HeightFogPSBlob, nullptr);
+
+	GetDevice()->CreatePixelShader(HeightFogPSBlob->GetBufferPointer(),
+		HeightFogPSBlob->GetBufferSize(), nullptr, &HeightFogPixelShader);
+
+	HeightFogVSBlob->Release();
+	HeightFogPSBlob->Release();
+
+	if (!HeightFogBlendState)
+	{
+		D3D11_BLEND_DESC BlendDesc = {};
+		BlendDesc.RenderTarget[0].BlendEnable = TRUE;
+		BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		HRESULT hr = GetDevice()->CreateBlendState(&BlendDesc, &HeightFogBlendState);
+		if (FAILED(hr))
+		{
+			UE_LOG_ERROR("Renderer: Failed to create height fog blend state (HRESULT: 0x%08lX)", hr);
+		}
+	}
+}
+
 /**
  * @brief 래스터라이저 상태를 해제하는 함수
  */
@@ -505,6 +550,13 @@ void URenderer::ReleaseSceneDepthViewModeShader()
 {
 	SafeRelease(SceneDepthVertexShader);
 	SafeRelease(SceneDepthPixelShader);
+}
+
+void URenderer::ReleaseHeightFogShader()
+{
+	SafeRelease(HeightFogVertexShader);
+	SafeRelease(HeightFogPixelShader);
+	SafeRelease(HeightFogBlendState);
 }
 
 /**
@@ -579,9 +631,9 @@ void URenderer::Tick(float DeltaSeconds)
  */
 void URenderer::RenderBegin() const
 {
-    // Render scene into FXAA scene color target when enabled and not in SceneDepth view mode
-    const bool bUseFXAAPath = bFXAAEnabled && FXAA && (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth);
-    ID3D11RenderTargetView* RenderTargetView = bUseFXAAPath ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
+	// Render scene into FXAA scene color target when enabled and not in SceneDepth view mode
+	const bool bUseFXAAPath = bFXAAEnabled && FXAA && (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth);
+	ID3D11RenderTargetView* RenderTargetView = bUseFXAAPath ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
 	GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
 
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
@@ -685,6 +737,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	TArray<TObjectPtr<USpotLightComponent>> SpotLights;
 	TArray<TObjectPtr<UPrimitiveComponent>> PrimitivesToPostUpdate;
 	TArray<TObjectPtr<UFireBallComponent>> FireBalls;
+	TArray<TObjectPtr<UHeightFogComponent>> HeightFogs;
 
 	for (size_t i = 0; i < InPrimitiveComponents.size(); ++i)
 	{
@@ -711,6 +764,10 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Spotlight)
 		{
 			SpotLights.push_back(Cast<USpotLightComponent>(PrimitiveComponent));
+		}
+		else if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::HeightFog)
+		{
+			HeightFogs.push_back(Cast<UHeightFogComponent>(PrimitiveComponent));
 		}
 		else if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::TextRender)
 		{
@@ -789,6 +846,12 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		RenderLights(InCurrentCamera, SpotLights, PrimitivesToPostUpdate);
 		RenderFireBalls(InCurrentCamera, FireBalls, PrimitivesToPostUpdate);
 	}
+
+	for (UHeightFogComponent* HeightFogComponent : HeightFogs)
+	{
+		RenderHeightFog(InCurrentCamera, InViewportClient, HeightFogComponent);
+	}
+
 	for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
 	{
 		if (BillboardComponent)
@@ -1285,7 +1348,7 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportCl
 	Pipeline->UpdatePipeline(PipelineInfo);
 
 	// constant buffer update
-	FDepthConstants2D SceneDepthData{};
+	FullscreenDepthConstants SceneDepthData{};
 
 	// 1) InvViewProj 계산
 	UCamera* Cam = InCurrentCamera;
@@ -1338,6 +1401,94 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportCl
 	ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
 	GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
 
+	Targets[0] = CurrentRTV;
+	GetDeviceContext()->OMSetRenderTargets(1, Targets, CurrentDSV);
+}
+
+void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient,
+	UHeightFogComponent* InHeightFogComponent)
+{
+	const EViewModeIndex ViewMode = GEngine->GetEditor()->GetViewMode();
+	if (ViewMode == EViewModeIndex::VMI_SceneDepth || ViewMode == EViewModeIndex::VMI_SceneDepth2D)
+	{
+		return;
+	}
+
+	if (!HeightFogVertexShader || !HeightFogPixelShader || !ConstantBufferHeightFog)
+	{
+		return;
+	}
+
+	ID3D11ShaderResourceView* DepthSRV = DeviceResources->GetDetphShaderResourceView();
+	if (!DepthSRV)
+	{
+		return;
+	}
+
+	FRenderState HeightFogState = {};
+	HeightFogState.CullMode = ECullMode::None;
+	HeightFogState.FillMode = EFillMode::Solid;
+
+	FPipelineInfo PipelineInfo = {
+		nullptr,
+		HeightFogVertexShader,
+		GetRasterizerState(HeightFogState),
+		DisabledDepthStencilState,
+		HeightFogPixelShader,
+		HeightFogBlendState,
+		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	};
+
+	Pipeline->UpdatePipeline(PipelineInfo);
+
+	FullscreenDepthConstants SceneDepthData{};
+	UCamera* Cam = InCurrentCamera;
+	const FViewProjConstants& VP = Cam->GetFViewProjConstants();
+	FMatrix View      = VP.View;
+	FMatrix Proj      = VP.Projection;
+	FMatrix ViewProj  = View * Proj;
+	SceneDepthData.InvViewProj = ViewProj.Inverse();
+	const FVector CameraPos = Cam->GetLocation();
+	SceneDepthData.CameraPosWSAndNear = FVector4(CameraPos.X, CameraPos.Y, CameraPos.Z, Cam->GetNearZ());
+	SceneDepthData.FarAndPadding = FVector4(Cam->GetFarZ(), 0.0f, 0.0f, 0.0f);
+
+	const D3D11_VIEWPORT& FullViewport = DeviceResources->GetViewportInfo();
+	const D3D11_VIEWPORT& SubViewport  = InViewportClient.GetViewportInfo();
+	const float InvFullWidth  = FullViewport.Width  > 0.0f ? 1.0f / FullViewport.Width  : 0.0f;
+	const float InvFullHeight = FullViewport.Height > 0.0f ? 1.0f / FullViewport.Height : 0.0f;
+	SceneDepthData.ViewportRect = FVector4(
+		SubViewport.TopLeftX * InvFullWidth,
+		SubViewport.TopLeftY * InvFullHeight,
+		SubViewport.Width    * InvFullWidth,
+		SubViewport.Height   * InvFullHeight
+	);
+
+	UpdateConstant(ConstantBufferDepth2D, SceneDepthData, 0, true, true);
+	FHeightFogConstants HeightFogData = InHeightFogComponent->BuildFogConstants();
+	UpdateConstant(ConstantBufferHeightFog, HeightFogData, 1, false, true);
+
+	ID3D11RenderTargetView* CurrentRTV = DeviceResources->GetRenderTargetView();
+
+	ID3D11RenderTargetView* Targets[1] = { CurrentRTV };
+	GetDeviceContext()->OMSetRenderTargets(1, Targets, nullptr);
+
+	InViewportClient.Apply(GetDeviceContext());
+
+	// Bind SRV, Sampler
+	ID3D11ShaderResourceView* depthSRV = DeviceResources->GetDetphShaderResourceView();
+
+	Pipeline->SetTexture(0, false, DepthSRV);
+	Pipeline->SetSamplerState(0, false, DeviceResources->GetDepthSamplerState());
+
+	Pipeline->SetVertexBuffer(nullptr, 0);
+	Pipeline->SetIndexBuffer(nullptr, 0);
+	Pipeline->Draw(3, 0);
+
+	//  depth SRV 언바인드
+	ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+	GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
+
+	ID3D11DepthStencilView* CurrentDSV = DeviceResources->GetDepthStencilView();
 	Targets[0] = CurrentRTV;
 	GetDeviceContext()->OMSetRenderTargets(1, Targets, CurrentDSV);
 }
@@ -1919,7 +2070,7 @@ void URenderer::CreateConstantBuffer()
 		GetDevice()->CreateBuffer(&FireBallConstantBufferDescription, nullptr, &ConstantBufferFireBall);
     
 		D3D11_BUFFER_DESC desc = {};
-		desc.ByteWidth      = (sizeof(FDepthConstants2D) + 0xF) & ~0xF; // 16바이트 맞춤
+		desc.ByteWidth      = (sizeof(FullscreenDepthConstants) + 0xF) & ~0xF; // 16바이트 맞춤
 		desc.Usage          = D3D11_USAGE_DYNAMIC;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		desc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
@@ -1935,6 +2086,16 @@ void URenderer::CreateConstantBuffer()
 		desc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
 
 		GetDevice()->CreateBuffer(&desc, nullptr, &ConstantBufferDepth);
+	}
+
+	{
+		D3D11_BUFFER_DESC desc = {};
+		desc.ByteWidth      = (sizeof(FHeightFogConstants) + 0xF) & ~0xF; // 16바이트 맞춤
+		desc.Usage          = D3D11_USAGE_DYNAMIC;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
+
+		GetDevice()->CreateBuffer(&desc, nullptr, &ConstantBufferHeightFog);
 	}
 }
 
@@ -2083,6 +2244,7 @@ void URenderer::ReleaseConstantBuffer()
 	SafeRelease(ConstantBufferFireBall);
 	SafeRelease(ConstantBufferDepth);
 	SafeRelease(ConstantBufferDepth2D);
+	SafeRelease(ConstantBufferHeightFog);
 }
 
 bool URenderer::UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const

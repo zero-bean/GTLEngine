@@ -18,6 +18,7 @@ class UTextRenderComponent;
 class UDecalComponent;
 class USpotLightComponent;
 class UFireBallComponent;
+class UHeightFogComponent;
 class AActor;
 class AGizmo;
 class UFontRenderer;
@@ -72,6 +73,7 @@ public:
 	void CreateSpotlightResrouces();
 	void CreateFireBallShader();
 	void CreateSceneDepthViewModeShader();
+	void CreateHeightFogShader();
 
 	// Release
 	void ReleaseConstantBuffer();
@@ -87,6 +89,7 @@ public:
 	void ReleaseSpotlightShader();
 	void ReleaseFireBallShader();
 	void ReleaseSceneDepthViewModeShader();
+	void ReleaseHeightFogShader();
 
 	// Render
 	void Tick(float DeltaSeconds);
@@ -109,6 +112,7 @@ public:
 	void RenderFireBalls(UCamera* InCurrentCamera, const TArray<TObjectPtr<UFireBallComponent>>& InFireBalls,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 	void RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient);
+	void RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient, UHeightFogComponent* InHeightFogComponent);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
 
@@ -196,6 +200,7 @@ private:
 	ID3D11Buffer* ConstantBufferFireBall = nullptr;
 	ID3D11Buffer* ConstantBufferDepth2D = nullptr;
 	ID3D11Buffer* ConstantBufferDepth = nullptr;
+	ID3D11Buffer* ConstantBufferHeightFog = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -210,6 +215,7 @@ private:
 	ID3D11Buffer* BillboardVertexBuffer = nullptr;
 	ID3D11Buffer* BillboardIndexBuffer = nullptr;
 	ID3D11BlendState* BillboardBlendState = nullptr;
+	ID3D11BlendState* HeightFogBlendState = nullptr;
 
 	ID3D11VertexShader* ProjectionDecalVertexShader = nullptr;
 	ID3D11PixelShader* ProjectionDecalPixelShader = nullptr;
@@ -227,7 +233,10 @@ private:
 	ID3D11BlendState* FireBallBlendState = nullptr;
   
 	ID3D11VertexShader* SceneDepthVertexShader = nullptr;
-	ID3D11PixelShader* SceneDepthPixelShader= nullptr;;
+	ID3D11PixelShader* SceneDepthPixelShader= nullptr;
+
+	ID3D11VertexShader* HeightFogVertexShader = nullptr;
+	ID3D11PixelShader* HeightFogPixelShader= nullptr;
 
 	class UFXAAPass* FXAA = nullptr;
 
