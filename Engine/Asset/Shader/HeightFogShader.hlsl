@@ -134,7 +134,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 
 	// FogHeightFalloff : 안개 고도 감쇠 팩터, 클수록 급격하게 옅어진다.
 	// FogDensity : 안개 밀도(0~1)
-	float sigma  = FogDensity * exp(-FogHeightFalloff * zClosest);
+	float sigma  = FogDensity * exp(-FogHeightFalloff * (zClosest - FogHeight));
 	const float UnitToMeters = 1.0f;
 	float opticalDepth = min(sigma * (Dist * UnitToMeters), 60.0f);
 	float fogFactor = exp(-opticalDepth);
