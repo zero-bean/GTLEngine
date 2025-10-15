@@ -43,7 +43,7 @@ void UPrimitiveComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 	if (bInIsLoading)
 	{
-		FJsonSerializer::ReadVector4(InOutHandle, "Color", Color, FVector4::ZeroVector());
+		FJsonSerializer::ReadVector4(InOutHandle, "Color", Color, FVector4(1.0f,1.0f,1.0f,0.0f));
 	}
 	else
 	{
