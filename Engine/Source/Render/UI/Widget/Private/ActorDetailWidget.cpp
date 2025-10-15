@@ -293,9 +293,6 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		if (ImGui::MenuItem("FireBall Component"))
 		{
 			AddComponentToActor(new UFireBallComponent());
-			UBillboardComponent* Billboard = new UBillboardComponent();
-			Billboard->SetSprite(ELightType::Spotlight);
-			AddComponentToActor(Billboard);
 			InSelectedActor->SetActorTickEnabled(true);
 		}
 

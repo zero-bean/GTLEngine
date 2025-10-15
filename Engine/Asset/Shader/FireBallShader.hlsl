@@ -58,7 +58,7 @@ PS_INPUT mainVS(VS_INPUT Input)
 	// 1. 오브젝트의 로컬 좌표를 월드 좌표로 변환.
 	Output.WorldPos = mul(Input.Position, World);
     // 2. 오브젝트의 로컬 노말을 월드 노말로 변환.
-	Output.Normal = normalize(mul(Input.Normal, (float3x3) World));
+	Output.Normal = normalize(mul(Input.Normal, (float3x3) WorldInverseTranspose));
     // 3. 오브젝트의 공간 정보를 최종 클립 좌표로 축소.
 	Output.Position = mul(Output.WorldPos, ViewMatrix);
 	Output.Position = mul(Output.Position, ProjectionMatrix);

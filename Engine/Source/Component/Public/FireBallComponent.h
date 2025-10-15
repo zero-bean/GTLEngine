@@ -31,10 +31,6 @@ public:
 	void SetRadiusFallOff(const float& InRadiusFallOff) { RadiusFallOff = InRadiusFallOff; }
 
 private:
-	void UpdateBoundingBox();
-
-	FAABB BoundingBoxData{};
-
 	FLinearColor Color{};
 	float Intensity = 1.0f;
 	float Radius = 10.0f;

@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "Component/Public/PrimitiveComponent.h"
-
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Physics/Public/AABB.h"
+#include "Utility/Public/JsonSerializer.h"
+#include <json.hpp>
 
 IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent)
 
@@ -34,6 +35,20 @@ UObject* UPrimitiveComponent::Duplicate(FObjectDuplicationParameters Parameters)
 	DupObject->bVisible		= bVisible;
 
 	return DupObject;
+}
+
+void UPrimitiveComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	if (bInIsLoading)
+	{
+		FJsonSerializer::ReadVector4(InOutHandle, "Color", Color, FVector4::ZeroVector());
+	}
+	else
+	{
+		InOutHandle["Color"] = FJsonSerializer::Vector4ToJson(Color);
+	}
 }
 
 const TArray<FNormalVertex>* UPrimitiveComponent::GetVerticesData() const
