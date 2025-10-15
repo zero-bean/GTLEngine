@@ -895,6 +895,33 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 			FireBall->SetRadiusFallOff(RadiusFallOff);
 		}
 	}
+    else if (InComponent->IsA(UPrimitiveComponent::StaticClass()))
+    {
+        UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(InComponent);
+        ImGui::Text("Primitive Properties");
+        static float EditingColor[4];
+        static void* EditingComponentId = nullptr;
+        if (EditingComponentId != Primitive)
+        {
+            FVector4 CurrentColor = Primitive->GetColor();
+            EditingColor[0] = CurrentColor.X;
+            EditingColor[1] = CurrentColor.Y;
+            EditingColor[2] = CurrentColor.Z;
+            EditingColor[3] = CurrentColor.W;
+            // If alpha was never set, default to 1 so color edits are visible
+            if (EditingColor[3] == 0.0f)
+            {
+                EditingColor[3] = 1.0f;
+            }
+            EditingComponentId = Primitive;
+        }
+        if (ImGui::ColorEdit4("Color", EditingColor))
+        {
+            Primitive->SetColor(FVector4(EditingColor[0], EditingColor[1], EditingColor[2], EditingColor[3]));
+            FVector4 NewColor = Primitive->GetColor();
+            UE_LOG("new color: %f, %f, %f, %f", NewColor.X, NewColor.Y, NewColor.Z, NewColor.W);
+        }
+    }
 	else
 	{
 		ImGui::TextColored(ImVec4(0.6f,0.6f,0.6f,1.0f), "No detail view for this component type.");

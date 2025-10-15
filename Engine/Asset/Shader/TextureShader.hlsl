@@ -94,6 +94,9 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 	if (texColor.a == 0.0f)
 		discard;
 
+	float tintFactor = saturate(TotalColor.a);
+	texColor.rgb = lerp(texColor.rgb, texColor.rgb * TotalColor.rgb, tintFactor);
+
 	if (DebugMode == 1)
 	{
 		float Depth = input.distWS /FarD;

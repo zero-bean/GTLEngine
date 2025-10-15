@@ -1365,18 +1365,20 @@ void URenderer::RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* In
 
 	UpdateConstant(InConstantBufferModels, InMeshComp->GetWorldTransformMatrix(), 0, true, false);
 
-	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
-	{
-		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-		FDepthConstants DepthData(1, 0.1f, 500.0f, 0.8f, Color);
-		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
-	}
-	else
-	{
-		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-		FDepthConstants DepthData(0, 0.1f, 500.0f, 0.8f, Color);
-		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
-	}
+    {
+        // Use user-defined component color; apply a lightweight highlight if selected (render-time only).
+        const bool bIsSelected = (GEngine->GetCurrentLevel() && InMeshComp->GetOwner() == GEngine->GetCurrentLevel()->GetSelectedActor());
+        FVector4 C = InMeshComp->GetColor();
+        if (bIsSelected)
+        {
+            C.X *= 1.2f; C.Y *= 1.2f; C.Z *= 1.2f; // simple brighten
+        }
+        // Bind as DebugParams.TotalColor (b3) for TextureShader tint and as debug params for depth viz
+        const bool bIsDepthView = (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth);
+        float Color[4] = { C.X, C.Y, C.Z, C.W };
+        FDepthConstants DepthData(bIsDepthView ? 1u : 0u, 0.1f, 500.0f, 0.8f, Color);
+        UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
+    }
 
     InPipeline.SetVertexBuffer(InMeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
     InPipeline.SetIndexBuffer(InMeshComp->GetIndexBuffer(), 0);
@@ -1505,6 +1507,20 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 	MaterialConstants.D = 1.0f;
     UpdateConstant(ConstantBufferMaterial, MaterialConstants, 2, false, true);
 
+    // Bind debug/tint params (slot b3) so TextureShader can apply TotalColor tint if any
+    {
+        const bool bIsDepthView = (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth);
+        const bool bIsSelected = (GEngine->GetCurrentLevel() && InBillboardComp->GetOwner() == GEngine->GetCurrentLevel()->GetSelectedActor());
+        FVector4 C = InBillboardComp->GetColor();
+        if (bIsSelected)
+        {
+            C.X *= 1.2f; C.Y *= 1.2f; C.Z *= 1.2f;
+        }
+        float Color[4] = { C.X, C.Y, C.Z, C.W };
+        FDepthConstants DepthData(bIsDepthView ? 1u : 0u, 0.1f, 500.0f, 0.8f, Color);
+        UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
+    }
+
 	Pipeline->SetTexture(0, false, RenderProxy->GetSRV());
 	Pipeline->SetSamplerState(0, false, RenderProxy->GetSampler());
 
@@ -1558,9 +1574,16 @@ void URenderer::RenderPrimitiveDefault(UPipeline& InPipeline, UPrimitiveComponen
 	ID3D11SamplerState* const pSamplers[5] = { nullptr };
 	InPipeline.GetDeviceContext()->PSSetSamplers(0, 5, pSamplers);
     // Update pipeline buffers
-	UpdateConstant(InConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true, false);
-	// [수정] 새로운 UpdateConstantBuffer 함수 사용 (색상은 슬롯 2번)
-	UpdateConstant(InConstantBufferColor, InPrimitiveComp->GetColor(), 2, false, true);
+    UpdateConstant(InConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true, false);
+    // Color: use component color and brighten slightly if this primitive belongs to the selected actor (render-time only)
+    {
+        FVector4 C = InPrimitiveComp->GetColor();
+        if (GEngine->GetCurrentLevel() && InPrimitiveComp->GetOwner() == GEngine->GetCurrentLevel()->GetSelectedActor())
+        {
+            C.X *= 1.2f; C.Y *= 1.2f; C.Z *= 1.2f;
+        }
+        UpdateConstant(InConstantBufferColor, C, 2, false, true);
+    }
 
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
 	{
@@ -1910,7 +1933,7 @@ void URenderer::CreateConstantBuffer()
 		FireBallConstantBufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		FireBallConstantBufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		GetDevice()->CreateBuffer(&FireBallConstantBufferDescription, nullptr, &ConstantBufferFireBall);
-    
+
 		D3D11_BUFFER_DESC desc = {};
 		desc.ByteWidth      = (sizeof(FDepthConstants2D) + 0xF) & ~0xF; // 16바이트 맞춤
 		desc.Usage          = D3D11_USAGE_DYNAMIC;
@@ -2125,7 +2148,7 @@ ID3D11RasterizerState* URenderer::GetRasterizerState(const FRenderState& InRende
 	RasterizerDesc.FillMode = FillMode;
 	RasterizerDesc.CullMode = CullMode;
 	RasterizerDesc.FrontCounterClockwise = TRUE;
-	RasterizerDesc.DepthClipEnable = TRUE; 
+	RasterizerDesc.DepthClipEnable = TRUE;
 
 	HRESULT ResultHandle = GetDevice()->CreateRasterizerState(&RasterizerDesc, &RasterizerState);
 
