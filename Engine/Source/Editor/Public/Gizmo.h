@@ -58,10 +58,11 @@ public:
 	/* *
 	* @brief Setter
 	*/
+	void SetTargetActor(AActor* InActor) { TargetActor = InActor; }
 	void SetLocation(const FVector& Location);
 	void SetGizmoDirection(EGizmoDirection Direction) { GizmoDirection = Direction; }
-	void SetActorRotation(const FVector& Rotation) { TargetActor->SetActorRotation(Rotation); }
-	void SetActorScale(const FVector& Scale) { TargetActor->SetActorScale3D(Scale); }
+	void SetActorRotation(const FVector& Rotation) { if (TargetActor) TargetActor->SetActorRotation(Rotation); }
+	void SetActorScale(const FVector& Scale) { if (TargetActor) TargetActor->SetActorScale3D(Scale); }
 
 	void SetWorld() { bIsWorld = true; }
 	void SetLocal() { bIsWorld = false; }

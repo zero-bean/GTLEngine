@@ -153,7 +153,8 @@ void UGizmo::ChangeGizmoMode()
 
 void UGizmo::SetLocation(const FVector& Location)
 {
-	TargetActor->SetActorLocation(Location);
+    if (!TargetActor) { return; }
+    TargetActor->SetActorLocation(Location);
 }
 
 bool UGizmo::IsInRadius(float Radius)

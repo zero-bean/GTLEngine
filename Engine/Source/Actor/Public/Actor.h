@@ -47,10 +47,12 @@ public:
 	const FVector& GetActorRotation() const;
 	const FVector& GetActorScale3D() const;
 
-	void AddComponent(TObjectPtr<UActorComponent> InComponent);
-	void AddComponent(TObjectPtr<UActorComponent> InComponent, TObjectPtr<USceneComponent> InParent);
+	void AddSceneComponent(TObjectPtr<UActorComponent> InComponent);
+	void AddSceneComponent(TObjectPtr<UActorComponent> InComponent, TObjectPtr<USceneComponent> InParent);
     void RemoveComponent(TObjectPtr<UActorComponent> Component);
     void MarkComponentForRemoval(TObjectPtr<UActorComponent> Component);
+
+	void AddActorComponent(TObjectPtr<UActorComponent> InComponent);
 
 	bool IsActorTickEnabled() const { return bIsActorTickEnabled; }
 	void SetActorTickEnabled(bool bInActorTickEnabled) { bIsActorTickEnabled = bInActorTickEnabled; }
@@ -90,6 +92,6 @@ private:
 
     TArray<TObjectPtr<UActorComponent>> ComponentsPendingRemoval;
 
-	bool bIsActorTickEnabled = false;
+	bool bIsActorTickEnabled = true;
 	bool bTickInEditor = false;
 };

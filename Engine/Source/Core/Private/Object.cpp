@@ -3,7 +3,7 @@
 #include "Core/Public/EngineStatics.h"
 #include "Core/Public/Name.h"
 #include "Core/Public/ObjectIterator.h"
-
+#include "Utility/Public/JsonSerializer.h"
 #include <json.hpp>
 
 uint32 UEngineStatics::NextUUID = 0;
@@ -50,6 +50,21 @@ UObject::UObject(const FName& InName)
 	GetUObjectArray().emplace_back(this);
 }
 
+void UObject::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	if (bInIsLoading)
+	{
+		if (InOutHandle.hasKey("Name"))
+		{
+			SetName(FName(InOutHandle["Name"].ToString()));
+		}
+	}
+	else
+	{
+		InOutHandle["Name"] = GetName().ToString();
+	}
+}
+
 UObject* UObject::Duplicate(FObjectDuplicationParameters Parameters)
 {
 	/** @note 이미 오브젝트가 존재할 경우 복제하지 않음 */
@@ -61,6 +76,7 @@ UObject* UObject::Duplicate(FObjectDuplicationParameters Parameters)
 	UObject* DupObject = Parameters.DestClass->CreateDefaultObject();
 
 	DupObject->SetOuter(Parameters.DestOuter);
+	DupObject->GenerateDuplicatedObjectName(GetName(), DupObject->GetUUID());
 
 	/** @note 새로운 오브젝트가 생성되었을 경우 맵을 업데이트 해준다. */
 	Parameters.DuplicationSeed.emplace(Parameters.SourceObject, DupObject);
@@ -112,6 +128,39 @@ void UObject::AddMemoryUsage(uint64 InBytes, uint32 InCount)
 void UObject::RemoveMemoryUsage(uint64 InBytes, uint32 InCount)
 {
 	PropagateMemoryChange(-static_cast<int64>(InBytes), -static_cast<int32>(InCount));
+}
+
+std::string UObject::GenerateDuplicatedObjectName(const FName& OriginalName, const uint32& NewUUID)
+{
+	string BaseName = OriginalName.ToString();
+	string BaseUUID = to_string(NewUUID);
+	size_t UnderBarIndex = BaseName.find_last_of('_');
+
+	// 마지막 '_' 문자를 찾았고, 그 뒤에 글자가 있는지 확인
+	if (UnderBarIndex != string::npos && UnderBarIndex < BaseName.length() - 1)
+	{
+		string Suffix = BaseName.substr(UnderBarIndex + 1);
+
+		// 접미사가 숫자로만 이루어져 있는지 확인
+		bool bSuffixNumeric = !Suffix.empty(); 
+		for (char C : Suffix)
+		{
+			if (!std::isdigit(C))
+			{
+				bSuffixNumeric = false;
+				break;
+			}
+		}
+
+		// 접미사가 숫자라면, '_' 앞부분까지만 이름으로 사용
+		if (bSuffixNumeric)
+		{
+			BaseName = BaseName.substr(0, UnderBarIndex);
+		}
+	}
+
+	// 정리된 이름에 새 UUID를 붙여 반환
+	return BaseName + "_" + BaseUUID;
 }
 
 void UObject::PropagateMemoryChange(uint64 InBytesDelta, uint32 InCountDelta)

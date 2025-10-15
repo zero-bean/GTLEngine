@@ -317,9 +317,13 @@
     <ClInclude Include="Source\Component\Mesh\Public\StaticMeshComponent.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
+    <ClInclude Include="Source\Component\Movement\Public\MovementComponent.h" />
+    <ClInclude Include="Source\Component\Movement\Public\ProjectileMovementComponent.h" />
+    <ClInclude Include="Source\Component\Movement\Public\RotatingMovementComponent.h" />
     <ClInclude Include="Source\Component\Public\ActorComponent.h" />
     <ClInclude Include="Source\Component\Public\BillboardComponent.h" />
     <ClInclude Include="Source\Component\Public\DecalComponent.h" />
+    <ClInclude Include="Source\Component\Public\FireBallComponent.h" />
     <ClInclude Include="Source\Component\Public\LightComponent.h" />
     <ClInclude Include="Source\Component\Public\SpotLightComponent.h" />
     <ClInclude Include="Source\Component\Public\TextRenderComponent.h" />
@@ -485,9 +489,13 @@
     <ClCompile Include="Source\Component\Mesh\Private\StaticMeshComponent.cpp">
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
+    <ClCompile Include="Source\Component\Movement\Private\MovementComponent.cpp" />
+    <ClCompile Include="Source\Component\Movement\Private\ProjectileMovementComponent.cpp" />
+    <ClCompile Include="Source\Component\Movement\Private\RotatingMovementComponent.cpp" />
     <ClCompile Include="Source\Component\Private\ActorComponent.cpp" />
     <ClCompile Include="Source\Component\Private\BillboardComponent.cpp" />
     <ClCompile Include="Source\Component\Private\DecalComponent.cpp" />
+    <ClCompile Include="Source\Component\Private\FireBallComponent.cpp" />
     <ClCompile Include="Source\Component\Private\LightComponent.cpp" />
     <ClCompile Include="Source\Component\Private\SpotLightComponent.cpp" />
     <ClCompile Include="Source\Component\Private\TextRenderComponent.cpp" />
@@ -627,6 +635,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_MT|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Asset\Shader\FireBallShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Asset\Shader\HiZCopyDepthCS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_MT|x64'">true</ExcludedFromBuild>

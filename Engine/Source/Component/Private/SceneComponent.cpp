@@ -157,6 +157,13 @@ void USceneComponent::MarkAsDirty()
 	}
 }
 
+void USceneComponent::MoveComponent(const FVector& Delta, const FQuaternion& NewRotation)
+{
+	RelativeLocation += Delta;
+	RelativeRotation = NewRotation.ToEuler();
+	MarkAsDirty();
+}
+
 void USceneComponent::SetRelativeLocation(const FVector& Location)
 {
 	RelativeLocation = Location;
@@ -168,6 +175,12 @@ void USceneComponent::SetRelativeRotation(const FVector& Rotation)
 	RelativeRotation = Rotation;
 	MarkAsDirty();
 }
+
+void USceneComponent::SetRelativeRotation(const FQuaternion& Rotation)
+{
+	RelativeRotation = Rotation.ToEuler();
+}
+
 void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 {
 	FVector ActualScale = Scale;
@@ -202,6 +215,17 @@ const FVector& USceneComponent::GetRelativeRotation() const
 const FVector& USceneComponent::GetRelativeScale3D() const
 {
 	return RelativeScale3D;
+}
+
+const FVector& USceneComponent::GetWorldLocation() const
+{
+	const FMatrix& WorldMatrix = GetWorldTransformMatrix();
+
+	return FVector(
+		WorldMatrix.Data[3][0],
+		WorldMatrix.Data[3][1],
+		WorldMatrix.Data[3][2]
+	);
 }
 
 const FMatrix& USceneComponent::GetWorldTransformMatrix() const

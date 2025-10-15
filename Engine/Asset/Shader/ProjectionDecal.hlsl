@@ -25,7 +25,7 @@ cbuffer DecalConstantBuffer : register(b3)
 	row_major float4x4 DecalInverseWorld; // 데칼의 월드 역행렬
 	row_major float4x4 DecalWorld;
 	float FadeProgress;				      // Fade progress (0-1)
-	uint  FadeStyle;			          // 0:Standard, 1:WipeLtoR, 2:Dissolve, 3:Iris
+	uint  FadeStyle;			            // 0:Standard, 1:WipeLtoR, 2:Dissolve, 3:Iris
 	float2 padding;
 };
 

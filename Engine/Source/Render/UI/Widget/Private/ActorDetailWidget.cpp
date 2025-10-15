@@ -12,6 +12,7 @@
 #include "Component/Public/LineComponent.h"
 #include "Component/Public/DecalComponent.h"
 #include "Component/Public/SpotLightComponent.h"
+#include "Component/Public/FireBallComponent.h"
 #include "Component/Mesh/Public/CubeComponent.h"
 #include "Component/Mesh/Public/SphereComponent.h"
 #include "Component/Mesh/Public/SquareComponent.h"
@@ -29,6 +30,10 @@
 #include <cctype>
 #include <exception>
 #include <filesystem>
+
+#include "Component/Movement/Public/RotatingMovementComponent.h"
+#include "Component/Movement/Public/MovementComponent.h"
+#include "Component/Movement/Public/ProjectileMovementComponent.h"
 
 bool UActorDetailWidget::bAssetsLoaded = false;
 TArray<FTextureOption> UActorDetailWidget::BillboardSpriteOptions;
@@ -233,31 +238,35 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 	if (ImGui::BeginPopup("AddComponentPopup"))
 	{
 		auto AddComponentToActor = [&](UActorComponent* NewComponent)
+		{
+			if (!NewComponent) return;
+
+			// 1. 고유 이름 설정
+			FString BaseName = NewComponent->GetClass()->GetClassTypeName().ToString();
+			FString UniqueName = GenerateUniqueComponentName(InSelectedActor, BaseName);
+			NewComponent->SetName(UniqueName);
+
+			// 2. SceneComponent인 경우 계층 구조 설정
+			if (USceneComponent* NewSceneComponent = Cast<USceneComponent>(NewComponent))
 			{
-				if (!NewComponent) return;
-
-				// 1. 고유 이름 설정
-				FString BaseName = NewComponent->GetClass()->GetClassTypeName().ToString();
-				FString UniqueName = GenerateUniqueComponentName(InSelectedActor, BaseName);
-				NewComponent->SetName(UniqueName);
-
-				// 2. SceneComponent인 경우 계층 구조 설정
-				if (USceneComponent* NewSceneComponent = Cast<USceneComponent>(NewComponent))
+				// SetRootComponent가 소유권 등록을 직접 처리하므로 수동 등록을 생략합니다.
+				if (!InSelectedActor->GetRootComponent())
 				{
-					// SetRootComponent가 소유권 등록을 직접 처리하므로 수동 등록을 생략합니다.
-					if (!InSelectedActor->GetRootComponent())
+					InSelectedActor->SetRootComponent(NewSceneComponent);
+				}
+				else
+				{
+					if (TObjectPtr<USceneComponent> ParentComponent = Cast<USceneComponent>(SelectedComponent))
 					{
-						InSelectedActor->SetRootComponent(NewSceneComponent);
-					}
-					else
-					{
-						if (TObjectPtr<USceneComponent> ParentComponent = Cast<USceneComponent>(SelectedComponent))
-						{
-							InSelectedActor->AddComponent(NewComponent, ParentComponent);
-						}
+						InSelectedActor->AddSceneComponent(NewComponent, ParentComponent);
 					}
 				}
-			};
+			}
+			else
+			{
+				InSelectedActor->AddActorComponent(NewComponent);
+			}
+		};
 
 		if (ImGui::MenuItem("Text Render Component"))
 		{
@@ -281,7 +290,17 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 			Billboard->SetSprite(ELightType::Spotlight);
 			AddComponentToActor(std::move(Billboard));
 		}
+		if (ImGui::MenuItem("FireBall Component"))
+		{
+			AddComponentToActor(new UFireBallComponent());
+			UBillboardComponent* Billboard = new UBillboardComponent();
+			Billboard->SetSprite(ELightType::Spotlight);
+			AddComponentToActor(Billboard);
+			InSelectedActor->SetActorTickEnabled(true);
+		}
+
 		ImGui::Separator();
+
 		if (ImGui::MenuItem("Cube Component"))
 		{
 			AddComponentToActor(new UCubeComponent());
@@ -301,6 +320,21 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		if (ImGui::MenuItem("Static Mesh Component"))
 		{
 			AddComponentToActor(new UStaticMeshComponent());
+		}
+
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Rotating Movement Component"))
+		{
+			URotatingMovementComponent* RotatingMovementComp = new URotatingMovementComponent();
+			AddComponentToActor(RotatingMovementComp);
+			RotatingMovementComp->SetUpdatedComponent(InSelectedActor->GetRootComponent());
+		}
+		if (ImGui::MenuItem("Projectile Movement Component"))
+		{
+			UProjectileMovementComponent* ProjectileMovementComp = new UProjectileMovementComponent();
+			AddComponentToActor(ProjectileMovementComp);
+			ProjectileMovementComp->SetUpdatedComponent(InSelectedActor->GetRootComponent());
 		}
 
 		ImGui::EndPopup();
@@ -354,14 +388,16 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		RenderHierarchyNode(RootComponentRaw, RenderedComponents, InSelectedActor);
 	}
 
-	// 2. 계층 구조에 포함되지 않은 나머지 컴포넌트들을 렌더링
-	for (const auto& Component : AllComponents)
-	{
-		if (Component && RenderedComponents.find(Component.Get()) == RenderedComponents.end())
-		{
-			RenderFlatNode(Component.Get(), InSelectedActor);
-		}
-	}
+    // 2-A. 계층 구조에 포함되지 않은 일반 컴포넌트 섹션
+	ImGui::Separator();
+    for (const auto& Component : AllComponents)
+    {
+        if (!Component) continue;
+        UActorComponent* Raw = Component.Get();
+        if (RenderedComponents.find(Raw) != RenderedComponents.end()) continue; // already shown in hierarchy
+        // if (Raw->IsA(UMovementComponent::StaticClass())) continue; // movement gets its own section
+        RenderFlatNode(Raw, InSelectedActor);
+    }
 
 	ImGui::Separator();
 
@@ -492,7 +528,110 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 	FName TypeName = InComponent->GetClass()->GetClassTypeName();
 	ImGui::Text("Details for: %s", TypeName.ToString().data());
 
-	if (InComponent->IsA(UTextRenderComponent::StaticClass()))
+	if (InComponent->IsA(URotatingMovementComponent::StaticClass()))
+	{
+		URotatingMovementComponent* RotatingComp = Cast<URotatingMovementComponent>(InComponent);
+
+		// Target (Updated) Component picker
+		if (AActor* Owner = RotatingComp->GetOwner())
+		{
+			const TArray<TObjectPtr<UActorComponent>>& AllComps = Owner->GetOwnedComponents();
+			// Build a list of scene components
+			TArray<USceneComponent*> SceneComps;
+			for (const auto& C : AllComps)
+			{
+				if (auto* SC = Cast<USceneComponent>(C.Get())) { SceneComps.push_back(SC); }
+			}
+
+			int currentIndex = -1;
+			for (int i = 0; i < (int)SceneComps.size(); ++i)
+			{
+				if (SceneComps[i] == RotatingComp->UpdatedComponent.Get()) { currentIndex = i; break; }
+			}
+
+			FString preview = currentIndex >= 0 ? SceneComps[currentIndex]->GetName().ToString() : FString("<none>");
+			if (ImGui::BeginCombo("Updated Component", preview.c_str()))
+			{
+				for (int i = 0; i < (int)SceneComps.size(); ++i)
+				{
+					bool selected = (i == currentIndex);
+					FString item = SceneComps[i]->GetName().ToString();
+					if (ImGui::Selectable(item.c_str(), selected))
+					{
+						RotatingComp->SetUpdatedComponent(SceneComps[i]);
+						currentIndex = i;
+					}
+				}
+				ImGui::EndCombo();
+			}
+		}
+
+		FVector RelativeRotation = RotatingComp->RotationRate;
+		float RotationArr[3] = { RelativeRotation.X, RelativeRotation.Y, RelativeRotation.Z };
+		if (ImGui::DragFloat3("Rotation Rate", RotationArr, 0.1f))
+		{
+			RotatingComp->RotationRate = FVector(RotationArr[0], RotationArr[1], RotationArr[2]);
+		}
+
+		FVector PivotTranslation = RotatingComp->PivotTranslation;
+		float PivotArr[3] = { PivotTranslation.X, PivotTranslation.Y, PivotTranslation.Z };
+		if (ImGui::DragFloat3("Pivot Translation", PivotArr, 0.1f))
+		{
+			RotatingComp->PivotTranslation = FVector(PivotArr[0], PivotArr[1], PivotArr[2]);
+		}
+	}
+	else if (InComponent->IsA(UProjectileMovementComponent::StaticClass()))
+	{
+		UProjectileMovementComponent* ProjectileComp = Cast<UProjectileMovementComponent>(InComponent);
+
+		if (AActor* Owner = ProjectileComp->GetOwner())
+		{
+			const TArray<TObjectPtr<UActorComponent>>& AllComps = Owner->GetOwnedComponents();
+			// Build a list of scene components
+			TArray<USceneComponent*> SceneComps;
+			for (const auto& C : AllComps)
+			{
+				if (auto* SC = Cast<USceneComponent>(C.Get())) { SceneComps.push_back(SC); }
+			}
+
+			int currentIndex = -1;
+			for (int i = 0; i < (int)SceneComps.size(); ++i)
+			{
+				if (SceneComps[i] == ProjectileComp->UpdatedComponent.Get()) { currentIndex = i; break; }
+			}
+
+			FString preview = currentIndex >= 0 ? SceneComps[currentIndex]->GetName().ToString() : FString("<none>");
+			if (ImGui::BeginCombo("Updated Component", preview.c_str()))
+			{
+				for (int i = 0; i < (int)SceneComps.size(); ++i)
+				{
+					bool selected = (i == currentIndex);
+					FString item = SceneComps[i]->GetName().ToString();
+					if (ImGui::Selectable(item.c_str(), selected))
+					{
+						ProjectileComp->SetUpdatedComponent(SceneComps[i]);
+						currentIndex = i;
+					}
+				}
+				ImGui::EndCombo();
+			}
+		}
+
+		FVector Velocity = ProjectileComp->Velocity;
+		float VelocityArr[3] = { Velocity.X, Velocity.Y, Velocity.Z };
+		if (ImGui::DragFloat3("Initial Velocity", VelocityArr, 0.1f))
+		{
+			ProjectileComp->Velocity = FVector(VelocityArr[0], VelocityArr[1], VelocityArr[2]);
+		}
+
+		FVector ProjectileGravity = ProjectileComp->ProjectileGravity;
+		float GravityArr[3] = { ProjectileGravity.X, ProjectileGravity.Y, ProjectileGravity.Z };
+		if (ImGui::DragFloat3("Gravity Direction", GravityArr, 0.1f))
+		{
+			ProjectileComp->ProjectileGravity = FVector(GravityArr[0], GravityArr[1], GravityArr[2]);
+		}
+	}
+	else if (InComponent->IsA(UTextRenderComponent::StaticClass()))
 	{
 		UTextRenderComponent* TextComp = Cast<UTextRenderComponent>(InComponent);
 		static char TextBuffer[256];
@@ -720,6 +859,41 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 			Spot->UpdateLightColor(FVector4(ColorRGBA[0], ColorRGBA[1], ColorRGBA[2], 1.0f));
 		}
 		ImGui::Separator();
+	}
+	else if (InComponent->IsA(UFireBallComponent::StaticClass()))
+	{
+		UFireBallComponent* FireBall = Cast<UFireBallComponent>(InComponent);
+		ImGui::Text("FireBall Properties");
+
+		// 1. Color (색상)
+		FLinearColor CurrentColor = FireBall->GetLinearColor();
+		FVector4 Color = FireBall->GetColor();
+		float ColorRGB[4] = { Color.X, Color.Y, Color.Z, Color.W};
+		if (ImGui::ColorEdit4("Color", ColorRGB))
+		{
+			FireBall->SetColor({ ColorRGB[0], ColorRGB[1], ColorRGB[2], ColorRGB[3] });
+		}
+
+		// 2. Intensity (빛의 세기)
+		float Intensity = FireBall->GetIntensity();
+		if (ImGui::DragFloat("Intensity", &Intensity, 0.1f, 0.0f, 100.0f))
+		{
+			FireBall->SetIntensity(Intensity);
+		}
+
+		// 3. Radius (반경)
+		float Radius = FireBall->GetRadius();
+		if (ImGui::DragFloat("Radius", &Radius, 0.1f, 0.1f, 1000.0f))
+		{
+			FireBall->SetRadius(Radius);
+		}
+
+		// 4. RadiusFallOff (감쇠 시작 지점)
+		float RadiusFallOff = FireBall->GetRadiusFallOff();
+		if (ImGui::DragFloat("Radius FallOff", &RadiusFallOff, 0.01f, 0.0f, 1.0f))
+		{
+			FireBall->SetRadiusFallOff(RadiusFallOff);
+		}
 	}
 	else
 	{

@@ -17,9 +17,9 @@ class UStaticMeshComponent;
 class UTextRenderComponent;
 class UDecalComponent;
 class USpotLightComponent;
+class UFireBallComponent;
 class AActor;
 class AGizmo;
-class UEditor;
 class UFontRenderer;
 class FViewport;
 class UCamera;
@@ -62,17 +62,15 @@ public:
 	void Release();
 
 	// Initialize
-	void CreateConstantBuffer();
-	void CreateRasterizerState();
 	void CreateDepthStencilState();
-
-	void CreateBillboardResources();
-	void CreateSpotlightResources();
-
 	void CreateDefaultShader();
 	void CreateTextureShader();
 	void CreateProjectionDecalShader();
 	void CreateSpotlightShader();
+	void CreateConstantBuffer();
+	void CreateBillboardResources();
+	void CreateSpotlightResrouces();
+	void CreateFireBallShader();
 	void CreateSceneDepthViewModeShader();
 
 	// Release
@@ -87,6 +85,7 @@ public:
 	void ReleaseTextureShader();
 	void ReleaseProjectionDecalShader();
 	void ReleaseSpotlightShader();
+	void ReleaseFireBallShader();
 	void ReleaseSceneDepthViewModeShader();
 
 	// Render
@@ -106,6 +105,8 @@ public:
 	void RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<UDecalComponent>>& InDecals,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 	void RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<USpotLightComponent>>& InSpotlights,
+		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
+	void RenderFireBalls(UCamera* InCurrentCamera, const TArray<TObjectPtr<UFireBallComponent>>& InFireBalls,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 	void RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient);
 
@@ -192,9 +193,9 @@ private:
 	ID3D11Buffer* ConstantBufferMaterial = nullptr;
 	ID3D11Buffer* ConstantBufferProjectionDecal = nullptr;
 	ID3D11Buffer* ConstantBufferSpotlight = nullptr;
+	ID3D11Buffer* ConstantBufferFireBall = nullptr;
 	ID3D11Buffer* ConstantBufferDepth2D = nullptr;
 	ID3D11Buffer* ConstantBufferDepth = nullptr;
-
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -220,6 +221,11 @@ private:
 	ID3D11InputLayout* SpotlightInputLayout = nullptr;
 	ID3D11BlendState* SpotlightBlendState = nullptr;
 
+	ID3D11VertexShader* FireBallVertexShader = nullptr;
+	ID3D11PixelShader* FireBallPixelShader = nullptr;
+	ID3D11InputLayout* FireBallInputLayout = nullptr;
+	ID3D11BlendState* FireBallBlendState = nullptr;
+  
 	ID3D11VertexShader* SceneDepthVertexShader = nullptr;
 	ID3D11PixelShader* SceneDepthPixelShader= nullptr;;
 

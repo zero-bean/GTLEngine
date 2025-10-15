@@ -555,12 +555,6 @@ void ULevel::MarkActorForDeletion(AActor* InActor)
 	// 삭제 대기 리스트에 추가
 	ActorsToDelete.push_back(InActor);
 	UE_LOG("Level: 다음 Tick에 Actor를 제거하기 위한 마킹 처리: %s", InActor->GetName().ToString().data());
-
-	// 선택 해제는 바로 처리
-	if (SelectedActor == InActor)
-	{
-		SelectedActor = nullptr;
-	}
 }
 
 void ULevel::ProcessPendingDeletions()
@@ -578,6 +572,11 @@ void ULevel::ProcessPendingDeletions()
 
 	for (AActor* ActorToDelete : ActorsToProcess)
 	{
+		if (SelectedActor == ActorToDelete)
+		{
+			SelectedActor = nullptr;
+		}
+
 		if (ActorToDelete)
 		{
 			DestroyActor(ActorToDelete);
