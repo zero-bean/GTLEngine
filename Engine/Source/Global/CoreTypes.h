@@ -167,6 +167,17 @@ struct FHeightFogConstants
 	float FogInscatteringColor[4]; // rgba (linear/HDR)
 };
 
+struct FOccluderConstants
+{
+	FMatrix OccluderWorld;
+	FMatrix OccluderInverseWorld;
+	FVector OccluderScale; 
+	float padding;
+
+	FOccluderConstants(const FMatrix& world, const FMatrix& invWorld, const FVector& scale)
+		: OccluderWorld(world), OccluderInverseWorld(invWorld), OccluderScale(scale) {
+	}
+};
 
 struct FVertex
 {
