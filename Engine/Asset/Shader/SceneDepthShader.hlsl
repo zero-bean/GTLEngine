@@ -57,45 +57,46 @@ PS_INPUT mainVS(VS_INPUT input)
 	return output;
 }
 
+// NDC z는 D3D11에선 0..1
+float3 ReconstructWorld(float2 localUV, out float depth01)
+{
+	float2 uv    = GetFullUV(localUV);
+	depth01      = DepthTexture.SampleLevel(SamplerPoint, uv, 0).r;
+
+	float2 ndcXY = ToNDCxy(uv);
+	float  ndcZ  = depth01;
+	float4 clip  = float4(ndcXY, ndcZ, 1.0f);
+
+	float4 world = mul(clip, InvViewProj);
+	world /= world.w;
+	return world.xyz;
+}
+
+// 카메라 전방(WS) 구하기: 화면 중앙의 near/far를 역투영해 방향 벡터
+float3 GetCameraForwardWS()
+{
+	float4 clipNear = float4(0, 0, 0, 1);  // D3D11: z=0
+	float4 clipFar  = float4(0, 0, 1, 1);  // D3D11: z=1
+	float4 pN = mul(clipNear, InvViewProj); pN /= pN.w;
+	float4 pF = mul(clipFar , InvViewProj); pF /= pF.w;
+	return normalize(pF.xyz - pN.xyz);
+}
+
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-	float d = LinearEyeDistance(input.tex);
-	float Levels = 5.0;
-	float Step = 1.0 / Levels;
-	d %= Step;
-	d*=Levels;
-	return float4(d,d,d,d);
-	//
-	// float2 uv = GetFullUV(input.tex);
-	// float depth01 = DepthTexture.SampleLevel(SamplerPoint, uv, 0).r;
-	// float Levels = 5.0;
-	// float Step = 1.0 / Levels;
-	// // depth01 %= Step;
-	// // depth01*=Levels;
-	// float v  =depth01;
-	// // return float4(v, v, v, v);
+	float depth01;
+	float3 WorldPosition = ReconstructWorld(input.tex, depth01);
+	float3 cam = CameraPosWSAndNear.xyz;
 
-	// 보기 편하게 범위 매핑(원하는 가시거리로 튜닝)
-	// float farVis = 150.0f;
-	// v = saturate(d / farVis);
-	// return float4(v, v, v, v);
+	if (depth01 > 0.99999f)
+		return float4(0.0, 0.0, 0.0, 0.0);
 
+	const float SliceWidth = 15.0;
+	float3 Forward = GetCameraForwardWS();
+	float2 dir = normalize(Forward.xy + 1e-6);        // z 제거, XY 평면 방향만 1e-6은 0벡터 정규화 오류를 피하기 위해
+	float planeDist = dot((WorldPosition-cam).xy, dir);     // 월드 XY 기준 띠
 
-	// // 2) 등고선(띠) 파라미터
-	// const float BandMeters = 5.0f;        // 띠 간격: 5m
-	// float t = d / BandMeters;             // 띠의 위상
-	// float phase = frac(t);                // 0..1 주기
-	//
-	// // 화면 미분으로 경계 두께를 해상도-독립적으로
-	// float w = fwidth(t) * 1.5;            // 두께 스케일은 취향대로
-	// // 경계 0과 1 둘 다 잡기 (양쪽 에지)
-	// float edge0 = 1.0 - smoothstep(0.0, w, phase);
-	// float edge1 = smoothstep(1.0 - w, 1.0, phase);
-	// float lineMask = saturate(edge0 + edge1); // 0=없음, 1=선
-	//
-	// // 3) 그레이와 등고선 합성 (선은 어둡게)
-	// float3 baseCol = lerp(float3(0.05,0.05,0.05), float3(1,1,1), v);
-	// float3 col = lerp(baseCol, float3(0,0,0), lineMask);
-	//
-	// return float4(col, 1);
+	float gray = frac(planeDist / SliceWidth);
+
+	return float4(gray, gray, gray, 1.0);
 }
