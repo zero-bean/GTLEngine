@@ -11,8 +11,9 @@ public:
 	UHeightFogComponent();
 	virtual ~UHeightFogComponent();
 
+	
 	// UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
 	// void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 private:
-
+	FHeightFogConstants HeightFogConstants;
 };

@@ -142,7 +142,8 @@ enum class EPrimitiveType : uint8
 	Ring,
 	Line,
 	TextRender,
-
+	HeightFog,
+	
 	End = 0xFF
 };
 DECLARE_UINT8_ENUM_REFLECTION(EPrimitiveType)
