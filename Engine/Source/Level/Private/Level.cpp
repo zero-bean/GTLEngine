@@ -446,50 +446,23 @@ void ULevel::RemoveLevelPrimitiveComponent(TObjectPtr<UPrimitiveComponent> InPri
 
 void ULevel::SetSelectedActor(AActor* InActor)
 {
-	// Set Selected Actor
-	if (SelectedActor)
-	{
-		for (auto& Component : SelectedActor->GetOwnedComponents())
-		{
-			if (!(Component->GetComponentType() >= EComponentType::Primitive))
-			{
-				continue;
-			}
+    if (InActor == SelectedActor)
+    {
+        return;
+    }
 
-			TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
-			if (PrimitiveComponent->IsVisible())
-			{
-				PrimitiveComponent->SetColor({0.f, 0.f, 0.f, 0.f});
-			}
-		}
-	}
+    UUIManager::GetInstance().OnSelectedActorChanged(InActor);
+    SelectedActor = InActor;
 
-	if (InActor != SelectedActor)
-	{
-		UUIManager::GetInstance().OnSelectedActorChanged(InActor);
-	}
-	SelectedActor = InActor;
+    if (!SelectedActor)
+    {
+        // 선택 해제 시에도 LevelPrimitiveComponents 재구성 (Billboard 제거)
+        InitializeActorsInLevel();
+        return;
+    }
 
-	if (!SelectedActor)
-	{
-		// 선택 해제 시에도 LevelPrimitiveComponents 재구성 (Billboard 제거)
-		InitializeActorsInLevel();
-		return;
-	}
-
-	for (auto& Component : SelectedActor->GetOwnedComponents())
-	{
-		if (!(Component->GetComponentType() >= EComponentType::Primitive)) continue;
-
-		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
-		if (PrimitiveComponent->IsVisible())
-		{
-			PrimitiveComponent->SetColor({1.f, 0.8f, 0.2f, 0.4f});
-		}
-	}
-
-	// 선택된 Actor의 Billboard를 LevelPrimitiveComponents에 추가하기 위해 재구성
-	InitializeActorsInLevel();
+    // 선택된 Actor의 Billboard를 LevelPrimitiveComponents에 추가하기 위해 재구성
+    InitializeActorsInLevel();
 }
 
 // Level에서 Actor 제거하는 함수
