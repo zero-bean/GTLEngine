@@ -47,7 +47,6 @@ private:
 	ID3D11Texture2D* FrameBuffer = nullptr;
 	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 
-
 	ID3D11Texture2D* DepthBuffer = nullptr;
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
 	ID3D11SamplerState* DepthSamplerState = nullptr;

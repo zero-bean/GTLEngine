@@ -223,6 +223,8 @@ void UMainBarWidget::RenderViewMenu()
 		bool bIsLit = (CurrentMode == EViewModeIndex::VMI_Lit);
 		bool bIsUnlit = (CurrentMode == EViewModeIndex::VMI_Unlit);
 		bool bIsWireframe = (CurrentMode == EViewModeIndex::VMI_Wireframe);
+		bool bIsZBufferScneDepth = (CurrentMode == EViewModeIndex::VMI_SceneDepth2D);
+		bool bIsScneDepth = (CurrentMode == EViewModeIndex::VMI_SceneDepth);
 
 		if (ImGui::MenuItem("조명 적용(Lit)", nullptr, bIsLit) && !bIsLit)
 		{
@@ -241,12 +243,12 @@ void UMainBarWidget::RenderViewMenu()
 			EditorInstance->SetViewMode(EViewModeIndex::VMI_Wireframe);
 			UE_LOG("MainBarWidget: ViewMode를 Wireframe으로 변경");
 		}
-		if (ImGui::MenuItem("Z버퍼 씬 뎁스(ZBffer Scene Depth)", nullptr, bIsWireframe) && !bIsWireframe)
+		if (ImGui::MenuItem("Z버퍼 씬 뎁스(ZBuffer Scene Depth)", nullptr, bIsZBufferScneDepth) && !bIsZBufferScneDepth)
 		{
 			EditorInstance->SetViewMode(EViewModeIndex::VMI_SceneDepth2D);
 			UE_LOG("MainBarWidget: ViewMode를 Zbuffer SceneDepth로 변경");
 		}
-		if (ImGui::MenuItem("씬 뎁스(Scene Depth)", nullptr, bIsWireframe) && !bIsWireframe)
+		if (ImGui::MenuItem("씬 뎁스(Scene Depth)", nullptr, bIsScneDepth) && !bIsScneDepth)
 		{
 			EditorInstance->SetViewMode(EViewModeIndex::VMI_SceneDepth);
 			UE_LOG("MainBarWidget: ViewMode를 SceneDepth로 변경");
@@ -344,6 +346,23 @@ void UMainBarWidget::RenderShowFlagsMenu()
 			{
 				ShowFlags |= static_cast<uint64>(EEngineShowFlags::SF_Decals);
 				UE_LOG("MainBarWidget: 데칼 표시");
+			}
+			CurrentLevel->SetShowFlags(ShowFlags);
+			CurrentLevel->InitializeActorsInLevel();
+		}
+
+		bool bShowHeightFog = (ShowFlags & EEngineShowFlags::SF_Fog) != 0;
+		if (ImGui::MenuItem("안개 표시", nullptr, bShowHeightFog))
+		{
+			if (bShowHeightFog)
+			{
+				ShowFlags &= ~static_cast<uint64>(EEngineShowFlags::SF_Fog);
+				UE_LOG("MainBarWidget: 안개 비표시");
+			}
+			else
+			{
+				ShowFlags |= static_cast<uint64>(EEngineShowFlags::SF_Fog);
+				UE_LOG("MainBarWidget: 안개 표시");
 			}
 			CurrentLevel->SetShowFlags(ShowFlags);
 			CurrentLevel->InitializeActorsInLevel();

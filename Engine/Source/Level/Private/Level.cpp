@@ -388,6 +388,10 @@ void ULevel::AddLevelPrimitiveComponentsInActor(AActor* Actor)
 		{
 			continue;
 		}
+		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::HeightFog && !(ShowFlags & EEngineShowFlags::SF_Fog))
+		{
+			continue;
+		}
 		if (PrimitiveComponent->GetPrimitiveType() != EPrimitiveType::TextRender)
 		{
 			LevelPrimitiveComponents.push_back(PrimitiveComponent);

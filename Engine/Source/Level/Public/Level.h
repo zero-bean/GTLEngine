@@ -30,6 +30,7 @@ enum class EEngineShowFlags : uint64
 	SF_BillboardText = 0x10,
 	SF_Bounds = 0x20,
 	SF_Decals = 0x40,
+	SF_Fog = 0x80,
 };
 
 inline uint64 operator|(EEngineShowFlags lhs, EEngineShowFlags rhs)
@@ -129,7 +130,8 @@ private:
 	uint64 ShowFlags = static_cast<uint64>(EEngineShowFlags::SF_Primitives) |
 		static_cast<uint64>(EEngineShowFlags::SF_BillboardText) |
 		static_cast<uint64>(EEngineShowFlags::SF_Bounds)|
-		static_cast<uint64>(EEngineShowFlags::SF_Decals);
+		static_cast<uint64>(EEngineShowFlags::SF_Decals)|
+		static_cast<uint64>(EEngineShowFlags::SF_Fog);
 
 	// LOD Update System
 	float LODUpdateFrameCounter = 0.f;
