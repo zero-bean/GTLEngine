@@ -862,7 +862,7 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 		}
 
 		float Density = FogConstants.FogDensity;
-		ImGui::DragFloat("Density", &Density, 0.0001f, 0.0f, 1.0f, "%.2f s");
+		ImGui::DragFloat("Density", &Density, 0.00001f, 0.0f, 0.1f, "%.5f s");
 		Fog->SetFogDensity(Density);
 
 		float HeightFalloff = FogConstants.FogHeightFalloff;
