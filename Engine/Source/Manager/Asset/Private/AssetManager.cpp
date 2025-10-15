@@ -36,17 +36,22 @@ void UAssetManager::Initialize()
 	VertexDatas.emplace(EPrimitiveType::Line, &VerticesLine);
     VertexDatas.emplace(EPrimitiveType::Decal, &VerticesCube);
     VertexDatas.emplace(EPrimitiveType::Spotlight, &VerticesSpotlight);
+	VertexDatas.emplace(EPrimitiveType::FireBall, &VerticesCube);
 
 	IndexDatas.emplace(EPrimitiveType::Cube, &IndicesCube);
-    IndexDatas.emplace(EPrimitiveType::Decal, &IndicesCubeLine);
+	IndexDatas.emplace(EPrimitiveType::Decal, &IndicesCubeLine);
+	IndexDatas.emplace(EPrimitiveType::FireBall, &IndicesCubeLine);
 
 	IndexBuffers.emplace(EPrimitiveType::Cube,
 		Renderer.CreateIndexBuffer(IndicesCube.data(), static_cast<int>(IndicesCube.size()) * sizeof(uint32)));
     IndexBuffers.emplace(EPrimitiveType::Decal,
         Renderer.CreateIndexBuffer(IndicesCubeLine.data(), static_cast<int>(IndicesCubeLine.size()) * sizeof(uint32)));
+	IndexBuffers.emplace(EPrimitiveType::FireBall,
+		Renderer.CreateIndexBuffer(IndicesCubeLine.data(), static_cast<int>(IndicesCubeLine.size()) * sizeof(uint32)));
 
 	NumIndices.emplace(EPrimitiveType::Cube, static_cast<uint32>(IndicesCube.size()));
-    NumIndices.emplace(EPrimitiveType::Decal, static_cast<uint32>(IndicesCubeLine.size()));
+	NumIndices.emplace(EPrimitiveType::Decal, static_cast<uint32>(IndicesCubeLine.size()));
+	NumIndices.emplace(EPrimitiveType::FireBall, static_cast<uint32>(IndicesCubeLine.size()));
 
 	// TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
 	VertexBuffers.emplace(EPrimitiveType::Cube, Renderer.CreateVertexBuffer(
@@ -70,6 +75,7 @@ void UAssetManager::Initialize()
     VertexBuffers.emplace(EPrimitiveType::Decal, VertexBuffers[EPrimitiveType::Cube]);
     VertexBuffers.emplace(EPrimitiveType::Spotlight, Renderer.CreateVertexBuffer(
     	VerticesSpotlight.data(), static_cast<int>(VerticesSpotlight.size()) * sizeof(FNormalVertex)));
+	VertexBuffers.emplace(EPrimitiveType::FireBall, VertexBuffers[EPrimitiveType::Cube]);
 
 	NumVertices.emplace(EPrimitiveType::Cube, static_cast<uint32>(VerticesCube.size()));
 	NumVertices.emplace(EPrimitiveType::Sphere, static_cast<uint32>(VerticesSphere.size()));
@@ -81,7 +87,8 @@ void UAssetManager::Initialize()
 	NumVertices.emplace(EPrimitiveType::Ring, static_cast<uint32>(VerticesRing.size()));
 	NumVertices.emplace(EPrimitiveType::Line, static_cast<uint32>(VerticesLine.size()));
     NumVertices.emplace(EPrimitiveType::Decal, NumVertices[EPrimitiveType::Cube]);
-    NumVertices.emplace(EPrimitiveType::Spotlight, static_cast<uint32>(VerticesSpotlight.size()));
+	NumVertices.emplace(EPrimitiveType::Spotlight, static_cast<uint32>(VerticesSpotlight.size()));
+	NumVertices.emplace(EPrimitiveType::FireBall, NumVertices[EPrimitiveType::Cube]);
 
 	// Calculate AABB for all primitive types (excluding StaticMesh)
 	for (const auto& Pair : VertexDatas)

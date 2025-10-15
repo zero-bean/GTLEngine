@@ -305,6 +305,9 @@ void UBVHierarchy::RaycastIterative(const FRay& InRay, float& OutClosestHit, int
                     continue;
                 }
 
+				// TODO: 추후 별도로 제외하는 코드로 만들 것
+				if (Prim.PrimitiveType == EPrimitiveType::FireBall) { continue; }
+
                 float boxT = 0.0f;
                 if (!Prim.Bounds.RaycastHit(InRay, &boxT) || boxT > OutClosestHit)
                 {

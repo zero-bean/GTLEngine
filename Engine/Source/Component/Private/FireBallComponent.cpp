@@ -10,36 +10,36 @@ IMPLEMENT_CLASS(UFireBallComponent, UPrimitiveComponent)
 UFireBallComponent::UFireBallComponent()
 {
 	Type = EPrimitiveType::FireBall;
-	BoundingBox = &BoundingBoxData;
-	UpdateBoundingBox();
+	Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
+
+	Vertices = AssetManager.GetVertexData(Type);
+	VertexBuffer = AssetManager.GetVertexbuffer(Type);
+	NumVertices = AssetManager.GetNumVertices(Type);
+
+	Indices = AssetManager.GetIndexData(Type);
+	IndexBuffer = AssetManager.GetIndexbuffer(Type);
+	NumIndices = AssetManager.GetNumIndices(Type);
+
+	BoundingBox = &AssetManager.GetAABB(Type);
+	SetRadius(Radius);
 }
 
 UFireBallComponent::~UFireBallComponent()
 {
-
 }
 
 void UFireBallComponent::TickComponent(float DeltaSeconds)
 {
 	Super::TickComponent(DeltaSeconds);
-	UpdateBoundingBox();
-}
-
-void UFireBallComponent::UpdateBoundingBox()
-{
-	const FVector Center = GetWorldLocation();
-	const FVector Extents(Radius, Radius, Radius);
-	BoundingBoxData.Min = Center - Extents;
-	BoundingBoxData.Max = Center + Extents;
 }
 
 UObject* UFireBallComponent::Duplicate(FObjectDuplicationParameters Parameters)
 {
 	auto DupObject = static_cast<UFireBallComponent*>(Super::Duplicate(Parameters));
-	DupObject->BoundingBoxData = BoundingBoxData;
 	DupObject->Color = Color;
 	DupObject->Intensity = Intensity;
-	DupObject->Radius = Radius;
+	DupObject->SetRadius(Radius);
 	DupObject->RadiusFallOff = RadiusFallOff;
 
 	return DupObject;
@@ -78,11 +78,11 @@ FLinearColor UFireBallComponent::GetLinearColor() const
 void UFireBallComponent::SetLinearColor(const FLinearColor& InLinearColor)
 {
 	Color = InLinearColor;
+
 }
 
 void UFireBallComponent::SetRadius(const float& InRadius)
 {
 	Radius = InRadius;
-	UpdateBoundingBox();
-	UBVHierarchy::GetInstance().Refit();
+	SetRelativeScale3D(FVector{ InRadius, InRadius, InRadius });
 }
