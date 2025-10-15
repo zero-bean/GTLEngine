@@ -100,9 +100,6 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     float worldDepth = worldInfo.x;
     float worldZ = worldInfo.y;
 
-	float3 roWS, rdWS;
-	GetRayWS(input.tex, roWS, rdWS);
-
 	float  depth01 = DepthTexture.SampleLevel(SamplerPoint, GetFullUV(input.tex), 0).r;
 	bool miss = (depth01 >= 0.9999f);
 
