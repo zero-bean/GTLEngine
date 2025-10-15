@@ -611,7 +611,8 @@ void URenderer::Tick(float DeltaSeconds)
     // Apply post-process (FXAA) before UI so UI remains crisp
     if (bFXAAEnabled && FXAA
     	&& GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth
-    	&& GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth2D)
+    	&& GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth2D
+    	&& GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth2DBending)
     {
         FXAA->Apply(Pipeline, ViewportClient, DisabledDepthStencilState, ClearColor);
     }
@@ -836,7 +837,11 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth2D)
 	{
-		RenderSceneDepthView(InCurrentCamera, InViewportClient);
+		RenderSceneDepthView(InCurrentCamera, InViewportClient, false);
+	}
+	else if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth2DBending)
+	{
+		RenderSceneDepthView(InCurrentCamera, InViewportClient, true);
 	}
 	else if (GEngine->GetEditor()->GetViewMode() != EViewModeIndex::VMI_SceneDepth)
 	{
@@ -1326,7 +1331,7 @@ void URenderer::RenderFireBalls(UCamera* InCurrentCamera, const TArray<TObjectPt
 	}
 }
 
-void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient)
+void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient, bool bIsBending)
 {
 	FRenderState SceneDepthState = {};
 	SceneDepthState.CullMode = ECullMode::Front;
@@ -1376,6 +1381,9 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportCl
 
 	UpdateConstant(ConstantBufferDepth2D, SceneDepthData, 0, true, true);
 
+	const FVector4 SceneViewBendingMode = FVector4(static_cast<float>(bIsBending), 0.0f, 0.0f, 0.0f);
+	UpdateConstant(ConstantBufferColor, SceneViewBendingMode, 1, true, true);
+
 	ID3D11RenderTargetView* CurrentRTV = DeviceResources->GetRenderTargetView();
 	ID3D11DepthStencilView* CurrentDSV = DeviceResources->GetDepthStencilView();
 
@@ -1407,7 +1415,7 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 	UHeightFogComponent* InHeightFogComponent)
 {
 	const EViewModeIndex ViewMode = GEngine->GetEditor()->GetViewMode();
-	if (ViewMode == EViewModeIndex::VMI_SceneDepth || ViewMode == EViewModeIndex::VMI_SceneDepth2D)
+	if (ViewMode == EViewModeIndex::VMI_SceneDepth || ViewMode == EViewModeIndex::VMI_SceneDepth2D || ViewMode == EViewModeIndex::VMI_SceneDepth2DBending)
 	{
 		return;
 	}
