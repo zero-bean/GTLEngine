@@ -8,7 +8,6 @@ IMPLEMENT_CLASS(UHeightFogComponent, UPrimitiveComponent)
 
 UHeightFogComponent::UHeightFogComponent()
 {
-	ComponentType = EComponentType::Scene;
 	Type = EPrimitiveType::HeightFog;
 	Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 }

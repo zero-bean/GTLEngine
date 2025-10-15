@@ -9,7 +9,7 @@ class UHeightFogComponent :  public UPrimitiveComponent
 
 public:
 	UHeightFogComponent();
-	virtual ~UHeightFogComponent();
+	virtual ~UHeightFogComponent() = default;
 
 	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;

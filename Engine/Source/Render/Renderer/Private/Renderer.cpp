@@ -7,6 +7,7 @@
 #include "Component/Public/DecalComponent.h"
 #include "Component/Public/SpotLightComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Component/Public/HeightFogComponent.h"
 #include "Core/Public/BVHierarchy.h"
 #include "Editor/Public/Editor.h"
 #include "Editor/Public/EditorEngine.h"
@@ -731,6 +732,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	TArray<TObjectPtr<UBillboardComponent>> Billboards;
 	TArray<TObjectPtr<UDecalComponent>> Decals;
 	TArray<TObjectPtr<USpotLightComponent>> SpotLights;
+	TArray<TObjectPtr<UHeightFogComponent>> HeightFogs;
 	TArray<TObjectPtr<UPrimitiveComponent>> PrimitivesToRenderByDecals;
 
 	for (size_t i = 0; i < InPrimitiveComponents.size(); ++i)
@@ -758,6 +760,10 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Spotlight)
 		{
 			SpotLights.push_back(Cast<USpotLightComponent>(PrimitiveComponent));
+		}
+		else if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::HeightFog)
+		{
+			HeightFogs.push_back(Cast<UHeightFogComponent>(PrimitiveComponent));
 		}
 		else if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::TextRender)
 		{
@@ -822,7 +828,12 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		RenderDecals(InCurrentCamera, Decals, PrimitivesToRenderByDecals);
 		RenderLights(InCurrentCamera, SpotLights, PrimitivesToRenderByDecals);
 	}
-	RenderHeightFog(InCurrentCamera, InViewportClient);
+
+	for (UHeightFogComponent* HeightFogComponent : HeightFogs)
+	{
+		RenderHeightFog(InCurrentCamera, InViewportClient, HeightFogComponent);
+	}
+
 	for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
 	{
 		if (BillboardComponent)
@@ -1311,15 +1322,11 @@ void URenderer::RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportCl
 	GetDeviceContext()->OMSetRenderTargets(1, Targets, CurrentDSV);
 }
 
-void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient)
+void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient,
+	UHeightFogComponent* InHeightFogComponent)
 {
 	const EViewModeIndex ViewMode = GEngine->GetEditor()->GetViewMode();
 	if (ViewMode == EViewModeIndex::VMI_SceneDepth || ViewMode == EViewModeIndex::VMI_SceneDepth2D)
-	{
-		return;
-	}
-
-	if (bFXAAEnabled && FXAA)
 	{
 		return;
 	}
@@ -1374,17 +1381,7 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 	);
 
 	UpdateConstant(ConstantBufferDepth2D, SceneDepthData, 0, true, true);
-
-	float FogColor[4] = { 0.0f, 1.0f, 1.0f, 1.0f };
-	FHeightFogConstants HeightFogData(
-		1.0f,
-		1.0f,
-		0.0f,
-		100.0f,
-		1.0f,
-		50.0f,
-		FogColor
-	);
+	FHeightFogConstants HeightFogData = InHeightFogComponent->BuildFogConstants();
 	UpdateConstant(ConstantBufferHeightFog, HeightFogData, 1, false, true);
 
 	ID3D11RenderTargetView* FrameRTV = DeviceResources->GetRenderTargetView();

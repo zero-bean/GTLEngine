@@ -17,6 +17,7 @@ class UStaticMeshComponent;
 class UTextRenderComponent;
 class UDecalComponent;
 class USpotLightComponent;
+class UHeightFogComponent;
 class AActor;
 class AGizmo;
 class UEditor;
@@ -110,7 +111,7 @@ public:
 	void RenderLights(UCamera* InCurrentCamera, const TArray<TObjectPtr<USpotLightComponent>>& InSpotlights,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 	void RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient);
-	void RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient);
+	void RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient, UHeightFogComponent* InHeightFogComponent);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
 
