@@ -224,6 +224,7 @@ void UMainBarWidget::RenderViewMenu()
 		bool bIsUnlit = (CurrentMode == EViewModeIndex::VMI_Unlit);
 		bool bIsWireframe = (CurrentMode == EViewModeIndex::VMI_Wireframe);
 		bool bIsZBufferScneDepth = (CurrentMode == EViewModeIndex::VMI_SceneDepth2D);
+		bool bIsZBufferScneDepthBending = (CurrentMode == EViewModeIndex::VMI_SceneDepth2DBending);
 		bool bIsScneDepth = (CurrentMode == EViewModeIndex::VMI_SceneDepth);
 
 		if (ImGui::MenuItem("조명 적용(Lit)", nullptr, bIsLit) && !bIsLit)
@@ -248,11 +249,16 @@ void UMainBarWidget::RenderViewMenu()
 			EditorInstance->SetViewMode(EViewModeIndex::VMI_SceneDepth2D);
 			UE_LOG("MainBarWidget: ViewMode를 Zbuffer SceneDepth로 변경");
 		}
-		if (ImGui::MenuItem("씬 뎁스(Scene Depth)", nullptr, bIsScneDepth) && !bIsScneDepth)
+		if (ImGui::MenuItem("Z버퍼 씬 뎁스 등간격(ZBuffer Scene Depth Bending)", nullptr, bIsZBufferScneDepthBending) && !bIsZBufferScneDepthBending)
 		{
-			EditorInstance->SetViewMode(EViewModeIndex::VMI_SceneDepth);
-			UE_LOG("MainBarWidget: ViewMode를 SceneDepth로 변경");
+			EditorInstance->SetViewMode(EViewModeIndex::VMI_SceneDepth2DBending);
+			UE_LOG("MainBarWidget: ViewMode를 Zbuffer SceneDepth Bending로 변경");
 		}
+		// if (ImGui::MenuItem("씬 뎁스(Scene Depth)", nullptr, bIsScneDepth) && !bIsScneDepth)
+		// {
+		// 	EditorInstance->SetViewMode(EViewModeIndex::VMI_SceneDepth);
+		// 	UE_LOG("MainBarWidget: ViewMode를 SceneDepth로 변경");
+		// }
 
 		ImGui::EndMenu();
 	}

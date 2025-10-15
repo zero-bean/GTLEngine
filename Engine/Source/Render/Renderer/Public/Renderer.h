@@ -113,7 +113,7 @@ public:
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 	void RenderFireBalls(UCamera* InCurrentCamera, const TArray<TObjectPtr<UFireBallComponent>>& InFireBalls,
 		const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
-	void RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient);
+	void RenderSceneDepthView(UCamera* InCurrentCamera, const FViewportClient& InViewportClient, bool bIsBending);
 	void RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient& InViewportClient, UHeightFogComponent* InHeightFogComponent);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
@@ -234,7 +234,7 @@ private:
 	ID3D11PixelShader* FireBallPixelShader = nullptr;
 	ID3D11InputLayout* FireBallInputLayout = nullptr;
 	ID3D11BlendState* FireBallBlendState = nullptr;
-  
+
 	ID3D11VertexShader* SceneDepthVertexShader = nullptr;
 	ID3D11PixelShader* SceneDepthPixelShader= nullptr;
 
