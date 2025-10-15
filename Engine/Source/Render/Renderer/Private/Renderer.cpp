@@ -162,13 +162,11 @@ void URenderer::Release()
 	ReleaseBillboardResources();
 	ReleaseSpotlightResources();
 	ReleaseTextureShader();
-    ReleaseProjectionDecalShader();
+	ReleaseProjectionDecalShader();
 	ReleaseSceneDepthViewModeShader();
 	ReleaseHeightFogShader();
 
-    if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
-
-  if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
+	if (FXAA) { FXAA->Release(); SafeDelete(FXAA); }
 
 	SafeDelete(ViewportClient);
 
@@ -1419,12 +1417,6 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 		return;
 	}
 
-	ID3D11ShaderResourceView* DepthSRV = DeviceResources->GetDetphShaderResourceView();
-	if (!DepthSRV)
-	{
-		return;
-	}
-
 	FRenderState HeightFogState = {};
 	HeightFogState.CullMode = ECullMode::None;
 	HeightFogState.FillMode = EFillMode::Solid;
@@ -1462,22 +1454,20 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 		SubViewport.Width    * InvFullWidth,
 		SubViewport.Height   * InvFullHeight
 	);
-
 	UpdateConstant(ConstantBufferDepth2D, SceneDepthData, 0, true, true);
+	InViewportClient.Apply(GetDeviceContext());
+
 	FHeightFogConstants HeightFogData = InHeightFogComponent->BuildFogConstants();
 	UpdateConstant(ConstantBufferHeightFog, HeightFogData, 1, false, true);
 
-	ID3D11RenderTargetView* CurrentRTV = DeviceResources->GetRenderTargetView();
-
-	ID3D11RenderTargetView* Targets[1] = { CurrentRTV };
-	GetDeviceContext()->OMSetRenderTargets(1, Targets, nullptr);
-
-	InViewportClient.Apply(GetDeviceContext());
-
 	// Bind SRV, Sampler
-	ID3D11ShaderResourceView* depthSRV = DeviceResources->GetDetphShaderResourceView();
+	const bool bUseFXAAPath = bFXAAEnabled && FXAA && (GEngine->GetEditor()->GetViewMode() !=
+	  EViewModeIndex::VMI_SceneDepth);
+	ID3D11RenderTargetView* currentRTV = bUseFXAAPath ? FXAA->GetSceneRTV() : DeviceResources->GetRenderTargetView();
+	ID3D11DepthStencilView* currentDSV = DeviceResources->GetDepthStencilView();
+	GetDeviceContext()->OMSetRenderTargets(1, &currentRTV, nullptr);
 
-	Pipeline->SetTexture(0, false, DepthSRV);
+	Pipeline->SetTexture(0, false,  DeviceResources->GetDetphShaderResourceView());
 	Pipeline->SetSamplerState(0, false, DeviceResources->GetDepthSamplerState());
 
 	Pipeline->SetVertexBuffer(nullptr, 0);
@@ -1487,10 +1477,7 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 	//  depth SRV 언바인드
 	ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
 	GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
-
-	ID3D11DepthStencilView* CurrentDSV = DeviceResources->GetDepthStencilView();
-	Targets[0] = CurrentRTV;
-	GetDeviceContext()->OMSetRenderTargets(1, Targets, CurrentDSV);
+	GetDeviceContext()->OMSetRenderTargets(1, &currentRTV, currentDSV);
 }
 
 /**
@@ -2068,7 +2055,7 @@ void URenderer::CreateConstantBuffer()
 		FireBallConstantBufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		FireBallConstantBufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		GetDevice()->CreateBuffer(&FireBallConstantBufferDescription, nullptr, &ConstantBufferFireBall);
-    
+
 		D3D11_BUFFER_DESC desc = {};
 		desc.ByteWidth      = (sizeof(FullscreenDepthConstants) + 0xF) & ~0xF; // 16바이트 맞춤
 		desc.Usage          = D3D11_USAGE_DYNAMIC;
@@ -2294,7 +2281,7 @@ ID3D11RasterizerState* URenderer::GetRasterizerState(const FRenderState& InRende
 	RasterizerDesc.FillMode = FillMode;
 	RasterizerDesc.CullMode = CullMode;
 	RasterizerDesc.FrontCounterClockwise = TRUE;
-	RasterizerDesc.DepthClipEnable = TRUE; 
+	RasterizerDesc.DepthClipEnable = TRUE;
 
 	HRESULT ResultHandle = GetDevice()->CreateRasterizerState(&RasterizerDesc, &RasterizerState);
 
