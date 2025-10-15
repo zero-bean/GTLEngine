@@ -1174,6 +1174,7 @@ void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<U
 			if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
 			if (Primitive->IsA(UDecalComponent::StaticClass())) { continue; }
 			if (Primitive->IsA(USpotLightComponent::StaticClass())) { continue; }
+			if (Primitive->IsA(UFireBallComponent::StaticClass())) { continue; };
 
 			// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
 			FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
@@ -1510,6 +1511,16 @@ void URenderer::RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* In
 
 	UpdateConstant(InConstantBufferModels, InMeshComp->GetWorldTransformMatrix(), 0, true, false);
 
+    const bool bIsSelected = (GEngine->GetCurrentLevel() && InMeshComp->GetOwner() == GEngine->GetCurrentLevel()->GetSelectedActor());
+    FVector4 C = InMeshComp->GetColor();
+    if (bIsSelected)
+    {
+    	C.X = 1.0f;
+    	C.Y = 1.0f;
+    	C.Z = 1.0f;
+        C.W = 1.0f;
+    }
+
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
 	{
 		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -1518,7 +1529,7 @@ void URenderer::RenderStaticMesh(UPipeline& InPipeline, UStaticMeshComponent* In
 	}
 	else
 	{
-		float Color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		float Color[4] = { C.X, C.Y, C.Z, C.W};
 		FDepthConstants DepthData(0, 0.1f, 500.0f, 0.8f, Color);
 		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
 	}
@@ -1650,6 +1661,21 @@ void URenderer::RenderBillboard(UBillboardComponent* InBillboardComp, UCamera* I
 	MaterialConstants.D = 1.0f;
     UpdateConstant(ConstantBufferMaterial, MaterialConstants, 2, false, true);
 
+	{
+		const bool bIsDepthView = (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth);
+		const bool bIsSelected = (GEngine->GetCurrentLevel() && InBillboardComp->GetOwner() == GEngine->GetCurrentLevel()->GetSelectedActor());
+		FVector4 C = InBillboardComp->GetColor();
+		if (bIsSelected)
+		{
+			C.X *= 1.2f;
+			C.Y *= 1.2f;
+			C.Z *= 1.2f;
+		}
+		float Color[4] = { C.X, C.Y, C.Z, C.W};
+		FDepthConstants DepthData(bIsDepthView ? 1u : 0u, 0.1f, 500.0f, 0.8f, Color);
+		UpdateConstant(ConstantBufferDepth, DepthData, 3, true, true);
+	}
+
 	Pipeline->SetTexture(0, false, RenderProxy->GetSRV());
 	Pipeline->SetSamplerState(0, false, RenderProxy->GetSampler());
 
@@ -1705,7 +1731,17 @@ void URenderer::RenderPrimitiveDefault(UPipeline& InPipeline, UPrimitiveComponen
     // Update pipeline buffers
 	UpdateConstant(InConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true, false);
 	// [수정] 새로운 UpdateConstantBuffer 함수 사용 (색상은 슬롯 2번)
-	UpdateConstant(InConstantBufferColor, InPrimitiveComp->GetColor(), 2, false, true);
+	// UpdateConstant(InConstantBufferColor, InPrimitiveComp->GetColor(), 2, false, true);
+    {
+		FVector4 C = InPrimitiveComp->GetColor();
+    	if (GEngine->GetCurrentLevel() && InPrimitiveComp->GetOwner() == GEngine->GetCurrentLevel()->GetSelectedActor())
+    	{
+    		C.X *= 1.2f;
+    		C.Y *= 1.2f;
+    		C.Z *= 1.2f;
+    	}
+    	UpdateConstant(InConstantBufferColor, C, 2, false, true);
+    }
 
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
 	{
