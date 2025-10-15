@@ -14,6 +14,7 @@
     <FxCompile Include="Asset\Shader\ShaderFont.hlsl" />
     <FxCompile Include="Asset\Shader\SpotlightShader.hlsl" />
     <FxCompile Include="Asset\Shader\TextureShader.hlsl" />
+    <FxCompile Include="Asset\Shader\ShadowProjectionShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -147,6 +148,8 @@
     <ClCompile Include="Source\World\Private\World.cpp" />
     <ClCompile Include="Source\Render\Renderer\Private\FXAAPass.cpp" />
     <ClCompile Include="Source\Component\Movement\Private\RotatingMovementComponent.cpp" />
+    <ClCompile Include="Source\Component\Movement\Private\ProjectileMovementComponent.cpp" />
+    <ClCompile Include="Source\Component\Private\HeightFogComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -296,6 +299,8 @@
     <ClInclude Include="Source\World\Public\World.h" />
     <ClInclude Include="Source\Render\Renderer\Public\FXAAPass.h" />
     <ClInclude Include="Source\Component\Movement\Public\RotatingMovementComponent.h" />
+    <ClInclude Include="Source\Component\Movement\Public\ProjectileMovementComponent.h" />
+    <ClInclude Include="Source\Component\Public\HeightFogComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Engine.rc" />
