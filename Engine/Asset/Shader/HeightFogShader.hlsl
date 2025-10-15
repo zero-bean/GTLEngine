@@ -77,16 +77,16 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     float worldZ = worldInfo.y;
 
 	// 무한한 거리는 투명처리
-	float depth01 = DepthTexture.SampleLevel(SamplerPoint, GetFullUV(input.tex), 0).r;
-	if (depth01 >= 0.9999f)
-	{
-		return float4(0.0f, 0.0f, 0.0f, 1.0f);
-	}
+	// float depth01 = DepthTexture.SampleLevel(SamplerPoint, GetFullUV(input.tex), 0).r;
+	// if (depth01 >= 0.9999f)
+	// {
+	// 	return float4(0.0f, 0.0f, 0.0f, 0.0f);
+	// }
 
 	// FogCutoffDistance : 안개가 적용되는 최대 거리
 	if (FogCutoffDistance > 0.0f && worldDepth > FogCutoffDistance)
 	{
-		return float4(1.0f, 1.0f, 1.0f, 1.0f);
+		return float4(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 
 	// StartDistance : 안개가 시작되는 첫 거리, 실제보다 거리를 더 가깝다고 계산
@@ -94,8 +94,9 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 
 	// FogHeightFalloff : 안개 고도 감쇠 팩터, 클수록 급격하게 옅어진다.
 	// FogDensity : 안개 밀도(0~1)
-	// fogFactor : 클수록 안개 자욱, worldDepth : 클수록 안개 자욱, FogDensity : 클수록 안개 자욱
-	float scatteringCoefficient = FogDensity * exp(-FogHeightFalloff * abs(worldZ)); // 0~1 * (1~e), 지수가 음수여야함
+	// scatteringCoefficient: 클수록 안개자욱, FogDensity : 클수록 안개 자욱,
+	float scatteringCoefficient = FogDensity * exp(-FogHeightFalloff * max(0, (abs(worldZ) - FogHeight))); // 0~1 * (1~e), 지수가 음수여야함
+	// fogFactor : 작을수록 안개 자욱, worldDepth : 클수록 안개 자욱
 	float fogFactor = exp(-scatteringCoefficient * worldDepth);
 	fogFactor = saturate(fogFactor);
 
@@ -120,9 +121,4 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 	else if (worldDepth >10)
 		return float4(0.0f, 1.0f, 1.0f, 1.0f);
 	return float4(1.0f, 1.0f, 0.0f, worldDepth);
-
-	// // 과도한 포화 방지(수치 안정)
-	// float transmittance = exp(-opticalDepth);
-	// float alpha = saturate(min(1.0f - transmittance, FogMaxOpacity));
- //
 }

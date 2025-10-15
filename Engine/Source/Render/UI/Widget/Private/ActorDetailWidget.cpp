@@ -745,15 +745,15 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 		Fog->SetFogDensity(Density);
 
 		float HeightFalloff = FogConstants.FogHeightFalloff;
-		ImGui::DragFloat("HeightFalloff", &HeightFalloff, 0.01f, 0.0f, 10.0f, "%.2f s");
+		ImGui::DragFloat("HeightFalloff", &HeightFalloff, 0.01f, -100.0f, 100.0f, "%.2f s");
 		Fog->SetFogHeightFalloff(HeightFalloff);
 
 		float StartDistance = FogConstants.StartDistance;
-		ImGui::DragFloat("StartDistance", &StartDistance, 0.01f, 0.0f, 100.0f, "%.2f s");
+		ImGui::DragFloat("StartDistance", &StartDistance, 0.01f, 0.0f, 1000.0f, "%.2f s");
 		Fog->SetStartDistance(StartDistance);
 
 		float FogCutoffDistance = FogConstants.FogCutoffDistance;
-		ImGui::DragFloat("FogCutoffDistance", &FogCutoffDistance, 0.01f, 0.0f, 100.0f, "%.2f s");
+		ImGui::DragFloat("FogCutoffDistance", &FogCutoffDistance, 0.01f, 0.0f, 1000.0f, "%.2f s");
 		Fog->SetFogCutoffDistance(FogCutoffDistance);
 
 		float FogMaxOpacity = FogConstants.FogMaxOpacity;
@@ -761,7 +761,7 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 		Fog->SetFogMaxOpacity(FogMaxOpacity);
 
 		float FogHeight = FogConstants.FogHeight;
-		ImGui::DragFloat("FogHeight", &FogHeight, 0.01f, 0.0f, 100.0f, "%.2f s");
+		ImGui::DragFloat("FogHeight", &FogHeight, 0.01f, 0.0f, 1000.0f, "%.2f s");
 		Fog->SetFogHeight(FogHeight);
 
 		ImGui::Separator();
