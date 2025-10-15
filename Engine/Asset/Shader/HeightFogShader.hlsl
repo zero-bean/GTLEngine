@@ -46,15 +46,14 @@ float2 LinearEyeDistance(float2 localUV)
     float depth01 = DepthTexture.SampleLevel(SamplerPoint, uv, 0).r;
 
     float2 ndcXY = uv * 2.0f - 1.0f;
-    float zClip = depth01 * 2.0f - 1.0f;
-    float4 clip = float4(ndcXY, zClip, 1.0f);
+    float4 clip = float4(ndcXY, depth01, 1.0f);
 
     float4 world = mul(clip, InvViewProj);
     world /= world.w;
 
     float2 result;
     result.x = distance(world.xyz, CameraPosWSAndNear.xyz);
-    result.y = world.y;
+    result.y = world.z;
     return result;
 }
 
@@ -63,7 +62,7 @@ PS_INPUT mainVS(VS_INPUT input)
     PS_INPUT output;
 
     float2 uv = float2((input.vertexID << 1) & 2, input.vertexID & 2);
-    output.tex = uv * 0.5f;
+    output.tex = uv;
     output.position = float4(uv * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
 
     return output;

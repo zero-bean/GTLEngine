@@ -1384,10 +1384,15 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 	FHeightFogConstants HeightFogData = InHeightFogComponent->BuildFogConstants();
 	UpdateConstant(ConstantBufferHeightFog, HeightFogData, 1, false, true);
 
-	ID3D11RenderTargetView* FrameRTV = DeviceResources->GetRenderTargetView();
-	ID3D11DepthStencilView* DepthDSV = DeviceResources->GetDepthStencilView();
-	GetDeviceContext()->OMSetRenderTargets(1, &FrameRTV, DepthDSV);
+	ID3D11RenderTargetView* CurrentRTV = DeviceResources->GetRenderTargetView();
+
+	ID3D11RenderTargetView* Targets[1] = { CurrentRTV };
+	GetDeviceContext()->OMSetRenderTargets(1, Targets, nullptr);
+
 	InViewportClient.Apply(GetDeviceContext());
+
+	// Bind SRV, Sampler
+	ID3D11ShaderResourceView* depthSRV = DeviceResources->GetDetphShaderResourceView();
 
 	Pipeline->SetTexture(0, false, DepthSRV);
 	Pipeline->SetSamplerState(0, false, DeviceResources->GetDepthSamplerState());
@@ -1396,8 +1401,13 @@ void URenderer::RenderHeightFog(UCamera* InCurrentCamera, const FViewportClient&
 	Pipeline->SetIndexBuffer(nullptr, 0);
 	Pipeline->Draw(3, 0);
 
-	ID3D11ShaderResourceView* NullSRV = nullptr;
-	GetDeviceContext()->PSSetShaderResources(0, 1, &NullSRV);
+	//  depth SRV 언바인드
+	ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+	GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
+
+	ID3D11DepthStencilView* CurrentDSV = DeviceResources->GetDepthStencilView();
+	Targets[0] = CurrentRTV;
+	GetDeviceContext()->OMSetRenderTargets(1, Targets, CurrentDSV);
 }
 
 /**
