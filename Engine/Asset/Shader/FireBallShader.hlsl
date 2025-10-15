@@ -62,7 +62,7 @@ PS_INPUT mainVS(VS_INPUT Input)
     // 3. 오브젝트의 공간 정보를 최종 클립 좌표로 축소.
 	Output.Position = mul(Output.WorldPos, ViewMatrix);
 	Output.Position = mul(Output.Position, ProjectionMatrix);
-	
+
 	return Output;
 }
 
@@ -84,9 +84,11 @@ float4 mainPS(PS_INPUT input) : SV_Target
 		diffuse = saturate(dot(normalize(input.Normal), LightDir));
 	}
 
-    // 2. 최종적으로 더해질 빛의 기여도 계산.
-	float3 LightContribution = FireBallColor.rgb * FireBallIntensity * Attenuation * diffuse;
+	// 2. 최종적으로 더해질 빛의 기여도 계산.
+    float strength = saturate(FireBallIntensity * Attenuation * diffuse);
 
-    // 3. 최종적으로 더해질 빛의 색상만 반환합니다.
-	return float4(LightContribution, 1.0f);
+	// 3. 최종적으로 더해질 빛의 색상만 반환합니다.
+    float3 overlay = FireBallColor.rgb;
+
+    return float4(overlay, strength);
 }

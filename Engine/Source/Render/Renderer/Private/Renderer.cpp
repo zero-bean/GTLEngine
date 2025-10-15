@@ -768,10 +768,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 		RenderPrimitiveComponent(*Pipeline, PrimitiveComponent, LoadedRasterizerState, ConstantBufferModels, ConstantBufferColor, ConstantBufferMaterial);
 	}
 
-	// 3. 그 다음, 렌더링된 프리미티브 위에 데칼을 렌더링합니다.
-	RenderDecals(InCurrentCamera, Decals, PrimitivesToPostUpdate);
-	RenderLights(InCurrentCamera, SpotLights, PrimitivesToPostUpdate);
-	RenderFireBalls(InCurrentCamera, FireBalls, PrimitivesToPostUpdate);
+	// 3. 후속 패스(데칼/조명/파이어볼)는 아래 뷰모드 분기에서 처리합니다.
 
 	if (GEngine->GetEditor()->GetViewMode() == EViewModeIndex::VMI_SceneDepth2D)
 	{
@@ -781,6 +778,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	{
 		RenderDecals(InCurrentCamera, Decals, PrimitivesToPostUpdate);
 		RenderLights(InCurrentCamera, SpotLights, PrimitivesToPostUpdate);
+		RenderFireBalls(InCurrentCamera, FireBalls, PrimitivesToPostUpdate);
 	}
 	for (TObjectPtr<UBillboardComponent> BillboardComponent : Billboards)
 	{
@@ -2071,11 +2069,11 @@ void URenderer::CreateFireBallShader()
 	{
 		D3D11_BLEND_DESC BlendDesc = {};
 		BlendDesc.RenderTarget[0].BlendEnable = TRUE;
-		BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;       // 원본색 기여도 1
-		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;      // 대상색 기여도 1
-		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;    // 두 색을 더함
+		BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA; // 원본색 기여도
+		BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA; // 대상색 기여도
+		BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD; // 두 색을 더함
 		BlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		BlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
 		BlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 		BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
