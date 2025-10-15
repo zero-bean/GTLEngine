@@ -937,6 +937,13 @@ void UActorDetailWidget::RenderComponentDetails(TObjectPtr<UActorComponent> InCo
 		{
 			FireBall->SetRadiusFallOff(RadiusFallOff);
 		}
+
+		// 5. Enable Shadows (그림자 활성화)
+		bool bShadowsEnabled = FireBall->IsShadowsEnabled();
+		if (ImGui::Checkbox("Enable Shadows", &bShadowsEnabled))
+		{
+			FireBall->SetShadowsEnabled(bShadowsEnabled);
+		}
 	}
     else if (InComponent->IsA(UPrimitiveComponent::StaticClass()))
     {

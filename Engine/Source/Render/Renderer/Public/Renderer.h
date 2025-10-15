@@ -74,6 +74,7 @@ public:
 	void CreateFireBallShader();
 	void CreateSceneDepthViewModeShader();
 	void CreateHeightFogShader();
+	void CreateShadowProjectionShader();
 
 	// Release
 	void ReleaseConstantBuffer();
@@ -90,6 +91,7 @@ public:
 	void ReleaseFireBallShader();
 	void ReleaseSceneDepthViewModeShader();
 	void ReleaseHeightFogShader();
+	void ReleaseShadowProjectionShader();
 
 	// Render
 	void Tick(float DeltaSeconds);
@@ -201,6 +203,7 @@ private:
 	ID3D11Buffer* ConstantBufferDepth2D = nullptr;
 	ID3D11Buffer* ConstantBufferDepth = nullptr;
 	ID3D11Buffer* ConstantBufferHeightFog = nullptr;
+	ID3D11Buffer* ConstantBufferOccluder = nullptr;
 
 	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
 
@@ -237,6 +240,10 @@ private:
 
 	ID3D11VertexShader* HeightFogVertexShader = nullptr;
 	ID3D11PixelShader* HeightFogPixelShader= nullptr;
+
+	ID3D11VertexShader* ShadowProjectionVertexShader = nullptr;
+	ID3D11PixelShader* ShadowProjectionPixelShader = nullptr;
+	ID3D11InputLayout* ShadowProjectionInputLayout = nullptr;
 
 	class UFXAAPass* FXAA = nullptr;
 
