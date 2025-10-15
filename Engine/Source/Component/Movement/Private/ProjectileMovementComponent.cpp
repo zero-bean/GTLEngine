@@ -21,7 +21,7 @@ void UProjectileMovementComponent::TickComponent(float DeltaSeconds)
 	}
 
 	const FVector OldVelocity = Velocity;
-	const FVector MoveDelta = Velocity * DeltaSeconds + ProjectileGravity * DeltaSeconds * DeltaSeconds;
+	const FVector MoveDelta = Velocity * DeltaSeconds + ProjectileGravity * DeltaSeconds * DeltaSeconds * 0.5f;
 	Velocity = OldVelocity + ProjectileGravity * DeltaSeconds;
 	UpdateComponentVelocity();
 
