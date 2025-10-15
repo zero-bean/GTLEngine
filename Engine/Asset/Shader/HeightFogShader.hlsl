@@ -45,29 +45,27 @@ float2 ToNDCxy(float2 uv)
 	return float2(uv.x * 2.0f - 1.0f, 1.0f - uv.y * 2.0f);
 }
 
-float2 LinearEyeDistance(float2 localUV)
+float LinearEyeDistance(float2 localUV)
 {
     float2 uv = GetFullUV(localUV);
     float depth01 = DepthTexture.SampleLevel(SamplerPoint, uv, 0).r;
 
     float2 ndcXY = ToNDCxy(uv);
-	float  ndcZ  = depth01 * 2.0f - 1.0f;
+	float  ndcZ  = depth01;
     float4 clip = float4(ndcXY, ndcZ, 1.0f);
 
     float4 world = mul(clip, InvViewProj);
     world /= world.w;
 
-    float2 result;
-    result.x = distance(world.xyz, CameraPosWSAndNear.xyz);
-    result.y = world.z;
-    return result;
+    return distance(world.xyz, CameraPosWSAndNear.xyz);
 }
 
-void GetRayWS(float2 localUV, out float3 roWS, out float3 rdWS)
+// 이 픽셀을 관통하는 Ray
+float3 GetRayWS(float2 localUV)
 {
 	float2 uv = GetFullUV(localUV);
 
-	const float zNearNDC = -1.0f; // D3D11 NDC
+	const float zNearNDC = 0.0f; // D3D11 NDC
 	const float zFarNDC  =  1.0f;
 
 	float2 ndc = ToNDCxy(uv);
@@ -75,12 +73,42 @@ void GetRayWS(float2 localUV, out float3 roWS, out float3 rdWS)
 	float4 clipNear = float4(ndc, zNearNDC, 1.0f);
 	float4 clipFar  = float4(ndc, zFarNDC,  1.0f);
 
-	float4 pNear = mul(clipNear, InvViewProj); pNear /= pNear.w;
-	float4 pFar  = mul(clipFar,  InvViewProj); pFar  /= pFar.w;
+	float4 worldNear = mul(clipNear, InvViewProj); worldNear /= worldNear.w;
+	float4 worldFar  = mul(clipFar,  InvViewProj); worldFar  /= worldFar.w;
 
-	// 레이 시작점은 카메라 또는 근평면 중 택1. 카메라가 더 직관적임.
-	roWS = CameraPosWSAndNear.xyz;
-	rdWS = normalize(pFar.xyz - pNear.xyz);
+	return normalize(worldFar.xyz - worldNear.xyz);
+}
+
+float OpticalDepth_ExpHeight(float CameraZ, float RayZ, float WorldDepth,
+							 float FogDensity, float FogHeightFalloff, float FogHeight,
+							 float UnitToMeters)
+{
+	float k   = FogHeightFalloff;			// 1/unit
+	float H   = FogHeight;					// unit
+	float Lm  = WorldDepth * UnitToMeters;	// 스케일 일치 목적
+	float z0  = CameraZ;
+	float z1  = CameraZ + RayZ * WorldDepth;
+
+	// RayZ가 거의 0이면 (수평 레이) 지수 부분이 거의 변하지 않으니(높지 않으니!)슬랩 근사
+	const float EPS = 1e-6f;
+	if (abs(RayZ) < EPS)
+	{
+		float zMid   = 0.5f * (z0 + z1);
+		float sigmaM = FogDensity * exp(-k * (zMid - H));
+		return sigmaM * Lm;
+	}
+
+	// 폐형식 적분:
+	// tau_uu = FogDensity * exp(k*(H - z0)) * (1 - exp(-k*rdZ*Luu)) / (k*rdZ)
+	// tau_m  = UnitToMeters * tau_uu  (단위 일치)
+	float expo0 = exp(k * (H - z0));
+	float expo1 = exp(-k * RayZ * WorldDepth);
+	float tauUU = FogDensity * expo0 * (1.0f - expo1) / (k * RayZ);
+
+	float tau = UnitToMeters * tauUU;
+
+	// 과도 포화 방지 (수치 안정)
+	return min(tau, 60.0f);
 }
 
 PS_INPUT mainVS(VS_INPUT input)
@@ -96,67 +124,41 @@ PS_INPUT mainVS(VS_INPUT input)
 
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    float2 worldInfo = LinearEyeDistance(input.tex);
-    float worldDepth = worldInfo.x;
-    float worldZ = worldInfo.y;
+	// UV값을 World로 변환
+	float WorldDepth = LinearEyeDistance(input.tex);
 
-	float  depth01 = DepthTexture.SampleLevel(SamplerPoint, GetFullUV(input.tex), 0).r;
-	bool miss = (depth01 >= 0.9999f);
-
-	float nearZ = CameraPosWSAndNear.w;
-	float farZ  = FarAndPadding.x;
-	float L_virt_far = max(0.0f, farZ - nearZ);
-
-	float Dist = miss ? L_virt_far : worldDepth;
+	// FogCutoffDistance 이상은 전부 FogCutoffDistance만큼으로 변환
 	if (FogCutoffDistance > 0.0f)
 	{
-		Dist = min(Dist, FogCutoffDistance);
+		WorldDepth = min(WorldDepth, FogCutoffDistance);
+	}
+	// StartDistance : 안개가 시작되는 첫 거리, 실제보다 거리를 더 가깝다고 계산
+	if (StartDistance >0.0f)
+	{
+		WorldDepth = max(0.0f, WorldDepth - StartDistance);
+	}
+	if (WorldDepth <= 0.0f)
+	{
+		return float4(0,0,0,0);
 	}
 
-	// StartDistance : 안개가 시작되는 첫 거리, 실제보다 거리를 더 가깝다고 계산
-	Dist = max(0.0f, Dist - StartDistance);
-	if (Dist <= 0.0f) return float4(0,0,0,0);
+	float CameraZ = CameraPosWSAndNear.z;
+	float3 WorldRay = GetRayWS(input.tex);
 
-	float z0 = CameraPosWSAndNear.z;         // 카메라 z
-	float3 ro, rd; GetRayWS(input.tex, ro, rd);
-	float z1 = miss ? (ro.z + rd.z * Dist)      // 미스: 레이 끝 z
-					: worldZ;                 // 히트: 표면 z
+	const float UnitToMeters = 10.0f; // TODO: Engine에서 설정한 거리 단위 값. 추후 제작 후 CPU에서 넘겨줄 것
 
-	float zClosest;
-	// 구간이 z=0을 가로지르면(부호 다름) 최소 거리는 0
-	if ((z0 >= 0 && z1 <= 0) || (z0 <= 0 && z1 >= 0))
-		zClosest = 0.0f;
-	else
-		zClosest = min(abs(z0), abs(z1));    // 아니면 더 가까운 쪽
+	// 빛 전달율 지수 Return
+	float tau = OpticalDepth_ExpHeight(
+		CameraZ,
+		WorldRay.z,
+		WorldDepth,
+		FogDensity, FogHeightFalloff, FogHeight, UnitToMeters
+	);
 
-	// FogHeightFalloff : 안개 고도 감쇠 팩터, 클수록 급격하게 옅어진다.
-	// FogDensity : 안개 밀도(0~1)
-	float sigma  = FogDensity * exp(-FogHeightFalloff * (zClosest - FogHeight));
-	const float UnitToMeters = 1.0f;
-	// float opticalDepth = min(sigma * (Dist * UnitToMeters), 60.0f);
-	float fogFactor = exp(-sigma * (Dist * UnitToMeters));
-
-	float alpha = saturate(min(1.0f - fogFactor, FogMaxOpacity));
+	// 빛 전달율 : 카메라~표면 사이 매질을 통과할 때, 원래 빛 몇%가 도달하는가? (0~1)
+	// Transmittance : 투과율(Beer–Lambert) 적용
+	float  Transmittance = exp(-tau);
+	float alpha = saturate(min(1.0f - Transmittance, FogMaxOpacity));
 	float3 fogColor = FogInscatteringColor.rgb;
 	return float4(fogColor, alpha);
-
-	if (fogFactor >1)
-		return float4(1.0f, 0.0f, 0.0f, 1.0f);
-	else if (fogFactor >0.8)
-		return float4(0.0f, 1.0f, 0.0f, 1.0f);
-	else if (fogFactor >0.5)
-		return float4(0.0f, 0.0f, 1.0f, 1.0f);
-	else if (fogFactor >0.2)
-		return float4(0.0f, 1.0f, 1.0f, 1.0f);
-	return float4(1.0f, 1.0f, 0.0f, worldDepth);
-
-	if (worldDepth >75)
-		return float4(1.0f, 0.0f, 0.0f, 1.0f);
-	else if (worldDepth >50)
-		return float4(0.0f, 1.0f, 0.0f, 1.0f);
-	else if (worldDepth >20)
-		return float4(0.0f, 0.0f, 1.0f, 1.0f);
-	else if (worldDepth >10)
-		return float4(0.0f, 1.0f, 1.0f, 1.0f);
-	return float4(1.0f, 1.0f, 0.0f, worldDepth);
 }
