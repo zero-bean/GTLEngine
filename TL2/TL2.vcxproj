@@ -178,7 +178,8 @@
     <ClCompile Include="EditorEngine.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="ExponentialHeightFog.cpp" />
-    <ClCompile Include="FireballComponent.cpp" />
+    <ClCompile Include="LocalLightComponent.cpp" />
+    <ClCompile Include="PointLightComponent.cpp" />
     <ClCompile Include="FXAAActor.cpp" />
     <ClCompile Include="FXAAComponent.cpp" />
     <ClCompile Include="GameEngine.cpp" />
@@ -187,6 +188,7 @@
     <ClCompile Include="ExponentialHeightFogComponent.cpp" />
     <ClCompile Include="Info.cpp" />
     <ClCompile Include="Level.cpp" />
+    <ClCompile Include="LightComponent.cpp" />
     <ClCompile Include="MenuBarWidget.cpp" />
     <ClCompile Include="MovementComponent.cpp" />
     <ClCompile Include="ObjManager.cpp" />
@@ -439,7 +441,8 @@
     <ClInclude Include="EditorEngine.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="ExponentialHeightFog.h" />
-    <ClInclude Include="FireballComponent.h" />
+    <ClInclude Include="LocalLightComponent.h" />
+    <ClInclude Include="PointLightComponent.h" />
     <ClInclude Include="Frustum.h" />
     <ClInclude Include="FViewportClient.h" />
     <ClInclude Include="FXAAActor.h" />
@@ -448,6 +451,7 @@
     <ClInclude Include="ExponentialHeightFogComponent.h" />
     <ClInclude Include="Info.h" />
     <ClInclude Include="Level.h" />
+    <ClInclude Include="LightComponent.h" />
     <ClInclude Include="LinearColor.h" />
     <ClInclude Include="MenuBarWidget.h" />
     <ClInclude Include="MovementComponent.h" />

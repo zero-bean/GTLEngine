@@ -308,14 +308,14 @@ void FSceneLoader::SaveV2(const FSceneData& SceneData, const FString& SceneName)
             FString TexturePath = NormalizePath(Comp.TexturePath);
             oss << "      \"TexturePath\" : \"" << TexturePath << "\"";
         }
-        if (Comp.Type.find("FireBallComponent") != std::string::npos)
+        if (Comp.Type.find("PointLightComponent") != std::string::npos)
         {
             if (!bHasTypeSpecificData) { oss << ",\n"; bHasTypeSpecificData = true; }
             else { oss << ",\n"; }
 
-            const FFireBallProperty& FB = Comp.FireBallProperty; // FComponentData 내부에 있다고 가정
+            const FPointLightProperty& FB = Comp.PointLightProperty; // FComponentData 내부에 있다고 가정
 
-            oss << "      \"FireBallData\" : {\n";
+            oss << "      \"PointLightData\" : {\n";
             oss << "        \"Intensity\" : " << FB.Intensity << ",\n";
             oss << "        \"Radius\" : " << FB.Radius << ",\n";
             oss << "        \"RadiusFallOff\" : " << FB.RadiusFallOff << ",\n";
@@ -501,27 +501,27 @@ FSceneData FSceneLoader::ParseV2(const JSON& Json)
             if (CompJson.hasKey("TexturePath"))
                 Comp.TexturePath = CompJson.at("TexturePath").ToString();
 
-            // 🔥 FireBallComponent (FFireBallProperty)
-            if (Comp.Type.find("FireBallComponent") != std::string::npos &&
-                CompJson.hasKey("FireBallData"))
+            // 🔥 PointLightComponent (FPointLightProperty)
+            if (Comp.Type.find("PointLightComponent") != std::string::npos &&
+                CompJson.hasKey("PointLightData"))
             {
-                const JSON& FireDataJson = CompJson.at("FireBallData");
+                const JSON& FireDataJson = CompJson.at("PointLightData");
 
                 if (FireDataJson.hasKey("Intensity"))
-                    Comp.FireBallProperty.Intensity = (float)FireDataJson.at("Intensity").ToFloat();
+                    Comp.PointLightProperty.Intensity = (float)FireDataJson.at("Intensity").ToFloat();
 
                 if (FireDataJson.hasKey("Radius"))
-                    Comp.FireBallProperty.Radius = (float)FireDataJson.at("Radius").ToFloat();
+                    Comp.PointLightProperty.Radius = (float)FireDataJson.at("Radius").ToFloat();
 
                 if (FireDataJson.hasKey("RadiusFallOff"))
-                    Comp.FireBallProperty.RadiusFallOff = (float)FireDataJson.at("RadiusFallOff").ToFloat();
+                    Comp.PointLightProperty.RadiusFallOff = (float)FireDataJson.at("RadiusFallOff").ToFloat();
 
                 if (FireDataJson.hasKey("Color"))
                 {
                     auto ColorJson = FireDataJson.at("Color");
                     if (ColorJson.size() >= 4)
                     {
-                        Comp.FireBallProperty.Color = FLinearColor(
+                        Comp.PointLightProperty.Color = FLinearColor(
                             (float)ColorJson[0].ToFloat(),
                             (float)ColorJson[1].ToFloat(),
                             (float)ColorJson[2].ToFloat(),

@@ -7,7 +7,7 @@ class UUIManager;
 class UWorld;
 class AActor;
 class AGizmoActor;
-class UFireBallComponent;
+class UPointLightComponent;
 class UDecalComponent;
 class URotationMovementComponent;
 class UProjectileMovementComponent;
@@ -70,7 +70,7 @@ private:
 	void RenderStaticMeshComponentDetails(UStaticMeshComponent* InComponent);
 	void RenderBillboardComponentDetails(UBillboardComponent* InComponent);
 	void RenderTextRenderComponentDetails(UTextRenderComponent* InComponent);
-	void RenderFireBallComponentDetails(UFireBallComponent* InComponent);
+	void RenderPointLightComponentDetails(UPointLightComponent* InComponent);
 	void RenderDecalComponentDetails(UDecalComponent* InComponent);
 	void RenderRotationMovementComponentDetails(URotationMovementComponent* InComponent);
 	void RenderProjectileMovementComponentDetails(UProjectileMovementComponent* InComponent);

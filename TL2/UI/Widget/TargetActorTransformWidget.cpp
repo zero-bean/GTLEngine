@@ -22,7 +22,7 @@
 #include "ProjectileMovementComponent.h"
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
-#include"FireballComponent.h"
+#include"PointLightComponent.h"
 
 #include <filesystem>
 #include <vector>
@@ -509,9 +509,9 @@ void UTargetActorTransformWidget::RenderWidget()
 		{
 			RenderTextRenderComponentDetails(Comp);
 		}
-		else if (UFireBallComponent* Comp = Cast<UFireBallComponent>(SelectedComponent))
+		else if (UPointLightComponent* Comp = Cast<UPointLightComponent>(SelectedComponent))
 		{
-			RenderFireBallComponentDetails(Comp);
+			RenderPointLightComponentDetails(Comp);
 		}	
 		else if (UDecalComponent* Comp = Cast<UDecalComponent>(SelectedComponent))
 		{
@@ -1031,10 +1031,10 @@ void UTargetActorTransformWidget::RenderTextRenderComponentDetails(UTextRenderCo
 	//}
 }
 
-void UTargetActorTransformWidget::RenderFireBallComponentDetails(UFireBallComponent* InComponent)
+void UTargetActorTransformWidget::RenderPointLightComponentDetails(UPointLightComponent* InComponent)
 {
 	ImGui::Separator();
-	ImGui::Text("FireBall Component Settings");
+	ImGui::Text("PointLight Component Settings");
 
 	// 🔸 색상 설정 (RGB Color Picker)
 	float color[3] = { InComponent->FireData.Color.R, InComponent->FireData.Color.G, InComponent->FireData.Color.B };
@@ -1071,7 +1071,7 @@ void UTargetActorTransformWidget::RenderFireBallComponentDetails(UFireBallCompon
 	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
 	ImGui::Text("Preview:");
 	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● FireBall Active");
+	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
 }
 
 void UTargetActorTransformWidget::RenderDecalComponentDetails(UDecalComponent* InComponent)

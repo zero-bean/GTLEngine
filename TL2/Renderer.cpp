@@ -18,7 +18,7 @@
 #include "Frustum.h"
 #include "BoundingVolume.h"
 #include "GizmoActor.h"
-#include "FireballComponent.h"
+#include "PointLightComponent.h"
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include "CameraComponent.h"
@@ -498,7 +498,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_Unlit:
     case EViewModeIndex::VMI_Wireframe:
     {
-        RenderFireBallPass(World);
+        RenderPointLightPass(World);
         RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
         RenderFogPass(World,Camera,Viewport);
         RenderFXAAPaxx(World, Camera, Viewport);
@@ -701,14 +701,14 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
         {
             bIsSelected = true;
         }
-        UStaticMeshComponent* FireballComponent = Cast<UStaticMeshComponent>(PrimitiveComponent);
+        UStaticMeshComponent* PointLightComponent = Cast<UStaticMeshComponent>(PrimitiveComponent);
 
-        if (FireballComponent)
+        if (PointLightComponent)
         {
-            if (!FireballComponent->GetStaticMesh()) {
+            if (!PointLightComponent->GetStaticMesh()) {
                 return;
             }
-            if (FireballComponent->GetStaticMesh()->GetVertexCount() == 4286) {
+            if (PointLightComponent->GetStaticMesh()->GetVertexCount() == 4286) {
 
                 UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0, 1));
                 static float Time;
@@ -868,25 +868,25 @@ void URenderer::RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* V
 }
 
 
-void URenderer::RenderFireBallPass(UWorld* World)
+void URenderer::RenderPointLightPass(UWorld* World)
 {
     if (!World) return;
 
-    // 1️⃣ 라이트 컴포넌트 수집 (FireBall, PointLight 등)
+    // 1️⃣ 라이트 컴포넌트 수집 (PointLight, PointLight 등)
     FPointLightBufferType PointLightCB{};
     PointLightCB.PointLightCount=0;
-    for (UFireBallComponent* FireBallComponent : World->GetLevel()->GetComponentList<UFireBallComponent>())
+    for (UPointLightComponent* PointLightComponent : World->GetLevel()->GetComponentList<UPointLightComponent>())
     {
         int idx = PointLightCB.PointLightCount++;
         if (idx >= MAX_POINT_LIGHTS) break;
 
         PointLightCB.PointLights[idx].Position = FVector4(
-            FireBallComponent->GetWorldLocation(), FireBallComponent->FireData.Radius
+            PointLightComponent->GetWorldLocation(), PointLightComponent->FireData.Radius
         );
         PointLightCB.PointLights[idx].Color = FVector4(
-            FireBallComponent->FireData.Color.R, FireBallComponent->FireData.Color.G, FireBallComponent->FireData.Color.B, FireBallComponent->FireData.Intensity
+            PointLightComponent->FireData.Color.R, PointLightComponent->FireData.Color.G, PointLightComponent->FireData.Color.B, PointLightComponent->FireData.Intensity
         );
-        PointLightCB.PointLights[idx].FallOff = FireBallComponent->FireData.RadiusFallOff;
+        PointLightCB.PointLights[idx].FallOff = PointLightComponent->FireData.RadiusFallOff;
     }
     // 2️⃣ 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);
@@ -900,7 +900,7 @@ void URenderer::RenderFireBallPass(UWorld* World)
         {
             if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Comp))
             {
-                if (UFireBallComponent* Fire = Cast<UFireBallComponent>(Prim))
+                if (UPointLightComponent* Fire = Cast<UPointLightComponent>(Prim))
                 {
                     int idx = PointLightCB.PointLightCount++;
                     if (idx >= MAX_POINT_LIGHTS) break;

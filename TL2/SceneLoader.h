@@ -3,10 +3,10 @@
 #include <fstream>
 #include <sstream>
 
-#include "nlohmann/json.hpp"   
+#include "nlohmann/json.hpp"
 #include "Vector.h"
 #include "UEContainer.h"
-#include"FireballComponent.h"
+#include "LinearColor.h"
 using namespace json;
 
 
@@ -51,6 +51,14 @@ struct FSceneData
     FPerspectiveCameraData Camera;
 };
 
+struct FPointLightProperty
+{
+    float Intensity = 5.0f;           // 밝기 (빛 세기)
+    float Radius = 15.0f;             // 영향 반경
+    float RadiusFallOff = 2.0f;       // 감쇠 정도 (클수록 급격히 사라짐)
+    FLinearColor Color = FLinearColor(1.f, 0.0f, 0.0f, 1.f); // 오렌지빛
+};
+
 struct FProjectileMovementProperty
 {
     float InitialSpeed = 1000.f;
@@ -80,7 +88,7 @@ struct FComponentData
     FString StaticMesh;  // StaticMeshComponent: Asset path
     TArray<FString> Materials;  // StaticMeshComponent: Materials
     FString TexturePath;  // DecalComponent, BillboardComponent: Texture path
-    FFireBallProperty FireBallProperty; // FireballComponent
+    FPointLightProperty PointLightProperty; // PointLightComponent
     // 신규
     FProjectileMovementProperty ProjectileMovementProperty;
     FRotationMovementProperty RotationMovementProperty;

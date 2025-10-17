@@ -93,6 +93,26 @@ void USceneManagerWidget::RenderWidget()
                 {
                     SelectionManager->SelectActor(Actor);
                 }
+
+                // Handle double-click to focus camera on actor
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                {
+                    ACameraActor* Camera = UIManager->GetCamera();
+                    if (Camera && Actor)
+                    {
+                        FVector ActorCenter = Actor->GetActorLocation();
+                        float Distance = 8.0f;
+                        FVector CameraDir = Camera->GetForward();
+                        if (CameraDir.SizeSquared() < KINDA_SMALL_NUMBER)
+                        {
+                            CameraDir = FVector(1, 0, 0);
+                        }
+                        FVector TargetPos = ActorCenter - CameraDir * Distance;
+
+                        // Start smooth camera movement
+                        Camera->MoveToLocation(TargetPos, 0.3f);
+                    }
+                }
             }
 
             ImGui::TreePop();

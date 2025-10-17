@@ -478,11 +478,17 @@
     </ClCompile>
     <ClCompile Include="ExponentialHeightFog.cpp" />
     <ClCompile Include="ExponentialHeightFogComponent.cpp" />
-    <ClCompile Include="FireballComponent.cpp">
+    <ClCompile Include="PointLightComponent.cpp">
       <Filter>Components\Light</Filter>
     </ClCompile>
     <ClCompile Include="FXAAActor.cpp" />
     <ClCompile Include="FXAAComponent.cpp" />
+    <ClCompile Include="LightComponent.cpp">
+      <Filter>Components\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalLightComponent.cpp">
+      <Filter>Components\Light</Filter>
+    </ClCompile>
   </ItemGroup>
   <!-- ==================== 헤더 파일 (.h) ==================== -->
   <ItemGroup>
@@ -882,11 +888,17 @@
     <ClInclude Include="ExponentialHeightFog.h" />
     <ClInclude Include="ExponentialHeightFogComponent.h" />
     <ClInclude Include="LinearColor.h" />
-    <ClInclude Include="FireballComponent.h">
+    <ClInclude Include="PointLightComponent.h">
       <Filter>Components\Light</Filter>
     </ClInclude>
     <ClInclude Include="FXAAActor.h" />
     <ClInclude Include="FXAAComponent.h" />
+    <ClInclude Include="LightComponent.h">
+      <Filter>Components\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="LocalLightComponent.h">
+      <Filter>Components\Light</Filter>
+    </ClInclude>
   </ItemGroup>
   <!-- ==================== 셰이더 파일 (.hlsl) ==================== -->
   <ItemGroup>
