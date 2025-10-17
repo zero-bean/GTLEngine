@@ -696,10 +696,6 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 
     for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
     {
-        FVector rgb(1.0f, 1.0f, 1.0f);
-     
-     
-        
         bool bIsSelected = false;
         if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BoundingBoxes))
         {
@@ -708,7 +704,9 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
         if (PrimitiveComponent->GetOwner() == SelectedActor)
         {
             bIsSelected = true;
-        }   
+        }
+        FVector rgb(1.0f, 1.0f, 1.0f);
+        UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
         PrimitiveComponent->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
     }
 }
