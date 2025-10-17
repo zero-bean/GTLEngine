@@ -202,8 +202,6 @@ struct FMeshData
     TArray<FVector> Normal;
     // 탄젠트
     TArray<FVector> Tangent;
-    // 바이탄젠트
-    TArray<FVector> Bitangent;
 };
 
 enum class EPrimitiveTopology
@@ -290,6 +288,7 @@ enum class EVertexLayoutType : uint8
 
     PositionColor,
     PositionColorTexturNormal,
+    PositionColorTexturNormalTangent,
     PositionUV,
     PositionBillBoard,
     PositionCollisionDebug,
