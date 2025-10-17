@@ -22,7 +22,8 @@
 #include "ProjectileMovementComponent.h"
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
-#include"PointLightComponent.h"
+#include "PointLightComponent.h"
+#include "Texture.h"
 
 #include <filesystem>
 #include <vector>
@@ -119,6 +120,41 @@ static TArray<FString> GetIconFiles()
 		iconFiles.push_back("Editor/Icon/SpotLight_64x.dds");
 	}
 	return iconFiles;
+}
+
+// Data/Texture/NormalMap 폴더에서 모든 텍스처 파일을 동적으로 찾아서 반환
+static TArray<FString> GetNormalMapFiles()
+{
+    TArray<FString> normalMapFiles;
+    try
+    {
+        fs::path normalMapPath = "Data/textures/NormalMap";
+        if (fs::exists(normalMapPath) && fs::is_directory(normalMapPath))
+        {
+            for (const auto& entry : fs::directory_iterator(normalMapPath))
+            {
+                if (entry.is_regular_file())
+                {
+                    auto path = entry.path();
+                    FString filename = path.filename().string();
+                    FString extension = path.extension().string();
+                    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+
+                    if (extension == ".dds" || extension == ".png" || extension == ".jpg" || extension == ".jpeg")
+                    {
+                        FString relativePath = "Data/textures/NormalMap/" + filename;
+                        normalMapFiles.push_back(relativePath);
+                    }
+                }
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        // 에러 로그 (선택 사항)
+        UE_LOG("Failed to scan normal map directory: %s", e.what());
+    }
+    return normalMapFiles;
 }
 
 UTargetActorTransformWidget::UTargetActorTransformWidget()
@@ -733,7 +769,7 @@ void UTargetActorTransformWidget::RenderStaticMeshComponentDetails(UStaticMeshCo
 		UStaticMesh* CurMesh = InComponent->GetStaticMesh();
 		if (CurMesh)
 		{
-			CurrentPath = CurMesh->GetAssetPathFileName();
+			CurrentPath = CurMesh->GetFilePath();
 			ImGui::Text("Current: %s", CurrentPath.c_str());
 		}
 		else
@@ -858,6 +894,85 @@ void UTargetActorTransformWidget::RenderStaticMeshComponentDetails(UStaticMeshCo
 				{
 					InComponent->SetMaterialByUser(static_cast<uint32>(MaterialSlotIndex), MaterialNames[SelectedMaterialIdxAt[MaterialSlotIndex]]);
 				}
+
+				// Normal Map 설정
+				UMaterial* Material = UResourceManager::GetInstance().Load<UMaterial>(MaterialSlots[MaterialSlotIndex].MaterialName);
+				if (Material)
+				{
+					static TArray<FString> NormalMapTexturePaths = GetNormalMapFiles();
+
+					// 표시용 이름 배열 생성 (경로, 확장자 제거)
+					TArray<FString> DisplayNames;
+					DisplayNames.reserve(NormalMapTexturePaths.size());
+					for (const FString& path : NormalMapTexturePaths)
+					{
+						DisplayNames.push_back(std::filesystem::path(path).stem().string());
+					}
+
+					// 현재 선택된 텍스처 찾기
+					UTexture* CurrentNormalTexture = Material->GetNormalTexture();
+					const char* CurrentTextureDisplayName = "None";
+					if (CurrentNormalTexture)
+					{
+						FString CurrentPath = CurrentNormalTexture->GetFilePath();
+						for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
+						{
+							if (NormalMapTexturePaths[i] == CurrentPath)
+							{
+								CurrentTextureDisplayName = DisplayNames[i].c_str();
+								break;
+							}
+						}
+					}
+
+					// 콤보박스 시작
+					if (ImGui::BeginCombo("Normal Map", CurrentTextureDisplayName))
+					{
+						// "None" 옵션
+						bool is_none_selected = (CurrentNormalTexture == nullptr);
+						if (ImGui::Selectable("None", is_none_selected))
+						{
+							Material->SetNormalTexture(nullptr);
+						}
+						if (is_none_selected)
+							ImGui::SetItemDefaultFocus();
+
+						// 나머지 텍스처 옵션들
+						for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
+						{
+							bool is_selected = (CurrentNormalTexture && CurrentNormalTexture->GetFilePath() == NormalMapTexturePaths[i]);
+							if (ImGui::Selectable(DisplayNames[i].c_str(), is_selected))
+							{
+								UTexture* SelectedTexture = UResourceManager::GetInstance().Load<UTexture>(NormalMapTexturePaths[i]);
+								Material->SetNormalTexture(SelectedTexture);
+							}
+
+							// 콤보박스 항목 호버 시 미리보기
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::BeginTooltip();
+								UTexture* HoveredTexture = UResourceManager::GetInstance().Load<UTexture>(NormalMapTexturePaths[i]);
+								if (HoveredTexture && HoveredTexture->GetShaderResourceView())
+								{
+									ImGui::Image(HoveredTexture->GetShaderResourceView(), ImVec2(128, 128));
+								}
+								ImGui::TextUnformatted(DisplayNames[i].c_str());
+								ImGui::EndTooltip();
+							}
+
+							if (is_selected)
+								ImGui::SetItemDefaultFocus();
+						}
+						ImGui::EndCombo();
+					}
+
+					// 현재 선택된 텍스처 미리보기
+					if (CurrentNormalTexture && CurrentNormalTexture->GetShaderResourceView())
+					{
+						ImGui::Image(CurrentNormalTexture->GetShaderResourceView(), ImVec2(128, 128));
+					}
+				}
+				
 				ImGui::PopID();
 			}
 		}

@@ -159,7 +159,6 @@ struct VS_INPUT
     float4 color : COLOR;
     float2 texCoord : TEXCOORD;
     float3 tangent : TANGENT;
-    float3 bitangent : BITANGENT;
 };
 
 struct PS_INPUT
@@ -193,7 +192,7 @@ PS_INPUT mainVS(VS_INPUT input)
     // 노멀, 탄젠트, 바이탄젠트를 월드 공간으로 변환
     o.worldNormal = normalize(mul(input.normal, (float3x3) NormalMatrix));
     o.worldTangent = normalize(mul(input.tangent, (float3x3) WorldMatrix));
-    o.worldBitangent = normalize(mul(input.bitangent, (float3x3) WorldMatrix));
+    o.worldBitangent = normalize(mul(cross(o.worldNormal, o.worldTangent), (float3x3) WorldMatrix));
 
     // MVP
     float4x4 MVP = mul(mul(WorldMatrix, ViewMatrix), ProjectionMatrix);
@@ -234,7 +233,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
         float2 uv = input.texCoord + UVScrollSpeed * UVScrollTime;
         base = g_DiffuseTexColor.Sample(g_Sample, uv).rgb;
     }
-
+      
     if (Picked == 1)
     {
         // 노란색 하이라이트를 50% 블렌딩
@@ -257,15 +256,15 @@ PS_OUTPUT mainPS(PS_INPUT input)
         // 2. 보간된 벡터들로 TBN 행렬 재구성 및 직교화를 합니다.
         float3 T = normalize(input.worldTangent);
         float3 B = normalize(input.worldBitangent);
-        float3 N = normalize(input.worldNormal);
+        float3 N_geom = normalize(input.worldNormal);
         
         // 정점 셰이더에서 픽셀 단위로 보간되어 넘어온 벡터들은 완벽하게 직교하지 않을 수 있습니다.
         // 따라서 그람-슈미트(Gram-Schmidt) 기법을 통해 TBN 좌표계를 다시 직교화하여 정렬합니다.
-        T = normalize(T - dot(T, N) * N);
-        B = cross(N, T);
+        T = normalize(T - dot(T, N_geom) * N_geom);
+        B = cross(N_geom, T);
 
-        // 3개의 기저 벡터를 기저 행렬로 변환합니다만, row-major 표준을 위해 전치를 합니다.
-        float3x3 TBN = transpose(float3x3(T, B, N));
+        // 3개의 기저 벡터를 기저 행렬로 변환합니다.
+        float3x3 TBN = float3x3(T, B, N_geom);
 
         // 3. 탄젠트 공간 노멀을 월드 공간으로 변환합니다.
         N = normalize(mul(tangentNormal, TBN));

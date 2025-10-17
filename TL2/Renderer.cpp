@@ -142,8 +142,12 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
     case EVertexLayoutType::PositionBillBoard:
         stride = sizeof(FBillboardVertexInfo_GPU);
         break;
+    case EVertexLayoutType::PositionColorTexturNormalTangent:
+        stride = sizeof(FVertexDynamic);
+        break;
     case EVertexLayoutType::PositionUV:
         stride = sizeof(FVertexUV);
+        break;
     default:
         // Handle unknown or unsupported vertex types
         assert(false && "Unknown vertex type!");
@@ -173,10 +177,13 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
         const uint32 NumMeshGroupInfos = static_cast<uint32>(MeshGroupInfos.size());
         for (uint32 i = 0; i < NumMeshGroupInfos; ++i)
         {
-            const UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
+            UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
             const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
             bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
-            bool bHasNormalTexture = !(MaterialInfo.NormalTextureFileName == FName::None());
+
+            // Check for normal texture directly from the UMaterial instance
+            UTexture* NormalTexture = Material->GetNormalTexture();
+            bool bHasNormalTexture = (NormalTexture != nullptr);
 
             // 재료 변경 추적
             if (LastMaterial != Material)
@@ -204,8 +211,8 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
             // Normal Texture
             if (bHasNormalTexture)
             {
-                FTextureData* NormalTextureData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.NormalTextureFileName);
-                RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &(NormalTextureData->TextureSRV));
+                ID3D11ShaderResourceView* NormalSRV = NormalTexture->GetShaderResourceView();
+                RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NormalSRV);
             }
 
             RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture }); // PSSet도 해줌
