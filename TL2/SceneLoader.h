@@ -59,6 +59,13 @@ struct FPointLightProperty
     FLinearColor Color = FLinearColor(1.f, 0.0f, 0.0f, 1.f); // 오렌지빛
 };
 
+
+struct FSpotLightInfo
+{
+    float InnnerConeAngle;
+    float OuterConeAngle;
+};
+
 struct FProjectileMovementProperty
 {
     float InitialSpeed = 1000.f;

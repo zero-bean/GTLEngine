@@ -58,6 +58,8 @@
 #include "FXAAComponent.h"
 #include "FXAAActor.h"
 #include"LocalLightComponent.h"
+#include "SpotLightActor.h" 
+#include "SpotLightComponent.h"
 // ... (rest of the file)
 IMPLEMENT_CLASS(UWorld)
 
@@ -70,6 +72,7 @@ IMPLEMENT_CLASS(UStaticMeshComponent)
 IMPLEMENT_CLASS(UMovementComponent)
 IMPLEMENT_CLASS(URotationMovementComponent)
 IMPLEMENT_CLASS(UProjectileMovementComponent)
+IMPLEMENT_CLASS(USpotLightComponent)
 //IMPLEMENT_CLASS(UShapeComponent)
 
 IMPLEMENT_CLASS(AActor)
@@ -81,6 +84,7 @@ IMPLEMENT_CLASS(ADecalActor)
 IMPLEMENT_CLASS(ADecalSpotLightActor)
 IMPLEMENT_CLASS(AExponentialHeightFog)
 IMPLEMENT_CLASS(AFXAAActor)
+IMPLEMENT_CLASS(ASpotLightActor)
 
 IMPLEMENT_CLASS(UGizmoArrowComponent)
 IMPLEMENT_CLASS(UGizmoScaleComponent)

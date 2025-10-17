@@ -282,6 +282,8 @@
     <ClCompile Include="SpatialDataStructure.cpp" />
     <ClCompile Include="DecalSpotLightActor.cpp" />
     <ClCompile Include="DecalSpotLightComponent.cpp" />
+    <ClCompile Include="SpotLightActor.cpp" />
+    <ClCompile Include="SpotLightComponent.cpp" />
     <ClCompile Include="SSplitter.cpp" />
     <ClCompile Include="SSplitterH.cpp" />
     <ClCompile Include="SSplitterV.cpp" />
@@ -514,6 +516,8 @@
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="DecalSpotLightActor.h" />
     <ClInclude Include="DecalSpotLightComponent.h" />
+    <ClInclude Include="SpotLightActor.h" />
+    <ClInclude Include="SpotLightComponent.h" />
     <ClInclude Include="SSplitter.h" />
     <ClInclude Include="SSplitterH.h" />
     <ClInclude Include="SSplitterV.h" />
