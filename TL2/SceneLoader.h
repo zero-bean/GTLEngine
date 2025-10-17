@@ -59,6 +59,19 @@ struct FPointLightProperty
     FLinearColor Color = FLinearColor(1.f, 0.0f, 0.0f, 1.f); // 오렌지빛
 };
 
+struct FAmbientLightProperty
+{
+    float Intensity = 0.3f;           // 밝기
+    FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f); // 흰색
+};
+
+struct FDirectionalLightProperty
+{
+    float Intensity = 3.0f;           // 밝기
+    FLinearColor Color = FLinearColor(1.0f, 0.95f, 0.8f, 1.0f); // 따뜻한 햇빛색
+    FVector Direction = FVector(0.0f, 0.0f, -1.0f); // 아래 방향
+};
+
 struct FProjectileMovementProperty
 {
     float InitialSpeed = 1000.f;
@@ -89,6 +102,8 @@ struct FComponentData
     TArray<FString> Materials;  // StaticMeshComponent: Materials
     FString TexturePath;  // DecalComponent, BillboardComponent: Texture path
     FPointLightProperty PointLightProperty; // PointLightComponent
+    FAmbientLightProperty AmbientLightProperty; // AmbientLightComponent
+    FDirectionalLightProperty DirectionalLightProperty; // DirectionalLightComponent
     // 신규
     FProjectileMovementProperty ProjectileMovementProperty;
     FRotationMovementProperty RotationMovementProperty;

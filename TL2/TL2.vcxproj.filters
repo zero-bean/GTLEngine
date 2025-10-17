@@ -489,6 +489,9 @@
     <ClCompile Include="LocalLightComponent.cpp">
       <Filter>Components\Light</Filter>
     </ClCompile>
+    <ClCompile Include="AmbientLightComponent.cpp">
+      <Filter>Components\Light</Filter>
+    </ClCompile>
   </ItemGroup>
   <!-- ==================== 헤더 파일 (.h) ==================== -->
   <ItemGroup>
@@ -886,6 +889,7 @@
       <Filter>Components\Movement</Filter>
     </ClInclude>
     <ClInclude Include="ExponentialHeightFog.h" />
+    <ClInclude Include="ExponentialHeightFogComponent.h" />
     <ClInclude Include="LinearColor.h" />
     <ClInclude Include="PointLightComponent.h">
       <Filter>Components\Light</Filter>
@@ -896,6 +900,9 @@
       <Filter>Components\Light</Filter>
     </ClInclude>
     <ClInclude Include="LocalLightComponent.h">
+      <Filter>Components\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="AmbientLightComponent.h">
       <Filter>Components\Light</Filter>
     </ClInclude>
   </ItemGroup>
@@ -926,6 +933,10 @@
     <FxCompile Include="DecalSpotLightShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Copy.hlsl" />
+    <FxCompile Include="FXAA.hlsl" />
+    <FxCompile Include="HeightFogShader.hlsl" />
+    <FxCompile Include="SceneDepth.hlsl" />
     <FxCompile Include="DepthPrepassShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -933,21 +944,6 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Gamma.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Copy.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="DecalShaderScreen.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="HeightFogShader.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="SceneDepth.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="FXAA.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
