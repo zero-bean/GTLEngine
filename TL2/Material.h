@@ -21,12 +21,16 @@ public:
     void SetTexture(UTexture* TextureResource);
     UTexture* GetTexture();
 
+    void SetNormalTexture(UTexture* TextureResource);
+    UTexture* GetNormalTexture();
+
     void SetMaterialInfo(const FObjMaterialInfo& InMaterialInfo) { MaterialInfo = InMaterialInfo; }
     const FObjMaterialInfo& GetMaterialInfo() const { return MaterialInfo; }
 
 private:
 	UShader* Shader = nullptr;
-	UTexture* Texture= nullptr;
+    UTexture* Texture = nullptr;
+    UTexture* NormalTexture = nullptr;
     FObjMaterialInfo MaterialInfo;
 };
 

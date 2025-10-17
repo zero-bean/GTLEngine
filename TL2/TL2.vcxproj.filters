@@ -477,12 +477,16 @@
       <Filter>Components\Movement</Filter>
     </ClCompile>
     <ClCompile Include="ExponentialHeightFog.cpp" />
-    <ClCompile Include="ExponentialHeightFogComponent.cpp" />
     <ClCompile Include="FireballComponent.cpp">
       <Filter>Components\Light</Filter>
     </ClCompile>
     <ClCompile Include="FXAAActor.cpp" />
-    <ClCompile Include="FXAAComponent.cpp" />
+    <ClCompile Include="FXAAComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="ExponentialHeightFogComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <!-- ==================== 헤더 파일 (.h) ==================== -->
   <ItemGroup>
@@ -880,13 +884,17 @@
       <Filter>Components\Movement</Filter>
     </ClInclude>
     <ClInclude Include="ExponentialHeightFog.h" />
-    <ClInclude Include="ExponentialHeightFogComponent.h" />
     <ClInclude Include="LinearColor.h" />
     <ClInclude Include="FireballComponent.h">
       <Filter>Components\Light</Filter>
     </ClInclude>
     <ClInclude Include="FXAAActor.h" />
-    <ClInclude Include="FXAAComponent.h" />
+    <ClInclude Include="FXAAComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ExponentialHeightFogComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
   </ItemGroup>
   <!-- ==================== 셰이더 파일 (.hlsl) ==================== -->
   <ItemGroup>
@@ -911,14 +919,9 @@
     <FxCompile Include="DecalShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="DecalShaderScreen.hlsl" />
     <FxCompile Include="SpotLightShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Copy.hlsl" />
-    <FxCompile Include="FXAA.hlsl" />
-    <FxCompile Include="HeightFogShader.hlsl" />
-    <FxCompile Include="SceneDepth.hlsl" />
     <FxCompile Include="DepthPrepassShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -926,6 +929,21 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Gamma.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Copy.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="DecalShaderScreen.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="HeightFogShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="SceneDepth.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="FXAA.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

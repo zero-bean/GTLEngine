@@ -176,19 +176,20 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
             const UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
             const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
             bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
-            
+            bool bHasNormalTexture = !(MaterialInfo.NormalTextureFileName == FName::None());
+
             // 재료 변경 추적
             if (LastMaterial != Material)
             {
                 StatsCollector.IncrementMaterialChanges();
                 LastMaterial = const_cast<UMaterial*>(Material);
             }
-            
-            FTextureData* TextureData = nullptr;
+
+            // Diffuse Texture
             if (bHasTexture)
             {
-                TextureData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.DiffuseTextureFileName);
-                
+                FTextureData* TextureData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.DiffuseTextureFileName);
+
                 // 텍스처 변경 추적 (임시로 FTextureData*를 UTexture*로 캠스트)
                 UTexture* CurrentTexture = reinterpret_cast<UTexture*>(TextureData);
                 if (LastTexture != CurrentTexture)
@@ -196,12 +197,19 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                     StatsCollector.IncrementTextureChanges();
                     LastTexture = CurrentTexture;
                 }
-                
+
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &(TextureData->TextureSRV));
             }
-            
-            RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture)); // PSSet도 해줌
-            
+
+            // Normal Texture
+            if (bHasNormalTexture)
+            {
+                FTextureData* NormalTextureData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.NormalTextureFileName);
+                RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &(NormalTextureData->TextureSRV));
+            }
+
+            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture }); // PSSet도 해줌
+
             // DrawCall 수실행 및 통계 추가
             RHIDevice->GetDeviceContext()->DrawIndexed(MeshGroupInfos[i].IndexCount, MeshGroupInfos[i].StartIndex, 0);
             StatsCollector.IncrementDrawCalls();
@@ -210,7 +218,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
     else
     {
         FObjMaterialInfo ObjMaterialInfo;
-        RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(ObjMaterialInfo), false, false)); // PSSet도 해줌
+        RHIDevice->UpdateSetCBuffer({ FMaterialInPs(ObjMaterialInfo), (uint32)false, (uint32)false, (uint32)false }); // PSSet도 해줌
         RHIDevice->GetDeviceContext()->DrawIndexed(IndexCount, 0, 0);
         StatsCollector.IncrementDrawCalls();
     }

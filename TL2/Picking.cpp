@@ -320,9 +320,9 @@ bool IntersectTriangleBVH(const FRay& LocalRay, FNarrowPhaseBVHNode* Node, const
             const uint32 i1 = MeshAsset->Indices[Primitive.TriangleIndex * 3 + 1];
             const uint32 i2 = MeshAsset->Indices[Primitive.TriangleIndex * 3 + 2];
     
-            const FVector& v0 = MeshAsset->Vertices[i0].pos;
-            const FVector& v1 = MeshAsset->Vertices[i1].pos;
-            const FVector& v2 = MeshAsset->Vertices[i2].pos;
+            const FVector& v0 = MeshAsset->Vertices[i0].Pos;
+            const FVector& v1 = MeshAsset->Vertices[i1].Pos;
+            const FVector& v2 = MeshAsset->Vertices[i2].Pos;
     
             
             // 가져온 정점으로 묄러트럼보어 실행 -> 실제 광선과 삼각형의 교차 검사
@@ -1047,9 +1047,9 @@ bool CPickingSystem::CheckGizmoComponentPicking(const UStaticMeshComponent* Comp
             const FNormalVertex& V1N = StaticMesh->Vertices[StaticMesh->Indices[Idx + 1]];
             const FNormalVertex& V2N = StaticMesh->Vertices[StaticMesh->Indices[Idx + 2]];
 
-            FVector A = TransformPoint(V0N.pos.X, V0N.pos.Y, V0N.pos.Z);
-            FVector B = TransformPoint(V1N.pos.X, V1N.pos.Y, V1N.pos.Z);
-            FVector C = TransformPoint(V2N.pos.X, V2N.pos.Y, V2N.pos.Z);
+            FVector A = TransformPoint(V0N.Pos.X, V0N.Pos.Y, V0N.Pos.Z);
+            FVector B = TransformPoint(V1N.Pos.X, V1N.Pos.Y, V1N.Pos.Z);
+            FVector C = TransformPoint(V2N.Pos.X, V2N.Pos.Y, V2N.Pos.Z);
 
             float THit;
             if (IntersectRayTriangleMT(Ray, A, B, C, THit))
@@ -1072,9 +1072,9 @@ bool CPickingSystem::CheckGizmoComponentPicking(const UStaticMeshComponent* Comp
             const FNormalVertex& V1N = StaticMesh->Vertices[Idx + 1];
             const FNormalVertex& V2N = StaticMesh->Vertices[Idx + 2];
 
-            FVector A = TransformPoint(V0N.pos.X, V0N.pos.Y, V0N.pos.Z);
-            FVector B = TransformPoint(V1N.pos.X, V1N.pos.Y, V1N.pos.Z);
-            FVector C = TransformPoint(V2N.pos.X, V2N.pos.Y, V2N.pos.Z);
+            FVector A = TransformPoint(V0N.Pos.X, V0N.Pos.Y, V0N.Pos.Z);
+            FVector B = TransformPoint(V1N.Pos.X, V1N.Pos.Y, V1N.Pos.Z);
+            FVector C = TransformPoint(V2N.Pos.X, V2N.Pos.Y, V2N.Pos.Z);
 
             float THit;
             if (IntersectRayTriangleMT(Ray, A, B, C, THit))

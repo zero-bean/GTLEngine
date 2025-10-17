@@ -118,8 +118,7 @@ FMeshData* UMeshLoader::LoadMesh(const std::filesystem::path& FilePath)
 
     for (const auto& Face : Faces)
     {
-        const FPosition& Pos = Positions[Face.IndexPosition - 1];
-        FVertexKey key{ Pos.x, Pos.y, Pos.z };
+        FVertexKey key{ Face.IndexPosition, Face.IndexNormal, Face.IndexTexCoord };
 
         auto it = UniqueVertexMap.find(key);
         if (it != UniqueVertexMap.end())
@@ -131,15 +130,19 @@ FMeshData* UMeshLoader::LoadMesh(const std::filesystem::path& FilePath)
             uint32 newIndex = static_cast<uint32>(MeshData->Vertices.size());
 
             // 위치 데이터 추가
+            const FPosition& Pos = Positions[Face.IndexPosition - 1];
             MeshData->Vertices.push_back(FVector(Pos.x, Pos.y, Pos.z));
 
-            // 랜덤 색상 추가
-            MeshData->Color.push_back(FVector4(
-                static_cast<float>(rand()) / RAND_MAX,
-                static_cast<float>(rand()) / RAND_MAX,
-                static_cast<float>(rand()) / RAND_MAX,
-                1.0f
-            ));
+            // UV 데이터 추가
+            if (Face.IndexTexCoord > 0 && Face.IndexTexCoord <= TexCoords.size())
+            {
+                const FTexCoord& UV = TexCoords[Face.IndexTexCoord - 1];
+                MeshData->UV.push_back(FVector2D(UV.u, UV.v));
+            }
+            else
+            {
+                MeshData->UV.push_back(FVector2D(0.0f, 0.0f));
+            }
 
             // Normal 데이터 추가
             if (Face.IndexNormal > 0 && Face.IndexNormal <= Normals.size())
@@ -153,9 +156,78 @@ FMeshData* UMeshLoader::LoadMesh(const std::filesystem::path& FilePath)
                 MeshData->Normal.push_back(FVector(0.0f, 1.0f, 0.0f));
             }
 
+            // 랜덤 색상 추가
+            MeshData->Color.push_back(FVector4(
+                static_cast<float>(rand()) / RAND_MAX,
+                static_cast<float>(rand()) / RAND_MAX,
+                static_cast<float>(rand()) / RAND_MAX,
+                1.0f
+            ));
+
             MeshData->Indices.push_back(newIndex);
             UniqueVertexMap[key] = newIndex;
         }
+    }
+
+    // Tangent, Bitangent 계산
+    MeshData->Tangent.resize(MeshData->Vertices.size(), FVector(0.f, 0.f, 0.f));
+    MeshData->Bitangent.resize(MeshData->Vertices.size(), FVector(0.f, 0.f, 0.f));
+
+    for (size_t i = 0; i < MeshData->Indices.size(); i += 3)
+    {
+        uint32 i0 = MeshData->Indices[i];
+        uint32 i1 = MeshData->Indices[i + 1];
+        uint32 i2 = MeshData->Indices[i + 2];
+
+        const FVector& v0 = MeshData->Vertices[i0];
+        const FVector& v1 = MeshData->Vertices[i1];
+        const FVector& v2 = MeshData->Vertices[i2];
+
+        const FVector2D& uv0 = MeshData->UV[i0];
+        const FVector2D& uv1 = MeshData->UV[i1];
+        const FVector2D& uv2 = MeshData->UV[i2];
+
+        FVector deltaPos1 = v1 - v0;
+        FVector deltaPos2 = v2 - v0;
+
+        FVector2D deltaUV1 = uv1 - uv0;
+        FVector2D deltaUV2 = uv2 - uv0;
+
+        float r = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV1.Y * deltaUV2.X);
+
+        if (isinf(r) || isnan(r))
+        {
+            continue;
+        }
+
+        FVector tangent = (deltaPos1 * deltaUV2.Y - deltaPos2 * deltaUV1.Y) * r;
+        FVector bitangent = (deltaPos2 * deltaUV1.X - deltaPos1 * deltaUV2.X) * r;
+
+        MeshData->Tangent[i0] += tangent;
+        MeshData->Tangent[i1] += tangent;
+        MeshData->Tangent[i2] += tangent;
+
+        MeshData->Bitangent[i0] += bitangent;
+        MeshData->Bitangent[i1] += bitangent;
+        MeshData->Bitangent[i2] += bitangent;
+    }
+
+    for (size_t i = 0; i < MeshData->Vertices.size(); ++i)
+    {
+        const FVector& n = MeshData->Normal[i];
+        const FVector& t = MeshData->Tangent[i];
+
+        // Gram-Schmidt 직교화
+        FVector tangent = (t - n * n.Dot(t)).GetSafeNormal();
+
+        // 왼손 좌표계인지 확인
+        if (FVector::Cross(n, t).Dot(MeshData->Bitangent[i]) < 0.0f)
+        {
+            tangent = tangent * -1.0f;
+        }
+
+        MeshData->Tangent[i] = tangent;
+        MeshData->Bitangent[i] = FVector::Cross(n, tangent).GetSafeNormal();
     }
 
     MeshCache[FilePath.string()] = MeshData;

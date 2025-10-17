@@ -26,6 +26,7 @@ cbuffer HighLightBuffer : register(b2)
 }
 
 Texture2D g_DiffuseTexColor : register(t0);
+Texture2D g_NormalTex : register(t1); // Normal map
 SamplerState g_Sample : register(s0);
 
 struct FMaterial
@@ -52,6 +53,8 @@ cbuffer PixelConstData : register(b4)
     FMaterial Material;
     bool HasMaterial;
     bool HasTexture;
+    bool HasNormalTexture;
+    float _pad_mat;
 }
 
 cbuffer PSScrollCB : register(b5)
@@ -152,9 +155,11 @@ LightAccum ComputePointLights_LambertPhong(float3 worldPos, float3 worldNormal, 
 struct VS_INPUT
 {
     float3 position : POSITION;
-    float3 normal : NORMAL0;
+    float3 normal : NORMAL;
     float4 color : COLOR;
-    float2 texCoord : TEXCOORD0;
+    float2 texCoord : TEXCOORD;
+    float3 tangent : TANGENT;
+    float3 bitangent : BITANGENT;
 };
 
 struct PS_INPUT
@@ -162,8 +167,10 @@ struct PS_INPUT
     float4 position : SV_POSITION;
     float3 worldPosition : TEXCOORD0;
     float3 worldNormal : TEXCOORD1;
-    float4 color : COLOR;
     float2 texCoord : TEXCOORD2;
+    float3 worldTangent : TEXCOORD3;
+    float3 worldBitangent : TEXCOORD4;
+    float4 color : COLOR;
     uint UUID : UUID;
 };
 
@@ -203,8 +210,10 @@ PS_INPUT mainVS(VS_INPUT input)
     float4 worldPos = mul(float4(displacedPos, 1.0f), WorldMatrix);
     o.worldPosition = worldPos.xyz;
 
-    // 노멀: inverse-transpose(World)
+    // 노멀, 탄젠트, 바이탄젠트를 월드 공간으로 변환
     o.worldNormal = normalize(mul(input.normal, (float3x3) NormalMatrix));
+    o.worldTangent = normalize(mul(input.tangent, (float3x3) WorldMatrix));
+    o.worldBitangent = normalize(mul(input.bitangent, (float3x3) WorldMatrix));
 
     // MVP
     float4x4 MVP = mul(mul(WorldMatrix, ViewMatrix), ProjectionMatrix);
@@ -278,18 +287,45 @@ PS_OUTPUT mainPS(PS_INPUT input)
             float glow = saturate(1.0 - dist * 2.0);
             texColor += glow * float3(1.2, 0.4, 0.1);
 
-        // 최종 결과
+        // 최종 결과u
             Result.Color = float4(saturate(texColor), 1.0);
             Result.UUID = input.UUID;
             return Result;
         }
     }
 
-    // 조명 계산 (shininess는 Material.SpecularExponent를 쓰는 게 일반적)
+    // 조명 계산을 위한 노멀 벡터 준비
     float3 N = normalize(input.worldNormal);
+
+    // 노말맵 텍스쳐가 존재한다면 
+    if (HasNormalTexture)
+    {
+        // 1. 노멀맵 텍스쳐에서 RGB 값을 Normal 값으로 변환합니다.
+        // RGB 값은 XYZ와 매핑되어 있으며 범위는 0~1로 저장되어 있고, 노말 값은 -1~1로 저장되어 있습니다.
+        // Sample(): UV 좌표를 읽어와 샘플러스테이트의 규칙을 참고하여, 
+        //           주변 텍셀의 색상을 조합해 해당 텍셀의 최종 색상값을 결정하는 역할을 가집니다.
+        float3 tangentNormal = g_NormalTex.Sample(g_Sample, input.texCoord).rgb * 2.0 - 1.0;
+
+        // 2. 보간된 벡터들로 TBN 행렬 재구성 및 직교화를 합니다.
+        float3 T = normalize(input.worldTangent);
+        float3 B = normalize(input.worldBitangent);
+        float3 N = normalize(input.worldNormal);
+        
+        // 정점 셰이더에서 픽셀 단위로 보간되어 넘어온 벡터들은 완벽하게 직교하지 않을 수 있습니다.
+        // 따라서 그람-슈미트(Gram-Schmidt) 기법을 통해 TBN 좌표계를 다시 직교화하여 정렬합니다.
+        T = normalize(T - dot(T, N) * N);
+        B = cross(N, T);
+
+        // 3개의 기저 벡터를 기저 행렬로 변환합니다만, row-major 표준을 위해 전치를 합니다.
+        float3x3 TBN = transpose(float3x3(T, B, N));
+
+        // 3. 탄젠트 공간 노멀을 월드 공간으로 변환합니다.
+        N = normalize(mul(tangentNormal, TBN));
+    }
+
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
     LightAccum la = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);
-    float3 light = ComputePointLights(input.worldPosition);
+    
     // Ambient + Diffuse + Specular
     float3 ambient = 0.25 * base;
     if (HasMaterial)
