@@ -1,13 +1,13 @@
-﻿// SpotLightComponent.h (Inheritance Version)
+﻿// DecalSpotLightComponent.h (Inheritance Version)
 #pragma once
 #include "DecalComponent.h"
 
-class USpotLightComponent : public UDecalComponent
+class UDecalSpotLightComponent : public UDecalComponent
 {
 public:
-    DECLARE_CLASS(USpotLightComponent, UDecalComponent)
+    DECLARE_CLASS(UDecalSpotLightComponent, UDecalComponent)
 
-    USpotLightComponent();
+    UDecalSpotLightComponent();
     const TArray<FVector> GetBoundingBoxLines() const override;
     const FVector4 GetBoundingBoxColor() const override;
 

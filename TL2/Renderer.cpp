@@ -11,14 +11,14 @@
 #include "SMultiViewportWindow.h"
 #include "SelectionManager.h"
 #include "DecalComponent.h"
-#include "SpotLightComponent.h"
+#include "DecalSpotLightComponent.h"
 #include "GridActor.h"
 #include "FViewport.h"
 #include "CameraActor.h"
 #include "Frustum.h"
 #include "BoundingVolume.h"
 #include "GizmoActor.h"
-#include "FireballComponent.h"
+#include "PointLightComponent.h"
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include "CameraComponent.h"
@@ -506,7 +506,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_Unlit:
     case EViewModeIndex::VMI_Wireframe:
     {
-        RenderFireBallPass(World);
+        RenderPointLightPass(World);
         RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
         RenderFogPass(World,Camera,Viewport);
         RenderFXAAPaxx(World, Camera, Viewport);
@@ -708,28 +708,7 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
         if (PrimitiveComponent->GetOwner() == SelectedActor)
         {
             bIsSelected = true;
-        }
-        UStaticMeshComponent* FireballComponent = Cast<UStaticMeshComponent>(PrimitiveComponent);
-
-        if (FireballComponent)
-        {
-            if (!FireballComponent->GetStaticMesh()) {
-                return;
-            }
-            if (FireballComponent->GetStaticMesh()->GetVertexCount() == 4286) {
-
-                UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0, 1));
-                static float Time;
-                Time += 0.001 ;
-				UpdateSetCBuffer(UVScrollCB((1, 1),Time,1));
-            }
-            else {
-                UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
-            }
-        }
-      
-
-      
+        }   
         PrimitiveComponent->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
     }
 }
@@ -876,25 +855,25 @@ void URenderer::RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* V
 }
 
 
-void URenderer::RenderFireBallPass(UWorld* World)
+void URenderer::RenderPointLightPass(UWorld* World)
 {
     if (!World) return;
 
-    // 1️⃣ 라이트 컴포넌트 수집 (FireBall, PointLight 등)
+    // 1️⃣ 라이트 컴포넌트 수집 (PointLight, PointLight 등)
     FPointLightBufferType PointLightCB{};
     PointLightCB.PointLightCount=0;
-    for (UFireBallComponent* FireBallComponent : World->GetLevel()->GetComponentList<UFireBallComponent>())
+    for (UPointLightComponent* PointLightComponent : World->GetLevel()->GetComponentList<UPointLightComponent>())
     {
         int idx = PointLightCB.PointLightCount++;
         if (idx >= MAX_POINT_LIGHTS) break;
 
         PointLightCB.PointLights[idx].Position = FVector4(
-            FireBallComponent->GetWorldLocation(), FireBallComponent->FireData.Radius
+            PointLightComponent->GetWorldLocation(), PointLightComponent->PointData.Radius
         );
         PointLightCB.PointLights[idx].Color = FVector4(
-            FireBallComponent->FireData.Color.R, FireBallComponent->FireData.Color.G, FireBallComponent->FireData.Color.B, FireBallComponent->FireData.Intensity
+            PointLightComponent->PointData.Color.R, PointLightComponent->PointData.Color.G, PointLightComponent->PointData.Color.B, PointLightComponent->PointData.Intensity
         );
-        PointLightCB.PointLights[idx].FallOff = FireBallComponent->FireData.RadiusFallOff;
+        PointLightCB.PointLights[idx].FallOff = PointLightComponent->PointData.RadiusFallOff;
     }
     // 2️⃣ 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);
@@ -908,18 +887,18 @@ void URenderer::RenderFireBallPass(UWorld* World)
         {
             if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Comp))
             {
-                if (UFireBallComponent* Fire = Cast<UFireBallComponent>(Prim))
+                if (UPointLightComponent* Point = Cast<UPointLightComponent>(Prim))
                 {
                     int idx = PointLightCB.PointLightCount++;
                     if (idx >= MAX_POINT_LIGHTS) break;
 
                     PointLightCB.PointLights[idx].Position = FVector4(
-                        Fire->GetWorldLocation(), Fire->FireData.Radius
+                        Point->GetWorldLocation(), Point->PointData.Radius
                     );
                     PointLightCB.PointLights[idx].Color = FVector4(
-                        Fire->FireData.Color.R, Fire->FireData.Color.G, Fire->FireData.Color.B, Fire->FireData.Intensity
+                        Point->PointData.Color.R, Point->PointData.Color.G, Point->PointData.Color.B, Point->PointData.Intensity
                     );
-                    PointLightCB.PointLights[idx].FallOff = Fire->FireData.RadiusFallOff;
+                    PointLightCB.PointLights[idx].FallOff = Point->PointData.RadiusFallOff;
                 }
             }
         }

@@ -25,6 +25,10 @@ public:
 
     void SetPerspectiveCameraInput(bool InPerspectiveCameraInput);
 
+    // Camera smooth movement
+    void MoveToLocation(const FVector& TargetLocation, float Duration = 0.3f);
+    bool IsCameraAnimating() const { return bCameraAnimating; }
+
 protected:
     ~ACameraActor() override;
 
@@ -71,8 +75,15 @@ private:
     float CameraPitchDeg = 0.0f; // Local Right based Pitch (limited)
 
     bool PerspectiveCameraInput = false;
-    
+
    // ECameraProjectionMode ProjectionMode = ECameraProjectionMode::Perspective;
+
+    // Camera animation state
+    bool bCameraAnimating = false;
+    FVector CameraAnimStartPos = FVector(0, 0, 0);
+    FVector CameraAnimTargetPos = FVector(0, 0, 0);
+    float CameraAnimTime = 0.0f;
+    float CameraAnimDuration = 0.3f;
 
     // Camera input processing methods
 

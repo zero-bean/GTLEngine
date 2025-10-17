@@ -457,10 +457,10 @@
     </ClCompile>
     <ClCompile Include="BoundingVolume.cpp" />
     <ClCompile Include="DecalComponentScreen.cpp" />
-    <ClCompile Include="SpotLightActor.cpp">
+    <ClCompile Include="DecalSpotLightActor.cpp">
       <Filter>Actors</Filter>
     </ClCompile>
-    <ClCompile Include="SpotLightComponent.cpp">
+    <ClCompile Include="DecalSpotLightComponent.cpp">
       <Filter>Components\Decal</Filter>
     </ClCompile>
     <ClCompile Include="TimeProfile.cpp" />
@@ -477,15 +477,17 @@
       <Filter>Components\Movement</Filter>
     </ClCompile>
     <ClCompile Include="ExponentialHeightFog.cpp" />
-    <ClCompile Include="FireballComponent.cpp">
+    <ClCompile Include="ExponentialHeightFogComponent.cpp" />
+    <ClCompile Include="PointLightComponent.cpp">
       <Filter>Components\Light</Filter>
     </ClCompile>
     <ClCompile Include="FXAAActor.cpp" />
-    <ClCompile Include="FXAAComponent.cpp">
-      <Filter>Components</Filter>
+    <ClCompile Include="FXAAComponent.cpp" />
+    <ClCompile Include="LightComponent.cpp">
+      <Filter>Components\Light</Filter>
     </ClCompile>
-    <ClCompile Include="ExponentialHeightFogComponent.cpp">
-      <Filter>Components</Filter>
+    <ClCompile Include="LocalLightComponent.cpp">
+      <Filter>Components\Light</Filter>
     </ClCompile>
   </ItemGroup>
   <!-- ==================== 헤더 파일 (.h) ==================== -->
@@ -863,11 +865,11 @@
     </ClInclude>
     <ClInclude Include="BoundingVolume.h" />
     <ClInclude Include="DecalComponentScreen.h" />
-    <ClInclude Include="SpotLightActor.h">
+    <ClInclude Include="DecalSpotLightActor.h">
       <Filter>Actors</Filter>
     </ClInclude>
     <ClInclude Include="CBufferTypes.h" />
-    <ClInclude Include="SpotLightComponent.h">
+    <ClInclude Include="DecalSpotLightComponent.h">
       <Filter>Components\Decal</Filter>
     </ClInclude>
     <ClInclude Include="TimeProfile.h" />
@@ -885,15 +887,16 @@
     </ClInclude>
     <ClInclude Include="ExponentialHeightFog.h" />
     <ClInclude Include="LinearColor.h" />
-    <ClInclude Include="FireballComponent.h">
+    <ClInclude Include="PointLightComponent.h">
       <Filter>Components\Light</Filter>
     </ClInclude>
     <ClInclude Include="FXAAActor.h" />
-    <ClInclude Include="FXAAComponent.h">
-      <Filter>Components</Filter>
+    <ClInclude Include="FXAAComponent.h" />
+    <ClInclude Include="LightComponent.h">
+      <Filter>Components\Light</Filter>
     </ClInclude>
-    <ClInclude Include="ExponentialHeightFogComponent.h">
-      <Filter>Components</Filter>
+    <ClInclude Include="LocalLightComponent.h">
+      <Filter>Components\Light</Filter>
     </ClInclude>
   </ItemGroup>
   <!-- ==================== 셰이더 파일 (.hlsl) ==================== -->
@@ -919,7 +922,8 @@
     <FxCompile Include="DecalShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="SpotLightShader.hlsl">
+    <FxCompile Include="DecalShaderScreen.hlsl" />
+    <FxCompile Include="DecalSpotLightShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="DepthPrepassShader.hlsl">

@@ -1,26 +1,64 @@
 {
   "Version" : 2,
-  "NextUUID" : 612,
+  "NextUUID" : 674,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-13.923723, 7.794196, 2.146348],
+    "Location" : [-22.802567, 0.277515, 2.391075],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 10.400009, -29.400002]
+    "Rotation" : [0.000000, 3.500001, 14.600003]
   },
   "Actors" : [
     {
-      "UUID" : 584,
+      "UUID" : 644,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Cube_0",
+      "RootComponentUUID" : 645
+    },
+    {
+      "UUID" : 646,
       "Type" : "AActor",
-      "Name" : "Actor_0",
-      "RootComponentUUID" : 585
+      "Name" : "Cube_1",
+      "RootComponentUUID" : 647
+    },
+    {
+      "UUID" : 648,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Cube_2",
+      "RootComponentUUID" : 649
+    },
+    {
+      "UUID" : 650,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Cube_3",
+      "RootComponentUUID" : 651
     }
   ],
   "Components" : [
     {
-      "UUID" : 598,
-      "OwnerActorUUID" : 584,
-      "ParentComponentUUID" : 585,
+      "UUID" : 645,
+      "OwnerActorUUID" : 644,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.356857, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Cube.obj"
+    },
+    {
+      "UUID" : 647,
+      "OwnerActorUUID" : 646,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 3.364109, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Cube.obj"
+    },
+    {
+      "UUID" : 649,
+      "OwnerActorUUID" : 648,
+      "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
@@ -28,27 +66,14 @@
       "StaticMesh" : "Data/Cube.obj"
     },
     {
-      "UUID" : 585,
-      "OwnerActorUUID" : 584,
+      "UUID" : 651,
+      "OwnerActorUUID" : 650,
       "ParentComponentUUID" : 0,
-      "Type" : "USceneComponent",
+      "Type" : "UStaticMeshComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
-    {
-      "UUID" : 590,
-      "OwnerActorUUID" : 584,
-      "ParentComponentUUID" : 0,
-      "Type" : "URotationMovementComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [0.000000, 0.000000, 0.000000],
-      "RotationMovementData" : {
-        "RotationRate" : [0.000000, 80.000000, 0.000000],
-        "PivotTranslation" : [0.000000, 11.700000, 0.000000],
-        "bRotationInLocalSpace" : true
-      }
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Cube.obj"
     }
   ]
 }

@@ -1,11 +1,11 @@
-﻿// SpotLightComponent.cpp (Inheritance Version)
+﻿// DecalSpotLightComponent.cpp (Inheritance Version)
 #include "pch.h"
-#include "SpotLightComponent.h"
+#include "DecalSpotLightComponent.h"
 #include "ResourceManager.h"
 
-IMPLEMENT_CLASS(USpotLightComponent)
+IMPLEMENT_CLASS(UDecalSpotLightComponent)
 
-USpotLightComponent::USpotLightComponent()
+UDecalSpotLightComponent::UDecalSpotLightComponent()
 {
     bCanEverTick = false;
     // The parent UDecalComponent constructor has already run and handled:
@@ -16,14 +16,14 @@ USpotLightComponent::USpotLightComponent()
     // We just need to override the parts that are different for a spotlight.
 
     // 1. Use the new spotlight shader instead of the default decal shader.
-    SetMaterial("SpotLightShader.hlsl");
+    SetMaterial("DecalSpotLightShader.hlsl");
 
     // 3. Call our overridden update function to create the initial perspective matrix.
     UpdateDecalProjectionMatrix();
     
 }
 
-void USpotLightComponent::UpdateDecalProjectionMatrix()
+void UDecalSpotLightComponent::UpdateDecalProjectionMatrix()
 {
     FOBB WorldOBB = GetWorldOBB();
 
@@ -42,11 +42,11 @@ void USpotLightComponent::UpdateDecalProjectionMatrix()
     DecalProjectionMatrix = FMatrix::PerspectiveFovLH(Fov, Aspect, Near, Far);
 }
 
-const FVector4 USpotLightComponent::GetBoundingBoxColor() const
+const FVector4 UDecalSpotLightComponent::GetBoundingBoxColor() const
 {
     return FVector4(1, 0, 0, 1);
 }
-const TArray<FVector> USpotLightComponent::GetBoundingBoxLines() const
+const TArray<FVector> UDecalSpotLightComponent::GetBoundingBoxLines() const
 {
     // SpotLight 절두체 그리기
 
@@ -92,14 +92,14 @@ const TArray<FVector> USpotLightComponent::GetBoundingBoxLines() const
 }
 
 
-UObject* USpotLightComponent::Duplicate()
+UObject* UDecalSpotLightComponent::Duplicate()
 {
-    USpotLightComponent* DuplicatedComponent = Cast<USpotLightComponent>(UDecalComponent::Duplicate());
+    UDecalSpotLightComponent* DuplicatedComponent = Cast<UDecalSpotLightComponent>(UDecalComponent::Duplicate());
     if (DuplicatedComponent)
     {
         DuplicatedComponent->TexturePath = TexturePath;
         //DuplicatedComponent->LocalAABB = LocalAABB;
-        // SpotLightComponent 특유의 프로퍼티 복사
+        // DecalSpotLightComponent 특유의 프로퍼티 복사
         DuplicatedComponent->Radius = Radius;
         DuplicatedComponent->Height = Height;
         DuplicatedComponent->Near = Near;
@@ -110,7 +110,7 @@ UObject* USpotLightComponent::Duplicate()
     return DuplicatedComponent;
 }
 
-void USpotLightComponent::DuplicateSubObjects()
+void UDecalSpotLightComponent::DuplicateSubObjects()
 {
     UDecalComponent::DuplicateSubObjects();
 }

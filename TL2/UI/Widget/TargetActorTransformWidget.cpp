@@ -22,7 +22,7 @@
 #include "ProjectileMovementComponent.h"
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
-#include"FireballComponent.h"
+#include"PointLightComponent.h"
 
 #include <filesystem>
 #include <vector>
@@ -509,9 +509,9 @@ void UTargetActorTransformWidget::RenderWidget()
 		{
 			RenderTextRenderComponentDetails(Comp);
 		}
-		else if (UFireBallComponent* Comp = Cast<UFireBallComponent>(SelectedComponent))
+		else if (UPointLightComponent* Comp = Cast<UPointLightComponent>(SelectedComponent))
 		{
-			RenderFireBallComponentDetails(Comp);
+			RenderPointLightComponentDetails(Comp);
 		}	
 		else if (UDecalComponent* Comp = Cast<UDecalComponent>(SelectedComponent))
 		{
@@ -1031,39 +1031,39 @@ void UTargetActorTransformWidget::RenderTextRenderComponentDetails(UTextRenderCo
 	//}
 }
 
-void UTargetActorTransformWidget::RenderFireBallComponentDetails(UFireBallComponent* InComponent)
+void UTargetActorTransformWidget::RenderPointLightComponentDetails(UPointLightComponent* InComponent)
 {
 	ImGui::Separator();
-	ImGui::Text("FireBall Component Settings");
+	ImGui::Text("PointLight Component Settings");
 
 	// 🔸 색상 설정 (RGB Color Picker)
-	float color[3] = { InComponent->FireData.Color.R, InComponent->FireData.Color.G, InComponent->FireData.Color.B };
+	float color[3] = { InComponent->PointData.Color.R, InComponent->PointData.Color.G, InComponent->PointData.Color.B };
 	if (ImGui::ColorEdit3("Color", color))
 	{
-		InComponent->FireData.Color = FLinearColor(color[0], color[1], color[2], 1.0f);
+		InComponent->PointData.Color = FLinearColor(color[0], color[1], color[2], 1.0f);
 	}
 
 	ImGui::Spacing();
 
 	// 🔸 밝기 (Intensity)
-	float intensity = InComponent->FireData.Intensity;
+	float intensity = InComponent->PointData.Intensity;
 	if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
 	{
-		InComponent->FireData.Intensity = intensity;
+		InComponent->PointData.Intensity = intensity;
 	}
 
 	// 🔸 반경 (Radius)
-	float radius = InComponent->FireData.Radius;
+	float radius = InComponent->PointData.Radius;
 	if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 1000.0f))
 	{
-		InComponent->FireData.Radius = radius;
+		InComponent->PointData.Radius = radius;
 	}
 
 	// 🔸 감쇠 정도 (FallOff)
-	float falloff = InComponent->FireData.RadiusFallOff;
+	float falloff = InComponent->PointData.RadiusFallOff;
 	if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
 	{
-		InComponent->FireData.RadiusFallOff = falloff;
+		InComponent->PointData.RadiusFallOff = falloff;
 	}
 
 	ImGui::Spacing();
@@ -1071,7 +1071,7 @@ void UTargetActorTransformWidget::RenderFireBallComponentDetails(UFireBallCompon
 	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
 	ImGui::Text("Preview:");
 	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● FireBall Active");
+	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
 }
 
 void UTargetActorTransformWidget::RenderDecalComponentDetails(UDecalComponent* InComponent)

@@ -45,6 +45,33 @@ void ACameraActor::Tick(float DeltaSeconds)
        // ProcessEditorCameraInput(DeltaSeconds);
 
     //}
+
+    // Update camera animation
+    if (bCameraAnimating)
+    {
+        CameraAnimTime += DeltaSeconds;
+
+        // Calculate interpolation alpha (0 to 1)
+        float Alpha = CameraAnimTime / CameraAnimDuration;
+
+        if (Alpha >= 1.0f)
+        {
+            // Animation complete
+            SetActorLocation(CameraAnimTargetPos);
+            bCameraAnimating = false;
+            CameraAnimTime = 0.0f;
+        }
+        else
+        {
+            // Smooth interpolation using ease-out curve
+            float EasedAlpha = 1.0f - (1.0f - Alpha) * (1.0f - Alpha);
+
+            // Lerp between start and target position
+            FVector NewPos = CameraAnimStartPos + (CameraAnimTargetPos - CameraAnimStartPos) * EasedAlpha;
+            SetActorLocation(NewPos);
+        }
+    }
+
     // 우클릭 드래그 종료시 UI와 동기화
     UInputManager& InputManager = UInputManager::GetInstance();
     if (InputManager.IsMouseButtonReleased(RightButton))
@@ -203,7 +230,7 @@ static inline FVector RotateByQuat(const FVector& Vector, const FQuat& Quat)
 void ACameraActor::ProcessCameraMovement(float DeltaSeconds)
 {
     UInputManager& InputManager = UInputManager::GetInstance();
-    
+
     FVector Move(0, 0, 0);
 
     // 1) 카메라 회전(쿼터니언)에서 로컬 기저 추출 (스케일 영향 제거)
@@ -230,4 +257,13 @@ void ACameraActor::ProcessCameraMovement(float DeltaSeconds)
         const FVector P = GetActorLocation();
         SetActorLocation(P + Move);
     }
+}
+
+void ACameraActor::MoveToLocation(const FVector& TargetLocation, float Duration)
+{
+    bCameraAnimating = true;
+    CameraAnimStartPos = GetActorLocation();
+    CameraAnimTargetPos = TargetLocation;
+    CameraAnimTime = 0.0f;
+    CameraAnimDuration = Duration > 0.0f ? Duration : 0.3f;
 }

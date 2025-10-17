@@ -7,7 +7,7 @@ class UExponentialHeightFogComponent;
 class UBillboardComponent;
 class UDecalComponent;
 class UPrimitiveComponent;
-class UFireBallComponent;
+class UPointLightComponent;
 class UFXAAComponent;
 
 class ULevel : public UObject
@@ -33,7 +33,7 @@ private:
 	TArray<UBillboardComponent*> BillboardComponentList;
 	TArray<UDecalComponent*> DecalComponentList;
 	TArray<UPrimitiveComponent*> PrimitiveComponentList;
-	TArray<UFireBallComponent*> FireBallComponentList;
+	TArray<UPointLightComponent*> PointLightComponentList;
 	TArray<UFXAAComponent*> FXAAComponentList;
 };
 
@@ -41,5 +41,5 @@ template<> TArray<UExponentialHeightFogComponent*>& ULevel::GetComponentList<UEx
 template<> TArray<UBillboardComponent*>& ULevel::GetComponentList<UBillboardComponent>();
 template<> TArray<UDecalComponent*>& ULevel::GetComponentList<UDecalComponent>();
 template<> TArray<UPrimitiveComponent*>& ULevel::GetComponentList<UPrimitiveComponent>();
-template<> TArray<UFireBallComponent*>& ULevel::GetComponentList<UFireBallComponent>();
+template<> TArray<UPointLightComponent*>& ULevel::GetComponentList<UPointLightComponent>();
 template<> TArray<UFXAAComponent*>& ULevel::GetComponentList<UFXAAComponent>();

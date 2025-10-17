@@ -1,5 +1,5 @@
 //======================================================
-// SpotLightShader.hlsl - Forward 렌더링으로 projection decal Shading
+// DecalSpotLightShader.hlsl - Forward 렌더링으로 projection decal Shading
 //======================================================
 
 cbuffer ModelBuffer : register(b0)
