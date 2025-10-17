@@ -50,6 +50,7 @@
 #include "DecalActor.h"
 #include "DecalSpotLightActor.h"
 #include "ExponentialHeightFog.h"
+#include "PointLightActor.h"
 #include "PointLightComponent.h"
 #include "MeshComponent.h"
 #include "RotationMovementComponent.h"
@@ -85,6 +86,7 @@ IMPLEMENT_CLASS(ADecalSpotLightActor)
 IMPLEMENT_CLASS(AExponentialHeightFog)
 IMPLEMENT_CLASS(AFXAAActor)
 IMPLEMENT_CLASS(ASpotLightActor)
+IMPLEMENT_CLASS(APointLightActor)
 
 IMPLEMENT_CLASS(UGizmoArrowComponent)
 IMPLEMENT_CLASS(UGizmoScaleComponent)

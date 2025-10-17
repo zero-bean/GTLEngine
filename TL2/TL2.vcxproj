@@ -180,6 +180,7 @@
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="ExponentialHeightFog.cpp" />
     <ClCompile Include="LocalLightComponent.cpp" />
+    <ClCompile Include="PointLightActor.cpp" />
     <ClCompile Include="PointLightComponent.cpp" />
     <ClCompile Include="FXAAActor.cpp" />
     <ClCompile Include="FXAAComponent.cpp" />
@@ -446,6 +447,7 @@
     <ClInclude Include="Engine.h" />
     <ClInclude Include="ExponentialHeightFog.h" />
     <ClInclude Include="LocalLightComponent.h" />
+    <ClInclude Include="PointLightActor.h" />
     <ClInclude Include="PointLightComponent.h" />
     <ClInclude Include="Frustum.h" />
     <ClInclude Include="FViewportClient.h" />
