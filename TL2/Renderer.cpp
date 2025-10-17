@@ -512,7 +512,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
         RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
         RenderFogPass(World,Camera,Viewport);
-       // RenderFXAAPaxx(World, Camera, Viewport);
+        RenderFXAAPaxx(World, Camera, Viewport);
         RenderEditorPass(World, Camera, Viewport);
         break;
     }
@@ -926,6 +926,11 @@ void URenderer::RenderSpotLightPass(UWorld* World)
             PointLightComponent->GetColor().R, PointLightComponent->GetColor().G, PointLightComponent->GetColor().B, PointLightComponent->GetIntensity()
         );
         SpotLightCB.SpotLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
+        // If set on component, propagate cone angles
+        SpotLightCB.SpotLights[idx].InnerConeAngle = PointLightComponent->GetInnerConeAngle();
+        SpotLightCB.SpotLights[idx].OuterConeAngle = PointLightComponent->GetOuterConeAngle();
+        SpotLightCB.SpotLights[idx].Direction = PointLightComponent->GetDirection();   
+        SpotLightCB.SpotLights[idx].InAndOutSmooth = PointLightComponent->GetInAndOutSmooth();
     }
     // 2️⃣ 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(SpotLightCB); 

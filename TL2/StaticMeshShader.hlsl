@@ -88,14 +88,17 @@ struct FSpotLightData
 {
     float4 Position; // xyz=위치(월드), w=반경
     float4 Color; // rgb=색상, a=Intensity
+    float4 Direction;
+ 
     float InnerConeAngle; // 감쇠 지수
     float OuterConeAngle; // 감쇠 지수
-    float SpotDataPadding;
+    float FallOff;
+    float InAndOutSmooth;
 };
 
 cbuffer SpotLightBuffer : register(b13)
 {
-    int SpotLightCount;
+    int SpotLightCount; 
     float3 SpotBufferPadding;
     FSpotLightData SpotLights[MAX_SpotLight];
 }
@@ -172,11 +175,53 @@ LightAccum ComputePointLights_LambertPhong(float3 worldPos, float3 worldNormal, 
 }
 
 
-float4 ComputeSpotLights(float3 worldPos, float3 worldNormal, float shininess)
+LightAccum ComputeSpotLights(float3 worldPos, float3 worldNormal, float shininess)
 {
-    return float4(1, 0, 0, 1); 
-}
-struct VS_INPUT
+    LightAccum acc = (LightAccum)0;
+
+    float3 N = normalize(worldNormal);
+    float3 V = normalize(CameraWorldPos - worldPos);
+    float  exp = clamp(shininess, 1.0, 128.0);
+
+    [loop]
+    for (int i = 0; i < SpotLightCount; i++)
+    {
+        FSpotLightData light = SpotLights[i];
+
+        // Direction and distance
+        float3 LvecToLight = light.Position.xyz - worldPos; // surface -> light
+        float  dist        = length(LvecToLight);
+        float3 L = normalize(LvecToLight);
+
+        // Distance attenuation (point light 와 동일) 
+        float range     = max(light.Position.w, 1e-3);
+        float fall      = max(light.FallOff, 0.001);
+        float t         = saturate(dist / range);
+        float attenDist = pow(saturate(1.0 - t), fall);
+        
+        
+        // 선형 보간 
+        float3 lightDir  = normalize(light.Direction.xyz);
+        float3 lightToWorld = normalize(-L); // light -> surface
+        float cosTheta = dot(lightDir, lightToWorld);
+         
+        float thetaInner = cos(radians(light.InnerConeAngle));
+        float thetaOuter = cos(radians(light.OuterConeAngle));
+        
+        float att = saturate(pow( (cosTheta - thetaOuter) / max((thetaInner - thetaOuter), 1e-3), light.InAndOutSmooth));
+          
+        // Diffuse
+        float3 Li    = light.Color.rgb * light.Color.a;
+        float  NdotL = saturate(dot(N, L));
+        float3 diffuse = Li * NdotL * attenDist * att;
+         
+        acc.diffuse  += diffuse;
+        //TODO
+        //acc.specular += specular;
+    }
+
+    return acc;
+}struct VS_INPUT
 {
     float3 position : POSITION;
     float3 normal : NORMAL;
@@ -297,7 +342,10 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
     LightAccum la = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);
-    la = ComputeSpotLights(input.worldPosition, N, shininess);
+    LightAccum ls = ComputeSpotLights(input.worldPosition, N, shininess);
+    
+    la.diffuse += ls.diffuse;
+    la.specular += ls.specular;
     
     // Ambient + Diffuse + Specular
     float3 ambient = 0.25 * base;

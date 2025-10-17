@@ -15,9 +15,13 @@ public:
 
 	float GetInnerConeAngle() { return InnerConeAngle;  }
 	float GetOuterConeAngle() { return OuterConeAngle;  }
+	FVector4 GetDirection() { return Direction;  }
+	float GetInAndOutSmooth() { return InAntOutSmooth;  }
 
 	void SetInnerConeAngle(float Angle) { InnerConeAngle = Angle; }
 	void SetOuterConeAngle(float Angle) { OuterConeAngle = Angle; }
+	void SetDirection(FVector Dir) { Direction = Dir; }
+	void SetInAndOutSmooth(float Smooth) { InAntOutSmooth = Smooth; }
 protected:
 	UObject* Duplicate() override;
 	void DuplicateSubObjects() override;
@@ -25,5 +29,10 @@ protected:
 
 	float InnerConeAngle;
 	float OuterConeAngle;
+	float InAntOutSmooth;
+
+	FVector4 Direction;
+
+
 };
 

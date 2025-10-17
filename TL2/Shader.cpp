@@ -31,7 +31,17 @@ void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
 
     hr = InDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &VertexShader);
 
-    hr = D3DCompileFromFile(WFilePath.c_str(), nullptr, nullptr, "mainPS", "ps_5_0", Flag, 0, &PSBlob, nullptr);
+    hr = D3DCompileFromFile(WFilePath.c_str(), nullptr, nullptr, "mainPS", "ps_5_0", Flag, 0, &PSBlob, &errorBlob);
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            char* msg = (char*)errorBlob->GetBufferPointer();
+            UE_LOG("shader '%s' PS compile error: %s", InShaderPath, msg);
+            errorBlob->Release();
+        }
+        return;
+    }
 
     hr = InDevice->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &PixelShader);
 

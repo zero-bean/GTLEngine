@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Vector.h"
 
-//CBufferStruct 안에 들어가는 Struct
+//CBufferStruct 내부에 들어갈 Struct
 struct FMaterialInPs
 {
     FVector DiffuseColor; // Kd
@@ -28,31 +28,29 @@ struct FMaterialInPs
 };
 
 
-
-
 #define CBUFFER_INFO(TYPENAME, SLOTNUM, SETVS, SETPS)\
 constexpr uint32 TYPENAME##SlotNum = SLOTNUM;\
 constexpr bool TYPENAME##SetVS = SETVS;\
 constexpr bool TYPENAME##SetPS = SETPS;\
 
 #define CBUFFER_TYPE_LIST(MACRO)\
-MACRO(ModelBufferType)					\
-MACRO(ViewProjBufferType)					\
-MACRO(FViewProjectionInverse)            \
-MACRO(BillboardBufferType)					\
-MACRO(FPixelConstBufferType)					\
-MACRO(HighLightBufferType)					\
-MACRO(ColorBufferType)					\
-MACRO(UVScrollCB)					\
-MACRO(DecalMatrixCB)					\
-MACRO(ViewportBufferType)					\
-MACRO(DecalAlphaBufferType)					\
-MACRO(FHeightFogBufferType)                  \
-MACRO(FPointLightBufferType)                  \
-MACRO(FSpotLightBufferType)                  \
-MACRO(CameraInfoBufferType)                  \
-MACRO(FXAABufferType)                  \
-MACRO(FGammaBufferType)                  \
+MACRO(ModelBufferType)\
+MACRO(ViewProjBufferType)\
+MACRO(FViewProjectionInverse)\
+MACRO(BillboardBufferType)\
+MACRO(FPixelConstBufferType)\
+MACRO(HighLightBufferType)\
+MACRO(ColorBufferType)\
+MACRO(UVScrollCB)\
+MACRO(DecalMatrixCB)\
+MACRO(ViewportBufferType)\
+MACRO(DecalAlphaBufferType)\
+MACRO(FHeightFogBufferType)\
+MACRO(FPointLightBufferType)\
+MACRO(FSpotLightBufferType)\
+MACRO(CameraInfoBufferType)\
+MACRO(FXAABufferType)\
+MACRO(FGammaBufferType)
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
@@ -68,20 +66,12 @@ CBUFFER_INFO(ViewportBufferType, 6, false, true)
 CBUFFER_INFO(DecalAlphaBufferType, 8, false, true)
 CBUFFER_INFO(FHeightFogBufferType, 8, false, true)
 CBUFFER_INFO(FPointLightBufferType, 9, false, true)
-CBUFFER_INFO(FSpotLightBufferType, 13, false, true) 
+CBUFFER_INFO(FSpotLightBufferType, 13, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
 
-
-//Create 
-//Release
-//매크로를 통해 List에 추가하는 형태로 제작
-//List를 통해 D3D11RHI
-//Update
-//Set vs,ps,hs,ds,gs
-
-//VS : b0
+// VS : b0
 struct ModelBufferType
 {
     FMatrix Model;
@@ -90,34 +80,31 @@ struct ModelBufferType
     FMatrix NormalMatrix; // Inverse transpose of Model matrix for proper normal transformation
 };
 
-//VS : b1
+// VS : b1
 struct ViewProjBufferType
 {
     FMatrix View;
     FMatrix Proj;
 
-    FVector CameraWorldPos; // ★ 추가
-    float  _pad_cam;       // 16바이트 정렬용 패딩
+    FVector CameraWorldPos; // 추가
+    float  _pad_cam;       // 16바이트 정렬
 };
 
-//VS : b2
+// VS : b2
 struct BillboardBufferType
 {
     FVector pos;
     float padding;
     FMatrix InverseViewMat;
-    /*FVector cameraRight;
-    FVector cameraUp;*/
 };
 
-//PS : b3
+// PS : b3
 struct FViewProjectionInverse
 {
     FMatrix ViewProjectionInverse;
 };
 
-
-//PS : b4
+// PS : b4
 struct FPixelConstBufferType
 {
     FMaterialInPs Material;
@@ -127,7 +114,6 @@ struct FPixelConstBufferType
     float pad;           // 4 bytes padding for 16-byte alignment
 };
 
-//VS,PS : b2
 struct HighLightBufferType
 {
     uint32 Picked;
@@ -136,16 +122,16 @@ struct HighLightBufferType
     uint32 Y;
     uint32 Z;
     uint32 Gizmo;
-	uint32 enable;
+    uint32 enable;
 };
 
-//PS : b3
+// PS : b3
 struct ColorBufferType
 {
     FVector4 Color;
 };
 
-//PS : b5
+// PS : b5
 struct UVScrollCB
 {
     FVector2D Speed;
@@ -153,7 +139,7 @@ struct UVScrollCB
     float Pad;
 };
 
-//PS : b7
+// PS : b7
 struct DecalMatrixCB
 {
     FMatrix DecalWorldMatrix;
@@ -163,49 +149,51 @@ struct DecalMatrixCB
     float Padding;
 };
 
-//PS : b6
+// PS : b6
 struct ViewportBufferType
 {
     FVector4 ViewportRect; // x=StartX, y=StartY, z=SizeX, w=SizeY
 };
-//PS : b6
+
+// PS : b6
 struct FPointLightData
 {
     FVector4 Position;   // xyz=위치, w=반경
     FVector4 Color;      // rgb=색상, a=Intensity
-    float FallOff;       // 감쇠 정도
-    FVector Padding;    // 16바이트 정렬 맞추기용
+    float FallOff;       // 감쇠 지수
+    FVector Padding;     // 16바이트 정렬 맞춤
 };
 
 #define MAX_POINT_LIGHTS 100
 // 전체 버퍼 (cbuffer b9 대응)
 struct FPointLightBufferType
 {
-    int PointLightCount;                    // 현재 활성 조명 개수
-    FVector _Padding;                      // 16바이트 정렬용 (HLSL의 float3 pad)
-    FPointLightData PointLights[MAX_POINT_LIGHTS]; // 배열 (최대 100개)
+    int PointLightCount;                    // 활성 포인트 라이트 개수
+    FVector _Padding;                       // 16바이트 정렬 (HLSL float3 pad)
+    FPointLightData PointLights[MAX_POINT_LIGHTS]; // 배열 (최대 100)
 };
 
-
-//PS : b6
+// PS : b6
 struct FSpotLightData
 {
     FVector4 Position;   // xyz=위치, w=반경
     FVector4 Color;      // rgb=색상, a=Intensity
+    FVector4 Direction;
+
     float InnerConeAngle;       
     float OuterConeAngle;       
-    float FallOff;              // 감쇠 정도
-    float Padding;    // 16바이트 정렬 맞추기용
+    float FallOff;              // 감쇠 지수
+    float InAndOutSmooth;              // 16바이트 정렬 맞춤
 };
 
 struct FSpotLightBufferType
 {
-    int SpotLightCount;                    // 현재 활성 조명 개수
-    FVector _Padding;                      // 16바이트 정렬용 (HLSL의 float3 pad)
-    FSpotLightData SpotLights[MAX_POINT_LIGHTS]; // 배열 (최대 100개)
+    int SpotLightCount;                    // 활성 스포트 라이트 개수
+    FVector _Padding;                       // 16바이트 정렬 (HLSL float3 pad)
+    FSpotLightData SpotLights[MAX_POINT_LIGHTS]; // 배열 (최대 100)
 };
 
-//PS : b8
+// PS : b8
 struct DecalAlphaBufferType
 {
     float CurrentAlpha;
@@ -213,7 +201,7 @@ struct DecalAlphaBufferType
     float pad;
 };
 
-//PS : b8
+// PS : b8
 struct FHeightFogBufferType
 {
     FLinearColor FogInscatteringColor;
@@ -228,7 +216,7 @@ struct FHeightFogBufferType
     float Padding;
 };
 
-//PS : b0
+// PS : b0
 struct CameraInfoBufferType
 {
     float NearClip;
@@ -236,8 +224,7 @@ struct CameraInfoBufferType
     float Padding[2];
 };
 
-
-//PS : b0
+// PS : b0
 struct FXAABufferType
 {
     float SlideX = 1.0f;
@@ -246,15 +233,10 @@ struct FXAABufferType
     float ReduceMul = 1.0f / 8.0f;
 };
 
-//PS : b0
+// PS : b0
 struct FGammaBufferType
 {
     float Gamma;
     FVector padding;
 };
-//---//
-
-
-
-
 

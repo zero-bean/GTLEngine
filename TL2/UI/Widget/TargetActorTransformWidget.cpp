@@ -1299,16 +1299,16 @@ void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComp
 	
 	// 🔸 InnerConeAngle
 	float InnerRadius = InComponent->GetInnerConeAngle();
-	if (ImGui::DragFloat("InnerConeAngle", &InnerRadius, 0.1f, 0.1f, 1000.0f))
+	if (ImGui::DragFloat("InnerConeAngle", &InnerRadius, 1.0f, 0.0f, 90.0f))
 	{
-		InComponent->SetRadius(InnerRadius);
+		InComponent->SetInnerConeAngle(InnerRadius );
 	}
 	
 	// 🔸 OuterConeAngle
 	float OuterRadius = InComponent->GetOuterConeAngle();
-	if (ImGui::DragFloat("OuterConeAngle", &OuterRadius, 0.1f, 0.1f, 1000.0f))
+	if (ImGui::DragFloat("OuterConeAngle", &OuterRadius, 1.0f, 0.0f, 90.0f))
 	{
-		InComponent->SetOuterConeAngle(OuterRadius);
+		InComponent->SetOuterConeAngle(OuterRadius );
 	}
 	
 	// 🔸 감쇠 정도 (FallOff)
@@ -1318,6 +1318,12 @@ void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComp
 		InComponent->SetRadiusFallOff(falloff);
 	}
 	
+	// 🔸 inner 원과 outter 원과 smooth하게 섞임
+	float smooth = InComponent->GetInAndOutSmooth();
+	if (ImGui::DragFloat("In&Out Smooth Factor", &smooth, 1.0f, 1.0f, 10.0f))
+	{ 
+		InComponent->SetInAndOutSmooth(smooth);
+	}
 	ImGui::Spacing();
 	
 	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
