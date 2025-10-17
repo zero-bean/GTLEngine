@@ -48,7 +48,7 @@
 #include "Level.h"
 #include "DecalComponent.h"
 #include "DecalActor.h"
-#include "SpotLightActor.h"
+#include "DecalSpotLightActor.h"
 #include "ExponentialHeightFog.h"
 #include "FireballComponent.h"
 #include "MeshComponent.h"
@@ -77,7 +77,7 @@ IMPLEMENT_CLASS(AStaticMeshActor)
 IMPLEMENT_CLASS(AGizmoActor)
 IMPLEMENT_CLASS(AGridActor)
 IMPLEMENT_CLASS(ADecalActor)
-IMPLEMENT_CLASS(ASpotLightActor)
+IMPLEMENT_CLASS(ADecalSpotLightActor)
 IMPLEMENT_CLASS(AExponentialHeightFog)
 IMPLEMENT_CLASS(AFXAAActor)
 

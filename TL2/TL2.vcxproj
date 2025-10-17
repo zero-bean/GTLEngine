@@ -278,8 +278,8 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="SMultiViewportWindow.cpp" />
     <ClCompile Include="SpatialDataStructure.cpp" />
-    <ClCompile Include="SpotLightActor.cpp" />
-    <ClCompile Include="SpotLightComponent.cpp" />
+    <ClCompile Include="DecalSpotLightActor.cpp" />
+    <ClCompile Include="DecalSpotLightComponent.cpp" />
     <ClCompile Include="SSplitter.cpp" />
     <ClCompile Include="SSplitterH.cpp" />
     <ClCompile Include="SSplitterV.cpp" />
@@ -393,7 +393,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="SpotLightShader.hlsl">
+    <FxCompile Include="DecalSpotLightShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
@@ -508,8 +508,8 @@
     <ClInclude Include="SMultiViewportWindow.h" />
     <ClInclude Include="SpatialDataStructure.h" />
     <ClInclude Include="Sphere.h" />
-    <ClInclude Include="SpotLightActor.h" />
-    <ClInclude Include="SpotLightComponent.h" />
+    <ClInclude Include="DecalSpotLightActor.h" />
+    <ClInclude Include="DecalSpotLightComponent.h" />
     <ClInclude Include="SSplitter.h" />
     <ClInclude Include="SSplitterH.h" />
     <ClInclude Include="SSplitterV.h" />

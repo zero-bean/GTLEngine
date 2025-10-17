@@ -297,10 +297,10 @@ void FSceneLoader::SaveV2(const FSceneData& SceneData, const FString& SceneName)
             }
         }
 
-        // DecalComponent, BillboardComponent, SpotLightComponent
+        // DecalComponent, BillboardComponent, DecalSpotLightComponent
         if ((Comp.Type.find("DecalComponent") != std::string::npos ||
              Comp.Type.find("BillboardComponent") != std::string::npos ||
-             Comp.Type.find("SpotLightComponent") != std::string::npos) &&
+             Comp.Type.find("DecalSpotLightComponent") != std::string::npos) &&
             !Comp.TexturePath.empty())
         {
             if (!bHasTypeSpecificData) { oss << ",\n"; bHasTypeSpecificData = true; }

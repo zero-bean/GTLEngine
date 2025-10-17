@@ -457,10 +457,10 @@
     </ClCompile>
     <ClCompile Include="BoundingVolume.cpp" />
     <ClCompile Include="DecalComponentScreen.cpp" />
-    <ClCompile Include="SpotLightActor.cpp">
+    <ClCompile Include="DecalSpotLightActor.cpp">
       <Filter>Actors</Filter>
     </ClCompile>
-    <ClCompile Include="SpotLightComponent.cpp">
+    <ClCompile Include="DecalSpotLightComponent.cpp">
       <Filter>Components\Decal</Filter>
     </ClCompile>
     <ClCompile Include="TimeProfile.cpp" />
@@ -859,11 +859,11 @@
     </ClInclude>
     <ClInclude Include="BoundingVolume.h" />
     <ClInclude Include="DecalComponentScreen.h" />
-    <ClInclude Include="SpotLightActor.h">
+    <ClInclude Include="DecalSpotLightActor.h">
       <Filter>Actors</Filter>
     </ClInclude>
     <ClInclude Include="CBufferTypes.h" />
-    <ClInclude Include="SpotLightComponent.h">
+    <ClInclude Include="DecalSpotLightComponent.h">
       <Filter>Components\Decal</Filter>
     </ClInclude>
     <ClInclude Include="TimeProfile.h" />
@@ -912,7 +912,7 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="DecalShaderScreen.hlsl" />
-    <FxCompile Include="SpotLightShader.hlsl">
+    <FxCompile Include="DecalSpotLightShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Copy.hlsl" />

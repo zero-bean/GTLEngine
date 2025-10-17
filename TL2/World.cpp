@@ -22,7 +22,7 @@
 #include"DecalComponent.h"
 #include"DecalActor.h"
 #include "TimeProfile.h"
-#include "SpotLightComponent.h"
+#include "DecalSpotLightComponent.h"
 #include "ProjectileMovementComponent.h"
 #include "RotationMovementComponent.h"
 
