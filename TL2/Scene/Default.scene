@@ -1,12 +1,12 @@
 {
   "Version" : 2,
-  "NextUUID" : 654,
+  "NextUUID" : 714,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-1.886229, 15.451190, 10.224094],
+    "Location" : [-12.978009, 2.938442, 2.199639],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 13.500007, -89.299850]
+    "Rotation" : [0.000000, 6.300001, 6.500002]
   },
   "Actors" : [
     {
@@ -17,6 +17,40 @@
     }
   ],
   "Components" : [
+    {
+      "UUID" : 645,
+      "OwnerActorUUID" : 644,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 6.860387, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Cube.obj"
+    },
+    {
+      "UUID" : 683,
+      "OwnerActorUUID" : 644,
+      "ParentComponentUUID" : 645,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 1.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/Pawn_64x.dds"
+    },
+    {
+      "UUID" : 700,
+      "OwnerActorUUID" : 644,
+      "ParentComponentUUID" : 0,
+      "Type" : "URotationMovementComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [0.000000, 0.000000, 0.000000],
+      "RotationMovementData" : {
+        "RotationRate" : [0.000000, 80.000000, 0.000000],
+        "PivotTranslation" : [0.000000, -25.600000, 0.000000],
+        "bRotationInLocalSpace" : true
+      }
+    },
     {
       "UUID" : 647,
       "OwnerActorUUID" : 646,

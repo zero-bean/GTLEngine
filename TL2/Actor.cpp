@@ -241,6 +241,12 @@ void AActor::AddComponent(USceneComponent* InComponent)
     {
         RootComponent = InComponent;
     }
+
+    // 컴포넌트를 레벨에 등록 (World가 있는 경우)
+    if (GetWorld() && !InComponent->bIsRegistered)
+    {
+        InComponent->RegisterComponent();
+    }
 }
 
 void AActor::RegisterAllComponents()
@@ -289,10 +295,10 @@ USceneComponent* AActor::CreateAndAttachComponent(USceneComponent* ParentCompone
     {
         if (NewComponent = Cast<USceneComponent>(NewComponentObject))
         {
-            this->AddComponent(NewComponent); // 액터의 관리 목록에 추가
+            NewComponent->SetOwner(this);
+            this->AddComponent(NewComponent); // 액터의 관리 목록에 추가 (내부에서 RegisterComponent 호출)
 
             NewComponent->SetupAttachment(ParentComponent, EAttachmentRule::KeepRelative);
-            NewComponent->SetOwner(this);
         }
     }
 
@@ -408,9 +414,16 @@ UObject* AActor::Duplicate()
 
     // OwnedComponents 재구성
     DuplicateActor->DuplicateSubObjects();
-    
-    // 복제된 모든 컴포넌트의 RegisterComponent()->OnRegister() 호출
-    DuplicateActor->RegisterAllComponents();
+
+    // 복제된 컴포넌트는 아직 레벨에 등록되지 않았으므로 bIsRegistered를 false로 설정
+    // SpawnActor 호출 시 자동으로 RegisterComponent가 호출됨
+    for (UActorComponent* Comp : DuplicateActor->GetComponents())
+    {
+        if (Comp)
+        {
+            Comp->bIsRegistered = false;
+        }
+    }
 
     return DuplicateActor;
 }

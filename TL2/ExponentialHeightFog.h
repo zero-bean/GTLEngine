@@ -6,7 +6,7 @@ class AExponentialHeightFog : public AInfo
 {
 public:
 
-	DECLARE_CLASS(AExponentialHeightFog, AInfo);
+	DECLARE_SPAWNABLE_CLASS(AExponentialHeightFog, AInfo, "Height Fog");
 
 
 	AExponentialHeightFog();

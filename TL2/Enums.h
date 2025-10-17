@@ -318,17 +318,9 @@ enum class EPrimitiveType : uint32
     End,
 };
 
-enum class ESpawnActorType : uint32
-{
-    Actor,
-    StaticMesh,
-    Decal,
-    SpotLight,
-    HeightFog,
-    FXAA,
+// ESpawnActorType은 더 이상 사용되지 않습니다.
+// Reflection 기반 시스템(UClassRegistry::GetSpawnableClasses)을 사용하세요.
 
-    Count
-};
 /**
  * Show Flag system for toggling rendering features globally
  * Uses bit flags for efficient storage and checking
@@ -425,5 +417,101 @@ enum class EComponentWorldTickMode
     GameOnly,   // 실제 게임에서만
     EditorOnly  // 에디터에서만
 };
+
+/// @brief EnumClass를 기본 자료형으로 변환
+template<typename EnumClass>
+constexpr auto ToUnderlying(EnumClass Enum) noexcept
+{
+    return static_cast<std::underlying_type_t<EnumClass>>(Enum);
+}
+
+/*
+ * @brief 기본 자료형을 EnumClass로 변환
+ * @tparam EnumClass 변환될 목표 열거형 클래스
+ * @tparam Type 입력되는 정수 값 기본 자료형
+ */
+template<typename EnumClass, typename Type>
+constexpr EnumClass ToEnum(Type Value)
+{
+    return static_cast<EnumClass>(Value);
+}
+
+template<typename EnumClass>
+constexpr EnumClass& operator++(EnumClass& Enum) noexcept
+{
+    static_assert(std::is_enum_v<EnumClass>, "This class must be an enum.");
+
+    Enum = ToEnum<EnumClass>(ToUnderlying(Enum) + 1);
+    
+    return Enum;
+}
+
+template<typename EnumClass>
+constexpr EnumClass operator++(EnumClass& Enum, int Dummy) noexcept
+{
+    static_assert(std::is_enum_v<EnumClass>, "This class must be an enum.");
+    EnumClass OriginalEnum = Enum;
+    ++Enum;
+
+    return OriginalEnum;
+}
+
+template<typename EnumClass>
+constexpr EnumClass operator%(EnumClass LHS, EnumClass RHS) noexcept
+{
+    static_assert(std::is_enum_v<EnumClass>, "This class must be an enum.");
+    return ToEnum<EnumClass>(ToUnderlying(LHS) % ToUnderlying(RHS));
+}
+
+template<typename EnumClass>
+constexpr EnumClass operator|(EnumClass LHS, EnumClass RHS) noexcept
+{
+    static_assert(std::is_enum_v<EnumClass>, "This class must be an enum.");
+    return ToEnum<EnumClass>(ToUnderlying(LHS) | ToUnderlying(RHS));
+}
+
+template<typename EnumClass>
+constexpr EnumClass operator&(EnumClass LHS, EnumClass RHS) noexcept
+{
+    static_assert(std::is_enum_v<EnumClass>, "This class must be an enum.");
+    return ToEnum<EnumClass>(ToUnderlying(LHS) & ToUnderlying(RHS));
+}
+template<typename EnumClass>
+constexpr EnumClass operator^(EnumClass LHS, EnumClass RHS) noexcept
+{
+    static_assert(std::is_enum_v<EnumClass>, "This class must be an enum.");
+    return ToEnum<EnumClass>(ToUnderlying(LHS) ^ ToUnderlying(RHS));
+}
+
+template<typename EnumClass>
+constexpr EnumClass operator~(EnumClass Value) noexcept
+{
+    static_assert(std::is_enum_v<EnumClass>, "This class must be an enum.");
+    return ToEnum<EnumClass>(~ToUnderlying(Value));
+}
+
+template<typename EnumClass>
+constexpr EnumClass& operator |=(EnumClass& LHS, EnumClass RHS) noexcept
+{
+    static_assert(std::is_enum_v<EnumClass>, "This class must be an enum.");
+    LHS = LHS | RHS;
+    return LHS;
+}
+
+template<typename EnumClass>
+constexpr EnumClass& operator &=(EnumClass& LHS, EnumClass RHS) noexcept
+{
+    static_assert(std::is_enum_v<EnumClass>, "This class must be an enum.");
+    LHS = LHS & RHS;
+    return LHS;
+}
+
+template<typename EnumClass>
+constexpr EnumClass& operator ^=(EnumClass& LHS, EnumClass RHS) noexcept
+{
+    static_assert(std::is_enum_v<EnumClass>, "This class must be an enum.");
+    LHS = LHS ^ RHS;
+    return LHS;
+}
 
 //#endif /** UE_ENUMS_H */

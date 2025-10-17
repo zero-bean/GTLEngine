@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include "SpotLightActor.h"
 #include "ObjectIterator.h"
 
 //// UE_LOG 대체 매크로
@@ -58,33 +59,18 @@ void UPrimitiveSpawnWidget::Initialize()
 {
 	// UIManager 참조 확보
 	UIManager = &UUIManager::GetInstance();
-    
-    if (SpawnRegistry.empty())
+
+    // Reflection을 통해 스폰 가능한 모든 Actor 자동 탐색
+    if (SpawnableClasses.empty())
     {
-        RegisterSpawnInfo<AActor>(ESpawnActorType::Actor, "Actor");
-        RegisterSpawnInfo<AStaticMeshActor>(ESpawnActorType::StaticMesh, "Static Mesh");
-        RegisterSpawnInfo<ADecalActor>(ESpawnActorType::Decal, "Decal");
-        RegisterSpawnInfo<ADecalSpotLightActor>(ESpawnActorType::SpotLight, "Decal Spot Light");
-        RegisterSpawnInfo<AExponentialHeightFog>(ESpawnActorType::HeightFog, "HeightFog");
-        RegisterSpawnInfo<AFXAAActor>(ESpawnActorType::FXAA, "FXAA");
+        SpawnableClasses = UClassRegistry::Get().GetSpawnableClasses(AActor::StaticClass());
+        UE_LOG("PrimitiveSpawnWidget: Found %d spawnable actor classes", SpawnableClasses.size());
     }
 }
 
 void UPrimitiveSpawnWidget::Update()
 {
 	// 필요시 업데이트 로직 추가
-}
-
-template<typename ActorType>
-void UPrimitiveSpawnWidget::RegisterSpawnInfo(ESpawnActorType SpawnType, const char* TypeName)
-{
-    SpawnRegistry.Add(SpawnType, {
-        TypeName,
-        [](UWorld* World, const FTransform& Transform) -> AActor* {
-            return World->SpawnActor<ActorType>(Transform);
-        }
-    });
-
 }
 
 UWorld* UPrimitiveSpawnWidget::GetCurrentWorld() const
@@ -139,23 +125,31 @@ void UPrimitiveSpawnWidget::RenderWidget()
     ImGui::Text("Actor Spawner");
     ImGui::Spacing();
 
-    // Primitive 타입 선택: StaticMesh만 노출
-    const char* SpawnTypes[] = { "Actor", "Static Mesh", "Decal", "Decal Spot Light", "ExponentialHeightFog", "FXAA"};
-    static ESpawnActorType SelectedSpawnType = ESpawnActorType::StaticMesh;
-    
-    ImGui::Text("Actor Types:");
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(120);
-    ImGui::Combo("##Actor Type", (int*)&SelectedSpawnType, SpawnTypes, ARRAYSIZE(SpawnTypes));
-
-    switch (SelectedSpawnType)
+    if (SpawnableClasses.empty())
     {
-    case ESpawnActorType::Actor:
-    {
-        ImGui::Text("Actor does not require additional resources to spawn.");
-        break;
+        ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "No spawnable actors found!");
+        return;
     }
-    case ESpawnActorType::StaticMesh:
+
+    // 스폰 가능한 Actor 타입 목록 생성
+    TArray<const char*> ActorDisplayNames;
+    for (UClass* ActorClass : SpawnableClasses)
+    {
+        ActorDisplayNames.push_back(ActorClass->GetDisplayName());
+    }
+
+    // 선택된 Actor 타입
+    ImGui::Text("Actor Type:");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(180);
+    ImGui::Combo("##ActorType", &SelectedClassIndex, ActorDisplayNames.data(), static_cast<int>(ActorDisplayNames.size()));
+
+    UClass* SelectedClass = (SelectedClassIndex >= 0 && SelectedClassIndex < static_cast<int>(SpawnableClasses.size()))
+        ? SpawnableClasses[SelectedClassIndex]
+        : nullptr;
+
+    // Static Mesh Actor인 경우 메시 선택 UI 표시
+    if (SelectedClass && SelectedClass->IsChildOf(AStaticMeshActor::StaticClass()))
     {
         auto& ResourceManager = UResourceManager::GetInstance();
 
@@ -208,20 +202,10 @@ void UPrimitiveSpawnWidget::RenderWidget()
                 ImGui::BulletText("%s", Path.c_str());
             ImGui::TreePop();
         }
-        break;
     }
-    case ESpawnActorType::Decal:
+    else
     {
-        ImGui::Text("Decal does not require additional resources to spawn.");
-        break;
-    }
-    case ESpawnActorType::SpotLight:
-    {
-        ImGui::Text("SpotLight does not require additional resources to spawn.");
-        break;
-    }
-    default:
-        break;
+        ImGui::Text("%s does not require additional resources.", SelectedClass ? SelectedClass->GetDisplayName() : "Unknown");
     }
 
     // 스폰 개수 설정
@@ -235,7 +219,10 @@ void UPrimitiveSpawnWidget::RenderWidget()
     ImGui::SameLine();
     if (ImGui::Button("Spawn Actors"))
     {
-        SpawnActors(SelectedSpawnType);
+        if (SelectedClass)
+        {
+            SpawnActor(SelectedClass);
+        }
     }
 
 	////Obj Parser 테스트용
@@ -303,34 +290,62 @@ void UPrimitiveSpawnWidget::RenderWidget()
     ImGui::Text("Quick Spawn:");
     if (ImGui::Button("Spawn 1 Cube"))
     {
-        SelectedSpawnType = ESpawnActorType::StaticMesh;
-        NumberOfSpawn = 1;
-        // 기본 선택을 Cube로 강제
-        if (!CachedMeshFilePaths.empty())
+        // Static Mesh Actor 찾기
+        UClass* StaticMeshClass = nullptr;
+        for (int32 i = 0; i < static_cast<int32>(SpawnableClasses.size()); ++i)
         {
-            SelectedMeshIndex = -1;
-            for (int32 i = 0; i < static_cast<int32>(CachedMeshFilePaths.size()); ++i)
+            if (SpawnableClasses[i]->IsChildOf(AStaticMeshActor::StaticClass()))
             {
-                if (GetBaseNameNoExt(CachedMeshFilePaths[i]) == "Cube" ||
-                    CachedMeshFilePaths[i] == "Data/Cube.obj")
-                {
-                    SelectedMeshIndex = i;
-                    break;
-                }
+                StaticMeshClass = SpawnableClasses[i];
+                SelectedClassIndex = i;
+                break;
             }
         }
-        SpawnActors(SelectedSpawnType);
+
+        if (StaticMeshClass)
+        {
+            NumberOfSpawn = 1;
+            // 기본 선택을 Cube로 강제
+            if (!CachedMeshFilePaths.empty())
+            {
+                SelectedMeshIndex = -1;
+                for (int32 i = 0; i < static_cast<int32>(CachedMeshFilePaths.size()); ++i)
+                {
+                    if (GetBaseNameNoExt(CachedMeshFilePaths[i]) == "Cube" ||
+                        CachedMeshFilePaths[i] == "Data/Cube.obj")
+                    {
+                        SelectedMeshIndex = i;
+                        break;
+                    }
+                }
+            }
+            SpawnActor(StaticMeshClass);
+        }
     }
     ImGui::SameLine();
     if (ImGui::Button("Spawn 20 Random"))
     {
-        SelectedSpawnType = ESpawnActorType::StaticMesh;
-        NumberOfSpawn = 20;
-        SpawnActors(SelectedSpawnType);
+        // Static Mesh Actor 찾기
+        UClass* StaticMeshClass = nullptr;
+        for (int32 i = 0; i < static_cast<int32>(SpawnableClasses.size()); ++i)
+        {
+            if (SpawnableClasses[i]->IsChildOf(AStaticMeshActor::StaticClass()))
+            {
+                StaticMeshClass = SpawnableClasses[i];
+                SelectedClassIndex = i;
+                break;
+            }
+        }
+
+        if (StaticMeshClass)
+        {
+            NumberOfSpawn = 20;
+            SpawnActor(StaticMeshClass);
+        }
     }
 }
 
-void UPrimitiveSpawnWidget::SpawnActors(ESpawnActorType SpawnType) const
+void UPrimitiveSpawnWidget::SpawnActor(UClass* ActorClass) const
 {
     UWorld* World = GetCurrentWorld();
     if (!World)
@@ -338,38 +353,45 @@ void UPrimitiveSpawnWidget::SpawnActors(ESpawnActorType SpawnType) const
         UE_LOG("PrimitiveSpawn: No World available for spawning");
         return;
     }
-    
-    const FSpawnInfo* Info = SpawnRegistry.Find(SpawnType);
-    if (!Info || !Info->Spawner)
+
+    if (!ActorClass || !ActorClass->CreateInstance)
     {
-        UE_LOG("ActorSpawn: Failed - No registered spawn information");
+        UE_LOG("ActorSpawn: Failed - Invalid actor class");
         return;
     }
-    UE_LOG("ActorSpawn: Spawning %d %s actors", NumberOfSpawn, Info->TypeName);
+
+    UE_LOG("ActorSpawn: Spawning %d %s actors", NumberOfSpawn, ActorClass->GetDisplayName());
 
     int32 SuccessCount = 0;
     for (int32 i = 0; i < NumberOfSpawn; i++)
     {
-        FVector SpawnLocation = FVector(0, 0, 0); //GenerateRandomLocation();
-        FQuat   SpawnRotation = FQuat::Identity(); //GenerateRandomRotation();
-        float   SpawnScale = 1.0f;//GenerateRandomScale();
-        /*FVector SpawnLocation = GenerateRandomLocation();
-        FQuat   SpawnRotation = GenerateRandomRotation();
-        float   SpawnScale = GenerateRandomScale();*/
+        FVector SpawnLocation = FVector(0, 0, 0);
+        FQuat   SpawnRotation = FQuat::Identity();
+        float   SpawnScale = 1.0f;
         FVector SpawnScaleVec(SpawnScale, SpawnScale, SpawnScale);
         FTransform SpawnTransform(SpawnLocation, SpawnRotation, SpawnScaleVec);
 
-        if (SpawnType == ESpawnActorType::SpotLight)
+        // 특정 Actor 타입에 대한 기본 회전 설정
+        if (ActorClass->IsChildOf(ADecalSpotLightActor::StaticClass()))
         {
-            SpawnTransform.Rotation = FQuat::MakeFromEuler(FVector(0,89.5,0));
+            SpawnTransform.Rotation = FQuat::MakeFromEuler(FVector(0, 89.5, 0));
         }
-        AActor* NewActor = Info->Spawner(World, SpawnTransform);
+        else if (ActorClass->IsChildOf(ASpotLightActor::StaticClass()))
+        {
+            SpawnTransform.Rotation = FQuat::MakeFromEuler(FVector(0.0f, 89.5f, 0.0f));
+        }
+
+        // ObjectFactory::NewObject를 통해 생성 (GUObjectArray에 등록됨)
+        AActor* NewActor = Cast<AActor>(NewObject(ActorClass));
         if (NewActor)
         {
-            FString ActorName;
+            // World에 스폰 (SetWorld, InitEmptyActor, 컴포넌트 등록 포함)
+            // 이 시점에서 RootComponent가 생성됨
+            World->SpawnActor(NewActor);
 
-            // Only for Static Mesh 
-            if (SpawnType == ESpawnActorType::StaticMesh)
+            // Static Mesh Actor인 경우 메시 설정
+            FString ActorName;
+            if (ActorClass->IsChildOf(AStaticMeshActor::StaticClass()))
             {
                 if (AStaticMeshActor* MeshActor = Cast<AStaticMeshActor>(NewActor))
                 {
@@ -390,24 +412,27 @@ void UPrimitiveSpawnWidget::SpawnActors(ESpawnActorType SpawnType) const
                     }
 
                     ActorName = World->GenerateUniqueActorName(
-                        bHasResourceSelection ? GetBaseNameNoExt(MeshPath).c_str() : Info->TypeName
+                        bHasResourceSelection ? GetBaseNameNoExt(MeshPath).c_str() : ActorClass->GetDisplayName()
                     );
+                    MeshActor->SetName(ActorName);
                 }
             }
-            // all other actor types
+            // 다른 Actor 타입
             else
             {
-                ActorName = World->GenerateUniqueActorName(Info->TypeName);
+                ActorName = World->GenerateUniqueActorName(ActorClass->GetDisplayName());
+                NewActor->SetName(ActorName);
             }
 
-            // Common logic
-            NewActor->SetName(ActorName);
-            UE_LOG("ActorSpawn: Created %s at (%.2f, %.2f, %.2f)", Info->TypeName, SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
+            // Transform 설정 (SpawnActor 후, RootComponent가 생성된 후)
+            NewActor->SetActorTransform(SpawnTransform);
+
+            UE_LOG("ActorSpawn: Created %s at (%.2f, %.2f, %.2f)", ActorClass->GetDisplayName(), SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
             SuccessCount++;
         }
         else
         {
-            UE_LOG("ActorSpawn: Failed - World->SpawnActor returned nullptr for type %s.", Info->TypeName);
+            UE_LOG("ActorSpawn: Failed - CreateInstance returned nullptr for type %s.", ActorClass->Name);
         }
     }
     UE_LOG("ActorSpawn: Successfully spawned %d/%d actors", SuccessCount, NumberOfSpawn);

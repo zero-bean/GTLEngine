@@ -13,17 +13,18 @@ ULevel::ULevel()
 
 ULevel::~ULevel()
 {
+	ComponentCache.clear();
 	Actors.clear();
 }
 
 void ULevel::AddActor(AActor* InActor)
 {
-	if (InActor)	
+	if (InActor)
 	{
-		if (InActor->GetClass()->Name == AActor::StaticClass()->Name)
+		// AActor 클래스인 경우 (정확히 AActor, 파생 클래스 제외)
+		if (std::strcmp(InActor->GetClass()->Name, "AActor") == 0)
 		{
 			InActor->InitEmptyActor();
-
 		}
 		Actors.Add(InActor);
 	}
@@ -34,62 +35,37 @@ void ULevel::RemoveActor(AActor* InActor)
 	if (InActor)
 	{
 		Actors.Remove(InActor);
+		// 캐시 무효화 (액터가 제거되면 해당 액터의 컴포넌트도 사라짐)
+		ComponentCache.clear();
 		//delete InActor;
 	}
 }
 
+void ULevel::RegisterComponent(UActorComponent* Component)
+{
+	if (!Component) return;
+
+	// 캐시 무효화 (다음 GetComponentList 호출 시 재구성됨)
+	ComponentCache.clear();
+}
+
+void ULevel::UnregisterComponent(UActorComponent* Component)
+{
+	if (!Component) return;
+
+	// 캐시 무효화
+	ComponentCache.clear();
+}
+
 void ULevel::CollectComponentsToRender()
 {
-	DecalComponentList.clear();
-	PrimitiveComponentList.clear();
-	BillboardComponentList.clear();
-	FogComponentList.clear();
-	PointLightComponentList.clear();
-	FXAAComponentList.clear();
+	// 캐시 무효화 (레거시 호환성)
+	ComponentCache.clear();
+}
 
-	for (AActor* Actor : Actors)
-	{
-		if (!Actor || Actor->GetActorHiddenInGame())
-		{
-			continue;
-		}
-
-		for (UActorComponent* ActorComponent : Actor->GetComponents())
-		{
-			if (UDecalComponent * DecalComponent = Cast<UDecalComponent>(ActorComponent))
-			{
-				DecalComponentList.Add(DecalComponent);
-			}
-			else if (UBillboardComponent* BillboardComponent = Cast<UBillboardComponent>(ActorComponent))
-			{
-				BillboardComponentList.Add(BillboardComponent);
-			}
-			else if (UExponentialHeightFogComponent* FogComponent = Cast<UExponentialHeightFogComponent>(ActorComponent))
-			{
-				if (FogComponent->IsRender())
-				{
-					FogComponentList.Add(FogComponent);
-				}
-			}
-			else if (UFXAAComponent* FXAAComp = Cast<UFXAAComponent>(ActorComponent))
-			{
-				FXAAComponentList.Add(FXAAComp);
-			}
-			else if (UPointLightComponent* PointLightComponent = Cast<UPointLightComponent>(ActorComponent))
-			{
-				PointLightComponentList.Add(PointLightComponent);
-			}
-			else if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(ActorComponent))
-			{
-				PrimitiveComponentList.Add(PrimitiveComponent);
-			}
-		}
-	}
-
-	DecalComponentList.Sort([](const UDecalComponent* A, const UDecalComponent* B)
-		{
-			return A->GetSortOrder() < B->GetSortOrder();
-		});
+void ULevel::ClearComponentCache()
+{
+	ComponentCache.clear();
 }
 
 const TArray<AActor*>& ULevel::GetActors() const
@@ -97,38 +73,7 @@ const TArray<AActor*>& ULevel::GetActors() const
 	return Actors;
 }
 
-TArray<AActor*>& ULevel::GetActors() 
+TArray<AActor*>& ULevel::GetActors()
 {
 	return Actors;
-}
-
-template<>
-TArray<UExponentialHeightFogComponent*>& ULevel::GetComponentList<UExponentialHeightFogComponent>()
-{
-	return FogComponentList;
-}
-template<>
-TArray<UFXAAComponent*>& ULevel::GetComponentList<UFXAAComponent>()
-{
-	return FXAAComponentList;
-}
-template<>
-TArray<UBillboardComponent*>& ULevel::GetComponentList<UBillboardComponent>()
-{
-	return BillboardComponentList;
-}
-template<>
-TArray<UDecalComponent*>& ULevel::GetComponentList<UDecalComponent>()
-{
-	return DecalComponentList;
-}
-template<>
-TArray<UPrimitiveComponent*>& ULevel::GetComponentList<UPrimitiveComponent>()
-{
-	return PrimitiveComponentList;
-}
-template<>
-TArray<UPointLightComponent*>& ULevel::GetComponentList<UPointLightComponent>()
-{
-	return PointLightComponentList;
 }

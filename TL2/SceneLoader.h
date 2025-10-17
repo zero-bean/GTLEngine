@@ -72,12 +72,20 @@ struct FDirectionalLightProperty
     FVector Direction = FVector(0.0f, 0.0f, -1.0f); // 아래 방향
 };
 
+
+struct FSpotLightInfo
+{
+    float InnnerConeAngle;
+    float OuterConeAngle;
+};
+
 struct FProjectileMovementProperty
 {
     float InitialSpeed = 1000.f;
     float MaxSpeed = 3000.f;
     float GravityScale = 1.0f;
 };
+
 
 struct FRotationMovementProperty
 {

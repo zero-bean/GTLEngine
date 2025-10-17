@@ -380,6 +380,9 @@ void UWorld::CreateNewScene()
             ObjectFactory::DeleteObject(Actor);
         }
         Level->GetActors().clear();
+
+        // ComponentCache 클리어 (댕글링 포인터 방지)
+        Level->ClearComponentCache();
     }
 
     //if (Octree)
@@ -1018,11 +1021,11 @@ void UWorld::LoadSceneV2(const FString& SceneName)
         // 새로 생성 시(Line 1154)에 이미 추가되므로 여기서는 추가하지 않음
     }
 
-    // Actor를 Level에 추가
+    // Actor를 Level에 추가 (SpawnActor로 컴포넌트 자동 등록)
     for (auto& Pair : ActorMap)
     {
         AActor* Actor = Pair.second;
-        Level->AddActor(Actor);
+        SpawnActor(Actor);
 
         // StaticMeshActor 전용 포인터 재설정
         if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(Actor))
@@ -1096,8 +1099,8 @@ UWorld* UWorld::DuplicateWorldForPIE(UWorld* EditorWorld)
 
                     if (PIEActor)
                     {
-                        PIELevel->AddActor(PIEActor);
-                        PIEActor->SetWorld(PIEWorld);
+                        // SpawnActor로 컴포넌트 자동 등록
+                        PIEWorld->SpawnActor(PIEActor);
                     }
                 }
             }
@@ -1144,8 +1147,13 @@ void UWorld::CleanupWorld()
 void UWorld::SpawnActor(AActor* InActor)
 {
     InActor->SetWorld(this);
-  
- 
+
+    // Level->AddActor를 사용하여 AActor의 InitEmptyActor 등이 호출되도록 함
+    Level->AddActor(InActor);
+
+    // 이름이 설정되지 않았으면 자동 생성
+    if (InActor->GetName().ToString().empty())
+    {
         if (UStaticMeshComponent* ActorComp = Cast<UStaticMeshComponent>(InActor->RootComponent))
         {
             FString ActorName = GenerateUniqueActorName(
@@ -1153,6 +1161,19 @@ void UWorld::SpawnActor(AActor* InActor)
             );
             InActor->SetName(ActorName);
         }
-   
-    Level->GetActors().Add(InActor);
+        else
+        {
+            // 일반 Actor는 DisplayName 사용
+            InActor->SetName(GenerateUniqueActorName(InActor->GetClass()->GetDisplayName()));
+        }
+    }
+
+    // 스폰된 액터의 모든 컴포넌트를 레벨에 등록
+    for (UActorComponent* Comp : InActor->GetComponents())
+    {
+        if (Comp && !Comp->bIsRegistered)
+        {
+            Comp->RegisterComponent();
+        }
+    }
 }

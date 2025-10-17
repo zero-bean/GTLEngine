@@ -6,7 +6,7 @@
 class ADecalSpotLightActor : public AActor
 {
 public:
-	DECLARE_CLASS(ADecalSpotLightActor, AActor)
+	DECLARE_SPAWNABLE_CLASS(ADecalSpotLightActor, AActor, "Decal Spot Light")
 
 	ADecalSpotLightActor();
 	virtual ~ADecalSpotLightActor() override;
