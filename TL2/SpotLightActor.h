@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Actor.h"
 
-class UPointLighComponent;
+class USpotLightComponent;
 
 class ASpotLightActor : public AActor
 {
@@ -17,7 +17,6 @@ public:
 	void DuplicateSubObjects() override;
 
 protected:
-	UPointLightComponent* PointLightComponent;
-
+	USpotLightComponent* SpotLightComponent;
 };
 
