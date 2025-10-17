@@ -179,28 +179,8 @@ PS_INPUT mainVS(VS_INPUT input)
     
     float time = UVScrollTime;
 
-    // 기본 위치
-    float3 displacedPos = input.position;
-
-    // 🔥 enable == 1 일 때만 일렁임 적용
-    if (Picked == 1 && enable == 1)
-    {
-    // 🔹 노멀 기반 일렁임 (진폭 ↑, 주파수 ↓)
-        float wave = sin(time * 3.5 + input.position.x * 3.0 + input.position.y * 3.0) * 0.08;
-
-    // 🔹 중심 기반 라디얼 펄스 (진폭 ↑, 속도 ↑)
-        float dist = length(input.position.xy);
-        wave += sin(dist * 8.0 - time * 6.0) * 0.06;
-
-    // 🔥 약간의 난수성 섞기 (불규칙한 표면)
-        float noise = sin((input.position.x + input.position.y + input.position.z) * 20.0 + time * 10.0) * 0.02;
-        wave += noise;
-
-    // 최종 displacement 적용
-        displacedPos = input.position + input.normal * wave;
-    }
     // 월드 변환 (row_major 기준: mul(v, M))
-    float4 worldPos = mul(float4(displacedPos, 1.0f), WorldMatrix);
+    float4 worldPos = mul(float4(input.position, 1.0f), WorldMatrix);
     o.worldPosition = worldPos.xyz;
 
     // 노멀: inverse-transpose(World)
@@ -208,7 +188,7 @@ PS_INPUT mainVS(VS_INPUT input)
 
     // MVP
     float4x4 MVP = mul(mul(WorldMatrix, ViewMatrix), ProjectionMatrix);
-    o.position = mul(float4(displacedPos, 1.0f), MVP);
+    o.position = mul(float4(input.position, 1.0f), MVP);
 
     // Gizmo 색상 처리
     float4 c = input.color;
@@ -248,41 +228,9 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     if (Picked == 1)
     {
-        base = lerp(base, float3(1.0, 1.0, 0.0), 0.5); // 하이라이트
-        if (enable == 1)
-        {
-        // 🔥 태양 일렁임 효과: 복합 노이즈 UV 왜곡
-            float time = UVScrollTime * 2.5; // 시간 속도 조절
-
-        // 기본 UV
-            float2 uv = input.texCoord;
-
-        // 중심에서의 거리 기반 왜곡 (라디얼)
-            float2 center = float2(0.5, 0.5);
-            float2 toCenter = uv - center;
-            float dist = length(toCenter);
-
-        // 다중 sine 기반 노이즈 왜곡
-            float wave1 = sin(time + dist * 25.0) * 0.02;
-            float wave2 = sin(time * 1.7 + (uv.x + uv.y) * 40.0) * 0.015;
-            float wave3 = sin(time * 2.3 + uv.x * 60.0) * 0.01;
-
-            float2 distortion = float2(wave1 + wave2, wave2 + wave3);
-
-            float2 animatedUV = uv + distortion;
-
-        // 🔥 텍스처 색상
-            float3 texColor = g_DiffuseTexColor.Sample(g_Sample, animatedUV).rgb;
-
-        // 중심 발광 강화
-            float glow = saturate(1.0 - dist * 2.0);
-            texColor += glow * float3(1.2, 0.4, 0.1);
-
-        // 최종 결과
-            Result.Color = float4(saturate(texColor), 1.0);
-            Result.UUID = input.UUID;
-            return Result;
-        }
+        // 노란색 하이라이트를 50% 블렌딩
+        float3 highlightColor = float3(1.0, 1.0, 0.0); // 노란색
+        base.rgb = lerp(base.rgb, highlightColor, 0.5);
     }
 
     // 조명 계산 (shininess는 Material.SpecularExponent를 쓰는 게 일반적)

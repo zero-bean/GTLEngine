@@ -700,28 +700,7 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
         if (PrimitiveComponent->GetOwner() == SelectedActor)
         {
             bIsSelected = true;
-        }
-        UStaticMeshComponent* PointLightComponent = Cast<UStaticMeshComponent>(PrimitiveComponent);
-
-        if (PointLightComponent)
-        {
-            if (!PointLightComponent->GetStaticMesh()) {
-                return;
-            }
-            if (PointLightComponent->GetStaticMesh()->GetVertexCount() == 4286) {
-
-                UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0, 1));
-                static float Time;
-                Time += 0.001 ;
-				UpdateSetCBuffer(UVScrollCB((1, 1),Time,1));
-            }
-            else {
-                UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
-            }
-        }
-      
-
-      
+        }   
         PrimitiveComponent->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
     }
 }
