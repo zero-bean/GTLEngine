@@ -1037,33 +1037,33 @@ void UTargetActorTransformWidget::RenderPointLightComponentDetails(UPointLightCo
 	ImGui::Text("PointLight Component Settings");
 
 	// 🔸 색상 설정 (RGB Color Picker)
-	float color[3] = { InComponent->FireData.Color.R, InComponent->FireData.Color.G, InComponent->FireData.Color.B };
+	float color[3] = { InComponent->PointData.Color.R, InComponent->PointData.Color.G, InComponent->PointData.Color.B };
 	if (ImGui::ColorEdit3("Color", color))
 	{
-		InComponent->FireData.Color = FLinearColor(color[0], color[1], color[2], 1.0f);
+		InComponent->PointData.Color = FLinearColor(color[0], color[1], color[2], 1.0f);
 	}
 
 	ImGui::Spacing();
 
 	// 🔸 밝기 (Intensity)
-	float intensity = InComponent->FireData.Intensity;
+	float intensity = InComponent->PointData.Intensity;
 	if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
 	{
-		InComponent->FireData.Intensity = intensity;
+		InComponent->PointData.Intensity = intensity;
 	}
 
 	// 🔸 반경 (Radius)
-	float radius = InComponent->FireData.Radius;
+	float radius = InComponent->PointData.Radius;
 	if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 1000.0f))
 	{
-		InComponent->FireData.Radius = radius;
+		InComponent->PointData.Radius = radius;
 	}
 
 	// 🔸 감쇠 정도 (FallOff)
-	float falloff = InComponent->FireData.RadiusFallOff;
+	float falloff = InComponent->PointData.RadiusFallOff;
 	if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
 	{
-		InComponent->FireData.RadiusFallOff = falloff;
+		InComponent->PointData.RadiusFallOff = falloff;
 	}
 
 	ImGui::Spacing();

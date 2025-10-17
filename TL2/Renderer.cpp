@@ -881,12 +881,12 @@ void URenderer::RenderPointLightPass(UWorld* World)
         if (idx >= MAX_POINT_LIGHTS) break;
 
         PointLightCB.PointLights[idx].Position = FVector4(
-            PointLightComponent->GetWorldLocation(), PointLightComponent->FireData.Radius
+            PointLightComponent->GetWorldLocation(), PointLightComponent->PointData.Radius
         );
         PointLightCB.PointLights[idx].Color = FVector4(
-            PointLightComponent->FireData.Color.R, PointLightComponent->FireData.Color.G, PointLightComponent->FireData.Color.B, PointLightComponent->FireData.Intensity
+            PointLightComponent->PointData.Color.R, PointLightComponent->PointData.Color.G, PointLightComponent->PointData.Color.B, PointLightComponent->PointData.Intensity
         );
-        PointLightCB.PointLights[idx].FallOff = PointLightComponent->FireData.RadiusFallOff;
+        PointLightCB.PointLights[idx].FallOff = PointLightComponent->PointData.RadiusFallOff;
     }
     // 2️⃣ 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);
@@ -900,18 +900,18 @@ void URenderer::RenderPointLightPass(UWorld* World)
         {
             if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Comp))
             {
-                if (UPointLightComponent* Fire = Cast<UPointLightComponent>(Prim))
+                if (UPointLightComponent* Point = Cast<UPointLightComponent>(Prim))
                 {
                     int idx = PointLightCB.PointLightCount++;
                     if (idx >= MAX_POINT_LIGHTS) break;
 
                     PointLightCB.PointLights[idx].Position = FVector4(
-                        Fire->GetWorldLocation(), Fire->FireData.Radius
+                        Point->GetWorldLocation(), Point->PointData.Radius
                     );
                     PointLightCB.PointLights[idx].Color = FVector4(
-                        Fire->FireData.Color.R, Fire->FireData.Color.G, Fire->FireData.Color.B, Fire->FireData.Intensity
+                        Point->PointData.Color.R, Point->PointData.Color.G, Point->PointData.Color.B, Point->PointData.Intensity
                     );
-                    PointLightCB.PointLights[idx].FallOff = Fire->FireData.RadiusFallOff;
+                    PointLightCB.PointLights[idx].FallOff = Point->PointData.RadiusFallOff;
                 }
             }
         }

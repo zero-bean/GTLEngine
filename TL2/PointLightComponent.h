@@ -24,7 +24,7 @@ public:
     // 🔹 AABB 반환 (충돌/선택 처리용)
     //virtual const FAABB GetWorldAABB() const override;
 
-    FPointLightProperty FireData;
+    FPointLightProperty PointData;
  
 
     // 🔸 CPU → GPU 전달용 라이트 데이터 캐시

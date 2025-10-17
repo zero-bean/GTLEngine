@@ -505,20 +505,20 @@ FSceneData FSceneLoader::ParseV2(const JSON& Json)
             if (Comp.Type.find("PointLightComponent") != std::string::npos &&
                 CompJson.hasKey("PointLightData"))
             {
-                const JSON& FireDataJson = CompJson.at("PointLightData");
+                const JSON& PointDataJson = CompJson.at("PointLightData");
 
-                if (FireDataJson.hasKey("Intensity"))
-                    Comp.PointLightProperty.Intensity = (float)FireDataJson.at("Intensity").ToFloat();
+                if (PointDataJson.hasKey("Intensity"))
+                    Comp.PointLightProperty.Intensity = (float)PointDataJson.at("Intensity").ToFloat();
 
-                if (FireDataJson.hasKey("Radius"))
-                    Comp.PointLightProperty.Radius = (float)FireDataJson.at("Radius").ToFloat();
+                if (PointDataJson.hasKey("Radius"))
+                    Comp.PointLightProperty.Radius = (float)PointDataJson.at("Radius").ToFloat();
 
-                if (FireDataJson.hasKey("RadiusFallOff"))
-                    Comp.PointLightProperty.RadiusFallOff = (float)FireDataJson.at("RadiusFallOff").ToFloat();
+                if (PointDataJson.hasKey("RadiusFallOff"))
+                    Comp.PointLightProperty.RadiusFallOff = (float)PointDataJson.at("RadiusFallOff").ToFloat();
 
-                if (FireDataJson.hasKey("Color"))
+                if (PointDataJson.hasKey("Color"))
                 {
-                    auto ColorJson = FireDataJson.at("Color");
+                    auto ColorJson = PointDataJson.at("Color");
                     if (ColorJson.size() >= 4)
                     {
                         Comp.PointLightProperty.Color = FLinearColor(

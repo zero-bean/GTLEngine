@@ -9,9 +9,9 @@ UPointLightComponent::UPointLightComponent()
 {
     // 초기 라이트 데이터 세팅
     FVector WorldPos = GetWorldLocation();
-    //PointLightBuffer.Position = FVector4(WorldPos, FireData.Radius);
-    //PointLightBuffer.Color = FVector4(FireData.Color.R, FireData.Color.G, FireData.Color.B, FireData.Intensity);
-    //PointLightBuffer.FallOff = FireData.RadiusFallOff;
+    //PointLightBuffer.Position = FVector4(WorldPos, PointData.Radius);
+    //PointLightBuffer.Color = FVector4(PointData.Color.R, PointData.Color.G, PointData.Color.B, PointData.Intensity);
+    //PointLightBuffer.FallOff = PointData.RadiusFallOff;
 
     bCanEverTick = true;
 }
@@ -27,11 +27,11 @@ void UPointLightComponent::Serialize(bool bIsLoading, FComponentData& InOut)
 
     if (bIsLoading)
     {
-        FireData = InOut.PointLightProperty;
+        PointData = InOut.PointLightProperty;
     }
     else
     {
-        InOut.PointLightProperty = FireData;
+        InOut.PointLightProperty = PointData;
     }
 }
 
@@ -44,16 +44,16 @@ void UPointLightComponent::TickComponent(float DeltaSeconds)
 
     //// 🔹 GPU 업로드용 버퍼 갱신
     //FVector WorldPos = GetWorldLocation();
-    //PointLightBuffer.Position = FVector4(WorldPos, FireData.Radius);
-    //PointLightBuffer.Color = FVector4(FireData.Color.R, FireData.Color.G, FireData.Color.B, FireData.Intensity);
-    //PointLightBuffer.FallOff = FireData.RadiusFallOff;
+    //PointLightBuffer.Position = FVector4(WorldPos, PointData.Radius);
+    //PointLightBuffer.Color = FVector4(PointData.Color.R, PointData.Color.G, PointData.Color.B, PointData.Intensity);
+    //PointLightBuffer.FallOff = PointData.RadiusFallOff;
 }
 
 //const FAABB UPointLightComponent::GetWorldAABB() const
 //{
 //    // PointLight의 Radius를 기반으로 AABB 생성
 //    FVector WorldLocation = GetWorldLocation();
-//    FVector Extent(FireData.Radius, FireData.Radius, FireData.Radius);
+//    FVector Extent(PointData.Radius, PointData.Radius, PointData.Radius);
 //
 //    return FAABB(WorldLocation - Extent, WorldLocation + Extent);
 //}
@@ -62,7 +62,7 @@ UObject* UPointLightComponent::Duplicate()
 {
     UPointLightComponent* DuplicatedComponent = NewObject<UPointLightComponent>();
     CopyCommonProperties(DuplicatedComponent);
-    DuplicatedComponent->FireData =this->FireData ; // 복제 (단, UObject 포인터 복사는 주의)
+    DuplicatedComponent->PointData =this->PointData ; // 복제 (단, UObject 포인터 복사는 주의)
     DuplicatedComponent->DuplicateSubObjects();
     return DuplicatedComponent;
 }
