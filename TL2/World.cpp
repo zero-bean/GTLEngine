@@ -1144,8 +1144,8 @@ void UWorld::CleanupWorld()
 void UWorld::SpawnActor(AActor* InActor)
 {
     InActor->SetWorld(this);
-  
- 
+
+
         if (UStaticMeshComponent* ActorComp = Cast<UStaticMeshComponent>(InActor->RootComponent))
         {
             FString ActorName = GenerateUniqueActorName(
@@ -1153,6 +1153,15 @@ void UWorld::SpawnActor(AActor* InActor)
             );
             InActor->SetName(ActorName);
         }
-   
+
     Level->GetActors().Add(InActor);
+
+    // 스폰된 액터의 모든 컴포넌트를 레벨에 등록
+    for (UActorComponent* Comp : InActor->GetComponents())
+    {
+        if (Comp && !Comp->bIsRegistered)
+        {
+            Comp->RegisterComponent();
+        }
+    }
 }

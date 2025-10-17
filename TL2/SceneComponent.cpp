@@ -2,6 +2,8 @@
 #include "SceneComponent.h"
 #include <algorithm>
 #include "ObjectFactory.h"
+#include "Level.h"
+#include "World.h"
 
 USceneComponent::USceneComponent()
     : RelativeLocation(0, 0, 0)
@@ -255,6 +257,43 @@ void USceneComponent::DetachFromParent(bool bKeepWorld)
 void USceneComponent::UpdateRelativeTransform()
 {
     RelativeTransform = FTransform(RelativeLocation, RelativeRotation, RelativeScale);
+}
+
+// ──────────────────────────────
+// Component Registration
+// ──────────────────────────────
+void USceneComponent::OnRegister()
+{
+    Super_t::OnRegister();
+
+    // Owner가 있고, Owner의 World가 있으면 Level에 등록
+    if (AActor* OwnerActor = GetOwner())
+    {
+        if (UWorld* World = OwnerActor->GetWorld())
+        {
+            if (ULevel* Level = World->GetLevel())
+            {
+                Level->RegisterComponent(this);
+            }
+        }
+    }
+}
+
+void USceneComponent::OnUnregister()
+{
+    // Owner가 있고, Owner의 World가 있으면 Level에서 해제
+    if (AActor* OwnerActor = GetOwner())
+    {
+        if (UWorld* World = OwnerActor->GetWorld())
+        {
+            if (ULevel* Level = World->GetLevel())
+            {
+                Level->UnregisterComponent(this);
+            }
+        }
+    }
+
+    Super_t::OnUnregister();
 }
 
 // Duplicate function

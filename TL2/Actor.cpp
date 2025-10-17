@@ -241,6 +241,12 @@ void AActor::AddComponent(USceneComponent* InComponent)
     {
         RootComponent = InComponent;
     }
+
+    // 컴포넌트를 레벨에 등록 (World가 있는 경우)
+    if (GetWorld() && !InComponent->bIsRegistered)
+    {
+        InComponent->RegisterComponent();
+    }
 }
 
 void AActor::RegisterAllComponents()
@@ -289,10 +295,10 @@ USceneComponent* AActor::CreateAndAttachComponent(USceneComponent* ParentCompone
     {
         if (NewComponent = Cast<USceneComponent>(NewComponentObject))
         {
-            this->AddComponent(NewComponent); // 액터의 관리 목록에 추가
+            NewComponent->SetOwner(this);
+            this->AddComponent(NewComponent); // 액터의 관리 목록에 추가 (내부에서 RegisterComponent 호출)
 
             NewComponent->SetupAttachment(ParentComponent, EAttachmentRule::KeepRelative);
-            NewComponent->SetOwner(this);
         }
     }
 
