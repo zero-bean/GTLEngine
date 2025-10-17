@@ -5,14 +5,7 @@
 class UUIManager;
 class UWorld;
 
-struct FSpawnInfo
-{
-	// Display name for UI and logs
-	const char* TypeName;
-
-	// Function for actual spawn logic
-	std::function<AActor* (UWorld*, const FTransform&)> Spawner;
-};
+// FSpawnInfo는 더 이상 사용되지 않습니다 - Reflection 기반 시스템으로 대체됨
 
 class UPrimitiveSpawnWidget
 	:public UWidget
@@ -23,7 +16,7 @@ public:
 	void Initialize() override;
 	void Update() override;
 	void RenderWidget() override;
-	void SpawnActors(ESpawnActorType SpawnType) const;
+	void SpawnActor(UClass* ActorClass) const;
 
 	// Special Member Function
 	UPrimitiveSpawnWidget();
@@ -31,12 +24,9 @@ public:
 
 private:
 	UUIManager* UIManager = nullptr;
-	TMap<ESpawnActorType, FSpawnInfo> SpawnRegistry;
+	TArray<UClass*> SpawnableClasses; // 자동으로 채워질 스폰 가능 클래스 목록
+	mutable int32 SelectedClassIndex = 0; // 선택된 클래스 인덱스
 
-	// Spawn Actor 관리
-	template<typename ActorType>
-	void RegisterSpawnInfo(ESpawnActorType SpawnType, const char* TypeName);
-	
 	// Spawn 설정
 	int32 NumberOfSpawn = 1;
 	float SpawnRangeMin = -5.0f;

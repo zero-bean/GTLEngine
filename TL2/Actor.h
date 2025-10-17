@@ -11,7 +11,7 @@ class UBillboardComponent;
 class AActor : public UObject
 {
 public:
-    DECLARE_CLASS(AActor, UObject)
+    DECLARE_SPAWNABLE_CLASS(AActor, UObject, "Empty Actor")
     AActor(); 
 
 protected:

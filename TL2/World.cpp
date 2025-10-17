@@ -1148,7 +1148,12 @@ void UWorld::SpawnActor(AActor* InActor)
 {
     InActor->SetWorld(this);
 
+    // Level->AddActor를 사용하여 AActor의 InitEmptyActor 등이 호출되도록 함
+    Level->AddActor(InActor);
 
+    // 이름이 설정되지 않았으면 자동 생성
+    if (InActor->GetName().ToString().empty())
+    {
         if (UStaticMeshComponent* ActorComp = Cast<UStaticMeshComponent>(InActor->RootComponent))
         {
             FString ActorName = GenerateUniqueActorName(
@@ -1156,8 +1161,12 @@ void UWorld::SpawnActor(AActor* InActor)
             );
             InActor->SetName(ActorName);
         }
-
-    Level->GetActors().Add(InActor);
+        else
+        {
+            // 일반 Actor는 DisplayName 사용
+            InActor->SetName(GenerateUniqueActorName(InActor->GetClass()->GetDisplayName()));
+        }
+    }
 
     // 스폰된 액터의 모든 컴포넌트를 레벨에 등록
     for (UActorComponent* Comp : InActor->GetComponents())

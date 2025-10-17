@@ -19,12 +19,12 @@ ULevel::~ULevel()
 
 void ULevel::AddActor(AActor* InActor)
 {
-	if (InActor)	
+	if (InActor)
 	{
-		if (InActor->GetClass()->Name == AActor::StaticClass()->Name)
+		// AActor 클래스인 경우 (정확히 AActor, 파생 클래스 제외)
+		if (std::strcmp(InActor->GetClass()->Name, "AActor") == 0)
 		{
 			InActor->InitEmptyActor();
-
 		}
 		Actors.Add(InActor);
 	}

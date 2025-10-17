@@ -6,7 +6,7 @@ class AFXAAActor : public AInfo
 {
 public:
 
-	DECLARE_CLASS(AFXAAActor, AInfo);
+	DECLARE_SPAWNABLE_CLASS(AFXAAActor, AInfo, "FXAA");
 	AFXAAActor();
 	UObject* Duplicate() override;
 	void DuplicateSubObjects() override;
