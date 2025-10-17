@@ -13,11 +13,13 @@ public:
 	USpotLightComponent();
 	~USpotLightComponent() override;
 
-	FSpotLightInfo SpotData;
 
 protected:
 	UObject* Duplicate() override;
 	void DuplicateSubObjects() override;
+	//FSpotLightInfo SpotData;
 
+	float InnnerConeAngle;
+	float OuterConeAngle;
 };
 

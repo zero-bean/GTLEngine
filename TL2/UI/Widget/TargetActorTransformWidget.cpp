@@ -23,6 +23,7 @@
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include"PointLightComponent.h"
+#include "SpotLightComponent.h"
 
 #include <filesystem>
 #include <vector>
@@ -529,6 +530,11 @@ void UTargetActorTransformWidget::RenderWidget()
 		{
 			RenderFXAAComponentDetails(FXAAComp);
 		}
+		else if (USpotLightComponent* SpotLightComp = Cast<USpotLightComponent>(SelectedComponent))
+		{
+			RenderSpotLightComponentDetails(SpotLightComp);
+		}
+
 		else
 		{
 			ImGui::Text("Selected component is not a supported type.");
@@ -1037,33 +1043,33 @@ void UTargetActorTransformWidget::RenderPointLightComponentDetails(UPointLightCo
 	ImGui::Text("PointLight Component Settings");
 
 	// 🔸 색상 설정 (RGB Color Picker)
-	float color[3] = { InComponent->PointData.Color.R, InComponent->PointData.Color.G, InComponent->PointData.Color.B };
+	float color[3] = { InComponent->GetColor().R, InComponent->GetColor().G, InComponent->GetColor().B};
 	if (ImGui::ColorEdit3("Color", color))
 	{
-		InComponent->PointData.Color = FLinearColor(color[0], color[1], color[2], 1.0f);
+		InComponent->SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
 	}
 
 	ImGui::Spacing();
 
 	// 🔸 밝기 (Intensity)
-	float intensity = InComponent->PointData.Intensity;
+	float intensity = InComponent->GetIntensity();
 	if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
 	{
-		InComponent->PointData.Intensity = intensity;
+		InComponent->SetIntensity(intensity);
 	}
 
 	// 🔸 반경 (Radius)
-	float radius = InComponent->PointData.Radius;
+	float radius = InComponent->GetRadius();
 	if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 1000.0f))
 	{
-		InComponent->PointData.Radius = radius;
+		InComponent->SetRadius(radius);
 	}
 
 	// 🔸 감쇠 정도 (FallOff)
-	float falloff = InComponent->PointData.RadiusFallOff;
+	float falloff = InComponent->GetRadiusFallOff();
 	if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
 	{
-		InComponent->PointData.RadiusFallOff = falloff;
+		InComponent->SetRadiusFallOff(falloff);
 	}
 
 	ImGui::Spacing();
@@ -1268,4 +1274,55 @@ void UTargetActorTransformWidget::RenderFXAAComponentDetails(UFXAAComponent* InC
 	{
 		InComponent->SetReduceMul(ReduceMul);
 	}
+}
+
+void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComponent* InComponent)
+{
+	//ImGui::Separator();
+	//ImGui::Text("SpotLight Component Settings");
+	//
+	//// 🔸 색상 설정 (RGB Color Picker)
+	//float color[3] = { InComponent->PointData.Color.R, InComponent->SpotData.Color.G, InComponent->SpotData.Color.B };
+	//if (ImGui::ColorEdit3("Color", color))
+	//{
+	//	InComponent->SpotData.Color = FLinearColor(color[0], color[1], color[2], 1.0f);
+	//}
+	//
+	//ImGui::Spacing();
+	//
+	//// 🔸 밝기 (Intensity)
+	//float intensity = InComponent->SpotData.Intensity;
+	//if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
+	//{
+	//	InComponent->SpotData.Intensity = intensity;
+	//}
+	//
+	//// 🔸 InnerConeAngle
+	//float radius = InComponent->SpotData;
+	//if (ImGui::DragFloat("InnerConeAngle", &radius, 0.1f, 0.1f, 1000.0f))
+	//{
+	//	InComponent->PointData.Radius = radius;
+	//}
+	//
+	//// 🔸 OuterConeAngle
+	//float radius = InComponent->PointData.Radius;
+	//if (ImGui::DragFloat("OuterConeAngle", &radius, 0.1f, 0.1f, 1000.0f))
+	//{
+	//	InComponent->PointData.Radius = radius;
+	//}
+	//
+	//// 🔸 감쇠 정도 (FallOff)
+	//float falloff = InComponent->PointData.RadiusFallOff;
+	//if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
+	//{
+	//	InComponent->PointData.RadiusFallOff = falloff;
+	//}
+	//
+	//ImGui::Spacing();
+	//
+	//// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
+	//ImGui::Text("Preview:");
+	//ImGui::SameLine();
+	//ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
+
 }

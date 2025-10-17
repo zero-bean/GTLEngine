@@ -27,11 +27,13 @@ void UPointLightComponent::Serialize(bool bIsLoading, FComponentData& InOut)
 
     if (bIsLoading)
     {
-        PointData = InOut.PointLightProperty;
+        Radius = InOut.PointLightProperty.Radius;
+        RadiusFallOff = InOut.PointLightProperty.RadiusFallOff;
     }
     else
     {
-        InOut.PointLightProperty = PointData;
+        InOut.PointLightProperty.Radius = Radius;
+        InOut.PointLightProperty.RadiusFallOff = RadiusFallOff;
     }
 }
 
@@ -62,7 +64,8 @@ UObject* UPointLightComponent::Duplicate()
 {
     UPointLightComponent* DuplicatedComponent = NewObject<UPointLightComponent>();
     CopyCommonProperties(DuplicatedComponent);
-    DuplicatedComponent->PointData =this->PointData ; // 복제 (단, UObject 포인터 복사는 주의)
+     DuplicatedComponent->Radius =this->Radius; // 복제 (단, UObject 포인터 복사는 주의)
+    DuplicatedComponent->RadiusFallOff = this->RadiusFallOff; // 복제 (단, UObject 포인터 복사는 주의)
     DuplicatedComponent->DuplicateSubObjects();
     return DuplicatedComponent;
 }

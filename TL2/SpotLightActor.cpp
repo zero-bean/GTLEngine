@@ -4,8 +4,8 @@
 
 ASpotLightActor::ASpotLightActor()
 {
-	//Name = "Spot Light Actor";
-	//SpotLightComponent = 
+	Name = "Spot Light Actor";
+	SpotLightComponent = CreateDefaultSubobject<USpotLightComponent>(FName("SpotLightComponent"));
 }
 
 ASpotLightActor::~ASpotLightActor()
