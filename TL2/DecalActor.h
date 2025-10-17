@@ -6,7 +6,7 @@
 class ADecalActor : public AActor
 {
 public:
-    DECLARE_CLASS(ADecalActor, AActor)
+    DECLARE_SPAWNABLE_CLASS(ADecalActor, AActor, "Decal")
 
     ADecalActor();
     virtual ~ADecalActor() override;
