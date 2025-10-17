@@ -1324,6 +1324,14 @@ void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComp
 	{ 
 		InComponent->SetInAndOutSmooth(smooth);
 	}
+
+	// Circle vertex count for end-cap visualization
+	int segs = InComponent->GetCircleSegments();
+	if (ImGui::DragInt("Circle Segments", &segs, 1.0f, 3, 512))
+	{
+		segs = FMath::Clamp(segs, 3, 512);
+		InComponent->SetCircleSegments(segs);
+	}
 	ImGui::Spacing();
 	
 	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)

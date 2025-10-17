@@ -1,4 +1,4 @@
-ï»¿#include "pch.h"
+#include "pch.h"
 
 #include "BillboardComponent.h"
 #include "TextRenderComponent.h"
@@ -43,15 +43,15 @@ void URenderer::Update(float DeltaSeconds)
 }
 void URenderer::BeginFrame()
 {
-    // ë Œë”ë§ í†µê³„ ìˆ˜ì§‘ ì‹œì‘
+    // ·»´õ¸µ Åë°è ¼öÁı ½ÃÀÛ
     URenderingStatsCollector::GetInstance().BeginFrame();
     
-    // ìƒíƒœ ì¶”ì  ë¦¬ì…‹
+    // »óÅÂ ÃßÀû ¸®¼Â
     ResetRenderStateTracking();
     
-    // ë°±ë²„í¼/ê¹Šì´ë²„í¼ë¥¼ í´ë¦¬ì–´
-    RHIDevice->ClearBackBuffer();  // ë°°ê²½ìƒ‰
-    RHIDevice->ClearDepthBuffer(1.0f, 0);                 // ê¹Šì´ê°’ ì´ˆê¸°í™”
+    // ¹é¹öÆÛ/±íÀÌ¹öÆÛ¸¦ Å¬¸®¾î
+    RHIDevice->ClearBackBuffer();  // ¹è°æ»ö
+    RHIDevice->ClearDepthBuffer(1.0f, 0);                 // ±íÀÌ°ª ÃÊ±âÈ­
     //RHIDevice->CreateBlendState();
     RHIDevice->IASetPrimitiveTopology();
     // RS
@@ -64,7 +64,7 @@ void URenderer::BeginFrame()
 
 void URenderer::PrepareShader(UShader* InShader)
 {
-    // ì…°ì´ë” ë³€ê²½ ì¶”ì 
+    // ¼ÎÀÌ´õ º¯°æ ÃßÀû
     if (LastShader != InShader)
     {
         URenderingStatsCollector::GetInstance().IncrementShaderChanges();
@@ -113,10 +113,10 @@ void URenderer::RenderFrame(UWorld* World)
     BeginFrame();
     UUIManager::GetInstance().Render();
 
-    //ì›ë˜ ì»´í¬ë„ŒíŠ¸ê°€ ìƒì„±ë˜ê³  ë ˆë²¨ì— ì•Œì•„ì„œ ë“±ë¡í•˜ê³  í•´ì œí•˜ëŠ”ê²Œ í›¨ì”¬ íš¨ìœ¨ì ì¸ë° ê·¸ë ‡ê²Œ í•˜ë©´ ì§€ê¸ˆ êµ¬ì¡°ìƒ ìƒì„±ìì—ì„œ ë ˆë²¨ì— ë“±ë¡í•  ìˆ˜ë°–ì— ì—†ê³ 
-    //ê·¸ëŸ¬ë©´ íŒŒì´ì›”ë“œë¡œ ë„˜ì–´ê°€ë©´ì„œ ë“€í”Œë¦¬ì¼€ì´íŠ¸ í•˜ëŠ” ì‹œì ì´ GWorldê°€ íŒŒì´ì›”ë“œê°€ ë˜ê¸° ì „ì´ë¼ì„œ ê¸°ì¡´ì˜ ì—ë””í„°ì›”ë“œ ë ˆë²¨ì— ì¤‘ë³µìœ¼ë¡œ ë“±ë¡ë˜ê³ 
-    //íŒŒì´ì›”ë“œì—ëŠ” ì»´í¬ë„ŒíŠ¸ ë“±ë¡ ì•ˆë˜ì–´ìˆì–´ì„œ í„°ì§. íŒŒì´ì›”ë“œì— ë“±ë¡í•˜ëŠ”ê±´ beingplayì—ì„œ í•˜ë©´ ëœë‹¤ì§€ë§Œ ìƒì„±ìê°€ ì•„ë‹Œ ê³³ì—ì„œ ìƒì„±ì´í›„ ë Œë”ë§ ì „ ë ˆë²¨ì— ë“±ë¡í• 
-    //ë°©ì•ˆì´ ë– ì˜¤ë¥´ì§€ ì•Šì•„ì„œ ì¼ë‹¨ ê¸‰í•œëŒ€ë¡œ ë§¤í”„ë ˆì„ ì»´í¬ë„ŒíŠ¸ ìˆ˜ì§‘í•˜ëŠ” í˜•íƒœë¡œ ì‘ì„±í•¨
+    //¿ø·¡ ÄÄÆ÷³ÍÆ®°¡ »ı¼ºµÇ°í ·¹º§¿¡ ¾Ë¾Æ¼­ µî·ÏÇÏ°í ÇØÁ¦ÇÏ´Â°Ô ÈÎ¾À È¿À²ÀûÀÎµ¥ ±×·¸°Ô ÇÏ¸é Áö±İ ±¸Á¶»ó »ı¼ºÀÚ¿¡¼­ ·¹º§¿¡ µî·ÏÇÒ ¼ö¹Û¿¡ ¾ø°í
+    //±×·¯¸é ÆÄÀÌ¿ùµå·Î ³Ñ¾î°¡¸é¼­ µàÇÃ¸®ÄÉÀÌÆ® ÇÏ´Â ½ÃÁ¡ÀÌ GWorld°¡ ÆÄÀÌ¿ùµå°¡ µÇ±â ÀüÀÌ¶ó¼­ ±âÁ¸ÀÇ ¿¡µğÅÍ¿ùµå ·¹º§¿¡ Áßº¹À¸·Î µî·ÏµÇ°í
+    //ÆÄÀÌ¿ùµå¿¡´Â ÄÄÆ÷³ÍÆ® µî·Ï ¾ÈµÇ¾îÀÖ¾î¼­ ÅÍÁü. ÆÄÀÌ¿ùµå¿¡ µî·ÏÇÏ´Â°Ç beingplay¿¡¼­ ÇÏ¸é µÈ´ÙÁö¸¸ »ı¼ºÀÚ°¡ ¾Æ´Ñ °÷¿¡¼­ »ı¼ºÀÌÈÄ ·»´õ¸µ Àü ·¹º§¿¡ µî·ÏÇÒ
+    //¹æ¾ÈÀÌ ¶°¿À¸£Áö ¾Ê¾Æ¼­ ÀÏ´Ü ±ŞÇÑ´ë·Î ¸ÅÇÁ·¹ÀÓ ÄÄÆ÷³ÍÆ® ¼öÁıÇÏ´Â ÇüÅÂ·Î ÀÛ¼ºÇÔ
     World->GetLevel()->CollectComponentsToRender();
 
     RenderViewPorts(World);
@@ -129,7 +129,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
 {
     URenderingStatsCollector& StatsCollector = URenderingStatsCollector::GetInstance();
     
-    // ë””ë²„ê·¸: StaticMesh ë Œë”ë§ í†µê³„
+    // µğ¹ö±×: StaticMesh ·»´õ¸µ Åë°è
     
     UINT stride = 0;
     switch (InMesh->GetVertexType())
@@ -179,7 +179,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
             bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
             bool bHasNormalTexture = !(MaterialInfo.NormalTextureFileName == FName::None());
 
-            // ì¬ë£Œ ë³€ê²½ ì¶”ì 
+            // Àç·á º¯°æ ÃßÀû
             if (LastMaterial != Material)
             {
                 StatsCollector.IncrementMaterialChanges();
@@ -191,7 +191,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
             {
                 FTextureData* TextureData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.DiffuseTextureFileName);
 
-                // í…ìŠ¤ì²˜ ë³€ê²½ ì¶”ì  (ì„ì‹œë¡œ FTextureData*ë¥¼ UTexture*ë¡œ ìº ìŠ¤íŠ¸)
+                // ÅØ½ºÃ³ º¯°æ ÃßÀû (ÀÓ½Ã·Î FTextureData*¸¦ UTexture*·Î Ä·½ºÆ®)
                 UTexture* CurrentTexture = reinterpret_cast<UTexture*>(TextureData);
                 if (LastTexture != CurrentTexture)
                 {
@@ -209,9 +209,9 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &(NormalTextureData->TextureSRV));
             }
 
-            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture }); // PSSetë„ í•´ì¤Œ
+            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture }); // PSSetµµ ÇØÁÜ
 
-            // DrawCall ìˆ˜ì‹¤í–‰ ë° í†µê³„ ì¶”ê°€
+            // DrawCall ¼ö½ÇÇà ¹× Åë°è Ãß°¡
             RHIDevice->GetDeviceContext()->DrawIndexed(MeshGroupInfos[i].IndexCount, MeshGroupInfos[i].StartIndex, 0);
             StatsCollector.IncrementDrawCalls();
         }
@@ -219,7 +219,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
     else
     {
         FObjMaterialInfo ObjMaterialInfo;
-        RHIDevice->UpdateSetCBuffer({ FMaterialInPs(ObjMaterialInfo), (uint32)false, (uint32)false, (uint32)false }); // PSSetë„ í•´ì¤Œ
+        RHIDevice->UpdateSetCBuffer({ FMaterialInPs(ObjMaterialInfo), (uint32)false, (uint32)false, (uint32)false }); // PSSetµµ ÇØÁÜ
         RHIDevice->GetDeviceContext()->DrawIndexed(IndexCount, 0, 0);
         StatsCollector.IncrementDrawCalls();
     }
@@ -229,13 +229,13 @@ void URenderer::DrawIndexedPrimitiveComponent(UTextRenderComponent* Comp, D3D11_
 {
     URenderingStatsCollector& StatsCollector = URenderingStatsCollector::GetInstance();
     
-    // ë””ë²„ê·¸: TextRenderComponent ë Œë”ë§ í†µê³„
+    // µğ¹ö±×: TextRenderComponent ·»´õ¸µ Åë°è
     
     UINT Stride = sizeof(FBillboardVertexInfo_GPU);
     ID3D11Buffer* VertexBuff = Comp->GetStaticMesh()->GetVertexBuffer();
     ID3D11Buffer* IndexBuff = Comp->GetStaticMesh()->GetIndexBuffer();
 
-    // ë§¤í…Œë¦¬ì–¼ ë³€ê²½ ì¶”ì 
+    // ¸ÅÅ×¸®¾ó º¯°æ ÃßÀû
     UMaterial* CompMaterial = Comp->GetMaterial();
     if (LastMaterial != CompMaterial)
     {
@@ -244,7 +244,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UTextRenderComponent* Comp, D3D11_
     }
     
     UShader* CompShader = CompMaterial->GetShader();
-    // ì…°ì´ë” ë³€ê²½ ì¶”ì 
+    // ¼ÎÀÌ´õ º¯°æ ÃßÀû
     if (LastShader != CompShader)
     {
         StatsCollector.IncrementShaderChanges();
@@ -262,7 +262,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UTextRenderComponent* Comp, D3D11_
         IndexBuff, DXGI_FORMAT_R32_UINT, 0
     );
 
-    // í…ìŠ¤ì²˜ ë³€ê²½ ì¶”ì  (í…ìŠ¤ì²˜ ë¹„êµ)
+    // ÅØ½ºÃ³ º¯°æ ÃßÀû (ÅØ½ºÃ³ ºñ±³)
     UTexture* CompTexture = CompMaterial->GetTexture();
     if (LastTexture != CompTexture)
     {
@@ -283,13 +283,13 @@ void URenderer::DrawIndexedPrimitiveComponent(UBillboardComponent* Comp, D3D11_P
 {
     URenderingStatsCollector& StatsCollector = URenderingStatsCollector::GetInstance();
     
-    // ë””ë²„ê·¸: TextRenderComponent ë Œë”ë§ í†µê³„
+    // µğ¹ö±×: TextRenderComponent ·»´õ¸µ Åë°è
     
     UINT Stride = sizeof(FBillboardVertexInfo_GPU);
     ID3D11Buffer* VertexBuff = Comp->GetStaticMesh()->GetVertexBuffer();
     ID3D11Buffer* IndexBuff = Comp->GetStaticMesh()->GetIndexBuffer();
 
-    // ë§¤í…Œë¦¬ì–¼ ë³€ê²½ ì¶”ì 
+    // ¸ÅÅ×¸®¾ó º¯°æ ÃßÀû
     UMaterial* CompMaterial = Comp->GetMaterial();
     if (LastMaterial != CompMaterial)
     {
@@ -298,7 +298,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UBillboardComponent* Comp, D3D11_P
     }
     
     UShader* CompShader = CompMaterial->GetShader();
-    // ì…°ì´ë” ë³€ê²½ ì¶”ì 
+    // ¼ÎÀÌ´õ º¯°æ ÃßÀû
     if (LastShader != CompShader)
     {
         StatsCollector.IncrementShaderChanges();
@@ -316,7 +316,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UBillboardComponent* Comp, D3D11_P
         IndexBuff, DXGI_FORMAT_R32_UINT, 0
     );
 
-    // í…ìŠ¤ì²˜ ë³€ê²½ ì¶”ì  (í…ìŠ¤ì²˜ ë¹„êµ)
+    // ÅØ½ºÃ³ º¯°æ ÃßÀû (ÅØ½ºÃ³ ºñ±³)
     UTexture* CompTexture = CompMaterial->GetTexture();
     if (LastTexture != CompTexture)
     {
@@ -343,15 +343,15 @@ void URenderer::SetViewModeType(EViewModeIndex ViewModeIndex)
 
 void URenderer::EndFrame()
 {
-    // ë Œë”ë§ í†µê³„ ìˆ˜ì§‘ ì¢…ë£Œ
+    // ·»´õ¸µ Åë°è ¼öÁı Á¾·á
     URenderingStatsCollector& StatsCollector = URenderingStatsCollector::GetInstance();
     StatsCollector.EndFrame();
     
-    // í˜„ì¬ í”„ë ˆì„ í†µê³„ë¥¼ ì—…ë°ì´íŠ¸
+    // ÇöÀç ÇÁ·¹ÀÓ Åë°è¸¦ ¾÷µ¥ÀÌÆ®
     const FRenderingStats& CurrentStats = StatsCollector.GetCurrentFrameStats();
     StatsCollector.UpdateFrameStats(CurrentStats);
     
-    // í‰ê·  í†µê³„ë¥¼ ì–»ì–´ì„œ ì˜¤ë²„ë ˆì´ì— ì—…ë°ì´íŠ¸
+    // Æò±Õ Åë°è¸¦ ¾ò¾î¼­ ¿À¹ö·¹ÀÌ¿¡ ¾÷µ¥ÀÌÆ®
     const FRenderingStats& AvgStats = StatsCollector.GetAverageStats();
     UStatsOverlayD2D::Get().UpdateRenderingStats(
         AvgStats.TotalDrawCalls,
@@ -372,7 +372,7 @@ void URenderer::OMSetDepthStencilState(EComparisonFunc Func)
 
 void URenderer::RenderViewPorts(UWorld* World) 
 {
-    // ë©€í‹° ë·°í¬íŠ¸ ì‹œìŠ¤í…œì„ í†µí•´ ê° ë·°í¬íŠ¸ë³„ë¡œ ë Œë”ë§
+    // ¸ÖÆ¼ ºäÆ÷Æ® ½Ã½ºÅÛÀ» ÅëÇØ °¢ ºäÆ÷Æ®º°·Î ·»´õ¸µ
     if (SMultiViewportWindow* MultiViewport = World->GetMultiViewportWindow())
     {
         MultiViewport->OnRender();
@@ -437,7 +437,7 @@ void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, c
 
 void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
-    // ë·°í¬íŠ¸ì˜ ì‹¤ì œ í¬ê¸°ë¡œ aspect ratio ê³„ì‚°
+    // ºäÆ÷Æ®ÀÇ ½ÇÁ¦ Å©±â·Î aspect ratio °è»ê
     float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
     if (Viewport->GetSizeY() == 0)
     {
@@ -448,7 +448,7 @@ void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* V
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
 
    
-    // ì”¬ì˜ ì•¡í„°ë“¤ì„ ë Œë”ë§
+    // ¾ÀÀÇ ¾×ÅÍµéÀ» ·»´õ¸µ
     // General Rendering (color + depth)
     RenderActorsInViewport(World, ViewMatrix, ProjectionMatrix, Viewport);
 }
@@ -464,7 +464,7 @@ void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* V
 //        const float NearZ = 1.0f;
 //        const float FarZ = Light->Radius;
 //
-//        // 6ë°©í–¥ ë·°í–‰ë ¬ êµ¬ì„±
+//        // 6¹æÇâ ºäÇà·Ä ±¸¼º
 //        FMatrix LightViews[6];
 //        LightViews[0] = FMatrix::LookAt(LightPos, LightPos + FVector(1, 0, 0), FVector(0, 1, 0));   // +X
 //        LightViews[1] = FMatrix::LookAt(LightPos, LightPos + FVector(-1, 0, 0), FVector(0, 1, 0));  // -X
@@ -482,7 +482,7 @@ void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* V
 //            RHI->OMSetDepthStencilState(EComparisonFunc::LessEqualWrite);
 //
 //            UpdateShadowBuffer(LightViews[Face], LightProj, LightPos);
-//            RenderSceneDepthOnly(World); // ê¹Šì´ë§Œ ë Œë”
+//            RenderSceneDepthOnly(World); // ±íÀÌ¸¸ ·»´õ
 //        }
 //    }
 //}
@@ -497,7 +497,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     // +-+-+ Render Pass Structure +-+-+
 
     float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
-    if (Viewport->GetSizeY() == 0) ViewportAspectRatio = 1.0f; // 0ìœ¼ë¡œ ë‚˜ëˆ„ê¸° ë°©ì§€
+    if (Viewport->GetSizeY() == 0) ViewportAspectRatio = 1.0f; // 0À¸·Î ³ª´©±â ¹æÁö
     FMatrix ViewMatrix = Camera->GetViewMatrix();
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
     UpdateSetCBuffer(ViewProjBufferType(ViewMatrix, ProjectionMatrix, Camera->GetActorLocation()));
@@ -520,7 +520,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     {
         RenderBasePass(World, Camera, Viewport);  // calls RenderScene, which executes the depth-only pass 
                                                   // (RenderSceneDepthPass) according to the current view mode
-        RenderSceneDepthVisualizePass(Camera);    // Depth â†’ Grayscale visualize
+        RenderSceneDepthVisualizePass(Camera);    // Depth ¡æ Grayscale visualize
         break;
     }
     default:
@@ -533,7 +533,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
 void URenderer::RenderEditorPass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
-    // ë·°í¬íŠ¸ì˜ ì‹¤ì œ í¬ê¸°ë¡œ aspect ratio ê³„ì‚°
+    // ºäÆ÷Æ®ÀÇ ½ÇÁ¦ Å©±â·Î aspect ratio °è»ê
     float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
     if (Viewport->GetSizeY() == 0)
     {
@@ -588,12 +588,12 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
     //const TArray<AActor*>& LevelActors = World->GetLevel() ? World->GetLevel()->GetActors() : TArray<AActor*>();
     //USelectionManager& SelectionManager = USelectionManager::GetInstance();
 
-    //// íŠ¹ìˆ˜ ì²˜ë¦¬ê°€ í•„ìš”í•œ ì»´í¬ë„ŒíŠ¸ë“¤
+    //// Æ¯¼ö Ã³¸®°¡ ÇÊ¿äÇÑ ÄÄÆ÷³ÍÆ®µé
     //TArray<UDecalComponent*> Decals;
     //TArray<UPrimitiveComponent*> RenderPrimitivesWithOutDecal;
     //TArray<UBillboardComponent*> BillboardComponentList;
     // 
-    //// ì•¡í„°ë³„ë¡œ ìˆœíšŒí•˜ë©° ë Œë”ë§
+    //// ¾×ÅÍº°·Î ¼øÈ¸ÇÏ¸ç ·»´õ¸µ
     //for (AActor* Actor : LevelActors)
     //{
     //    if (!Actor || Actor->GetActorHiddenInGame())
@@ -612,13 +612,13 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
 
     //        if (UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(ActorComp))
     //        {
-    //            // ë°”ìš´ë”© ë°•ìŠ¤ ê·¸ë¦¬ê¸°
+    //            // ¹Ù¿îµù ¹Ú½º ±×¸®±â
     //            if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BoundingBoxes))
     //            {
     //                AddLines(Primitive->GetBoundingBoxLines(), Primitive->GetBoundingBoxColor());
     //            }
 
-    //            // ë°ì¹¼ ì»´í¬ë„ŒíŠ¸ëŠ” ë‚˜ì¤‘ì— ì²˜ë¦¬
+    //            // µ¥Ä® ÄÄÆ÷³ÍÆ®´Â ³ªÁß¿¡ Ã³¸®
     //            if (UDecalComponent* Decal = Cast<UDecalComponent>(ActorComp))
     //            {
     //                Decals.Add(Decal);
@@ -642,7 +642,7 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
     //OMSetBlendState(false);
     //RenderEngineActors(World->GetEngineActors(), ViewMatrix, ProjectionMatrix, Viewport);
 
-    //// ë°ì¹¼ ë Œë”ë§
+    //// µ¥Ä® ·»´õ¸µ
     //if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_Decals))
     //{
     //    Decals.Sort([](const UDecalComponent* A, const UDecalComponent* B)
@@ -675,15 +675,61 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
     //    }
     //}
 
-    // BVH ë°”ìš´ë“œ ì‹œê°í™”
+    // BVH ¹Ù¿îµå ½Ã°¢È­
     if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BVH))
     {
         AddLines(World->GetBVH().GetBVHBoundsWire(), FVector4(0.5f, 0.5f, 1, 1));
     }
 
+    // SpotLight cone visualization via line batch
+    {
+        const FVector CameraPos = (World->GetCameraActor() ? World->GetCameraActor()->GetActorLocation() : FVector(0,0,0));
+        for (USpotLightComponent* Spot : World->GetLevel()->GetComponentList<USpotLightComponent>())
+        {
+            if (!Spot || !Spot->IsRender()) continue;
+
+            const FVector apex = Spot->GetWorldLocation();
+            FVector dir = Spot->GetDirection().GetVt3();
+            dir = dir.GetSafeNormal();
+            const float range = Spot->GetRadius();
+            const float angleRad = DegreeToRadian(Spot->GetOuterConeAngle());
+            const float circleRadius = std::tan(angleRad) * range;
+            const FVector center = apex + dir * range;
+
+            // Build orthonormal basis (u,v) for circle plane (perpendicular to dir)
+            FVector arbitraryUp = fabsf(dir.Z) > 0.99f ? FVector(1, 0, 0) : FVector(0, 0, 1);
+            FVector u = FVector::Cross(arbitraryUp, dir).GetSafeNormal();
+            FVector v = FVector::Cross(dir, u).GetSafeNormal();
+
+            const int segments = FMath::Clamp(Spot->GetCircleSegments(), 3, 512);
+            const float step = TWO_PI / static_cast<float>(segments);
+            const FVector4 color(Spot->GetColor().R, Spot->GetColor().G, Spot->GetColor().B, 1.0f);
+
+            FVector prevPoint;
+            for (int i = 0; i <= segments; ++i)
+            {
+                float t = step * i;
+                FVector p = center + u * (cosf(t) * circleRadius) + v * (sinf(t) * circleRadius);
+
+                // Draw circle edge
+                if (i > 0)
+                {
+                    AddLine(prevPoint, p, color);
+                }
+                prevPoint = p;
+
+                // Draw camera-to-circle vertex line
+                AddLine(CameraPos, p, color);
+
+                // Draw cone side from apex to circle vertex for clarity
+                AddLine(apex, p, color);
+            }
+        }
+    }
+
     EndLineBatch(FMatrix::Identity(), ViewMatrix, ProjectionMatrix);
 
-    // ë¹Œë³´ë“œëŠ” ë§ˆì§€ë§‰ì— ë Œë”ë§
+    // ºôº¸µå´Â ¸¶Áö¸·¿¡ ·»´õ¸µ
    /* for (auto& Billboard : World->GetLevel()->GetComponentList<UBillboardComponent>())
     {
         Billboard->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
@@ -837,7 +883,7 @@ void URenderer::RenderFogPass(UWorld* World, ACameraActor* Camera, FViewport* Vi
         if (FogComponent->IsRender())
         {
             FogComponent->Render(this, Camera->GetActorLocation(), Camera->GetViewMatrix(), Camera->GetProjectionMatrix(), Viewport);
-            //ì²«ë²ˆì§¸ ê²ƒë§Œ ê·¸ë¦¼
+            //Ã¹¹øÂ° °Í¸¸ ±×¸²
             break;
         }
    }
@@ -850,7 +896,7 @@ void URenderer::RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* V
     for (UFXAAComponent* FXAAComponent : World->GetLevel()->GetComponentList<UFXAAComponent>())
     {
         FXAAComponent->Render(this);
-        //ì²«ë²ˆì§¸ ê²ƒë§Œ ê·¸ë¦¼
+        //Ã¹¹øÂ° °Í¸¸ ±×¸²
         break;
     }
 }
@@ -860,7 +906,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
 {
     if (!World) return;
 
-    // 1ï¸âƒ£ ë¼ì´íŠ¸ ì»´í¬ë„ŒíŠ¸ ìˆ˜ì§‘ (PointLight, PointLight ë“±)
+    // 1?? ¶óÀÌÆ® ÄÄÆ÷³ÍÆ® ¼öÁı (PointLight, PointLight µî)
     FPointLightBufferType PointLightCB{};
     PointLightCB.PointLightCount=0;
     for (UPointLightComponent* PointLightComponent : World->GetLevel()->GetComponentList<UPointLightComponent>())
@@ -876,7 +922,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
         );
         PointLightCB.PointLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
     }
-    // 2ï¸âƒ£ ìƒìˆ˜ ë²„í¼ GPUë¡œ ì—…ë°ì´íŠ¸
+    // 2?? »ó¼ö ¹öÆÛ GPU·Î ¾÷µ¥ÀÌÆ®
     UpdateSetCBuffer(PointLightCB);
 
     /*const TArray<AActor*>& Actors = World->GetLevel()->GetActors();se
@@ -932,13 +978,13 @@ void URenderer::RenderSpotLightPass(UWorld* World)
         SpotLightCB.SpotLights[idx].Direction = PointLightComponent->GetDirection();   
         SpotLightCB.SpotLights[idx].InAndOutSmooth = PointLightComponent->GetInAndOutSmooth();
     }
-    // 2ï¸âƒ£ ìƒìˆ˜ ë²„í¼ GPUë¡œ ì—…ë°ì´íŠ¸
+    // 2?? »ó¼ö ¹öÆÛ GPU·Î ¾÷µ¥ÀÌÆ®
     UpdateSetCBuffer(SpotLightCB); 
 }
 
 void URenderer::RenderOverlayPass(UWorld* World)
 {
-    // TODO: ì˜¤ë²„ë ˆì´(UI, ë””ë²„ê·¸ í…ìŠ¤íŠ¸ ë“±) êµ¬í˜„
+    // TODO: ¿À¹ö·¹ÀÌ(UI, µğ¹ö±× ÅØ½ºÆ® µî) ±¸Çö
 }
 
 void URenderer::RenderSceneDepthVisualizePass(ACameraActor* Camera)
@@ -1151,7 +1197,7 @@ void URenderer::EndLineBatch(const FMatrix& ModelMatrix, const FMatrix& ViewMatr
         RHIDevice->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
         RHIDevice->GetDeviceContext()->DrawIndexed(DynamicLineMesh->GetCurrentIndexCount(), 0, 0);
         
-        // ë¼ì¸ ë Œë”ë§ì— ëŒ€í•œ DrawCall í†µê³„ ì¶”ê°€
+        // ¶óÀÎ ·»´õ¸µ¿¡ ´ëÇÑ DrawCall Åë°è Ãß°¡
         URenderingStatsCollector::GetInstance().IncrementDrawCalls();
     }
     
@@ -1161,12 +1207,12 @@ void URenderer::EndLineBatch(const FMatrix& ModelMatrix, const FMatrix& ViewMatr
 
 UPrimitiveComponent* URenderer::GetCollidedPrimitive(int MouseX, int MouseY) const
 {
-    //GPUì™€ ë™ê¸°í™” ë¬¸ì œ ë•Œë¬¸ì— Mapì´ í˜¸ì¶œë ë•Œê¹Œì§€ ê¸°ë‹¤ë ¤ì•¼í•´ì„œ í”¼í‚¹ í•˜ëŠ” í”„ë ˆì„ì— ì—„ì²­ë‚œ í”„ë ˆì„ ë“œëì´ ì¼ì–´ë‚¨.
-    //******ë¹„ë™ê¸° ë°©ì‹ìœ¼ë¡œ ë¬´ì¡°ê±´ ë°”ê¿”ì•¼í•¨****************
+    //GPU¿Í µ¿±âÈ­ ¹®Á¦ ¶§¹®¿¡ MapÀÌ È£ÃâµÉ¶§±îÁö ±â´Ù·Á¾ßÇØ¼­ ÇÇÅ· ÇÏ´Â ÇÁ·¹ÀÓ¿¡ ¾öÃ»³­ ÇÁ·¹ÀÓ µå¶øÀÌ ÀÏ¾î³².
+    //******ºñµ¿±â ¹æ½ÄÀ¸·Î ¹«Á¶°Ç ¹Ù²ã¾ßÇÔ****************
     uint32 PickedId = 0;
 
     ID3D11DeviceContext* DeviceContext = RHIDevice->GetDeviceContext();
-    //ìŠ¤í…Œì´ì§• ë²„í¼ë¥¼ ê°€ì ¸ì™€ì•¼ í•˜ëŠ”ë° ì´ê±¸ Device ì¶”ìƒ í´ë˜ìŠ¤ê°€ Getterë¡œ ê°€ì§€ê³  ìˆëŠ”ê²Œ ì¢‹ì€ ì„¤ê³„ê°€ ì•„ë‹Œ ê²ƒ ê°™ì•„ì„œ ì¼ë‹¨ ìºìŠ¤íŒ…í•¨
+    //½ºÅ×ÀÌÂ¡ ¹öÆÛ¸¦ °¡Á®¿Í¾ß ÇÏ´Âµ¥ ÀÌ°É Device Ãß»ó Å¬·¡½º°¡ Getter·Î °¡Áö°í ÀÖ´Â°Ô ÁÁÀº ¼³°è°¡ ¾Æ´Ñ °Í °°¾Æ¼­ ÀÏ´Ü Ä³½ºÆÃÇÔ
     D3D11RHI* RHI = static_cast<D3D11RHI*>(RHIDevice);
 
     D3D11_BOX Box{};
