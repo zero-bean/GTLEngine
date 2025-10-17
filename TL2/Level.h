@@ -28,7 +28,9 @@ public:
 	// 타입별 컴포넌트 리스트 조회 (참조 반환으로 성능 최적화)
 	template<typename T>
 	const TArray<T*>& GetComponentList() const;
-	
+
+	// 컴포넌트 캐시 클리어 (씬 전환 시 호출)
+	void ClearComponentCache();
 
 	const TArray<AActor*>& GetActors() const;
 	TArray<AActor*>& GetActors();
@@ -77,6 +79,9 @@ void ULevel::RebuildComponentCache() const
 		for (UActorComponent* Comp : Actor->GetComponents())
 		{
 			if (!Comp) continue;
+
+			// 등록된 컴포넌트만 캐시에 추가 (삭제된 컴포넌트 필터링)
+			if (!Comp->bIsRegistered) continue;
 
 			// IsA를 통해 상속 계층 체크 (PointLight는 Light로도 조회 가능)
 			if (Comp->IsA<T>())

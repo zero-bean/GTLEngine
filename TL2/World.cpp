@@ -380,6 +380,9 @@ void UWorld::CreateNewScene()
             ObjectFactory::DeleteObject(Actor);
         }
         Level->GetActors().clear();
+
+        // ComponentCache 클리어 (댕글링 포인터 방지)
+        Level->ClearComponentCache();
     }
 
     //if (Octree)
@@ -1018,11 +1021,11 @@ void UWorld::LoadSceneV2(const FString& SceneName)
         // 새로 생성 시(Line 1154)에 이미 추가되므로 여기서는 추가하지 않음
     }
 
-    // Actor를 Level에 추가
+    // Actor를 Level에 추가 (SpawnActor로 컴포넌트 자동 등록)
     for (auto& Pair : ActorMap)
     {
         AActor* Actor = Pair.second;
-        Level->AddActor(Actor);
+        SpawnActor(Actor);
 
         // StaticMeshActor 전용 포인터 재설정
         if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(Actor))
@@ -1096,8 +1099,8 @@ UWorld* UWorld::DuplicateWorldForPIE(UWorld* EditorWorld)
 
                     if (PIEActor)
                     {
-                        PIELevel->AddActor(PIEActor);
-                        PIEActor->SetWorld(PIEWorld);
+                        // SpawnActor로 컴포넌트 자동 등록
+                        PIEWorld->SpawnActor(PIEActor);
                     }
                 }
             }

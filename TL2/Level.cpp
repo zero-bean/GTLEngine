@@ -13,6 +13,7 @@ ULevel::ULevel()
 
 ULevel::~ULevel()
 {
+	ComponentCache.clear();
 	Actors.clear();
 }
 
@@ -34,6 +35,8 @@ void ULevel::RemoveActor(AActor* InActor)
 	if (InActor)
 	{
 		Actors.Remove(InActor);
+		// 캐시 무효화 (액터가 제거되면 해당 액터의 컴포넌트도 사라짐)
+		ComponentCache.clear();
 		//delete InActor;
 	}
 }
@@ -57,6 +60,11 @@ void ULevel::UnregisterComponent(UActorComponent* Component)
 void ULevel::CollectComponentsToRender()
 {
 	// 캐시 무효화 (레거시 호환성)
+	ComponentCache.clear();
+}
+
+void ULevel::ClearComponentCache()
+{
 	ComponentCache.clear();
 }
 

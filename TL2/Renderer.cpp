@@ -693,6 +693,10 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 
     for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
     {
+        // 안전성 체크: nullptr 또는 비활성 컴포넌트 스킵
+        if (!PrimitiveComponent || !PrimitiveComponent->IsActive())
+            continue;
+
         bool bIsSelected = false;
         if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BoundingBoxes))
         {

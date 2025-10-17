@@ -414,9 +414,16 @@ UObject* AActor::Duplicate()
 
     // OwnedComponents 재구성
     DuplicateActor->DuplicateSubObjects();
-    
-    // 복제된 모든 컴포넌트의 RegisterComponent()->OnRegister() 호출
-    DuplicateActor->RegisterAllComponents();
+
+    // 복제된 컴포넌트는 아직 레벨에 등록되지 않았으므로 bIsRegistered를 false로 설정
+    // SpawnActor 호출 시 자동으로 RegisterComponent가 호출됨
+    for (UActorComponent* Comp : DuplicateActor->GetComponents())
+    {
+        if (Comp)
+        {
+            Comp->bIsRegistered = false;
+        }
+    }
 
     return DuplicateActor;
 }
