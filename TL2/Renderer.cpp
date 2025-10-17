@@ -867,12 +867,12 @@ void URenderer::RenderPointLightPass(UWorld* World)
         if (idx >= MAX_POINT_LIGHTS) break;
 
         PointLightCB.PointLights[idx].Position = FVector4(
-            PointLightComponent->GetWorldLocation(), PointLightComponent->PointData.Radius
+            PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
         );
         PointLightCB.PointLights[idx].Color = FVector4(
-            PointLightComponent->PointData.Color.R, PointLightComponent->PointData.Color.G, PointLightComponent->PointData.Color.B, PointLightComponent->PointData.Intensity
+            PointLightComponent->GetColor().R, PointLightComponent->GetColor().G, PointLightComponent->GetColor().B, PointLightComponent->GetIntensity()
         );
-        PointLightCB.PointLights[idx].FallOff = PointLightComponent->PointData.RadiusFallOff;
+        PointLightCB.PointLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
     }
     // 2️⃣ 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);

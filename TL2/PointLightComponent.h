@@ -22,18 +22,23 @@ public:
     virtual void TickComponent(float DeltaSeconds) override;
 
     // 🔹 AABB 반환 (충돌/선택 처리용)
-    //virtual const FAABB GetWorldAABB() const override;
-
-    FPointLightProperty PointData;
- 
-
+    //virtual const FAABB GetWorldAABB() const override;  
+  
     // 🔸 CPU → GPU 전달용 라이트 데이터 캐시
-   // FPointLightData PointLightBuffer;
+    //FPointLightData PointLightBuffer;
 
+    float GetRadius() { return Radius; }
+    void SetRadius(float R) { Radius = R; }
     
-protected:
-	
+    float GetRadiusFallOff() { return RadiusFallOff; }
+    void SetRadiusFallOff(float FallOff) { RadiusFallOff = FallOff; } 
 
+protected:
     UObject* Duplicate() override;
     void DuplicateSubObjects() override;
+    
+protected: 
+    float Radius = 15.0f;             // 영향 반경
+    float RadiusFallOff = 2.0f;       // 감쇠 정도 (클수록 급격히 사라짐) 
+ 
 };

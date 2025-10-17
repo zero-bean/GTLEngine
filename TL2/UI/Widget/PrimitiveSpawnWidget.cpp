@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include "SpotLightActor.h"
 #include "ObjectIterator.h"
 
 //// UE_LOG 대체 매크로
@@ -64,9 +65,10 @@ void UPrimitiveSpawnWidget::Initialize()
         RegisterSpawnInfo<AActor>(ESpawnActorType::Actor, "Actor");
         RegisterSpawnInfo<AStaticMeshActor>(ESpawnActorType::StaticMesh, "Static Mesh");
         RegisterSpawnInfo<ADecalActor>(ESpawnActorType::Decal, "Decal");
-        RegisterSpawnInfo<ADecalSpotLightActor>(ESpawnActorType::SpotLight, "Decal Spot Light");
+        RegisterSpawnInfo<ADecalSpotLightActor>(ESpawnActorType::DecalSpotLight, "Decal Spot Light");
         RegisterSpawnInfo<AExponentialHeightFog>(ESpawnActorType::HeightFog, "HeightFog");
         RegisterSpawnInfo<AFXAAActor>(ESpawnActorType::FXAA, "FXAA");
+        RegisterSpawnInfo<ASpotLightActor>(ESpawnActorType::SpotLight, "SpotLight"); 
     }
 }
 
@@ -140,7 +142,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
     ImGui::Spacing();
 
     // Primitive 타입 선택: StaticMesh만 노출
-    const char* SpawnTypes[] = { "Actor", "Static Mesh", "Decal", "Decal Spot Light", "ExponentialHeightFog", "FXAA"};
+    const char* SpawnTypes[] = { "Actor", "Static Mesh", "Decal", "Decal Spot Light", "ExponentialHeightFog", "FXAA", "SpotLight"};
     static ESpawnActorType SelectedSpawnType = ESpawnActorType::StaticMesh;
     
     ImGui::Text("Actor Types:");
@@ -213,6 +215,11 @@ void UPrimitiveSpawnWidget::RenderWidget()
     case ESpawnActorType::Decal:
     {
         ImGui::Text("Decal does not require additional resources to spawn.");
+        break;
+    }
+    case ESpawnActorType::DecalSpotLight:
+    {
+        ImGui::Text("DecalSpotLight does not require additional resources to spawn.");
         break;
     }
     case ESpawnActorType::SpotLight:
@@ -359,10 +366,15 @@ void UPrimitiveSpawnWidget::SpawnActors(ESpawnActorType SpawnType) const
         FVector SpawnScaleVec(SpawnScale, SpawnScale, SpawnScale);
         FTransform SpawnTransform(SpawnLocation, SpawnRotation, SpawnScaleVec);
 
-        if (SpawnType == ESpawnActorType::SpotLight)
+        if (SpawnType == ESpawnActorType::DecalSpotLight)
         {
             SpawnTransform.Rotation = FQuat::MakeFromEuler(FVector(0,89.5,0));
         }
+        if (SpawnType == ESpawnActorType::SpotLight)
+        {
+            SpawnTransform.Rotation = FQuat::MakeFromEuler(FVector(0.0f , 89.5f, 0.0f));
+        }
+        
         AActor* NewActor = Info->Spawner(World, SpawnTransform);
         if (NewActor)
         {
