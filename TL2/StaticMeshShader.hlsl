@@ -94,7 +94,10 @@ struct FSpotLightData
     float OuterConeAngle; // 감쇠 지수
     float FallOff;
     float InAndOutSmooth;
-};
+    
+    float3 AttFactor;
+    float SpotPadding;
+    };
 
 cbuffer SpotLightBuffer : register(b13)
 {
@@ -174,7 +177,7 @@ LightAccum ComputePointLights_LambertPhong(float3 worldPos, float3 worldNormal, 
     return acc;
 }
 
-
+ 
 LightAccum ComputeSpotLights(float3 worldPos, float3 worldNormal, float shininess)
 {
     LightAccum acc = (LightAccum)0;
@@ -198,6 +201,9 @@ LightAccum ComputeSpotLights(float3 worldPos, float3 worldNormal, float shinines
         float fall      = max(light.FallOff, 0.001);
         float t         = saturate(dist / range);
         float attenDist = pow(saturate(1.0 - t), fall);
+
+        
+       // float attenDist = pow(saturate(1 / (light.AttFactor.x + range * light.AttFactor.y + range * range * light.AttFactor.z)), fall);
         
         
         // 선형 보간 

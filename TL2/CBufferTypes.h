@@ -184,6 +184,9 @@ struct FSpotLightData
     float OuterConeAngle;       
     float FallOff;              // 감쇠 지수
     float InAndOutSmooth;              // 16바이트 정렬 맞춤
+        
+    FVector AttFactor;
+    float radius; 
 };
 
 struct FSpotLightBufferType

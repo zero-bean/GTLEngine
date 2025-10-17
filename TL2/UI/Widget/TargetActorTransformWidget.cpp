@@ -1289,6 +1289,13 @@ void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComp
 	}
 	
 	ImGui::Spacing();
+
+	// 🔸 반지름
+	float radius = InComponent->GetRadius();
+	if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, 20.0f))
+	{
+		InComponent->SetRadius(radius);
+	}
 	
 	// 🔸 밝기 (Intensity)
 	float intensity = InComponent->GetIntensity();
@@ -1316,6 +1323,11 @@ void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComp
   	if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
 	{
 		InComponent->SetRadiusFallOff(falloff);
+	}
+	FVector attFactor = InComponent->GetAttFactor();
+  	if (ImGui::DragFloat3("Attenuation Factor", &attFactor.X, 1.0f, 0.0f, 10.0f))
+	{
+		InComponent->SetAttFactor(attFactor);
 	}
 	
 	// 🔸 inner 원과 outter 원과 smooth하게 섞임
