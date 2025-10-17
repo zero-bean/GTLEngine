@@ -9,6 +9,8 @@ class UDecalComponent;
 class UPrimitiveComponent;
 class UPointLightComponent;
 class UFXAAComponent;
+class USpotLightComponent;
+
 
 class ULevel : public UObject
 {
@@ -34,6 +36,7 @@ private:
 	TArray<UDecalComponent*> DecalComponentList;
 	TArray<UPrimitiveComponent*> PrimitiveComponentList;
 	TArray<UPointLightComponent*> PointLightComponentList;
+	TArray<USpotLightComponent*> SpotLightComponentList;
 	TArray<UFXAAComponent*> FXAAComponentList;
 };
 

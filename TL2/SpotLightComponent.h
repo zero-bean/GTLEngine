@@ -13,13 +13,17 @@ public:
 	USpotLightComponent();
 	~USpotLightComponent() override;
 
+	float GetInnerConeAngle() { return InnerConeAngle;  }
+	float GetOuterConeAngle() { return OuterConeAngle;  }
 
+	void SetInnerConeAngle(float Angle) { InnerConeAngle = Angle; }
+	void SetOuterConeAngle(float Angle) { OuterConeAngle = Angle; }
 protected:
 	UObject* Duplicate() override;
 	void DuplicateSubObjects() override;
 	//FSpotLightInfo SpotData;
 
-	float InnnerConeAngle;
+	float InnerConeAngle;
 	float OuterConeAngle;
 };
 

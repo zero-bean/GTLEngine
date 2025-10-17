@@ -22,6 +22,7 @@
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include "CameraComponent.h"
+#include "SpotLightComponent.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
@@ -507,9 +508,11 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_Wireframe:
     {
         RenderPointLightPass(World);
+        RenderSpotLightPass(World);
+
         RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
         RenderFogPass(World,Camera,Viewport);
-        RenderFXAAPaxx(World, Camera, Viewport);
+       // RenderFXAAPaxx(World, Camera, Viewport);
         RenderEditorPass(World, Camera, Viewport);
         break;
     }
@@ -903,6 +906,29 @@ void URenderer::RenderPointLightPass(UWorld* World)
     }*/
 
     
+}
+
+void URenderer::RenderSpotLightPass(UWorld* World)
+{
+    if (!World) return;
+     
+    FSpotLightBufferType SpotLightCB{};
+    SpotLightCB.SpotLightCount = 0;
+    for (USpotLightComponent* PointLightComponent : World->GetLevel()->GetComponentList<USpotLightComponent>())
+    {
+        int idx = SpotLightCB.SpotLightCount++;
+        if (idx >= MAX_POINT_LIGHTS) break;
+
+        SpotLightCB.SpotLights[idx].Position = FVector4(
+            PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
+        );
+        SpotLightCB.SpotLights[idx].Color = FVector4(
+            PointLightComponent->GetColor().R, PointLightComponent->GetColor().G, PointLightComponent->GetColor().B, PointLightComponent->GetIntensity()
+        );
+        SpotLightCB.SpotLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
+    }
+    // 2️⃣ 상수 버퍼 GPU로 업데이트
+    UpdateSetCBuffer(SpotLightCB); 
 }
 
 void URenderer::RenderOverlayPass(UWorld* World)

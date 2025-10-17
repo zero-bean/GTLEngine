@@ -49,6 +49,7 @@ MACRO(ViewportBufferType)					\
 MACRO(DecalAlphaBufferType)					\
 MACRO(FHeightFogBufferType)                  \
 MACRO(FPointLightBufferType)                  \
+MACRO(FSpotLightBufferType)                  \
 MACRO(CameraInfoBufferType)                  \
 MACRO(FXAABufferType)                  \
 MACRO(FGammaBufferType)                  \
@@ -67,6 +68,7 @@ CBUFFER_INFO(ViewportBufferType, 6, false, true)
 CBUFFER_INFO(DecalAlphaBufferType, 8, false, true)
 CBUFFER_INFO(FHeightFogBufferType, 8, false, true)
 CBUFFER_INFO(FPointLightBufferType, 9, false, true)
+CBUFFER_INFO(FSpotLightBufferType, 13, false, true) 
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
@@ -174,6 +176,7 @@ struct FPointLightData
     float FallOff;       // 감쇠 정도
     FVector Padding;    // 16바이트 정렬 맞추기용
 };
+
 #define MAX_POINT_LIGHTS 100
 // 전체 버퍼 (cbuffer b9 대응)
 struct FPointLightBufferType
@@ -182,6 +185,26 @@ struct FPointLightBufferType
     FVector _Padding;                      // 16바이트 정렬용 (HLSL의 float3 pad)
     FPointLightData PointLights[MAX_POINT_LIGHTS]; // 배열 (최대 100개)
 };
+
+
+//PS : b6
+struct FSpotLightData
+{
+    FVector4 Position;   // xyz=위치, w=반경
+    FVector4 Color;      // rgb=색상, a=Intensity
+    float InnerConeAngle;       
+    float OuterConeAngle;       
+    float FallOff;              // 감쇠 정도
+    float Padding;    // 16바이트 정렬 맞추기용
+};
+
+struct FSpotLightBufferType
+{
+    int SpotLightCount;                    // 현재 활성 조명 개수
+    FVector _Padding;                      // 16바이트 정렬용 (HLSL의 float3 pad)
+    FSpotLightData SpotLights[MAX_POINT_LIGHTS]; // 배열 (최대 100개)
+};
+
 //PS : b8
 struct DecalAlphaBufferType
 {

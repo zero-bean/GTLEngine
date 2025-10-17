@@ -65,6 +65,7 @@ cbuffer PSScrollCB : register(b5)
 }
 
 #define MAX_PointLight 100
+#define MAX_SpotLight 100
 
 // C++ 구조체와 동일한 레이아웃
 struct FPointLightData
@@ -80,6 +81,23 @@ cbuffer PointLightBuffer : register(b9)
     int PointLightCount;
     float3 _pad;
     FPointLightData PointLights[MAX_PointLight];
+}
+
+// C++ 구조체와 동일한 레이아웃
+struct FSpotLightData
+{
+    float4 Position; // xyz=위치(월드), w=반경
+    float4 Color; // rgb=색상, a=Intensity
+    float InnerConeAngle; // 감쇠 지수
+    float OuterConeAngle; // 감쇠 지수
+    float SpotDataPadding;
+};
+
+cbuffer SpotLightBuffer : register(b13)
+{
+    int SpotLightCount;
+    float3 SpotBufferPadding;
+    FSpotLightData SpotLights[MAX_SpotLight];
 }
 
 struct LightAccum
@@ -109,6 +127,7 @@ float3 ComputePointLights(float3 worldPos)
     }
     return total;
 }
+
 
 // ------------------------------------------------------------------
 // Lambert + Blinn-Phong (안정/일관성)
@@ -152,6 +171,11 @@ LightAccum ComputePointLights_LambertPhong(float3 worldPos, float3 worldNormal, 
     return acc;
 }
 
+
+float4 ComputeSpotLights(float3 worldPos, float3 worldNormal, float shininess)
+{
+    return float4(1, 0, 0, 1); 
+}
 struct VS_INPUT
 {
     float3 position : POSITION;
@@ -273,6 +297,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
     LightAccum la = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);
+    la = ComputeSpotLights(input.worldPosition, N, shininess);
     
     // Ambient + Diffuse + Specular
     float3 ambient = 0.25 * base;

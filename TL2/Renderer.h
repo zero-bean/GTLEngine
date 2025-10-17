@@ -99,6 +99,7 @@ private:
 
     void RenderPointLightShadowPass(UWorld* World);
     void RenderPointLightPass(UWorld* World);     // 포스트: PointLight 조명/가산
+    void RenderSpotLightPass(UWorld* World);     // 포스트: SpotLight 조명/가산
     void RenderOverlayPass(UWorld* World);      // 라인/텍스트/UI/디버그
     void RenderSceneDepthVisualizePass(ACameraActor* Camera);       // 포스트: SceneDepth 뷰 모드 (뎁스 버퍼 시각화)
 

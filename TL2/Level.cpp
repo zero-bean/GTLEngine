@@ -6,6 +6,7 @@
 #include "BillboardComponent.h"
 #include "PointLightComponent.h"
 #include "FXAAComponent.h"
+#include "SpotLightComponent.h"
 
 ULevel::ULevel()
 {
@@ -45,6 +46,7 @@ void ULevel::CollectComponentsToRender()
 	BillboardComponentList.clear();
 	FogComponentList.clear();
 	PointLightComponentList.clear();
+	SpotLightComponentList.clear();
 	FXAAComponentList.clear();
 
 	for (AActor* Actor : Actors)
@@ -78,6 +80,10 @@ void ULevel::CollectComponentsToRender()
 			else if (UPointLightComponent* PointLightComponent = Cast<UPointLightComponent>(ActorComponent))
 			{
 				PointLightComponentList.Add(PointLightComponent);
+			}
+			else if (USpotLightComponent* SpotLightComponent = Cast<USpotLightComponent>(ActorComponent))
+			{
+				SpotLightComponentList.Add(SpotLightComponent);
 			}
 			else if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(ActorComponent))
 			{
@@ -131,4 +137,9 @@ template<>
 TArray<UPointLightComponent*>& ULevel::GetComponentList<UPointLightComponent>()
 {
 	return PointLightComponentList;
+}
+template<>
+TArray<USpotLightComponent*>& ULevel::GetComponentList<USpotLightComponent>()
+{
+	return SpotLightComponentList;
 }

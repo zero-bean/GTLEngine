@@ -1278,51 +1278,51 @@ void UTargetActorTransformWidget::RenderFXAAComponentDetails(UFXAAComponent* InC
 
 void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComponent* InComponent)
 {
-	//ImGui::Separator();
-	//ImGui::Text("SpotLight Component Settings");
-	//
-	//// 🔸 색상 설정 (RGB Color Picker)
-	//float color[3] = { InComponent->PointData.Color.R, InComponent->SpotData.Color.G, InComponent->SpotData.Color.B };
-	//if (ImGui::ColorEdit3("Color", color))
-	//{
-	//	InComponent->SpotData.Color = FLinearColor(color[0], color[1], color[2], 1.0f);
-	//}
-	//
-	//ImGui::Spacing();
-	//
-	//// 🔸 밝기 (Intensity)
-	//float intensity = InComponent->SpotData.Intensity;
-	//if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
-	//{
-	//	InComponent->SpotData.Intensity = intensity;
-	//}
-	//
-	//// 🔸 InnerConeAngle
-	//float radius = InComponent->SpotData;
-	//if (ImGui::DragFloat("InnerConeAngle", &radius, 0.1f, 0.1f, 1000.0f))
-	//{
-	//	InComponent->PointData.Radius = radius;
-	//}
-	//
-	//// 🔸 OuterConeAngle
-	//float radius = InComponent->PointData.Radius;
-	//if (ImGui::DragFloat("OuterConeAngle", &radius, 0.1f, 0.1f, 1000.0f))
-	//{
-	//	InComponent->PointData.Radius = radius;
-	//}
-	//
-	//// 🔸 감쇠 정도 (FallOff)
-	//float falloff = InComponent->PointData.RadiusFallOff;
-	//if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
-	//{
-	//	InComponent->PointData.RadiusFallOff = falloff;
-	//}
-	//
-	//ImGui::Spacing();
-	//
-	//// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
-	//ImGui::Text("Preview:");
-	//ImGui::SameLine();
-	//ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
+	ImGui::Separator();
+	ImGui::Text("SpotLight Component Settings");
+	
+	// 🔸 색상 설정 (RGB Color Picker)
+	float color[3] = { InComponent->GetColor().R, InComponent->GetColor().G, InComponent->GetColor().B};
+	if (ImGui::ColorEdit3("Color", color))
+	{
+		InComponent->SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+	}
+	
+	ImGui::Spacing();
+	
+	// 🔸 밝기 (Intensity)
+	float intensity = InComponent->GetIntensity();
+	if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
+	{
+		InComponent->SetIntensity(intensity);
+	}
+	
+	// 🔸 InnerConeAngle
+	float InnerRadius = InComponent->GetInnerConeAngle();
+	if (ImGui::DragFloat("InnerConeAngle", &InnerRadius, 0.1f, 0.1f, 1000.0f))
+	{
+		InComponent->SetRadius(InnerRadius);
+	}
+	
+	// 🔸 OuterConeAngle
+	float OuterRadius = InComponent->GetOuterConeAngle();
+	if (ImGui::DragFloat("OuterConeAngle", &OuterRadius, 0.1f, 0.1f, 1000.0f))
+	{
+		InComponent->SetOuterConeAngle(OuterRadius);
+	}
+	
+	// 🔸 감쇠 정도 (FallOff)
+	float falloff = InComponent->GetRadiusFallOff();
+  	if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
+	{
+		InComponent->SetRadiusFallOff(falloff);
+	}
+	
+	ImGui::Spacing();
+	
+	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
+	ImGui::Text("Preview:");
+	ImGui::SameLine();
+	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
 
 }
