@@ -46,3 +46,13 @@ UTexture* UMaterial::GetTexture()
 {
 	return Texture;
 }
+
+void UMaterial::SetNormalTexture(UTexture* TextureResource)
+{
+    NormalTexture = TextureResource;
+}
+
+UTexture* UMaterial::GetNormalTexture()
+{
+    return NormalTexture;
+}

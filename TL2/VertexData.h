@@ -20,8 +20,8 @@ struct FVertexSimple
     }
 
     void FillFrom(const FNormalVertex& src) {
-        Position = src.pos;
-        Color = src.color;
+        Position = src.Pos;
+        Color = src.Color;
     }
 };
 
@@ -31,20 +31,26 @@ struct FVertexDynamic
     FVector Normal;
     FVector4 Color;
     FVector2D UV;
+    FVector Tangent;
+    FVector Bitangent;
 
     void FillFrom(const FMeshData& mesh, size_t i)
- {
+    {
         Position = mesh.Vertices[i];
         Color = (i < mesh.Color.size()) ? mesh.Color[i] : FVector4(1, 1, 1, 1);
         UV = (i < mesh.UV.size()) ? mesh.UV[i] : FVector2D(0, 0);
         Normal = (i < mesh.Normal.size()) ? mesh.Normal[i] : FVector(0, 0, 1);
+        Tangent = (i < mesh.Tangent.size()) ? mesh.Tangent[i] : FVector(1, 0, 0);
+        Bitangent = (i < mesh.Bitangent.size()) ? mesh.Bitangent[i] : FVector(0, 1, 0);
     }
 
     void FillFrom(const FNormalVertex& src) {
-        Position = src.pos;
-        Color = src.color;
-        UV = src.tex;
-        Normal = FVector{ src.normal.X, src.normal.Y, src.normal.Z };
+        Position = src.Pos;
+        Color = src.Color;
+        UV = src.Tex;
+        Normal = FVector{ src.Normal.X, src.Normal.Y, src.Normal.Z };
+        Tangent = src.Tangent;
+        Bitangent = src.Bitangent;
     }
 };
 
@@ -77,16 +83,16 @@ struct FBillboardVertexInfo_GPU {
     }
 
     void FillFrom(const FNormalVertex& src) {
-        Position[0] = src.pos.X;
-        Position[1] = src.pos.Y;
-        Position[2] = src.pos.Z;
+        Position[0] = src.Pos.X;
+        Position[1] = src.Pos.Y;
+        Position[2] = src.Pos.Z;
 
-        CharSize[0] = src.tex.X;
-        CharSize[1] = src.tex.Y;
+        CharSize[0] = src.Tex.X;
+        CharSize[1] = src.Tex.Y;
 
-        UVRect[0] = src.color.X;
-        UVRect[1] = src.color.Y;
-        UVRect[2] = src.color.Z;
-        UVRect[3] = src.color.W;
+        UVRect[0] = src.Color.X;
+        UVRect[1] = src.Color.Y;
+        UVRect[2] = src.Color.Z;
+        UVRect[3] = src.Color.W;
     }
 };

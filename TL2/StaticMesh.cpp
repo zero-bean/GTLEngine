@@ -80,9 +80,9 @@ void UStaticMesh::BuildMeshBVH()
         const uint32 Index2 = StaticMeshAsset->Indices[i * 3 + 2];
 
         // 인덱스에 해당하는 실제 정점 위치
-        const FVector& V0 = StaticMeshAsset->Vertices[Index0].pos;
-        const FVector& V1 = StaticMeshAsset->Vertices[Index1].pos;
-        const FVector& V2 = StaticMeshAsset->Vertices[Index2].pos;
+        const FVector& V0 = StaticMeshAsset->Vertices[Index0].Pos;
+        const FVector& V1 = StaticMeshAsset->Vertices[Index1].Pos;
+        const FVector& V2 = StaticMeshAsset->Vertices[Index2].Pos;
 
         // BVH 프리미티브 생성 및 리스트에 추가
         FNarrowPhaseBVHPrimitive Primitive;
@@ -104,12 +104,8 @@ void UStaticMesh::BuildMeshBVH()
 
 void UStaticMesh::CreateVertexBuffer(FMeshData* InMeshData, ID3D11Device* InDevice)
 {
-    TArray<FVertexUV> Vertices;
-    for (int i = 0; i < InMeshData->Vertices.size(); i++)
-    {
-        Vertices.Push(FVertexUV(InMeshData->Vertices[i], InMeshData->UV[i]));
-    }
-    D3D11RHI::CreateVertexBuffer(InDevice, Vertices, &VertexBuffer);
+    HRESULT hr = D3D11RHI::CreateVertexBuffer<FVertexDynamic>(InDevice, *InMeshData, &VertexBuffer);
+    assert(SUCCEEDED(hr));
 }
 
 void UStaticMesh::CreateVertexBuffer(FStaticMesh* InStaticMesh, ID3D11Device* InDevice)

@@ -489,6 +489,9 @@
     <ClCompile Include="LocalLightComponent.cpp">
       <Filter>Components\Light</Filter>
     </ClCompile>
+    <ClCompile Include="AmbientLightComponent.cpp">
+      <Filter>Components\Light</Filter>
+    </ClCompile>
   </ItemGroup>
   <!-- ==================== 헤더 파일 (.h) ==================== -->
   <ItemGroup>
@@ -897,6 +900,9 @@
       <Filter>Components\Light</Filter>
     </ClInclude>
     <ClInclude Include="LocalLightComponent.h">
+      <Filter>Components\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="AmbientLightComponent.h">
       <Filter>Components\Light</Filter>
     </ClInclude>
   </ItemGroup>

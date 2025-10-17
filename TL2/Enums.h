@@ -22,6 +22,7 @@ struct FObjMaterialInfo
     FVector EmissiveColor = FVector::One(); // Ke
 
     FName DiffuseTextureFileName;
+    FName NormalTextureFileName;
     FString AmbientTextureFileName;
     FString SpecularTextureFileName;
     FString EmissiveTextureFileName;
@@ -52,6 +53,7 @@ struct FObjMaterialInfo
             Serialization::WriteString(Ar, Info.EmissiveTextureFileName);
             Serialization::WriteString(Ar, Info.TransparencyTextureFileName);
             Serialization::WriteString(Ar, Info.SpecularExponentTextureFileName);
+            Serialization::WriteString(Ar, Info.NormalTextureFileName.ToString());
         }
         else if (Ar.IsLoading())
         {
@@ -63,6 +65,10 @@ struct FObjMaterialInfo
             Serialization::ReadString(Ar, Info.EmissiveTextureFileName);
             Serialization::ReadString(Ar, Info.TransparencyTextureFileName);
             Serialization::ReadString(Ar, Info.SpecularExponentTextureFileName);
+
+            FString NormalTextureFileString; 
+            Serialization::ReadString(Ar, NormalTextureFileString); 
+            Info.NormalTextureFileName = FName(NormalTextureFileString);
         }
 
         Ar << Info.TransmissionFilter;
@@ -120,14 +126,21 @@ struct FGroupInfo
 
 struct FNormalVertex
 {
-    FVector pos;
-    FVector normal;
-    FVector4 color;
-    FVector2D tex;
+    FVector Pos;
+    FVector Normal;
+    FVector4 Color;
+    FVector2D Tex;
+    FVector Tangent; 
+    FVector Bitangent; 
 
     friend FArchive& operator<<(FArchive& Ar, FNormalVertex& Vtx)
     {
-        Ar.Serialize(&Vtx, sizeof(FNormalVertex));
+        Ar << Vtx.Pos;
+        Ar << Vtx.Normal;
+        Ar << Vtx.Color;
+        Ar << Vtx.Tex;
+        Ar << Vtx.Tangent;
+        Ar << Vtx.Bitangent;
         return Ar;
     }
 };
@@ -187,9 +200,12 @@ struct FMeshData
     TArray<FVector2D> UV;//also can be Billboard size
     // 노말 좌표
     TArray<FVector> Normal;
-    //
-    
+    // 탄젠트
+    TArray<FVector> Tangent;
+    // 바이탄젠트
+    TArray<FVector> Bitangent;
 };
+
 enum class EPrimitiveTopology
 {
     PointList,

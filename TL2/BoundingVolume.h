@@ -64,17 +64,17 @@ struct FAABB
         {
             return;
         }
-        Min = NormalVertices[0].pos;
-        Max = NormalVertices[0].pos;
+        Min = NormalVertices[0].Pos;
+        Max = NormalVertices[0].Pos;
         for (const FNormalVertex& Vertex : NormalVertices)
         {
-            Min.X = std::min(Min.X, Vertex.pos.X);
-            Min.Y = std::min(Min.Y, Vertex.pos.Y);
-            Min.Z = std::min(Min.Z, Vertex.pos.Z);
+            Min.X = std::min(Min.X, Vertex.Pos.X);
+            Min.Y = std::min(Min.Y, Vertex.Pos.Y);
+            Min.Z = std::min(Min.Z, Vertex.Pos.Z);
 
-            Max.X = std::max(Max.X, Vertex.pos.X);
-            Max.Y = std::max(Max.Y, Vertex.pos.Y);
-            Max.Z = std::max(Max.Z, Vertex.pos.Z);
+            Max.X = std::max(Max.X, Vertex.Pos.X);
+            Max.Y = std::max(Max.Y, Vertex.Pos.Y);
+            Max.Z = std::max(Max.Z, Vertex.Pos.Z);
         }
     }
 
