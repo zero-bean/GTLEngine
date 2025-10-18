@@ -63,13 +63,23 @@ private:
 	bool bUniformScale = false;
 	
 	// 헬퍼 메서드
-	//AActor* GetCurrentSelectedActor() const;
 	void ResetChangeFlags();
 
 	// Render component details func.
 	// TODO: define UComponentDetailsWidget class, add to ComponentWidgetRegistry (TMap)
 	void RenderExponentialHeightFogComponentDetails(UExponentialHeightFogComponent* InComponent);
+
+	/* *
+	* @brief StaticMeshComponent의 제어를 담당 및 렌더하는 함수입니다.
+	* @function - RenderStaticMeshSelector: 스태틱 메시 선택 UI를 렌더링합니다.
+	* @function - RenderMaterialSlots: 머티리얼 슬롯 목록 UI를 렌더링합니다.
+	* @function - RenderNormalMapSelector:머티리얼의 노멀 맵 선택 UI를 렌더링합니다.
+	*/
 	void RenderStaticMeshComponentDetails(UStaticMeshComponent* InComponent);
+	void RenderStaticMeshSelector(UStaticMeshComponent* InComponent);
+	void RenderMaterialSlots(UStaticMeshComponent* InComponent);
+	void RenderNormalMapSelector(UStaticMeshComponent* InComponent, int32 MaterialSlotIndex);
+
 	void RenderBillboardComponentDetails(UBillboardComponent* InComponent);
 	void RenderTextRenderComponentDetails(UTextRenderComponent* InComponent);
 	void RenderPointLightComponentDetails(UPointLightComponent* InComponent);

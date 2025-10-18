@@ -768,225 +768,305 @@ void UTargetActorTransformWidget::RenderExponentialHeightFogComponentDetails(UEx
 
 void UTargetActorTransformWidget::RenderStaticMeshComponentDetails(UStaticMeshComponent* InComponent)
 {
-	ImGui::Text("Static Mesh Override");
+	ImGui::Text("StaticMesh Component");
+
 	if (!InComponent)
 	{
 		ImGui::TextColored(ImVec4(1, 0.6f, 0.6f, 1), "StaticMeshComponent not found.");
+		return;
+	}
+
+	// 1. 스태틱 메시 선택 UI 렌더링
+	RenderStaticMeshSelector(InComponent);
+
+	// 2. 머티리얼 슬롯 UI 렌더링
+	RenderMaterialSlots(InComponent);
+}
+
+void UTargetActorTransformWidget::RenderStaticMeshSelector(UStaticMeshComponent* InComponent)
+{
+	// 현재 메시 경로 표시
+	FString CurrentPath;
+	UStaticMesh* CurMesh = InComponent->GetStaticMesh();
+	if (CurMesh)
+	{
+		CurrentPath = CurMesh->GetFilePath();
+		ImGui::Text("Current: %s", CurrentPath.c_str());
 	}
 	else
 	{
-		// 현재 메시 경로 표시
-		FString CurrentPath;
-		UStaticMesh* CurMesh = InComponent->GetStaticMesh();
-		if (CurMesh)
+		ImGui::Text("Current: <None>");
+	}
+
+	// 리소스 매니저에서 로드된 모든 StaticMesh 경로 수집
+	auto& RM = UResourceManager::GetInstance();
+	TArray<FString> Paths = RM.GetAllStaticMeshFilePaths();
+
+	if (Paths.empty())
+	{
+		ImGui::TextColored(ImVec4(1, 0.6f, 0.6f, 1), "No StaticMesh resources loaded.");
+		return;
+	}
+
+	// 표시용 이름(파일명 스템)
+	TArray<FString> DisplayNames;
+	DisplayNames.reserve(Paths.size());
+	for (const FString& p : Paths)
+		DisplayNames.push_back(GetBaseNameNoExt(p));
+
+	// ImGui 콤보 아이템 배열
+	TArray<const char*> Items;
+	Items.reserve(DisplayNames.size());
+	for (const FString& n : DisplayNames)
+		Items.push_back(n.c_str());
+
+	// 선택 인덱스 유지
+	static int SelectedMeshIdx = -1;
+
+	// 기본 선택: Cube가 있으면 자동 선택
+	if (SelectedMeshIdx == -1)
+	{
+		for (int i = 0; i < static_cast<int>(Paths.size()); ++i)
 		{
-			CurrentPath = CurMesh->GetFilePath();
-			ImGui::Text("Current: %s", CurrentPath.c_str());
-		}
-		else
-		{
-			ImGui::Text("Current: <None>");
-		}
-
-		// 리소스 매니저에서 로드된 모든 StaticMesh 경로 수집
-		auto& RM = UResourceManager::GetInstance();
-		TArray<FString> Paths = RM.GetAllStaticMeshFilePaths();
-
-		if (Paths.empty())
-		{
-			ImGui::TextColored(ImVec4(1, 0.6f, 0.6f, 1), "No StaticMesh resources loaded.");
-		}
-		else
-		{
-			// 표시용 이름(파일명 스템)
-			TArray<FString> DisplayNames;
-			DisplayNames.reserve(Paths.size());
-			for (const FString& p : Paths)
-				DisplayNames.push_back(GetBaseNameNoExt(p));
-
-			// ImGui 콤보 아이템 배열
-			TArray<const char*> Items;
-			Items.reserve(DisplayNames.size());
-			for (const FString& n : DisplayNames)
-				Items.push_back(n.c_str());
-
-			// 선택 인덱스 유지
-			static int SelectedMeshIdx = -1;
-
-			// 기본 선택: Cube가 있으면 자동 선택
-			if (SelectedMeshIdx == -1)
+			if (DisplayNames[i] == "Cube" || Paths[i] == "Data/Cube.obj")
 			{
-				for (int i = 0; i < static_cast<int>(Paths.size()); ++i)
-				{
-					if (DisplayNames[i] == "Cube" || Paths[i] == "Data/Cube.obj")
-					{
-						SelectedMeshIdx = i;
-						break;
-					}
-				}
+				SelectedMeshIdx = i;
+				break;
 			}
+		}
+	}
 
-			ImGui::SetNextItemWidth(240);
-			ImGui::Combo("StaticMesh", &SelectedMeshIdx, Items.data(), static_cast<int>(Items.size()));
-			ImGui::SameLine();
-			if (ImGui::Button("Apply Mesh"))
+	ImGui::SetNextItemWidth(240);
+	ImGui::Combo("StaticMesh", &SelectedMeshIdx, Items.data(), static_cast<int>(Items.size()));
+	ImGui::SameLine();
+	if (ImGui::Button("Apply Mesh"))
+	{
+		if (SelectedMeshIdx >= 0 && SelectedMeshIdx < static_cast<int>(Paths.size()))
+		{
+			const FString& NewPath = Paths[SelectedMeshIdx];
+			InComponent->SetStaticMesh(NewPath);
+
+			UE_LOG("Applied StaticMesh: %s", NewPath.c_str());
+		}
+	}
+
+	// 현재 메시로 선택 동기화 버튼 (옵션)
+	ImGui::SameLine();
+	if (ImGui::Button("Select Current"))
+	{
+		SelectedMeshIdx = -1;
+		if (!CurrentPath.empty())
+		{
+			for (int i = 0; i < static_cast<int>(Paths.size()); ++i)
 			{
-				if (SelectedMeshIdx >= 0 && SelectedMeshIdx < static_cast<int>(Paths.size()))
+				if (Paths[i] == CurrentPath ||
+					DisplayNames[i] == GetBaseNameNoExt(CurrentPath))
 				{
-					const FString& NewPath = Paths[SelectedMeshIdx];
-					InComponent->SetStaticMesh(NewPath);
-
-					UE_LOG("Applied StaticMesh: %s", NewPath.c_str());
-				}
-			}
-
-			// 현재 메시로 선택 동기화 버튼 (옵션)
-			ImGui::SameLine();
-			if (ImGui::Button("Select Current"))
-			{
-				SelectedMeshIdx = -1;
-				if (!CurrentPath.empty())
-				{
-					for (int i = 0; i < static_cast<int>(Paths.size()); ++i)
-					{
-						if (Paths[i] == CurrentPath ||
-							DisplayNames[i] == GetBaseNameNoExt(CurrentPath))
-						{
-							SelectedMeshIdx = i;
-							break;
-						}
-					}
+					SelectedMeshIdx = i;
+					break;
 				}
 			}
 		}
+	}
+}
 
-		// Material 설정
+void UTargetActorTransformWidget::RenderMaterialSlots(UStaticMeshComponent* InComponent)
+{
+	UStaticMesh* CurMesh = InComponent->GetStaticMesh();
+	if (!CurMesh)
+	{
+		return; // 표시할 머티리얼 슬롯이 없음
+	}
 
-		const TArray<FString> MaterialNames = UResourceManager::GetInstance().GetAllFilePaths<UMaterial>();
-		// ImGui 콤보 아이템 배열
-		TArray<const char*> MaterialNamesCharP;
-		MaterialNamesCharP.reserve(MaterialNames.size());
-		for (const FString& n : MaterialNames)
-			MaterialNamesCharP.push_back(n.c_str());
+	const uint64 MeshGroupCount = CurMesh->GetMeshGroupCount();
+	if (MeshGroupCount == 0)
+	{
+		return; // 메시 그룹이 없음
+	}
 
-		if (CurMesh)
+	ImGui::Separator();
+
+	// 모든 머티리얼 이름 로드
+	const TArray<FString> MaterialNames = UResourceManager::GetInstance().GetAllFilePaths<UMaterial>();
+	TArray<const char*> MaterialNamesCharP;
+	MaterialNamesCharP.reserve(MaterialNames.size());
+	for (const FString& n : MaterialNames)
+		MaterialNamesCharP.push_back(n.c_str());
+
+	if (MaterialNamesCharP.empty())
+	{
+		ImGui::TextColored(ImVec4(1, 0.6f, 0.6f, 1), "No Material resources loaded.");
+		return;
+	}
+
+	// 각 슬롯별 선택된 머티리얼 인덱스
+	static TArray<int32> SelectedMaterialIdxAt;
+	if (SelectedMaterialIdxAt.size() < MeshGroupCount)
+	{
+		SelectedMaterialIdxAt.resize(MeshGroupCount);
+	}
+
+	// 현재 SMC의 MaterialSlots 정보를 UI에 반영
+	const TArray<FMaterialSlot>& MaterialSlots = InComponent->GetMaterailSlots();
+	for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
+	{
+		// 이 동기화 로직은 매 프레임 실행되어야 현재 상태를 올바르게 반영합니다.
+		SelectedMaterialIdxAt[MaterialSlotIndex] = -1; // 기본값
+		for (uint32 MaterialIndex = 0; MaterialIndex < MaterialNames.size(); ++MaterialIndex)
 		{
-			const uint64 MeshGroupCount = CurMesh->GetMeshGroupCount();
-
-			if (0 < MeshGroupCount)
+			if (MaterialSlots[MaterialSlotIndex].MaterialName == MaterialNames[MaterialIndex])
 			{
-				ImGui::Separator();
-			}
-
-			static TArray<int32> SelectedMaterialIdxAt; // i번 째 Material Slot이 가지고 있는 MaterialName이 MaterialNames의 몇번쩨 값인지.
-			if (SelectedMaterialIdxAt.size() < MeshGroupCount)
-			{
-				SelectedMaterialIdxAt.resize(MeshGroupCount);
-			}
-
-			// 현재 SMC의 MaterialSlots 정보를 UI에 반영
-			const TArray<FMaterialSlot>& MaterialSlots = InComponent->GetMaterailSlots();
-			for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
-			{
-				for (uint32 MaterialIndex = 0; MaterialIndex < MaterialNames.size(); ++MaterialIndex)
-				{
-					if (MaterialSlots[MaterialSlotIndex].MaterialName == MaterialNames[MaterialIndex])
-					{
-						SelectedMaterialIdxAt[MaterialSlotIndex] = MaterialIndex;
-					}
-				}
-			}
-
-			// Material 선택
-			for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
-			{
-				ImGui::PushID(static_cast<int>(MaterialSlotIndex));
-				if (ImGui::Combo("Material", &SelectedMaterialIdxAt[MaterialSlotIndex], MaterialNamesCharP.data(), static_cast<int>(MaterialNamesCharP.size())))
-				{
-					InComponent->SetMaterialByUser(static_cast<uint32>(MaterialSlotIndex), MaterialNames[SelectedMaterialIdxAt[MaterialSlotIndex]]);
-				}
-
-				// Normal Map 설정
-				UMaterial* Material = UResourceManager::GetInstance().Load<UMaterial>(MaterialSlots[MaterialSlotIndex].MaterialName);
-				if (Material)
-				{
-					static TArray<FString> NormalMapTexturePaths = GetNormalMapFiles();
-
-					// 표시용 이름 배열 생성 (경로, 확장자 제거)
-					TArray<FString> DisplayNames;
-					DisplayNames.reserve(NormalMapTexturePaths.size());
-					for (const FString& path : NormalMapTexturePaths)
-					{
-						DisplayNames.push_back(std::filesystem::path(path).stem().string());
-					}
-
-					// 현재 선택된 텍스처 찾기
-					UTexture* CurrentNormalTexture = Material->GetNormalTexture();
-					const char* CurrentTextureDisplayName = "None";
-					if (CurrentNormalTexture)
-					{
-						FString CurrentPath = CurrentNormalTexture->GetFilePath();
-						for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
-						{
-							if (NormalMapTexturePaths[i] == CurrentPath)
-							{
-								CurrentTextureDisplayName = DisplayNames[i].c_str();
-								break;
-							}
-						}
-					}
-
-					// 콤보박스 시작
-					if (ImGui::BeginCombo("Normal Map", CurrentTextureDisplayName))
-					{
-						// "None" 옵션
-						bool is_none_selected = (CurrentNormalTexture == nullptr);
-						if (ImGui::Selectable("None", is_none_selected))
-						{
-							Material->SetNormalTexture(nullptr);
-						}
-						if (is_none_selected)
-							ImGui::SetItemDefaultFocus();
-
-						// 나머지 텍스처 옵션들
-						for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
-						{
-							bool is_selected = (CurrentNormalTexture && CurrentNormalTexture->GetFilePath() == NormalMapTexturePaths[i]);
-							if (ImGui::Selectable(DisplayNames[i].c_str(), is_selected))
-							{
-								UTexture* SelectedTexture = UResourceManager::GetInstance().Load<UTexture>(NormalMapTexturePaths[i]);
-								Material->SetNormalTexture(SelectedTexture);
-							}
-
-							// 콤보박스 항목 호버 시 미리보기
-							if (ImGui::IsItemHovered())
-							{
-								ImGui::BeginTooltip();
-								UTexture* HoveredTexture = UResourceManager::GetInstance().Load<UTexture>(NormalMapTexturePaths[i]);
-								if (HoveredTexture && HoveredTexture->GetShaderResourceView())
-								{
-									ImGui::Image(HoveredTexture->GetShaderResourceView(), ImVec2(128, 128));
-								}
-								ImGui::TextUnformatted(DisplayNames[i].c_str());
-								ImGui::EndTooltip();
-							}
-
-							if (is_selected)
-								ImGui::SetItemDefaultFocus();
-						}
-						ImGui::EndCombo();
-					}
-
-					// 현재 선택된 텍스처 미리보기
-					if (CurrentNormalTexture && CurrentNormalTexture->GetShaderResourceView())
-					{
-						ImGui::Image(CurrentNormalTexture->GetShaderResourceView(), ImVec2(128, 128));
-					}
-				}
-				
-				ImGui::PopID();
+				SelectedMaterialIdxAt[MaterialSlotIndex] = MaterialIndex;
+				break;
 			}
 		}
+	}
+
+	// Material 슬롯별 UI 렌더링
+	for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
+	{
+		ImGui::PushID(static_cast<int>(MaterialSlotIndex));
+
+		// 머티리얼 콤보박스
+		if (ImGui::Combo("Material", &SelectedMaterialIdxAt[MaterialSlotIndex], MaterialNamesCharP.data(), static_cast<int>(MaterialNamesCharP.size())))
+		{
+			if (SelectedMaterialIdxAt[MaterialSlotIndex] >= 0)
+			{
+				InComponent->SetMaterialByUser(static_cast<uint32>(MaterialSlotIndex), 
+					MaterialNames[SelectedMaterialIdxAt[MaterialSlotIndex]]);
+				InComponent->ClearNormalTextureOverride(static_cast<int32>(MaterialSlotIndex));
+			}
+		}
+
+		RenderNormalMapSelector(InComponent, static_cast<int32>(MaterialSlotIndex));
+
+		ImGui::PopID();
+	}
+}
+
+// UTargetActorTransformWidget.cpp (혹은 .h에 선언부가 있다면 .h에도)
+
+/**
+ * 헬퍼 함수 3: 노멀 맵 선택 UI (컴포넌트 오버라이드 방식)
+ */
+void UTargetActorTransformWidget::RenderNormalMapSelector(UStaticMeshComponent* InComponent, int32 MaterialSlotIndex)
+{
+	// 1. 현재 슬롯의 원본 머티리얼 로드
+	const FMaterialSlot& Slot = InComponent->GetMaterailSlots()[MaterialSlotIndex];
+	UMaterial* BaseMaterial = UResourceManager::GetInstance().Load<UMaterial>(Slot.MaterialName);
+
+	// 원본 머티리얼이 없으면 UI를 그릴 수 없음
+	if (!BaseMaterial)
+	{
+		ImGui::TextColored(ImVec4(1, 0.6f, 0.6f, 1), "Base Material not found.");
+		return;
+	}
+
+	// 2. 노멀 맵 리소스 로드 (매번 호출해도 괜찮도록 static으로 관리)
+	static TArray<FString> NormalMapTexturePaths;
+	static TArray<FString> DisplayNames;
+	static bool bNormalMapsInitialized = false;
+
+	if (!bNormalMapsInitialized)
+	{
+		NormalMapTexturePaths = GetNormalMapFiles(); // 이 함수는 제공된 코드에 없었으므로, 이미 구현되어 있다고 가정
+		DisplayNames.reserve(NormalMapTexturePaths.size());
+		for (const FString& path : NormalMapTexturePaths)
+		{
+			DisplayNames.push_back(std::filesystem::path(path).stem().string());
+		}
+		bNormalMapsInitialized = true;
+	}
+
+	// 3. 현재 적용된 텍스처 결정
+	const bool bHasOverride = InComponent->HasNormalTextureOverride(MaterialSlotIndex);
+
+	UTexture* CurrentTexture = nullptr;
+	if (bHasOverride)
+	{
+		// 오버라이드 상태: 컴포넌트의 오버라이드 텍스처를 가져옴 (None 오버라이드 시 nullptr일 수 있음)
+		CurrentTexture = InComponent->GetNormalTextureOverride(MaterialSlotIndex);
+	}
+	else
+	{
+		// 기본 상태: 원본 머티리얼의 텍스처를 가져옴
+		CurrentTexture = BaseMaterial->GetNormalTexture();
+	}
+
+	// 4. 콤보박스 라벨(표시될 이름) 설정
+	const char* CurrentTextureDisplayName = "None";
+	if (CurrentTexture)
+	{
+		FString CurrentPath = CurrentTexture->GetFilePath();
+		for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
+		{
+			if (NormalMapTexturePaths[i] == CurrentPath)
+			{
+				CurrentTextureDisplayName = DisplayNames[i].c_str();
+				break;
+			}
+		}
+		// 목록에 없는 텍스처(예: 원본 머티리얼의 기본값)는 "None"으로 표시될 수 있음
+	}
+
+	// 상태 표시: (Default) 또는 (Override)
+	char ComboLabel[256];
+	snprintf(ComboLabel, 256, "%s %s", CurrentTextureDisplayName, bHasOverride ? "(Override)" : "(Default)");
+
+	// 5. 콤보박스 렌더링
+	if (ImGui::BeginCombo("Normal Map", ComboLabel))
+	{
+		// "None (Override)" 옵션: 명시적으로 텍스처 없음을 오버라이드
+		bool is_none_selected = (bHasOverride && CurrentTexture == nullptr);
+		if (ImGui::Selectable("None (Override)", is_none_selected))
+		{
+			InComponent->SetNormalTextureOverride(MaterialSlotIndex, nullptr);
+		}
+		if (is_none_selected)
+			ImGui::SetItemDefaultFocus();
+
+		// 리소스 텍스처 옵션들
+		for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
+		{
+			UTexture* OptionTexture = UResourceManager::GetInstance().Load<UTexture>(NormalMapTexturePaths[i]);
+			bool is_selected = (bHasOverride && CurrentTexture == OptionTexture);
+
+			if (ImGui::Selectable(DisplayNames[i].c_str(), is_selected))
+			{
+				// 컴포넌트의 오버라이드 설정
+				InComponent->SetNormalTextureOverride(MaterialSlotIndex, OptionTexture);
+			}
+
+			// (툴팁 미리보기)
+			if (ImGui::IsItemHovered() && OptionTexture && OptionTexture->GetShaderResourceView())
+			{
+				ImGui::BeginTooltip();
+				ImGui::Image(OptionTexture->GetShaderResourceView(), ImVec2(128, 128));
+				ImGui::TextUnformatted(DisplayNames[i].c_str());
+				ImGui::EndTooltip();
+			}
+
+			if (is_selected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	// 6. "기본값으로" 되돌리기 버튼 (오버라이드 중일 때만 표시)
+	if (bHasOverride)
+	{
+		ImGui::SameLine();
+		if (ImGui::Button("Revert to Default"))
+		{
+			// 컴포넌트의 오버라이드 제거
+			InComponent->ClearNormalTextureOverride(MaterialSlotIndex);
+		}
+	}
+
+	// 7. 현재 적용된 텍스처 미리보기
+	if (CurrentTexture && CurrentTexture->GetShaderResourceView())
+	{
+		ImGui::Image(CurrentTexture->GetShaderResourceView(), ImVec2(128, 128));
 	}
 }
 

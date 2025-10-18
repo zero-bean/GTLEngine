@@ -1,6 +1,6 @@
 {
   "Version" : 2,
-  "NextUUID" : 699,
+  "NextUUID" : 750,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
@@ -41,7 +41,7 @@
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
       "RelativeLocation" : [3.071271, 0.110701, 0.445936],
-      "RelativeRotation" : [-0.000022, -0.000005, 179.999939],
+      "RelativeRotation" : [-0.000036, -0.000005, 179.999908],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
     },
@@ -66,7 +66,7 @@
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
       "RelativeLocation" : [3.655819, 0.110701, 4.790642],
-      "RelativeRotation" : [83.662071, -1.901469, 90.025703],
+      "RelativeRotation" : [88.099380, -1.901476, 90.025696],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
     },
@@ -91,7 +91,7 @@
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
       "RelativeLocation" : [0.000000, 0.110701, 0.000000],
-      "RelativeRotation" : [-0.000022, -0.000005, 179.999939],
+      "RelativeRotation" : [-0.000036, -0.000005, 179.999908],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
     },
@@ -116,7 +116,7 @@
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
       "RelativeLocation" : [-3.202050, 0.110701, 4.790642],
-      "RelativeRotation" : [83.651817, -0.000005, 179.999939],
+      "RelativeRotation" : [83.651810, -0.000005, 179.999908],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
     },
