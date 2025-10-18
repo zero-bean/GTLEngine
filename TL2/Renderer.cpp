@@ -688,7 +688,7 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
         {
             if (!Spot || !Spot->IsRender()) continue;
 
-            const FVector apex = Spot->GetWorldLocation();
+            const FVector SpotPos = Spot->GetWorldLocation();
             FVector dir = Spot->GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();
             const float range = Spot->GetRadius();
             if (range <= KINDA_SMALL_NUMBER || dir.SizeSquared() < KINDA_SMALL_NUMBER)
@@ -698,7 +698,7 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
             const float angleDeg = FMath::Clamp(Spot->GetOuterConeAngle(), 0.0f, 89.0f);
             const float angleRad = DegreeToRadian(angleDeg);
             const float circleRadius = std::tan(angleRad) * range;
-            const FVector center = apex + dir * range;
+            const FVector center = SpotPos + dir * range;
 
             // Build orthonormal basis (u,v) for circle plane (perpendicular to dir)
             FVector arbitraryUp = fabsf(dir.Z) > 0.99f ? FVector(1, 0, 0) : FVector(0, 0, 1);
@@ -707,7 +707,7 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
 
             const int segments = FMath::Clamp(Spot->GetCircleSegments(), 3, 512);
             const float step = TWO_PI / static_cast<float>(segments);
-            const FVector4 color(Spot->GetColor().R, Spot->GetColor().G, Spot->GetColor().B, 1.0f);
+            const FVector4 color(1.0f, 1.0f, 1.0f, 1.0f);
 
             FVector prevPoint;
             for (int i = 0; i <= segments; ++i)
@@ -724,7 +724,7 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
 
                 // Draw camera-to-circle vertex line
                 AddLine(CameraPos, p, color);
-                AddLine(apex, p, color);
+                AddLine(SpotPos, p, color);
             }
         }
     }

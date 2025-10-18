@@ -492,6 +492,8 @@
     <ClCompile Include="AmbientLightComponent.cpp">
       <Filter>Components\Light</Filter>
     </ClCompile>
+    <ClCompile Include="SpotLightActor.cpp" />
+    <ClCompile Include="SpotLightComponent.cpp" />
   </ItemGroup>
   <!-- ==================== 헤더 파일 (.h) ==================== -->
   <ItemGroup>
@@ -905,6 +907,8 @@
     <ClInclude Include="AmbientLightComponent.h">
       <Filter>Components\Light</Filter>
     </ClInclude>
+    <ClInclude Include="SpotLightActor.h" />
+    <ClInclude Include="SpotLightComponent.h" />
   </ItemGroup>
   <!-- ==================== 셰이더 파일 (.hlsl) ==================== -->
   <ItemGroup>
@@ -946,11 +950,19 @@
     <FxCompile Include="Gamma.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="UberLit.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <!-- ==================== 리소스 파일 ==================== -->
   <ItemGroup>
     <Content Include="Editor\Icon\Pawn_64x.dds" />
     <Content Include="Editor\Icon\PointLight_64x.dds" />
     <Content Include="Editor\Icon\SpotLight_64x.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Light.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

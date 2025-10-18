@@ -10,7 +10,8 @@
 
 UStaticMeshComponent::UStaticMeshComponent()
 {
-    SetMaterial("StaticMeshShader.hlsl");
+    //SetMaterial("StaticMeshShader.hlsl");
+    SetMaterial("UberLit.hlsl");
 }
 
 UStaticMeshComponent::~UStaticMeshComponent()

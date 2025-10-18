@@ -20,7 +20,7 @@ void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
 #ifdef _DEBUG
     Flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
-    hr = D3DCompileFromFile(WFilePath.c_str(), nullptr, nullptr, "mainVS", "vs_5_0", Flag, 0, &VSBlob, &errorBlob);
+    hr = D3DCompileFromFile(WFilePath.c_str(), DefinesRender, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", Flag, 0, &VSBlob, &errorBlob);
     if (FAILED(hr))
     {
         char* msg = (char*)errorBlob->GetBufferPointer();
@@ -31,7 +31,7 @@ void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
 
     hr = InDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &VertexShader);
 
-    hr = D3DCompileFromFile(WFilePath.c_str(), nullptr, nullptr, "mainPS", "ps_5_0", Flag, 0, &PSBlob, &errorBlob);
+    hr = D3DCompileFromFile(WFilePath.c_str(), DefinesRender, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &PSBlob, &errorBlob);
     if (FAILED(hr))
     {
         if (errorBlob)
