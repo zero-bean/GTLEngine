@@ -134,13 +134,13 @@ private:
     template <typename T>
     void CBufferUpdate(ID3D11Buffer* CBuffer, T& CBufferData)
     {
-        D3D11_MAPPED_SUBRESOURCE MSR;
+        D3D11_MAPPED_SUBRESOURCE MSR;      
 
         //gpu메모리를 cpu가 접근할 수 있도록 잠금
         //D3D11_MAP_WRITE_DISCARD : gpu안의 데이터를 버리고 cpu에서 넣는 데이터로 덮어씌움 
         //gpu내용을 버림으로써 gpu안의 메모리를 읽는 과정 생략
         DeviceContext->Map(CBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MSR);
-        memcpy(MSR.pData, &CBufferData, sizeof(T));
+        memcpy(MSR.pData, &CBufferData, sizeof(T));        
         DeviceContext->Unmap(CBuffer, 0);
     }
     void CBufferSet(ID3D11Buffer* CBuffer, const uint32 SlotNum, const bool bSetVS, const  bool bSetPS)

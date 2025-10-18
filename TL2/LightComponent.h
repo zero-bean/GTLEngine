@@ -4,7 +4,7 @@
 class ULightComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(ULightComponent, USceneComponent)
+	DECLARE_SPAWNABLE_CLASS(ULightComponent, USceneComponent, "Light Component")
 	ULightComponent();
 	~ULightComponent() override;
 

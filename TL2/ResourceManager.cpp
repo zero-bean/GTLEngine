@@ -402,8 +402,9 @@ void UResourceManager::InitShaderILMap()
     layout.Add({ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 });
     layout.Add({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0 });
     layout.Add({ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 });
-    layout.Add({ "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 60, D3D11_INPUT_PER_VERTEX_DATA, 0 });
     ShaderToInputLayoutMap["StaticMeshShader.hlsl"] = layout;
+    ShaderToInputLayoutMap["WorldNormalShader.hlsl"] = layout;
+    ShaderToInputLayoutMap["UberLit.hlsl"] = layout;
     ShaderToInputLayoutMap["DecalShader.hlsl"] = layout;
     ShaderToInputLayoutMap["DecalSpotLightShader.hlsl"] = layout;
     layout.clear();

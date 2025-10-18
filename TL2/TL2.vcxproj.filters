@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <!-- ==================== 최상위 필터 ==================== -->
     <Filter Include="Core">
       <UniqueIdentifier>{E1000000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
@@ -44,11 +43,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{95520b77-70ba-47a8-a3c4-364bce265567}</UniqueIdentifier>
     </Filter>
-    <!-- ==================== Core 하위 필터 ==================== -->
     <Filter Include="Core\Engine">
       <UniqueIdentifier>{E1100000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <!-- ==================== Components 하위 필터 ==================== -->
     <Filter Include="Components\Camera">
       <UniqueIdentifier>{E3100000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
@@ -67,18 +64,21 @@
     <Filter Include="Components\Decal">
       <UniqueIdentifier>{E3600000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <!-- ==================== Rendering 하위 필터 ==================== -->
+    <Filter Include="Components\Movement">
+      <UniqueIdentifier>{74aac7c3-b3d4-4cb4-8aea-6bec9fe600ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Components\Light">
+      <UniqueIdentifier>{4312deaf-c4fc-4add-b141-6a83fb4f1c25}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Rendering\RHI">
       <UniqueIdentifier>{E4100000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
     <Filter Include="Rendering\Viewport">
       <UniqueIdentifier>{E4200000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <!-- ==================== Resources 하위 필터 ==================== -->
     <Filter Include="Resources\Mesh">
       <UniqueIdentifier>{E5100000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <!-- ==================== UI 하위 필터 ==================== -->
     <Filter Include="UI\Windows">
       <UniqueIdentifier>{E6100000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
@@ -97,7 +97,6 @@
     <Filter Include="UI\Stats">
       <UniqueIdentifier>{E6600000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <!-- ==================== Utilities 하위 필터 ==================== -->
     <Filter Include="Utilities\Archive">
       <UniqueIdentifier>{EB100000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
@@ -107,27 +106,16 @@
     <Filter Include="Utilities\Scene">
       <UniqueIdentifier>{EB300000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <!-- ==================== Math & Data 하위 필터 ==================== -->
     <Filter Include="Math &amp; Data\Primitives">
       <UniqueIdentifier>{EC100000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <!-- ==================== ThirdParty 하위 필터 ==================== -->
     <Filter Include="ThirdParty\ImGui">
       <UniqueIdentifier>{340a9369-98be-4580-af67-945e0e2bcbef}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Components\Movement">
-      <UniqueIdentifier>{74aac7c3-b3d4-4cb4-8aea-6bec9fe600ee}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Components\Light">
-      <UniqueIdentifier>{4312deaf-c4fc-4add-b141-6a83fb4f1c25}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
-  <!-- ==================== 소스 파일 (.cpp) ==================== -->
   <ItemGroup>
-    <!-- Main Entry Point -->
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp" />
-    <!-- Core -->
     <ClCompile Include="Object.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -143,7 +131,9 @@
     <ClCompile Include="AllClassesRegistration.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <!-- Core\Engine -->
+    <ClCompile Include="Info.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="Engine.cpp">
       <Filter>Core\Engine</Filter>
     </ClCompile>
@@ -156,7 +146,6 @@
     <ClCompile Include="EditorClipboard.cpp">
       <Filter>Core\Engine</Filter>
     </ClCompile>
-    <!-- Actors -->
     <ClCompile Include="CameraActor.cpp">
       <Filter>Actors</Filter>
     </ClCompile>
@@ -172,62 +161,99 @@
     <ClCompile Include="DecalActor.cpp">
       <Filter>Actors</Filter>
     </ClCompile>
-    <!-- Components -->
+    <ClCompile Include="DecalSpotLightActor.cpp">
+      <Filter>Actors</Filter>
+    </ClCompile>
+    <ClCompile Include="FXAAActor.cpp">
+      <Filter>Actors</Filter>
+    </ClCompile>
+    <ClCompile Include="SpotLightActor.cpp">
+      <Filter>Actors</Filter>
+    </ClCompile>
     <ClCompile Include="ActorComponent.cpp">
       <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="SceneComponent.cpp">
       <Filter>Components</Filter>
     </ClCompile>
-    <!-- Components\Camera -->
+    <ClCompile Include="ExponentialHeightFogComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="FXAAComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
     <ClCompile Include="CameraComponent.cpp">
       <Filter>Components\Camera</Filter>
     </ClCompile>
-    <!-- Components\Mesh -->
     <ClCompile Include="MeshComponent.cpp">
       <Filter>Components\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="StaticMeshComponent.cpp">
       <Filter>Components\Mesh</Filter>
     </ClCompile>
-    <!-- Components\Primitive -->
     <ClCompile Include="PrimitiveComponent.cpp">
       <Filter>Components\Primitive</Filter>
     </ClCompile>
     <ClCompile Include="ShapeComponent.cpp">
       <Filter>Components\Primitive</Filter>
     </ClCompile>
-    <!-- Components\Line -->
     <ClCompile Include="LineComponent.cpp">
       <Filter>Components\Line</Filter>
     </ClCompile>
-    <!-- Components\Text -->
     <ClCompile Include="TextRenderComponent.cpp">
       <Filter>Components\Text</Filter>
     </ClCompile>
     <ClCompile Include="BillboardComponent.cpp">
       <Filter>Components\Text</Filter>
     </ClCompile>
-    <!-- Components\Decal -->
     <ClCompile Include="DecalComponent.cpp">
       <Filter>Components\Decal</Filter>
     </ClCompile>
-    <!-- Rendering -->
+    <ClCompile Include="DecalComponentScreen.cpp">
+      <Filter>Components\Decal</Filter>
+    </ClCompile>
+    <ClCompile Include="DecalSpotLightComponent.cpp">
+      <Filter>Components\Decal</Filter>
+    </ClCompile>
+    <ClCompile Include="ProjectileMovementComponent.cpp">
+      <Filter>Components\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="RotationMovementComponent.cpp">
+      <Filter>Components\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="MovementComponent.cpp">
+      <Filter>Components\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="PointLightComponent.cpp">
+      <Filter>Components\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="LightComponent.cpp">
+      <Filter>Components\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalLightComponent.cpp">
+      <Filter>Components\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="AmbientLightComponent.cpp">
+      <Filter>Components\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="SpotLightComponent.cpp">
+      <Filter>Components\Light</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
-    <!-- Rendering\RHI -->
+    <ClCompile Include="ExponentialHeightFog.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
     <ClCompile Include="D3D11RHI.cpp">
       <Filter>Rendering\RHI</Filter>
     </ClCompile>
-    <!-- Rendering\Viewport -->
     <ClCompile Include="FViewport.cpp">
       <Filter>Rendering\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="FViewportClient.cpp">
       <Filter>Rendering\Viewport</Filter>
     </ClCompile>
-    <!-- Resources -->
     <ClCompile Include="ResourceBase.cpp">
       <Filter>Resources</Filter>
     </ClCompile>
@@ -243,7 +269,6 @@
     <ClCompile Include="TextQuad.cpp">
       <Filter>Resources</Filter>
     </ClCompile>
-    <!-- Resources\Mesh -->
     <ClCompile Include="StaticMesh.cpp">
       <Filter>Resources\Mesh</Filter>
     </ClCompile>
@@ -259,14 +284,12 @@
     <ClCompile Include="MeshLoader.cpp">
       <Filter>Resources\Mesh</Filter>
     </ClCompile>
-    <!-- UI -->
     <ClCompile Include="UI\UIManager.cpp">
       <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="UI\GlobalConsole.cpp">
       <Filter>UI</Filter>
     </ClCompile>
-    <!-- UI\Windows -->
     <ClCompile Include="UI\Window\UIWindow.cpp">
       <Filter>UI\Windows</Filter>
     </ClCompile>
@@ -285,7 +308,6 @@
     <ClCompile Include="UI\Window\SceneWindow.cpp">
       <Filter>UI\Windows</Filter>
     </ClCompile>
-    <!-- UI\Widgets -->
     <ClCompile Include="UI\Widget\Widget.cpp">
       <Filter>UI\Widgets</Filter>
     </ClCompile>
@@ -316,15 +338,12 @@
     <ClCompile Include="UI\Widget\TargetActorTransformWidget.cpp">
       <Filter>UI\Widgets</Filter>
     </ClCompile>
-    <!-- UI\Factory -->
     <ClCompile Include="UI\Factory\UIWindowFactory.cpp">
       <Filter>UI\Factory</Filter>
     </ClCompile>
-    <!-- UI\ImGui -->
     <ClCompile Include="UI\ImGui\ImGuiHelper.cpp">
       <Filter>UI\ImGui</Filter>
     </ClCompile>
-    <!-- UI\SWidget -->
     <ClCompile Include="SWindow.cpp">
       <Filter>UI\SWidget</Filter>
     </ClCompile>
@@ -358,14 +377,12 @@
     <ClCompile Include="RenderViewportSwitcherWidget.cpp">
       <Filter>UI\SWidget</Filter>
     </ClCompile>
-    <!-- UI\Stats -->
     <ClCompile Include="UI\StatsOverlayD2D.cpp">
       <Filter>UI\Stats</Filter>
     </ClCompile>
     <ClCompile Include="RenderingStats.cpp">
       <Filter>UI\Stats</Filter>
     </ClCompile>
-    <!-- Gizmo -->
     <ClCompile Include="GizmoArrowComponent.cpp">
       <Filter>Gizmo</Filter>
     </ClCompile>
@@ -375,7 +392,6 @@
     <ClCompile Include="GizmoScaleComponent.cpp">
       <Filter>Gizmo</Filter>
     </ClCompile>
-    <!-- Managers -->
     <ClCompile Include="InputManager.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
@@ -391,7 +407,6 @@
     <ClCompile Include="SelectionManager.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
-    <!-- Spatial -->
     <ClCompile Include="SpatialDataStructure.cpp">
       <Filter>Spatial</Filter>
     </ClCompile>
@@ -404,7 +419,6 @@
     <ClCompile Include="BoundingVolumeHierarchy.cpp">
       <Filter>Spatial</Filter>
     </ClCompile>
-    <!-- Bounding -->
     <ClCompile Include="Frustum.cpp">
       <Filter>Bounding</Filter>
     </ClCompile>
@@ -414,26 +428,27 @@
     <ClCompile Include="OBoundingBoxComponent.cpp">
       <Filter>Bounding</Filter>
     </ClCompile>
-    <!-- Utilities -->
+    <ClCompile Include="BoundingVolume.cpp">
+      <Filter>Bounding</Filter>
+    </ClCompile>
     <ClCompile Include="Picking.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
     <ClCompile Include="FName.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
-    <!-- Utilities\Factory -->
+    <ClCompile Include="TimeProfile.cpp">
+      <Filter>Utilities</Filter>
+    </ClCompile>
     <ClCompile Include="ObjectFactory.cpp">
       <Filter>Utilities\Factory</Filter>
     </ClCompile>
-    <!-- Utilities\Scene -->
     <ClCompile Include="SceneLoader.cpp">
       <Filter>Utilities\Scene</Filter>
     </ClCompile>
-    <!-- Math & Data -->
     <ClCompile Include="UEContainer.cpp">
       <Filter>Math &amp; Data</Filter>
     </ClCompile>
-    <!-- ThirdParty\ImGui -->
     <ClCompile Include="ImGui\imgui.cpp">
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
@@ -455,49 +470,18 @@
     <ClCompile Include="ImGui\imgui_widgets.cpp">
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="BoundingVolume.cpp" />
-    <ClCompile Include="DecalComponentScreen.cpp" />
-    <ClCompile Include="DecalSpotLightActor.cpp">
+    <ClCompile Include="DirectionalLightActor.cpp">
       <Filter>Actors</Filter>
     </ClCompile>
-    <ClCompile Include="DecalSpotLightComponent.cpp">
-      <Filter>Components\Decal</Filter>
-    </ClCompile>
-    <ClCompile Include="TimeProfile.cpp" />
-    <ClCompile Include="Info.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ProjectileMovementComponent.cpp">
-      <Filter>Components\Movement</Filter>
-    </ClCompile>
-    <ClCompile Include="RotationMovementComponent.cpp">
-      <Filter>Components\Movement</Filter>
-    </ClCompile>
-    <ClCompile Include="MovementComponent.cpp">
-      <Filter>Components\Movement</Filter>
-    </ClCompile>
-    <ClCompile Include="ExponentialHeightFog.cpp" />
-    <ClCompile Include="ExponentialHeightFogComponent.cpp" />
-    <ClCompile Include="PointLightComponent.cpp">
+    <ClCompile Include="DirectionalLightComponent.cpp">
       <Filter>Components\Light</Filter>
     </ClCompile>
-    <ClCompile Include="FXAAActor.cpp" />
-    <ClCompile Include="FXAAComponent.cpp" />
-    <ClCompile Include="LightComponent.cpp">
-      <Filter>Components\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="LocalLightComponent.cpp">
-      <Filter>Components\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="AmbientLightComponent.cpp">
-      <Filter>Components\Light</Filter>
+    <ClCompile Include="PointLightActor.cpp">
+      <Filter>Actors</Filter>
     </ClCompile>
   </ItemGroup>
-  <!-- ==================== 헤더 파일 (.h) ==================== -->
   <ItemGroup>
-    <!-- PCH -->
     <ClInclude Include="pch.h" />
-    <!-- Core -->
     <ClInclude Include="Object.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -513,7 +497,9 @@
     <ClInclude Include="PropertyFlag.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <!-- Core\Engine -->
+    <ClInclude Include="Info.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="Engine.h">
       <Filter>Core\Engine</Filter>
     </ClInclude>
@@ -526,7 +512,6 @@
     <ClInclude Include="EditorClipboard.h">
       <Filter>Core\Engine</Filter>
     </ClInclude>
-    <!-- Actors -->
     <ClInclude Include="CameraActor.h">
       <Filter>Actors</Filter>
     </ClInclude>
@@ -542,65 +527,105 @@
     <ClInclude Include="DecalActor.h">
       <Filter>Actors</Filter>
     </ClInclude>
-    <!-- Components -->
+    <ClInclude Include="DecalSpotLightActor.h">
+      <Filter>Actors</Filter>
+    </ClInclude>
+    <ClInclude Include="FXAAActor.h">
+      <Filter>Actors</Filter>
+    </ClInclude>
+    <ClInclude Include="SpotLightActor.h">
+      <Filter>Actors</Filter>
+    </ClInclude>
     <ClInclude Include="ActorComponent.h">
       <Filter>Components</Filter>
     </ClInclude>
     <ClInclude Include="SceneComponent.h">
       <Filter>Components</Filter>
     </ClInclude>
-    <!-- Components\Camera -->
+    <ClInclude Include="ExponentialHeightFogComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="FXAAComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
     <ClInclude Include="CameraComponent.h">
       <Filter>Components\Camera</Filter>
     </ClInclude>
-    <!-- Components\Mesh -->
     <ClInclude Include="MeshComponent.h">
       <Filter>Components\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="StaticMeshComponent.h">
       <Filter>Components\Mesh</Filter>
     </ClInclude>
-    <!-- Components\Primitive -->
     <ClInclude Include="PrimitiveComponent.h">
       <Filter>Components\Primitive</Filter>
     </ClInclude>
     <ClInclude Include="ShapeComponent.h">
       <Filter>Components\Primitive</Filter>
     </ClInclude>
-    <!-- Components\Line -->
     <ClInclude Include="LineComponent.h">
       <Filter>Components\Line</Filter>
     </ClInclude>
-    <!-- Components\Text -->
     <ClInclude Include="TextRenderComponent.h">
       <Filter>Components\Text</Filter>
     </ClInclude>
     <ClInclude Include="BillboardComponent.h">
       <Filter>Components\Text</Filter>
     </ClInclude>
-    <!-- Components\Decal -->
     <ClInclude Include="DecalComponent.h">
       <Filter>Components\Decal</Filter>
     </ClInclude>
-    <!-- Rendering -->
+    <ClInclude Include="DecalComponentScreen.h">
+      <Filter>Components\Decal</Filter>
+    </ClInclude>
+    <ClInclude Include="DecalSpotLightComponent.h">
+      <Filter>Components\Decal</Filter>
+    </ClInclude>
+    <ClInclude Include="ProjectileMovementComponent.h">
+      <Filter>Components\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="RotationMovementComponent.h">
+      <Filter>Components\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="MovementComponent.h">
+      <Filter>Components\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="PointLightComponent.h">
+      <Filter>Components\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="LightComponent.h">
+      <Filter>Components\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="LocalLightComponent.h">
+      <Filter>Components\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="AmbientLightComponent.h">
+      <Filter>Components\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="SpotLightComponent.h">
+      <Filter>Components\Light</Filter>
+    </ClInclude>
     <ClInclude Include="Renderer.h">
       <Filter>Rendering</Filter>
     </ClInclude>
-    <!-- Rendering\RHI -->
+    <ClInclude Include="ExponentialHeightFog.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
     <ClInclude Include="RHIDevice.h">
       <Filter>Rendering\RHI</Filter>
     </ClInclude>
     <ClInclude Include="D3D11RHI.h">
       <Filter>Rendering\RHI</Filter>
     </ClInclude>
-    <!-- Rendering\Viewport -->
+    <ClInclude Include="CBufferTypes.h">
+      <Filter>Rendering\RHI</Filter>
+    </ClInclude>
     <ClInclude Include="FViewport.h">
       <Filter>Rendering\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="FViewportClient.h">
       <Filter>Rendering\Viewport</Filter>
     </ClInclude>
-    <!-- Resources -->
     <ClInclude Include="ResourceBase.h">
       <Filter>Resources</Filter>
     </ClInclude>
@@ -616,7 +641,6 @@
     <ClInclude Include="TextQuad.h">
       <Filter>Resources</Filter>
     </ClInclude>
-    <!-- Resources\Mesh -->
     <ClInclude Include="StaticMesh.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
@@ -632,14 +656,12 @@
     <ClInclude Include="MeshLoader.h">
       <Filter>Resources\Mesh</Filter>
     </ClInclude>
-    <!-- UI -->
     <ClInclude Include="UI\UIManager.h">
       <Filter>UI</Filter>
     </ClInclude>
     <ClInclude Include="UI\GlobalConsole.h">
       <Filter>UI</Filter>
     </ClInclude>
-    <!-- UI\Windows -->
     <ClInclude Include="UI\Window\UIWindow.h">
       <Filter>UI\Windows</Filter>
     </ClInclude>
@@ -658,7 +680,6 @@
     <ClInclude Include="UI\Window\SceneWindow.h">
       <Filter>UI\Windows</Filter>
     </ClInclude>
-    <!-- UI\Widgets -->
     <ClInclude Include="UI\Widget\Widget.h">
       <Filter>UI\Widgets</Filter>
     </ClInclude>
@@ -689,15 +710,12 @@
     <ClInclude Include="UI\Widget\TargetActorTransformWidget.h">
       <Filter>UI\Widgets</Filter>
     </ClInclude>
-    <!-- UI\Factory -->
     <ClInclude Include="UI\Factory\UIWindowFactory.h">
       <Filter>UI\Factory</Filter>
     </ClInclude>
-    <!-- UI\ImGui -->
     <ClInclude Include="UI\ImGui\ImGuiHelper.h">
       <Filter>UI\ImGui</Filter>
     </ClInclude>
-    <!-- UI\SWidget -->
     <ClInclude Include="SWindow.h">
       <Filter>UI\SWidget</Filter>
     </ClInclude>
@@ -731,14 +749,12 @@
     <ClInclude Include="RenderViewportSwitcherWidget.h">
       <Filter>UI\SWidget</Filter>
     </ClInclude>
-    <!-- UI\Stats -->
     <ClInclude Include="UI\StatsOverlayD2D.h">
       <Filter>UI\Stats</Filter>
     </ClInclude>
     <ClInclude Include="RenderingStats.h">
       <Filter>UI\Stats</Filter>
     </ClInclude>
-    <!-- Gizmo -->
     <ClInclude Include="GizmoArrowComponent.h">
       <Filter>Gizmo</Filter>
     </ClInclude>
@@ -748,7 +764,6 @@
     <ClInclude Include="GizmoScaleComponent.h">
       <Filter>Gizmo</Filter>
     </ClInclude>
-    <!-- Managers -->
     <ClInclude Include="InputManager.h">
       <Filter>Managers</Filter>
     </ClInclude>
@@ -764,7 +779,6 @@
     <ClInclude Include="SelectionManager.h">
       <Filter>Managers</Filter>
     </ClInclude>
-    <!-- Spatial -->
     <ClInclude Include="SpatialDataStructure.h">
       <Filter>Spatial</Filter>
     </ClInclude>
@@ -777,7 +791,6 @@
     <ClInclude Include="BoundingVolumeHierarchy.h">
       <Filter>Spatial</Filter>
     </ClInclude>
-    <!-- Bounding -->
     <ClInclude Include="Frustum.h">
       <Filter>Bounding</Filter>
     </ClInclude>
@@ -787,7 +800,9 @@
     <ClInclude Include="OBoundingBoxComponent.h">
       <Filter>Bounding</Filter>
     </ClInclude>
-    <!-- Utilities -->
+    <ClInclude Include="BoundingVolume.h">
+      <Filter>Bounding</Filter>
+    </ClInclude>
     <ClInclude Include="Picking.h">
       <Filter>Utilities</Filter>
     </ClInclude>
@@ -800,11 +815,12 @@
     <ClInclude Include="SceneRotationUtils.h">
       <Filter>Utilities</Filter>
     </ClInclude>
-    <!-- Utilities\Factory -->
+    <ClInclude Include="TimeProfile.h">
+      <Filter>Utilities</Filter>
+    </ClInclude>
     <ClInclude Include="ObjectFactory.h">
       <Filter>Utilities\Factory</Filter>
     </ClInclude>
-    <!-- Utilities\Archive -->
     <ClInclude Include="Archive.h">
       <Filter>Utilities\Archive</Filter>
     </ClInclude>
@@ -814,11 +830,9 @@
     <ClInclude Include="WindowsBinReader.h">
       <Filter>Utilities\Archive</Filter>
     </ClInclude>
-    <!-- Utilities\Scene -->
     <ClInclude Include="SceneLoader.h">
       <Filter>Utilities\Scene</Filter>
     </ClInclude>
-    <!-- Math & Data -->
     <ClInclude Include="Vector.h">
       <Filter>Math &amp; Data</Filter>
     </ClInclude>
@@ -831,7 +845,9 @@
     <ClInclude Include="ObjectIterator.h">
       <Filter>Math &amp; Data</Filter>
     </ClInclude>
-    <!-- Math & Data\Primitives -->
+    <ClInclude Include="LinearColor.h">
+      <Filter>Math &amp; Data</Filter>
+    </ClInclude>
     <ClInclude Include="Triangle.h">
       <Filter>Math &amp; Data\Primitives</Filter>
     </ClInclude>
@@ -841,7 +857,6 @@
     <ClInclude Include="Sphere.h">
       <Filter>Math &amp; Data\Primitives</Filter>
     </ClInclude>
-    <!-- ThirdParty\ImGui -->
     <ClInclude Include="ImGui\imconfig.h">
       <Filter>ThirdParty\ImGui</Filter>
     </ClInclude>
@@ -866,47 +881,16 @@
     <ClInclude Include="ImGui\imstb_truetype.h">
       <Filter>ThirdParty\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="BoundingVolume.h" />
-    <ClInclude Include="DecalComponentScreen.h" />
-    <ClInclude Include="DecalSpotLightActor.h">
+    <ClInclude Include="DirectionalLightActor.h">
       <Filter>Actors</Filter>
     </ClInclude>
-    <ClInclude Include="CBufferTypes.h" />
-    <ClInclude Include="DecalSpotLightComponent.h">
-      <Filter>Components\Decal</Filter>
-    </ClInclude>
-    <ClInclude Include="TimeProfile.h" />
-    <ClInclude Include="Info.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="ProjectileMovementComponent.h">
-      <Filter>Components\Movement</Filter>
-    </ClInclude>
-    <ClInclude Include="RotationMovementComponent.h">
-      <Filter>Components\Movement</Filter>
-    </ClInclude>
-    <ClInclude Include="MovementComponent.h">
-      <Filter>Components\Movement</Filter>
-    </ClInclude>
-    <ClInclude Include="ExponentialHeightFog.h" />
-    <ClInclude Include="ExponentialHeightFogComponent.h" />
-    <ClInclude Include="LinearColor.h" />
-    <ClInclude Include="PointLightComponent.h">
+    <ClInclude Include="DirectionalLightComponent.h">
       <Filter>Components\Light</Filter>
     </ClInclude>
-    <ClInclude Include="FXAAActor.h" />
-    <ClInclude Include="FXAAComponent.h" />
-    <ClInclude Include="LightComponent.h">
-      <Filter>Components\Light</Filter>
-    </ClInclude>
-    <ClInclude Include="LocalLightComponent.h">
-      <Filter>Components\Light</Filter>
-    </ClInclude>
-    <ClInclude Include="AmbientLightComponent.h">
-      <Filter>Components\Light</Filter>
+    <ClInclude Include="PointLightActor.h">
+      <Filter>Actors</Filter>
     </ClInclude>
   </ItemGroup>
-  <!-- ==================== 셰이더 파일 (.hlsl) ==================== -->
   <ItemGroup>
     <FxCompile Include="Primitive.hlsl">
       <Filter>Shaders</Filter>
@@ -929,14 +913,9 @@
     <FxCompile Include="DecalShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="DecalShaderScreen.hlsl" />
     <FxCompile Include="DecalSpotLightShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Copy.hlsl" />
-    <FxCompile Include="FXAA.hlsl" />
-    <FxCompile Include="HeightFogShader.hlsl" />
-    <FxCompile Include="SceneDepth.hlsl" />
     <FxCompile Include="DepthPrepassShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -946,11 +925,36 @@
     <FxCompile Include="Gamma.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="DecalShaderScreen.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="HeightFogShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="SceneDepth.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Copy.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="WorldNormalShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="FXAA.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="UberLit.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
-  <!-- ==================== 리소스 파일 ==================== -->
   <ItemGroup>
     <Content Include="Editor\Icon\Pawn_64x.dds" />
     <Content Include="Editor\Icon\PointLight_64x.dds" />
     <Content Include="Editor\Icon\SpotLight_64x.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Light.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

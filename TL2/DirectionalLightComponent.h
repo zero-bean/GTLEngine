@@ -7,7 +7,7 @@ struct FDirectionalLightProperty;
 class UDirectionalLightComponent : public ULightComponent
 {
 public:
-	DECLARE_CLASS(UDirectionalLightComponent, ULightComponent)
+	DECLARE_SPAWNABLE_CLASS(UDirectionalLightComponent, ULightComponent, "Directional Light Component")
 	UDirectionalLightComponent();
 	~UDirectionalLightComponent() override;
 
@@ -16,9 +16,14 @@ public:
 
 	virtual void TickComponent(float DeltaSeconds) override;
 
-	FDirectionalLightProperty DirectionalData;
+	// Direction은 Scene Comp의 회전방향
+	FVector GetDirection() const { return this->GetWorldRotation().GetForwardVector(); }
+	int32 IsEnabledSpecular() const { return bEnableSpecular; }
+	void SetSpecularEnable(bool bEnable);
 
 protected:
 	UObject* Duplicate() override;
 	void DuplicateSubObjects() override;
+	
+	int32 bEnableSpecular = 1;
 };

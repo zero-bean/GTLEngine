@@ -175,11 +175,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="DirectionalLightActor.cpp" />
+    <ClCompile Include="DirectionalLightComponent.cpp" />
     <ClCompile Include="EditorClipboard.cpp" />
     <ClCompile Include="EditorEngine.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="ExponentialHeightFog.cpp" />
     <ClCompile Include="LocalLightComponent.cpp" />
+    <ClCompile Include="PointLightActor.cpp" />
     <ClCompile Include="PointLightComponent.cpp" />
     <ClCompile Include="FXAAActor.cpp" />
     <ClCompile Include="FXAAComponent.cpp" />
@@ -424,6 +427,15 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="WorldNormalShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="UberLit.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActorComponent.h" />
@@ -441,11 +453,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="DirectionalLightActor.h" />
+    <ClInclude Include="DirectionalLightComponent.h" />
     <ClInclude Include="EditorClipboard.h" />
     <ClInclude Include="EditorEngine.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="ExponentialHeightFog.h" />
     <ClInclude Include="LocalLightComponent.h" />
+    <ClInclude Include="PointLightActor.h" />
     <ClInclude Include="PointLightComponent.h" />
     <ClInclude Include="Frustum.h" />
     <ClInclude Include="FViewportClient.h" />
@@ -568,6 +583,12 @@
     <Content Include="Editor\Icon\Pawn_64x.dds" />
     <Content Include="Editor\Icon\PointLight_64x.dds" />
     <Content Include="Editor\Icon\SpotLight_64x.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Light.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

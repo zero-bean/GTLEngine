@@ -10,7 +10,8 @@
 
 UStaticMeshComponent::UStaticMeshComponent()
 {
-    SetMaterial("StaticMeshShader.hlsl");
+    //SetMaterial("StaticMeshShader.hlsl");
+    SetMaterial("UberLit.hlsl");
 }
 
 UStaticMeshComponent::~UStaticMeshComponent()
@@ -47,7 +48,6 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
         ModelBuffer.NormalMatrix = NormalMatrix;
 
         Renderer->UpdateSetCBuffer(ModelBuffer);
-      
         
         Renderer->PrepareShader(GetMaterial()->GetShader());
         Renderer->DrawIndexedPrimitiveComponent(GetStaticMesh(), D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterailSlots);

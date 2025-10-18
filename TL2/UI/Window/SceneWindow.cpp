@@ -19,34 +19,6 @@ USceneWindow::USceneWindow()
 	Config.DockDirection = EUIDockDirection::Center;
 
 	Config.UpdateWindowFlags();
-	//SetConfig(Config);
-	//URenderViewportSwitcherWidget* RenderViewPortSWitcherWidget= NewObject<URenderViewportSwitcherWidget>();
-	//AddWidget(RenderViewPortSWitcherWidget);
-	//// Add Scene Manager Widget (main scene hierarchy)
-	//USceneManagerWidget* SceneManagerWidget = NewObject<USceneManagerWidget>();
-	//if (SceneManagerWidget)
-	//{
-	//	AddWidget(SceneManagerWidget);
-	//	UE_LOG("SceneWindow: SceneManagerWidget created successfully");
-	//}
-	//else
-	//{
-	//	UE_LOG("SceneWindow: Failed to create SceneManagerWidget");
-	//}
-	//
-	//// Add Show Flag Widget for rendering control
-	//UShowFlagWidget* ShowFlagWidget = NewObject<UShowFlagWidget>();
-	//if (ShowFlagWidget)
-	//{
-	//	AddWidget(ShowFlagWidget);
-	//	UE_LOG("SceneWindow: ShowFlagWidget created successfully");
-	//}
-	//else
-	//{
-	//	UE_LOG("SceneWindow: Failed to create ShowFlagWidget");
-	//}
-	
-	// Transform and termination widgets moved to Control Panel for better UX
 }
 
 void USceneWindow::Initialize()

@@ -91,6 +91,7 @@ protected:
     TMap<FString, TArray<D3D11_INPUT_ELEMENT_DESC>> ShaderToInputLayoutMap;
     TMap<FString, FString> TextureToShaderMap;
 
+
 private:
     TMap<FString, UMaterial*> MaterialMap;
 };
