@@ -48,7 +48,7 @@ private:
     ID3D11Buffer* IndexBuffer = nullptr;
     uint32 VertexCount = 0;     // 정점 개수
     uint32 IndexCount = 0;     // 버텍스 점의 개수 
-    EVertexLayoutType VertexType = EVertexLayoutType::PositionColorTexturNormal;  // 버텍스 타입
+    EVertexLayoutType VertexType = EVertexLayoutType::PositionColorTexturNormalTangent;  // 버텍스 타입
 
 	// CPU 리소스
     FStaticMesh* StaticMeshAsset = nullptr;

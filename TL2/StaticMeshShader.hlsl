@@ -65,6 +65,7 @@ cbuffer PSScrollCB : register(b5)
 }
 
 #define MAX_PointLight 100
+#define MAX_SpotLight 100
 
 // C++ 구조체와 동일한 레이아웃
 struct FPointLightData
@@ -80,6 +81,29 @@ cbuffer PointLightBuffer : register(b9)
     int PointLightCount;
     float3 _pad;
     FPointLightData PointLights[MAX_PointLight];
+}
+
+// C++ 구조체와 동일한 레이아웃
+struct FSpotLightData
+{
+    float4 Position; // xyz=위치(월드), w=반경
+    float4 Color; // rgb=색상, a=Intensity
+    float4 Direction;
+ 
+    float InnerConeAngle; // 감쇠 지수
+    float OuterConeAngle; // 감쇠 지수
+    float FallOff;
+    float InAndOutSmooth;
+    
+    float3 AttFactor;
+    float SpotPadding;
+    };
+
+cbuffer SpotLightBuffer : register(b13)
+{
+    int SpotLightCount; 
+    float3 SpotBufferPadding;
+    FSpotLightData SpotLights[MAX_SpotLight];
 }
 
 struct FDirectionalLightData
@@ -123,6 +147,7 @@ float3 ComputePointLights(float3 worldPos)
     }
     return total;
 }
+
 
 // ------------------------------------------------------------------
 // Lambert + Blinn-Phong (안정/일관성)
@@ -201,6 +226,58 @@ LightAccum ComputeDirectionalLights(float3 WorldPosition, float3 WorldNormal, fl
     return acc;
 }
 
+ 
+LightAccum ComputeSpotLights(float3 worldPos, float3 worldNormal, float shininess)
+{
+    LightAccum acc = (LightAccum)0;
+
+    float3 N = normalize(worldNormal);
+    float3 V = normalize(CameraWorldPos - worldPos);
+    float  exp = clamp(shininess, 1.0, 128.0);
+
+    [loop]
+    for (int i = 0; i < SpotLightCount; i++)
+    {
+        FSpotLightData light = SpotLights[i];
+
+        // Direction and distance
+        float3 LvecToLight = light.Position.xyz - worldPos; // surface -> light
+        float  dist        = length(LvecToLight);
+        float3 L = normalize(LvecToLight);
+
+        // Distance attenuation (point light 와 동일) 
+        float range     = max(light.Position.w, 1e-3);
+        float fall      = max(light.FallOff, 0.001);
+        float t         = saturate(dist / range);
+        float attenDist = pow(saturate(1.0 - t), fall);
+
+        
+       // float attenDist = pow(saturate(1 / (light.AttFactor.x + range * light.AttFactor.y + range * range * light.AttFactor.z)), fall);
+        
+        
+        // 선형 보간 
+        float3 lightDir  = normalize(light.Direction.xyz);
+        float3 lightToWorld = normalize(-L); // light -> surface
+        float cosTheta = dot(lightDir, lightToWorld);
+         
+        float thetaInner = cos(radians(light.InnerConeAngle));
+        float thetaOuter = cos(radians(light.OuterConeAngle));
+        
+        float att = saturate(pow( (cosTheta - thetaOuter) / max((thetaInner - thetaOuter), 1e-3), light.InAndOutSmooth));
+          
+        // Diffuse
+        float3 Li    = light.Color.rgb * light.Color.a;
+        float  NdotL = saturate(dot(N, L));
+        float3 diffuse = Li * NdotL * attenDist * att;
+         
+        acc.diffuse  += diffuse;
+        //TODO
+        //acc.specular += specular;
+    }
+
+    return acc;
+}
+    
 struct VS_INPUT
 {
     float3 position : POSITION;
@@ -208,7 +285,6 @@ struct VS_INPUT
     float4 color : COLOR;
     float2 texCoord : TEXCOORD;
     float3 tangent : TANGENT;
-    float3 bitangent : BITANGENT;
 };
 
 struct PS_INPUT
@@ -242,7 +318,7 @@ PS_INPUT mainVS(VS_INPUT input)
     // 노멀, 탄젠트, 바이탄젠트를 월드 공간으로 변환
     o.worldNormal = normalize(mul(input.normal, (float3x3) NormalMatrix));
     o.worldTangent = normalize(mul(input.tangent, (float3x3) WorldMatrix));
-    o.worldBitangent = normalize(mul(input.bitangent, (float3x3) WorldMatrix));
+    o.worldBitangent = normalize(mul(cross(o.worldNormal, o.worldTangent), (float3x3) WorldMatrix));
 
     // MVP
     float4x4 MVP = mul(mul(WorldMatrix, ViewMatrix), ProjectionMatrix);
@@ -283,7 +359,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
         float2 uv = input.texCoord + UVScrollSpeed * UVScrollTime;
         base = g_DiffuseTexColor.Sample(g_Sample, uv).rgb;
     }
-
+      
     if (Picked == 1)
     {
         // 노란색 하이라이트를 50% 블렌딩
@@ -306,39 +382,45 @@ PS_OUTPUT mainPS(PS_INPUT input)
         // 2. 보간된 벡터들로 TBN 행렬 재구성 및 직교화를 합니다.
         float3 T = normalize(input.worldTangent);
         float3 B = normalize(input.worldBitangent);
-        float3 N = normalize(input.worldNormal);
+        float3 N_geom = normalize(input.worldNormal);
         
         // 정점 셰이더에서 픽셀 단위로 보간되어 넘어온 벡터들은 완벽하게 직교하지 않을 수 있습니다.
         // 따라서 그람-슈미트(Gram-Schmidt) 기법을 통해 TBN 좌표계를 다시 직교화하여 정렬합니다.
-        T = normalize(T - dot(T, N) * N);
-        B = cross(N, T);
+        T = normalize(T - dot(T, N_geom) * N_geom);
+        B = cross(N_geom, T);
 
-        // 3개의 기저 벡터를 기저 행렬로 변환합니다만, row-major 표준을 위해 전치를 합니다.
-        float3x3 TBN = transpose(float3x3(T, B, N));
+        // 3개의 기저 벡터를 기저 행렬로 변환합니다.
+        float3x3 TBN = float3x3(T, B, N_geom);
 
         // 3. 탄젠트 공간 노멀을 월드 공간으로 변환합니다.
         N = normalize(mul(tangentNormal, TBN));
     }
 
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
-    LightAccum DirectionalLightColor = ComputeDirectionalLights(input.worldPosition, N, shininess); 
-    LightAccum PointLightColor = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);    
-    LightAccum TotalLight = (LightAccum)0;
-    TotalLight.diffuse = DirectionalLightColor.diffuse + PointLightColor.diffuse;
-    TotalLight.specular = DirectionalLightColor.specular + PointLightColor.specular;
+    LightAccum la = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);
+    LightAccum ls = ComputeSpotLights(input.worldPosition, N, shininess);
+    LightAccum ld = ComputeDirectionalLights(input.worldPosition, N, shininess); 
+    
+    la.diffuse += ls.diffuse + ld.diffuse;
+    la.specular += ls.specular + ld.specular;    
     
     // Ambient + Diffuse + Specular
     float3 ambient = 0.25 * base;
     if (HasMaterial)
         ambient += 0.25 * Material.AmbientColor;
 
-    float3 diffuseLit = base * TotalLight.diffuse;
-    float3 specularLit = TotalLight.specular;
+    float3 diffuseLit = base * la.diffuse;
+    float3 specularLit = la.specular;
     if (HasMaterial)
         specularLit *= saturate(Material.SpecularColor);
 
     float3 finalLit = ambient + diffuseLit + specularLit;
     finalLit = saturate(finalLit); // 과포화 방지
+    
+    if (GIzmo == 1)
+    {
+        finalLit = base;
+    }
     
     Result.Color = float4(finalLit, 1.0);
     Result.UUID = input.UUID;

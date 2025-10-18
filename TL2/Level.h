@@ -9,6 +9,8 @@ class UDecalComponent;
 class UPrimitiveComponent;
 class UPointLightComponent;
 class UFXAAComponent;
+class USpotLightComponent;
+
 
 class ULevel : public UObject
 {

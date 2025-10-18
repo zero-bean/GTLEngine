@@ -22,6 +22,7 @@
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include "CameraComponent.h"
+#include "SpotLightComponent.h"
 #include "DirectionalLightComponent.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
@@ -41,6 +42,7 @@ void URenderer::Update(float DeltaSeconds)
 {
     
 }
+
 void URenderer::BeginFrame()
 {
     // 렌더링 통계 수집 시작
@@ -64,16 +66,20 @@ void URenderer::BeginFrame()
 
 void URenderer::PrepareShader(UShader* InShader)
 {
+    UShader* ShaderToUse = OverrideShader ? OverrideShader : InShader;
+
     // 셰이더 변경 추적
-    if (LastShader != InShader)
+    if (LastShader != ShaderToUse)
     {
         URenderingStatsCollector::GetInstance().IncrementShaderChanges();
-        LastShader = InShader;
+        LastShader = ShaderToUse;
     }
     
-    RHIDevice->GetDeviceContext()->VSSetShader(InShader->GetVertexShader(), nullptr, 0);
-    RHIDevice->GetDeviceContext()->PSSetShader(InShader->GetPixelShader(), nullptr, 0);
-    RHIDevice->GetDeviceContext()->IASetInputLayout(InShader->GetInputLayout());
+    // Ensure uber-shader variant matches current selection
+    ShaderToUse->SetActiveMode(CurrentShadingModel);
+    RHIDevice->GetDeviceContext()->VSSetShader(ShaderToUse->GetVertexShader(), nullptr, 0);
+    RHIDevice->GetDeviceContext()->PSSetShader(ShaderToUse->GetPixelShader(), nullptr, 0);
+    RHIDevice->GetDeviceContext()->IASetInputLayout(ShaderToUse->GetInputLayout());
 }
 
 void URenderer::OMSetBlendState(bool bIsChecked)
@@ -140,8 +146,12 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
     case EVertexLayoutType::PositionBillBoard:
         stride = sizeof(FBillboardVertexInfo_GPU);
         break;
+    case EVertexLayoutType::PositionColorTexturNormalTangent:
+        stride = sizeof(FVertexDynamic);
+        break;
     case EVertexLayoutType::PositionUV:
         stride = sizeof(FVertexUV);
+        break;
     default:
         // Handle unknown or unsupported vertex types
         assert(false && "Unknown vertex type!");
@@ -169,12 +179,16 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
     {
         const TArray<FGroupInfo>& MeshGroupInfos = InMesh->GetMeshGroupInfo();
         const uint32 NumMeshGroupInfos = static_cast<uint32>(MeshGroupInfos.size());
+
         for (uint32 i = 0; i < NumMeshGroupInfos; ++i)
         {
-            const UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
+            UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
             const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
             bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
-            bool bHasNormalTexture = !(MaterialInfo.NormalTextureFileName == FName::None());
+
+            // Check for normal texture directly from the UMaterial instance
+            UTexture* NormalTexture = Material->GetNormalTexture();
+            bool bHasNormalTexture = (NormalTexture != nullptr);
 
             // 재료 변경 추적
             if (LastMaterial != Material)
@@ -202,8 +216,8 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
             // Normal Texture
             if (bHasNormalTexture)
             {
-                FTextureData* NormalTextureData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.NormalTextureFileName);
-                RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &(NormalTextureData->TextureSRV));
+                ID3D11ShaderResourceView* NormalSRV = NormalTexture->GetShaderResourceView();
+                RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NormalSRV);
             }
 
             RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture }); // PSSet도 해줌
@@ -443,7 +457,6 @@ void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* V
 
     FMatrix ViewMatrix = Camera->GetViewMatrix();
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
-
    
     // 씬의 액터들을 렌더링
     // General Rendering (color + depth)
@@ -471,6 +484,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     {
         RenderDirectionalLightPass(World);
         RenderPointLightPass(World);
+        RenderSpotLightPass(World);
+
         RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
         RenderFogPass(World,Camera,Viewport);
         RenderFXAAPaxx(World, Camera, Viewport);
@@ -482,6 +497,16 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         RenderBasePass(World, Camera, Viewport);  // calls RenderScene, which executes the depth-only pass 
                                                   // (RenderSceneDepthPass) according to the current view mode
         RenderSceneDepthVisualizePass(Camera);    // Depth → Grayscale visualize
+
+        RenderEditorPass(World, Camera, Viewport);
+        break;
+    }
+    case EViewModeIndex::VMI_WorldNormal:
+    {
+        OverrideShader =  UResourceManager::GetInstance().Load<UShader>("WorldNormalShader.hlsl");
+        RenderBasePass(World, Camera, Viewport);
+        OverrideShader = nullptr;
+        RenderEditorPass(World, Camera, Viewport);
         break;
     }
     default:
@@ -509,18 +534,19 @@ void URenderer::RenderEditorPass(UWorld* World, ACameraActor* Camera, FViewport*
         RHIDevice->OMSetRenderTargets(ERenderTargetType::None);
         RHIDevice->PSSetRenderTargetSRV(ERenderTargetType::None);
         RHIDevice->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID | ERenderTargetType::NoDepth);
+
         for (auto& Billboard : World->GetLevel()->GetComponentList<UBillboardComponent>())
         {
             Billboard->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
         }
        
-   
         if (AGizmoActor* Gizmo = World->GetGizmoActor())
         {
             Gizmo->Render(Camera, Viewport);
         }
     }
 }
+
 void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport)
 {
     if (!World || !Viewport)
@@ -549,6 +575,54 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
     if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BVH))
     {
         AddLines(World->GetBVH().GetBVHBoundsWire(), FVector4(0.5f, 0.5f, 1, 1));
+    }
+
+    // SpotLight cone visualization via line batch
+    {
+        const FVector CameraPos = (World->GetCameraActor() ? World->GetCameraActor()->GetActorLocation() : FVector(0,0,0));
+        for (USpotLightComponent* Spot : World->GetLevel()->GetComponentList<USpotLightComponent>())
+        {
+            if (!Spot || !Spot->IsRender()) continue;
+
+            const FVector SpotPos = Spot->GetWorldLocation();
+            FVector dir = Spot->GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();
+            const float range = Spot->GetRadius();
+            if (range <= KINDA_SMALL_NUMBER || dir.SizeSquared() < KINDA_SMALL_NUMBER)
+            {
+                continue;
+            }
+            const float angleDeg = FMath::Clamp(Spot->GetOuterConeAngle(), 0.0f, 89.0f);
+            const float angleRad = DegreeToRadian(angleDeg);
+            const float circleRadius = std::tan(angleRad) * range;
+            const FVector center = SpotPos + dir * range;
+
+            // Build orthonormal basis (u,v) for circle plane (perpendicular to dir)
+            FVector arbitraryUp = fabsf(dir.Z) > 0.99f ? FVector(1, 0, 0) : FVector(0, 0, 1);
+            FVector u = FVector::Cross(arbitraryUp, dir).GetSafeNormal();
+            FVector v = FVector::Cross(dir, u).GetSafeNormal();
+
+            const int segments = FMath::Clamp(Spot->GetCircleSegments(), 3, 512);
+            const float step = TWO_PI / static_cast<float>(segments);
+            const FVector4 color(1.0f, 1.0f, 1.0f, 1.0f);
+
+            FVector prevPoint;
+            for (int i = 0; i <= segments; ++i)
+            {
+                float t = step * i;
+                FVector p = center + u * (cosf(t) * circleRadius) + v * (sinf(t) * circleRadius);
+
+                // Draw circle edge
+                if (i > 0)
+                {
+                    AddLine(prevPoint, p, color);
+                }
+                prevPoint = p;
+
+                // Draw camera-to-circle vertex line
+                AddLine(CameraPos, p, color);
+                AddLine(SpotPos, p, color);
+            }
+        }
     }
 
     EndLineBatch(FMatrix::Identity(), ViewMatrix, ProjectionMatrix);
@@ -626,6 +700,11 @@ void URenderer::RenderEngineActors(const TArray<AActor*>& EngineActors, const FM
             continue;
         }
 
+        if (Cast<AGizmoActor>(EngineActor))
+        {
+            continue;
+        }
+
         for (UActorComponent* Component : EngineActor->GetComponents())
         {
             if (!Component)
@@ -699,6 +778,7 @@ void URenderer::RenderFogPass(UWorld* World, ACameraActor* Camera, FViewport* Vi
    }
 
 }
+
 void URenderer::RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
     UpdateSetCBuffer(FGammaBufferType(Gamma));
@@ -715,7 +795,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
 {
     if (!World) return;
 
-    // 1️⃣ 라이트 컴포넌트 수집 (PointLight, PointLight 등)
+    // 1?? 라이트 컴포넌트 수집 (PointLight, PointLight 등)
     FPointLightBufferType PointLightCB{};
     PointLightCB.PointLightCount=0;
     for (UPointLightComponent* PointLightComponent : World->GetLevel()->GetComponentList<UPointLightComponent>())
@@ -731,7 +811,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
         );
         PointLightCB.PointLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
     }
-    // 2️⃣ 상수 버퍼 GPU로 업데이트
+    // 2?? 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);
     
 }
@@ -756,6 +836,36 @@ void URenderer::RenderDirectionalLightPass(UWorld* World)
     UpdateSetCBuffer(DirectionalLightCB);    
 }
 
+void URenderer::RenderSpotLightPass(UWorld* World)
+{
+    if (!World) return;
+     
+    FSpotLightBufferType SpotLightCB{};
+    SpotLightCB.SpotLightCount = 0;
+    for (USpotLightComponent* PointLightComponent : World->GetLevel()->GetComponentList<USpotLightComponent>())
+    {
+        int idx = SpotLightCB.SpotLightCount++;
+        if (idx >= MAX_POINT_LIGHTS) break;
+
+        SpotLightCB.SpotLights[idx].Position = FVector4(
+            PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
+        );
+        SpotLightCB.SpotLights[idx].Color = FVector4(
+            PointLightComponent->GetColor().R, PointLightComponent->GetColor().G, PointLightComponent->GetColor().B, PointLightComponent->GetIntensity()
+        );
+        SpotLightCB.SpotLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
+        // If set on component, propagate cone angles
+        SpotLightCB.SpotLights[idx].InnerConeAngle = PointLightComponent->GetInnerConeAngle();
+        SpotLightCB.SpotLights[idx].OuterConeAngle = PointLightComponent->GetOuterConeAngle();
+        SpotLightCB.SpotLights[idx].Direction = PointLightComponent->GetDirection();   
+        SpotLightCB.SpotLights[idx].InAndOutSmooth = PointLightComponent->GetInAndOutSmooth();
+        SpotLightCB.SpotLights[idx].AttFactor = PointLightComponent->GetAttFactor();
+
+    }
+    // 2?? 상수 버퍼 GPU로 업데이트
+    UpdateSetCBuffer(SpotLightCB); 
+}
+
 void URenderer::RenderOverlayPass(UWorld* World)
 {
     // TODO: 오버레이(UI, 디버그 텍스트 등) 구현
@@ -763,22 +873,32 @@ void URenderer::RenderOverlayPass(UWorld* World)
 
 void URenderer::RenderSceneDepthVisualizePass(ACameraActor* Camera)
 {
-    // +-+ Set Render State +-+
-    // Bind only RTV (DSV = nullptr)
+    // +-+ 1. Save Original Viewport State +-+
+    // 이 패스는 렌더 타겟 전체에 그리기 위해 뷰포트를 변경합니다.
+    // 이후에 렌더링될 EditorPass (기즈모 등)가 올바른 뷰포트 영역에 그려지도록
+    // 현재 뷰포트 상태를 미리 저장합니다.
+    D3D11_VIEWPORT OriginalViewport;
+    UINT NumViewports = 1;
+    RHIDevice->GetDeviceContext()->RSGetViewports(&NumViewports, &OriginalViewport);
+
+    // +-+ 2. Set Render State for Full-Screen Pass +-+
+    // RTV(컬러)만 바인딩하고 DSV(뎁스)는 바인딩 해제(nullptr)합니다.
+    // 뎁스 텍스처를 셰이더에서 읽기(SRV) 위해 DSV에서 바인딩 해제해야 합니다.
     ID3D11RenderTargetView* FrameRTV = static_cast<D3D11RHI*>(RHIDevice)->GetFrameRTV();
     RHIDevice->GetDeviceContext()->OMSetRenderTargets(1, &FrameRTV, nullptr);
+
+    // 뎁스 테스트와 쓰기를 모두 비활성화합니다.
     RHIDevice->OmSetDepthStencilState(EComparisonFunc::Disable);
 
-    // +-+ Re-set Viewport +-+
-    // Because the DSV is set to nullptr
-    // Unbinding DSV invalidates the current viewport state, causing it to appear smaller.
-    // Get viewport size from the current framebuffer (Texture2D)
+    // +-+ 3. Set Full-Screen Viewport +-+
+    // DSV를 nullptr로 설정하면 D3D11 파이프라인이 뷰포트 설정을 무효화할 수 있습니다.
+    // 따라서 렌더 타겟(프레임 버퍼) 크기에 맞는 "전체 화면" 뷰포트를 명시적으로 다시 설정합니다.
     D3D11_TEXTURE2D_DESC BackDesc{};
     ID3D11Texture2D* FrameBuffer = static_cast<D3D11RHI*>(RHIDevice)->GetFrameBuffer();
     if (FrameBuffer)
     {
         FrameBuffer->GetDesc(&BackDesc);
-        D3D11_VIEWPORT vp = {
+        D3D11_VIEWPORT FullScreenVP = {
             .TopLeftX = 0.0f,
             .TopLeftY = 0.0f,
             .Width = static_cast<FLOAT>(BackDesc.Width),
@@ -786,11 +906,11 @@ void URenderer::RenderSceneDepthVisualizePass(ACameraActor* Camera)
             .MinDepth = 0.0f,
             .MaxDepth = 1.0f
         };
-        // Reset Viewport
-        RHIDevice->GetDeviceContext()->RSSetViewports(1, &vp);
+        // 뷰포트를 전체 화면으로 리셋합니다.
+        RHIDevice->GetDeviceContext()->RSSetViewports(1, &FullScreenVP);
     }
 
-    // +-+ Set Shader & Buffer +-+
+    // +-+ 4. Set Shader & Resources +-+
     SceneDepthVisualizeShader = UResourceManager::GetInstance().Load<UShader>("DepthVisualizeShader.hlsl");
     PrepareShader(SceneDepthVisualizeShader);
     if (Camera)
@@ -801,28 +921,27 @@ void URenderer::RenderSceneDepthVisualizePass(ACameraActor* Camera)
         UpdateSetCBuffer(CameraInfoBufferType(CameraInfo));
     }
 
-    // +-+ Set Shader Resources (Texture) +-+
-    // Bind depth SRV
-    // If DSV were still bound, the set call would fail and result in a null binding.
-    // TODO: Abstracting RHI access to the depth SRV
+    // 뎁스 텍스처를 픽셀 셰이더의 리소스(SRV)로 바인딩합니다.
     ID3D11ShaderResourceView* DepthSRV = static_cast<D3D11RHI*>(RHIDevice)->GetDepthSRV();
-    RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &DepthSRV);   // SET
-    
-    //ID3D11ShaderResourceView* currentSRV = nullptr;
-    //RHIDevice->GetDeviceContext()->PSGetShaderResources(0, 1, &currentSRV); // GET
-    //UE_LOG("Currently bound SRV at slot 0 = %p", currentSRV);      // null!!! if bind both RTV + DSV
+    RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &DepthSRV); // SET
 
-    // +-+ Connect to PS s0 slot +-+
     RHIDevice->PSSetDefaultSampler(0);
     RHIDevice->IASetPrimitiveTopology();
 
-    // +-+ Draw Full-Screen Triangle +-+
+    // +-+ 5. Draw Full-Screen Triangle +-+
+    // 정점 3개로 구성된 전체 화면 삼각형을 그립니다.
     RHIDevice->GetDeviceContext()->Draw(3, 0);
 
-    // +-+ Restore Render State +-+
-    // Unbind SRV to allow re-binding the depth texture as DSV
+    // +-+ 6. Restore Original State +-+
+    // 뎁스 텍스처를 SRV에서 바인딩 해제합니다 (이후 DSV로 다시 바인딩할 수 있도록).
     ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
     RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
+
+    // 패스 시작 시 저장해두었던 원래 뷰포트로 복원합니다.
+    // (이것이 기즈모 위치를 올바르게 수정하는 핵심입니다.)
+    RHIDevice->GetDeviceContext()->RSSetViewports(1, &OriginalViewport);
+
+    // 뎁스 상태를 기본값(테스트 및 쓰기 활성화)으로 복원합니다.
     RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual);
 }
 
@@ -937,6 +1056,7 @@ void URenderer::AddLines(const TArray<FVector>& LineList, const FVector4& Color)
         LineBatchData->Indices.push_back(currentIndex);
     }
 }
+
 void URenderer::EndLineBatch(const FMatrix& ModelMatrix, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix)
 {
     if (!bLineBatchActive || !LineBatchData || !DynamicLineMesh || LineBatchData->Vertices.empty())
@@ -978,7 +1098,6 @@ void URenderer::EndLineBatch(const FMatrix& ModelMatrix, const FMatrix& ViewMatr
     bLineBatchActive = false;
 }
 
-
 UPrimitiveComponent* URenderer::GetCollidedPrimitive(int MouseX, int MouseY) const
 {
     //GPU와 동기화 문제 때문에 Map이 호출될때까지 기다려야해서 피킹 하는 프레임에 엄청난 프레임 드랍이 일어남.
@@ -1016,7 +1135,6 @@ UPrimitiveComponent* URenderer::GetCollidedPrimitive(int MouseX, int MouseY) con
     return Cast<UPrimitiveComponent>(GUObjectArray[PickedId]);
 }
 
-
 void URenderer::ResetRenderStateTracking()
 {
     LastMaterial = nullptr;
@@ -1035,3 +1153,13 @@ void URenderer::ClearLineBatch()
     bLineBatchActive = false;
 }
 
+// Shading model accessors (used by UI)
+void URenderer::SetShadingModel(ELightShadingModel Model)
+{
+    CurrentShadingModel = Model;
+}
+
+ELightShadingModel URenderer::GetShadingModel() const
+{
+    return CurrentShadingModel;
+}

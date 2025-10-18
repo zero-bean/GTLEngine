@@ -10,28 +10,10 @@
   },
   "Actors" : [
     {
-      "UUID" : 644,
-      "Type" : "AStaticMeshActor",
-      "Name" : "Cube_0",
-      "RootComponentUUID" : 645
-    },
-    {
       "UUID" : 646,
-      "Type" : "AActor",
-      "Name" : "Cube_1",
+      "Type" : "AStaticMeshActor",
+      "Name" : "Stone_0",
       "RootComponentUUID" : 647
-    },
-    {
-      "UUID" : 648,
-      "Type" : "AStaticMeshActor",
-      "Name" : "Cube_2",
-      "RootComponentUUID" : 649
-    },
-    {
-      "UUID" : 650,
-      "Type" : "AStaticMeshActor",
-      "Name" : "Cube_3",
-      "RootComponentUUID" : 651
     }
   ],
   "Components" : [
@@ -74,30 +56,25 @@
       "OwnerActorUUID" : 646,
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 3.364109, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeLocation" : [0.000000, 0.110701, 0.000000],
+      "RelativeRotation" : [-0.000000, -0.000005, -180.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Cube.obj"
+      "StaticMesh" : "Data/stone/Stone.obj"
     },
     {
-      "UUID" : 649,
-      "OwnerActorUUID" : 648,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "UUID" : 648,
+      "OwnerActorUUID" : 646,
+      "ParentComponentUUID" : 647,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 4.100000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Cube.obj"
-    },
-    {
-      "UUID" : 651,
-      "OwnerActorUUID" : 650,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Cube.obj"
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
     }
   ]
 }

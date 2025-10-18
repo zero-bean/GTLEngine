@@ -2,6 +2,7 @@
 #include "BillboardComponent.h"
 #include "RHIDevice.h"
 #include "LineDynamicMesh.h"
+#include "Shader.h"
 
 class UStaticMeshComponent;
 class UTextRenderComponent;
@@ -39,7 +40,7 @@ public:
 public:
     void Update(float DeltaSecond);
 
-	void BeginFrame();
+    void BeginFrame();
 
     void PrepareShader(UShader* InShader);
 
@@ -66,6 +67,10 @@ public:
     // View Mode Setting
     void SetViewModeType(EViewModeIndex ViewModeIndex);
     void SetViewModeIndex(EViewModeIndex InViewModeIndex) { CurrentViewMode = InViewModeIndex; }
+
+    // Shading model control (for uber shader)
+    void SetShadingModel(ELightShadingModel Model);
+    ELightShadingModel GetShadingModel() const;
 
     // Batch Line Rendering System
     void BeginLineBatch();
@@ -99,6 +104,7 @@ private:
 
     void RenderPointLightPass(UWorld* World);     // 포스트: PointLight 조명/가산
     void RenderDirectionalLightPass(UWorld* World);
+    void RenderSpotLightPass(UWorld* World);     // 포스트: SpotLight 조명/가산
     void RenderOverlayPass(UWorld* World);      // 라인/텍스트/UI/디버그
     void RenderSceneDepthVisualizePass(ACameraActor* Camera);       // 포스트: SceneDepth 뷰 모드 (뎁스 버퍼 시각화)
 
@@ -135,6 +141,9 @@ private:
     UShader* LastShader = nullptr;
     UTexture* LastTexture = nullptr;
 
+    // 뷰모드 선택 시, 해당 뷰모드 전용으로 사용하는 쉐이더
+    UShader* OverrideShader = nullptr;
+
     // Shader for Scene Depth Pass
     UShader* DepthOnlyShader = nullptr;
     UShader* SceneDepthVisualizeShader = nullptr;
@@ -149,5 +158,8 @@ private:
 
     void InitializeLineBatch();
     void ResetRenderStateTracking();
+    
+    // Global shading model selection used by uber shader(s)
+    ELightShadingModel CurrentShadingModel = ELightShadingModel::BlinnPhong;
 };
 
