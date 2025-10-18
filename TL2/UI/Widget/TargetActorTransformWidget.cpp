@@ -1393,51 +1393,77 @@ void UTargetActorTransformWidget::RenderFXAAComponentDetails(UFXAAComponent* InC
 
 void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComponent* InComponent)
 {
-	//ImGui::Separator();
-	//ImGui::Text("SpotLight Component Settings");
-	//
-	//// 🔸 색상 설정 (RGB Color Picker)
-	//float color[3] = { InComponent->PointData.Color.R, InComponent->SpotData.Color.G, InComponent->SpotData.Color.B };
-	//if (ImGui::ColorEdit3("Color", color))
-	//{
-	//	InComponent->SpotData.Color = FLinearColor(color[0], color[1], color[2], 1.0f);
-	//}
-	//
-	//ImGui::Spacing();
-	//
-	//// 🔸 밝기 (Intensity)
-	//float intensity = InComponent->SpotData.Intensity;
-	//if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
-	//{
-	//	InComponent->SpotData.Intensity = intensity;
-	//}
-	//
-	//// 🔸 InnerConeAngle
-	//float radius = InComponent->SpotData;
-	//if (ImGui::DragFloat("InnerConeAngle", &radius, 0.1f, 0.1f, 1000.0f))
-	//{
-	//	InComponent->PointData.Radius = radius;
-	//}
-	//
-	//// 🔸 OuterConeAngle
-	//float radius = InComponent->PointData.Radius;
-	//if (ImGui::DragFloat("OuterConeAngle", &radius, 0.1f, 0.1f, 1000.0f))
-	//{
-	//	InComponent->PointData.Radius = radius;
-	//}
-	//
-	//// 🔸 감쇠 정도 (FallOff)
-	//float falloff = InComponent->PointData.RadiusFallOff;
-	//if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
-	//{
-	//	InComponent->PointData.RadiusFallOff = falloff;
-	//}
-	//
-	//ImGui::Spacing();
-	//
-	//// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
-	//ImGui::Text("Preview:");
-	//ImGui::SameLine();
-	//ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
+	ImGui::Separator();
+	ImGui::Text("SpotLight Component Settings");
+	
+	// 🔸 색상 설정 (RGB Color Picker)
+	float color[3] = { InComponent->GetColor().R, InComponent->GetColor().G, InComponent->GetColor().B};
+	if (ImGui::ColorEdit3("Color", color))
+	{
+		InComponent->SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+	}
+	
+	ImGui::Spacing();
+
+	// 🔸 반지름
+	float radius = InComponent->GetRadius();
+	if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, 20.0f))
+	{
+		InComponent->SetRadius(radius);
+	}
+	
+	// 🔸 밝기 (Intensity)
+	float intensity = InComponent->GetIntensity();
+	if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
+	{
+		InComponent->SetIntensity(intensity);
+	}
+	
+	// 🔸 InnerConeAngle
+	float InnerRadius = InComponent->GetInnerConeAngle();
+	if (ImGui::DragFloat("InnerConeAngle", &InnerRadius, 1.0f, 0.0f, 90.0f))
+	{
+		InComponent->SetInnerConeAngle(InnerRadius );
+	}
+	
+	// 🔸 OuterConeAngle
+	float OuterRadius = InComponent->GetOuterConeAngle();
+	if (ImGui::DragFloat("OuterConeAngle", &OuterRadius, 1.0f, 0.0f, 90.0f))
+	{
+		InComponent->SetOuterConeAngle(OuterRadius );
+	}
+	
+	// 🔸 감쇠 정도 (FallOff)
+	float falloff = InComponent->GetRadiusFallOff();
+  	if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
+	{
+		InComponent->SetRadiusFallOff(falloff);
+	}
+	FVector attFactor = InComponent->GetAttFactor();
+  	if (ImGui::DragFloat3("Attenuation Factor", &attFactor.X, 1.0f, 0.0f, 10.0f))
+	{
+		InComponent->SetAttFactor(attFactor);
+	}
+	
+	// 🔸 inner 원과 outter 원과 smooth하게 섞임
+	float smooth = InComponent->GetInAndOutSmooth();
+	if (ImGui::DragFloat("In&Out Smooth Factor", &smooth, 1.0f, 1.0f, 10.0f))
+	{ 
+		InComponent->SetInAndOutSmooth(smooth);
+	}
+
+	// Circle vertex count for end-cap visualization
+	int segs = InComponent->GetCircleSegments();
+	if (ImGui::DragInt("Circle Segments", &segs, 1.0f, 3, 512))
+	{
+		segs = FMath::Clamp(segs, 3, 512);
+		InComponent->SetCircleSegments(segs);
+	}
+	ImGui::Spacing();
+	
+	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
+	ImGui::Text("Preview:");
+	ImGui::SameLine();
+	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
 
 }

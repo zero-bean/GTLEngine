@@ -176,8 +176,8 @@ void UPrimitiveSpawnWidget::RenderWidget()
         {
             for (int32 i = 0; i < static_cast<int32>(CachedMeshFilePaths.size()); ++i)
             {
-                if (GetBaseNameNoExt(CachedMeshFilePaths[i]) == "Cube" ||
-                    CachedMeshFilePaths[i] == "Data/Cube.obj")
+                if (GetBaseNameNoExt(CachedMeshFilePaths[i]) == "Sphere" ||
+                    CachedMeshFilePaths[i] == "Data/Sphere.obj")
                 {
                     SelectedMeshIndex = i;
                     break;

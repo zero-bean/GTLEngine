@@ -6,6 +6,7 @@
 #include "BillboardComponent.h"
 #include "PointLightComponent.h"
 #include "FXAAComponent.h"
+#include "SpotLightComponent.h"
 
 ULevel::ULevel()
 {

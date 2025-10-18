@@ -9,6 +9,7 @@
 #include "../../StaticMeshActor.h"
 #include "../../SelectionManager.h"
 #include "Renderer.h"
+#include "../../Shader.h"
 #include <algorithm>
 #include <string>
 
@@ -42,6 +43,25 @@ void USceneManagerWidget::RenderWidget()
 {
     ImGui::Text("Scene Manager");
     ImGui::DragFloat("Gamma", &GEngine->GetActiveWorld()->GetRenderer()->Gamma, 0.1f, 1.0f, 2.2f);
+
+    // Shading model selector (Uber shader)
+    if (URenderer* Renderer = GEngine->GetActiveWorld()->GetRenderer())
+    {
+        int current = static_cast<int>(Renderer->GetShadingModel());
+        ImGui::Text("Shading Model");
+        // Layout radios in two rows
+        ImGui::RadioButton("Phong", &current, static_cast<int>(ELightShadingModel::Phong));
+        ImGui::SameLine();
+        ImGui::RadioButton("Blinn-Phong", &current, static_cast<int>(ELightShadingModel::BlinnPhong));
+        ImGui::SameLine();
+        ImGui::RadioButton("Lambert", &current, static_cast<int>(ELightShadingModel::Lambert));
+        ImGui::SameLine();
+        ImGui::RadioButton("BRDF", &current, static_cast<int>(ELightShadingModel::BRDF));
+        if (current != static_cast<int>(Renderer->GetShadingModel()))
+        {
+            Renderer->SetShadingModel(static_cast<ELightShadingModel>(current));
+        }
+    }
     ImGui::Spacing();
 
     // Toolbar

@@ -22,6 +22,7 @@
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include "CameraComponent.h"
+#include "SpotLightComponent.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
@@ -73,9 +74,11 @@ void URenderer::PrepareShader(UShader* InShader)
         LastShader = ShaderToUse;
     }
     
-    RHIDevice->GetDeviceContext()->VSSetShader(ShaderToUse->GetVertexShader(), nullptr, 0);
-    RHIDevice->GetDeviceContext()->PSSetShader(ShaderToUse->GetPixelShader(), nullptr, 0);
-    RHIDevice->GetDeviceContext()->IASetInputLayout(ShaderToUse->GetInputLayout());
+    // Ensure uber-shader variant matches current selection
+    InShader->SetActiveMode(CurrentShadingModel);
+    RHIDevice->GetDeviceContext()->VSSetShader(InShader->GetVertexShader(), nullptr, 0);
+    RHIDevice->GetDeviceContext()->PSSetShader(InShader->GetPixelShader(), nullptr, 0);
+    RHIDevice->GetDeviceContext()->IASetInputLayout(InShader->GetInputLayout());
 }
 
 void URenderer::OMSetBlendState(bool bIsChecked)
@@ -479,6 +482,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_Wireframe:
     {
         RenderPointLightPass(World);
+        RenderSpotLightPass(World);
+
         RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
         RenderFogPass(World,Camera,Viewport);
         RenderFXAAPaxx(World, Camera, Viewport);
@@ -568,6 +573,54 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
     if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BVH))
     {
         AddLines(World->GetBVH().GetBVHBoundsWire(), FVector4(0.5f, 0.5f, 1, 1));
+    }
+
+    // SpotLight cone visualization via line batch
+    {
+        const FVector CameraPos = (World->GetCameraActor() ? World->GetCameraActor()->GetActorLocation() : FVector(0,0,0));
+        for (USpotLightComponent* Spot : World->GetLevel()->GetComponentList<USpotLightComponent>())
+        {
+            if (!Spot || !Spot->IsRender()) continue;
+
+            const FVector SpotPos = Spot->GetWorldLocation();
+            FVector dir = Spot->GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();
+            const float range = Spot->GetRadius();
+            if (range <= KINDA_SMALL_NUMBER || dir.SizeSquared() < KINDA_SMALL_NUMBER)
+            {
+                continue;
+            }
+            const float angleDeg = FMath::Clamp(Spot->GetOuterConeAngle(), 0.0f, 89.0f);
+            const float angleRad = DegreeToRadian(angleDeg);
+            const float circleRadius = std::tan(angleRad) * range;
+            const FVector center = SpotPos + dir * range;
+
+            // Build orthonormal basis (u,v) for circle plane (perpendicular to dir)
+            FVector arbitraryUp = fabsf(dir.Z) > 0.99f ? FVector(1, 0, 0) : FVector(0, 0, 1);
+            FVector u = FVector::Cross(arbitraryUp, dir).GetSafeNormal();
+            FVector v = FVector::Cross(dir, u).GetSafeNormal();
+
+            const int segments = FMath::Clamp(Spot->GetCircleSegments(), 3, 512);
+            const float step = TWO_PI / static_cast<float>(segments);
+            const FVector4 color(1.0f, 1.0f, 1.0f, 1.0f);
+
+            FVector prevPoint;
+            for (int i = 0; i <= segments; ++i)
+            {
+                float t = step * i;
+                FVector p = center + u * (cosf(t) * circleRadius) + v * (sinf(t) * circleRadius);
+
+                // Draw circle edge
+                if (i > 0)
+                {
+                    AddLine(prevPoint, p, color);
+                }
+                prevPoint = p;
+
+                // Draw camera-to-circle vertex line
+                AddLine(CameraPos, p, color);
+                AddLine(SpotPos, p, color);
+            }
+        }
     }
 
     EndLineBatch(FMatrix::Identity(), ViewMatrix, ProjectionMatrix);
@@ -750,7 +803,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
 {
     if (!World) return;
 
-    // 1️⃣ 라이트 컴포넌트 수집 (PointLight, PointLight 등)
+    // 1?? 라이트 컴포넌트 수집 (PointLight, PointLight 등)
     FPointLightBufferType PointLightCB{};
     PointLightCB.PointLightCount=0;
     for (UPointLightComponent* PointLightComponent : World->GetLevel()->GetComponentList<UPointLightComponent>())
@@ -766,7 +819,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
         );
         PointLightCB.PointLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
     }
-    // 2️⃣ 상수 버퍼 GPU로 업데이트
+    // 2?? 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);
 
     /*const TArray<AActor*>& Actors = World->GetLevel()->GetActors();se
@@ -794,6 +847,36 @@ void URenderer::RenderPointLightPass(UWorld* World)
             }
         }
     }*/
+}
+
+void URenderer::RenderSpotLightPass(UWorld* World)
+{
+    if (!World) return;
+     
+    FSpotLightBufferType SpotLightCB{};
+    SpotLightCB.SpotLightCount = 0;
+    for (USpotLightComponent* PointLightComponent : World->GetLevel()->GetComponentList<USpotLightComponent>())
+    {
+        int idx = SpotLightCB.SpotLightCount++;
+        if (idx >= MAX_POINT_LIGHTS) break;
+
+        SpotLightCB.SpotLights[idx].Position = FVector4(
+            PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
+        );
+        SpotLightCB.SpotLights[idx].Color = FVector4(
+            PointLightComponent->GetColor().R, PointLightComponent->GetColor().G, PointLightComponent->GetColor().B, PointLightComponent->GetIntensity()
+        );
+        SpotLightCB.SpotLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
+        // If set on component, propagate cone angles
+        SpotLightCB.SpotLights[idx].InnerConeAngle = PointLightComponent->GetInnerConeAngle();
+        SpotLightCB.SpotLights[idx].OuterConeAngle = PointLightComponent->GetOuterConeAngle();
+        SpotLightCB.SpotLights[idx].Direction = PointLightComponent->GetDirection();   
+        SpotLightCB.SpotLights[idx].InAndOutSmooth = PointLightComponent->GetInAndOutSmooth();
+        SpotLightCB.SpotLights[idx].AttFactor = PointLightComponent->GetAttFactor();
+
+    }
+    // 2?? 상수 버퍼 GPU로 업데이트
+    UpdateSetCBuffer(SpotLightCB); 
 }
 
 void URenderer::RenderOverlayPass(UWorld* World)
@@ -1081,4 +1164,15 @@ void URenderer::ClearLineBatch()
     LineBatchData->Indices.clear();
     
     bLineBatchActive = false;
+}
+
+// Shading model accessors (used by UI)
+void URenderer::SetShadingModel(ELightShadingModel Model)
+{
+    CurrentShadingModel = Model;
+}
+
+ELightShadingModel URenderer::GetShadingModel() const
+{
+    return CurrentShadingModel;
 }

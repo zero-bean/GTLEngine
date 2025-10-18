@@ -2,6 +2,7 @@
 #include "BillboardComponent.h"
 #include "RHIDevice.h"
 #include "LineDynamicMesh.h"
+#include "Shader.h"
 
 class UStaticMeshComponent;
 class UTextRenderComponent;
@@ -67,6 +68,10 @@ public:
     void SetViewModeType(EViewModeIndex ViewModeIndex);
     void SetViewModeIndex(EViewModeIndex InViewModeIndex) { CurrentViewMode = InViewModeIndex; }
 
+    // Shading model control (for uber shader)
+    void SetShadingModel(ELightShadingModel Model);
+    ELightShadingModel GetShadingModel() const;
+
     // Batch Line Rendering System
     void BeginLineBatch();
     void AddLine(const FVector& Start, const FVector& End, const FVector4& Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -99,6 +104,7 @@ private:
 
     void RenderPointLightShadowPass(UWorld* World);
     void RenderPointLightPass(UWorld* World);     // 포스트: PointLight 조명/가산
+    void RenderSpotLightPass(UWorld* World);     // 포스트: SpotLight 조명/가산
     void RenderOverlayPass(UWorld* World);      // 라인/텍스트/UI/디버그
     void RenderSceneDepthVisualizePass(ACameraActor* Camera);       // 포스트: SceneDepth 뷰 모드 (뎁스 버퍼 시각화)
 
@@ -161,5 +167,8 @@ private:
 
     void InitializeLineBatch();
     void ResetRenderStateTracking();
+    
+    // Global shading model selection used by uber shader(s)
+    ELightShadingModel CurrentShadingModel = ELightShadingModel::BlinnPhong;
 };
 

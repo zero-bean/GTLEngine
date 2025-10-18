@@ -303,7 +303,7 @@ void SViewportWindow::RenderToolbar()
 			//}
 
 			ImGui::EndCombo();
-		}
+		} 
 
 		// PIE Play/Stop 버튼
 		ImGui::SameLine();
