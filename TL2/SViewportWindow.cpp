@@ -304,6 +304,20 @@ void SViewportWindow::RenderToolbar()
 			ImGui::EndCombo();
 		}
 
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70.0f);
+		if (ImGui::BeginCombo("##Shading", "Shading"))
+		{
+			// UI
+			static int modelIdx = 2; // 0 Phong, 1 Blinn, 2 Lambert, 3 BRDF
+			ImGui::RadioButton("Phong", &modelIdx, 0);
+			ImGui::RadioButton("Blinn", &modelIdx, 1);
+			ImGui::RadioButton("Lambert", &modelIdx, 2);
+			ImGui::RadioButton("BRDF", &modelIdx, 3);
+		
+		}
+
+
 		// PIE Play/Stop 버튼
 		ImGui::SameLine();
 		UEngine* Engine = GetEngine();

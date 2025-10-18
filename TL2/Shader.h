@@ -1,26 +1,52 @@
 ﻿#pragma once
 #include "ResourceBase.h"
 
+enum class ELightShadingModel : uint32_t
+{
+	Phong = 0,
+	BlinnPhong = 1,
+	Lambert= 2,
+	BRDF = 3,
+	Count,
+};
 class UShader : public UResourceBase
 {
 public:
 	DECLARE_CLASS(UShader, UResourceBase)
 
 	void Load(const FString& ShaderPath, ID3D11Device* InDevice);
-
+	   
 	ID3D11InputLayout* GetInputLayout() const { return InputLayout; }
 	ID3D11VertexShader* GetVertexShader() const { return VertexShader; }
-	ID3D11PixelShader* GetPixelShader() const { return PixelShader; }
+	ID3D11PixelShader* GetPixelShader() const { return PixelShaders[(size_t)ActiveModel]; }
+
+	void SetActiveMode(ELightShadingModel Model) { ActiveModel = Model; }
+	ELightShadingModel GetActiveMode() const  { return ActiveModel; } 
+
+	static const D3D_SHADER_MACRO* GetMacros(ELightShadingModel Model);
+
 protected:
 	virtual ~UShader();
 
+	ELightShadingModel ActiveModel = ELightShadingModel::BlinnPhong;
+
+	// Default macro table; actual selection is decided at load time.
+	D3D_SHADER_MACRO DefinesRender[5] =
+	{
+		{ "LIGHTING_MODEL_PHONG",  "0" },
+		{ "LIGHTING_MODEL_BLINN_PHONG",  "1" },
+		{ "LIGHTING_MODEL_BRDF",  "0" },
+		{ "LIGHTING_MODEL_LAMBERT",  "0" },
+		{ nullptr, nullptr }
+	};
+	 
 private:
 	ID3DBlob* VSBlob = nullptr;
 	ID3DBlob* PSBlob = nullptr;
 
 	ID3D11InputLayout* InputLayout = nullptr;
 	ID3D11VertexShader* VertexShader = nullptr;
-	ID3D11PixelShader* PixelShader = nullptr;
+	ID3D11PixelShader* PixelShaders[(size_t)ELightShadingModel::Count] = {nullptr};
 
 	void CreateInputLayout(ID3D11Device* Device, const FString& InShaderPath);
 	void ReleaseResources();
@@ -56,9 +82,7 @@ struct FVertexPositionColorTexturNormal
 };
 
 struct FVertexPositionBillBoard
-
 {
-
 	static const D3D11_INPUT_ELEMENT_DESC* GetLayout()
 
 	{
@@ -76,8 +100,7 @@ struct FVertexPositionBillBoard
 		return layout;
 
 	}
-
-
+	 
 
 	static uint32 GetLayoutCount() { return 3; }
 
