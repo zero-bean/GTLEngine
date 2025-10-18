@@ -52,6 +52,7 @@ MACRO(FPointLightBufferType)                  \
 MACRO(CameraInfoBufferType)                  \
 MACRO(FXAABufferType)                  \
 MACRO(FGammaBufferType)                  \
+MACRO(FDirectionalLightBufferType)          \
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
@@ -70,6 +71,7 @@ CBUFFER_INFO(FPointLightBufferType, 9, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
+CBUFFER_INFO(FDirectionalLightBufferType, 11, false, true)
 
 
 //Create 
@@ -228,6 +230,21 @@ struct FGammaBufferType
 {
     float Gamma;
     FVector padding;
+};
+
+struct FDirectionalLightData
+{
+    FLinearColor Color;
+    FVector Direction;
+    int32 bEnableSpecular;
+};
+
+// PS : b11
+struct FDirectionalLightBufferType
+{
+    int DirectionalLightCount;
+    FVector Pad;
+    FDirectionalLightData DirectionalLights[MAX_POINT_LIGHTS];
 };
 //---//
 

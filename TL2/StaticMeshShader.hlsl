@@ -82,6 +82,20 @@ cbuffer PointLightBuffer : register(b9)
     FPointLightData PointLights[MAX_PointLight];
 }
 
+struct FDirectionalLightData
+{
+    float4 Color;
+    float3 Direction;
+    int bEnableSpecular;
+};
+
+cbuffer FDirectionalLightBufferType : register(b11)
+{
+    int DirectionalLightCount;
+    float3 Pad;
+    FDirectionalLightData DirectionalLights[MAX_PointLight];
+}
+
 struct LightAccum
 {
     float3 diffuse;
@@ -147,6 +161,41 @@ LightAccum ComputePointLights_LambertPhong(float3 worldPos, float3 worldNormal, 
 
         acc.diffuse += diffuse;
         acc.specular += specular;
+    }
+
+    return acc;
+}
+
+LightAccum ComputeDirectionalLights(float3 WorldPosition, float3 WorldNormal, float Shininess)
+{
+    LightAccum acc = (LightAccum) 0;
+
+    float3 NormalVector = normalize(WorldNormal);
+    // 카메라로 향하는 방향 벡터
+    float3 ViewVector = normalize(CameraWorldPos - WorldPosition);
+
+    float exp = clamp(Shininess, 1.0, 128.0);
+
+    exp = 128.0;
+    [loop]
+    for (int i = 0; i < DirectionalLightCount; ++i)
+    {
+        float3 LightColor = DirectionalLights[i].Color.rgb * DirectionalLights[i].Color.a;
+        
+        // 광원에서 물체를 향하는 방향 벡터에 부호를 바꿔서 물체에서 광원을 향하도록 함
+        float3 LightVector = normalize(-DirectionalLights[i].Direction);
+        // 표면 -> 광원 벡터와 물체의 법선벡터 내적
+        float DiffuseFactor = saturate(dot(LightVector, NormalVector));
+        float3 Diffuse = LightColor * DiffuseFactor;
+        acc.diffuse += Diffuse;
+
+        if (DirectionalLights[i].bEnableSpecular == 1)
+        {
+            float3 HalfVector = normalize(LightVector + ViewVector);
+            float SpecularFactor = saturate(dot(HalfVector, NormalVector));
+            float3 Specular = LightColor * pow(SpecularFactor, exp);
+            acc.specular += Specular;
+        }
     }
 
     return acc;
@@ -272,15 +321,19 @@ PS_OUTPUT mainPS(PS_INPUT input)
     }
 
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
-    LightAccum la = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);
+    LightAccum DirectionalLightColor = ComputeDirectionalLights(input.worldPosition, N, shininess); 
+    LightAccum PointLightColor = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);    
+    LightAccum TotalLight = (LightAccum)0;
+    TotalLight.diffuse = DirectionalLightColor.diffuse + PointLightColor.diffuse;
+    TotalLight.specular = DirectionalLightColor.specular + PointLightColor.specular;
     
     // Ambient + Diffuse + Specular
     float3 ambient = 0.25 * base;
     if (HasMaterial)
         ambient += 0.25 * Material.AmbientColor;
 
-    float3 diffuseLit = base * la.diffuse;
-    float3 specularLit = la.specular;
+    float3 diffuseLit = base * TotalLight.diffuse;
+    float3 specularLit = TotalLight.specular;
     if (HasMaterial)
         specularLit *= saturate(Material.SpecularColor);
 

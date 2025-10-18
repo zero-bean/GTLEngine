@@ -70,6 +70,7 @@ struct FDirectionalLightProperty
     float Intensity = 3.0f;           // 밝기
     FLinearColor Color = FLinearColor(1.0f, 0.95f, 0.8f, 1.0f); // 따뜻한 햇빛색
     FVector Direction = FVector(0.0f, 0.0f, -1.0f); // 아래 방향
+    uint32 bEnableSpecular = 1;
 };
 
 

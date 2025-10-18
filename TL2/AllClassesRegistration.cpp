@@ -49,6 +49,7 @@
 #include "DecalComponent.h"
 #include "DecalActor.h"
 #include "DecalSpotLightActor.h"
+#include "DirectionalLightActor.h"
 #include "ExponentialHeightFog.h"
 #include "PointLightActor.h"
 #include "PointLightComponent.h"
@@ -61,6 +62,7 @@
 #include"LocalLightComponent.h"
 #include "SpotLightActor.h" 
 #include "SpotLightComponent.h"
+#include "DirectionalLightComponent.h"
 // ... (rest of the file)
 IMPLEMENT_CLASS(UWorld)
 
@@ -87,6 +89,7 @@ IMPLEMENT_CLASS(AExponentialHeightFog)
 IMPLEMENT_CLASS(AFXAAActor)
 IMPLEMENT_CLASS(ASpotLightActor)
 IMPLEMENT_CLASS(APointLightActor)
+IMPLEMENT_CLASS(ADirectionalLightActor)
 
 IMPLEMENT_CLASS(UGizmoArrowComponent)
 IMPLEMENT_CLASS(UGizmoScaleComponent)
@@ -101,6 +104,7 @@ IMPLEMENT_CLASS(UExponentialHeightFogComponent)
 IMPLEMENT_CLASS(UFXAAComponent)
 IMPLEMENT_CLASS(ULightComponent)
 IMPLEMENT_CLASS(ULocalLightComponent)
+IMPLEMENT_CLASS(UDirectionalLightComponent)
 
 // Managers / Systems
 IMPLEMENT_CLASS(UInputManager)

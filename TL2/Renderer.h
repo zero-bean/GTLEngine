@@ -95,10 +95,10 @@ private:
     void RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix);   // 깊이 전용 (필요 시)
     void RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* Viewport);         // 불투명/기본 머티리얼
     void RenderFogPass(UWorld* World, ACameraActor* Camera, FViewport* Viewport);                       // 포스트: SceneColor/SceneDepth 기반
-    void RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* Viewport);
+    void RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* Viewport);    
 
-    void RenderPointLightShadowPass(UWorld* World);
     void RenderPointLightPass(UWorld* World);     // 포스트: PointLight 조명/가산
+    void RenderDirectionalLightPass(UWorld* World);
     void RenderOverlayPass(UWorld* World);      // 라인/텍스트/UI/디버그
     void RenderSceneDepthVisualizePass(ACameraActor* Camera);       // 포스트: SceneDepth 뷰 모드 (뎁스 버퍼 시각화)
 
@@ -111,15 +111,6 @@ private:
     void RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport);
     void RenderDecals(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport);
     void RenderEngineActors(const TArray<AActor*>& EngineActors, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport);
-
-    //// 2) 풀스크린 쿼드
-    //void CreateFullScreenQuad();
-    //void DestroyFullScreenQuad();
-    //void DrawFullScreenQuad();
-
-    //// 3) 씬 타겟 (SceneColor/SceneDepth)
-    //void EnsureSceneTargets();     // 뷰포트 크기 반영해 생성/재생성
-    //void ReleaseSceneTargets();
 
     // 4) 파이프라인 공통 상수
     struct alignas(16) FPostCB { FVector4 ViewSize; FVector2D NearFar; FVector2D Pad; };

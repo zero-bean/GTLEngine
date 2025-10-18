@@ -497,6 +497,12 @@
     <ClCompile Include="PointLightActor.cpp">
       <Filter>Actors</Filter>
     </ClCompile>
+    <ClCompile Include="DirectionalLightComponent.cpp">
+      <Filter>Components\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectionalLightActor.cpp">
+      <Filter>Actors</Filter>
+    </ClCompile>
   </ItemGroup>
   <!-- ==================== 헤더 파일 (.h) ==================== -->
   <ItemGroup>
@@ -913,6 +919,12 @@
     <ClInclude Include="SpotLightActor.h" />
     <ClInclude Include="SpotLightComponent.h" />
     <ClInclude Include="PointLightActor.h">
+      <Filter>Actors</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectionalLightComponent.h">
+      <Filter>Components\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectionalLightActor.h">
       <Filter>Actors</Filter>
     </ClInclude>
   </ItemGroup>

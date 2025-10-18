@@ -12,6 +12,7 @@ class UDecalComponent;
 class URotationMovementComponent;
 class UProjectileMovementComponent;
 class USpotLightComponent;
+class UDirectionalLightComponent;
 
 class UTargetActorTransformWidget
 	: public UWidget
@@ -77,4 +78,5 @@ private:
 	void RenderProjectileMovementComponentDetails(UProjectileMovementComponent* InComponent);
 	void RenderFXAAComponentDetails(UFXAAComponent* InComponent);
 	void RenderSpotLightComponentDetails(USpotLightComponent* InComponent);
+	void RenderDirectionalLightComponentDetails(UDirectionalLightComponent* InComponent);
 };

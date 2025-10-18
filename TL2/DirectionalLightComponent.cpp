@@ -1,11 +1,10 @@
 #include "pch.h"
 #include "DirectionalLightComponent.h"
 #include "SceneLoader.h"
-#include "World.h"
 
 UDirectionalLightComponent::UDirectionalLightComponent()
 {
-    bCanEverTick = true;
+    bCanEverTick = true;    
 }
 
 UDirectionalLightComponent::~UDirectionalLightComponent()
@@ -19,11 +18,15 @@ void UDirectionalLightComponent::Serialize(bool bIsLoading, FComponentData& InOu
 
     if (bIsLoading)
     {
-        DirectionalData = InOut.DirectionalLightProperty;
+        Intensity = InOut.DirectionalLightProperty.Intensity;
+        Color = InOut.DirectionalLightProperty.Color;
+        bEnableSpecular = InOut.DirectionalLightProperty.bEnableSpecular;
     }
     else
     {
-        InOut.DirectionalLightProperty = DirectionalData;
+        InOut.DirectionalLightProperty.Intensity = Intensity;
+        InOut.DirectionalLightProperty.Color = Color;
+        InOut.DirectionalLightProperty.bEnableSpecular = bEnableSpecular;
     }
 }
 
@@ -33,11 +36,18 @@ void UDirectionalLightComponent::TickComponent(float DeltaSeconds)
     // 예: 해의 이동에 따른 방향 변화 등
 }
 
+void UDirectionalLightComponent::SetSpecularEnable(bool bEnable)
+{
+    bEnableSpecular = bEnable ? 1 : 0;
+}
+
 UObject* UDirectionalLightComponent::Duplicate()
 {
     UDirectionalLightComponent* DuplicatedComponent = NewObject<UDirectionalLightComponent>();
     CopyCommonProperties(DuplicatedComponent);
-    DuplicatedComponent->DirectionalData = this->DirectionalData;
+    DuplicatedComponent->Intensity = this->Intensity;
+    DuplicatedComponent->Color = this->Color;    
+    DuplicatedComponent->bEnableSpecular = this->bEnableSpecular;
     DuplicatedComponent->DuplicateSubObjects();
     return DuplicatedComponent;
 }

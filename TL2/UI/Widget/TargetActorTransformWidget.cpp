@@ -24,9 +24,11 @@
 #include "FXAAComponent.h"
 #include"PointLightComponent.h"
 #include "SpotLightComponent.h"
+#include "DirectionalLightComponent.h"
 
 #include <filesystem>
 #include <vector>
+
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -533,6 +535,10 @@ void UTargetActorTransformWidget::RenderWidget()
 		else if (USpotLightComponent* SpotLightComp = Cast<USpotLightComponent>(SelectedComponent))
 		{
 			RenderSpotLightComponentDetails(SpotLightComp);
+		}
+		else if (UDirectionalLightComponent* DirectionalLightComp = Cast<UDirectionalLightComponent>(SelectedComponent))
+		{
+			RenderDirectionalLightComponentDetails(DirectionalLightComp);
 		}
 
 		else
@@ -1325,4 +1331,39 @@ void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComp
 	//ImGui::SameLine();
 	//ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
 
+}
+
+void UTargetActorTransformWidget::RenderDirectionalLightComponentDetails(UDirectionalLightComponent* InComponent)
+{
+	ImGui::Separator();
+	ImGui::Text("PointLight Component Settings");
+
+	// 🔸 색상 설정 (RGB Color Picker)
+	float color[3] = { InComponent->GetColor().R, InComponent->GetColor().G, InComponent->GetColor().B};
+	if (ImGui::ColorEdit3("Color", color))
+	{
+		InComponent->SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+	}
+
+	ImGui::Spacing();
+
+	// 🔸 밝기 (Intensity)
+	float intensity = InComponent->GetIntensity();
+	if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
+	{
+		InComponent->SetIntensity(intensity);
+	}
+
+	bool bEnableSpecular = InComponent->IsEnabledSpecular() && true;
+	if (ImGui::Checkbox("Specular Enable", &bEnableSpecular))
+	{
+		InComponent->SetSpecularEnable(bEnableSpecular);
+	}
+	
+	ImGui::Spacing();
+
+	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
+	ImGui::Text("Preview:");
+	ImGui::SameLine();
+	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● DirectionalLight Active");
 }

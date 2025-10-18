@@ -6,7 +6,7 @@ class UPointLightComponent;
 class APointLightActor : public AActor
 {
 public:
-    DECLARE_CLASS(APointLightActor, AActor)
+    DECLARE_SPAWNABLE_CLASS(APointLightActor, AActor, "Point Light");
 
     APointLightActor();
     ~APointLightActor() override;

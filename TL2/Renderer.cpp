@@ -22,6 +22,7 @@
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include "CameraComponent.h"
+#include "DirectionalLightComponent.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
@@ -449,41 +450,6 @@ void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* V
     RenderActorsInViewport(World, ViewMatrix, ProjectionMatrix, Viewport);
 }
 
-//void URenderer::RenderPointLightShadowPass(UWorld* World)
-//{
-//    for (auto& Light : World->PointLights)
-//    {
-//        if (!Light->CastShadows)
-//            continue;
-//
-//        const FVector LightPos = Light->Position;
-//        const float NearZ = 1.0f;
-//        const float FarZ = Light->Radius;
-//
-//        // 6방향 뷰행렬 구성
-//        FMatrix LightViews[6];
-//        LightViews[0] = FMatrix::LookAt(LightPos, LightPos + FVector(1, 0, 0), FVector(0, 1, 0));   // +X
-//        LightViews[1] = FMatrix::LookAt(LightPos, LightPos + FVector(-1, 0, 0), FVector(0, 1, 0));  // -X
-//        LightViews[2] = FMatrix::LookAt(LightPos, LightPos + FVector(0, 1, 0), FVector(0, 0, -1));  // +Y
-//        LightViews[3] = FMatrix::LookAt(LightPos, LightPos + FVector(0, -1, 0), FVector(0, 0, 1));  // -Y
-//        LightViews[4] = FMatrix::LookAt(LightPos, LightPos + FVector(0, 0, 1), FVector(0, 1, 0));   // +Z
-//        LightViews[5] = FMatrix::LookAt(LightPos, LightPos + FVector(0, 0, -1), FVector(0, 1, 0));  // -Z
-//
-//        const FMatrix LightProj = FMatrix::PerspectiveFovLH(PI / 2.0f, 1.0f, NearZ, FarZ);
-//
-//        for (int Face = 0; Face < 6; ++Face)
-//        {
-//            RHI->SetRenderTarget(Light->ShadowCubeMap, Face);
-//            RHI->ClearDepth(1.0f);
-//            RHI->OMSetDepthStencilState(EComparisonFunc::LessEqualWrite);
-//
-//            UpdateShadowBuffer(LightViews[Face], LightProj, LightPos);
-//            RenderSceneDepthOnly(World); // 깊이만 렌더
-//        }
-//    }
-//}
-
-
 void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
 
@@ -503,6 +469,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_Unlit:
     case EViewModeIndex::VMI_Wireframe:
     {
+        RenderDirectionalLightPass(World);
         RenderPointLightPass(World);
         RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
         RenderFogPass(World,Camera,Viewport);
@@ -577,98 +544,7 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
     RenderEngineActors(World->GetEngineActors(), ViewMatrix, ProjectionMatrix, Viewport);
 
     RenderDecals(World, ViewMatrix, ProjectionMatrix, Viewport);
-
-
-    //const TArray<AActor*>& LevelActors = World->GetLevel() ? World->GetLevel()->GetActors() : TArray<AActor*>();
-    //USelectionManager& SelectionManager = USelectionManager::GetInstance();
-
-    //// 특수 처리가 필요한 컴포넌트들
-    //TArray<UDecalComponent*> Decals;
-    //TArray<UPrimitiveComponent*> RenderPrimitivesWithOutDecal;
-    //TArray<UBillboardComponent*> BillboardComponentList;
-    // 
-    //// 액터별로 순회하며 렌더링
-    //for (AActor* Actor : LevelActors)
-    //{
-    //    if (!Actor || Actor->GetActorHiddenInGame())
-    //    {
-    //        continue;
-    //    }
-
-    //    bool bIsSelected = SelectionManager.IsActorSelected(Actor);
-
-    //    for (UActorComponent* ActorComp : Actor->GetComponents())
-    //    {
-    //        if (!ActorComp)
-    //        {
-    //            continue;
-    //        }
-
-    //        if (UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(ActorComp))
-    //        {
-    //            // 바운딩 박스 그리기
-    //            if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BoundingBoxes))
-    //            {
-    //                AddLines(Primitive->GetBoundingBoxLines(), Primitive->GetBoundingBoxColor());
-    //            }
-
-    //            // 데칼 컴포넌트는 나중에 처리
-    //            if (UDecalComponent* Decal = Cast<UDecalComponent>(ActorComp))
-    //            {
-    //                Decals.Add(Decal);
-    //                continue;
-    //            }
-    //            if (UBillboardComponent* Billboard = Cast<UBillboardComponent>(ActorComp))
-    //            {
-    //                BillboardComponentList.Add(Billboard);
-    //                continue;
-    //            }
-
-    //            RenderPrimitivesWithOutDecal.Add(Primitive);
-
-    //            FVector rgb(1.0f, 1.0f, 1.0f);
-    //            UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
-    //            Primitive->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
-    //        }
-    //    }
-    //}
-
-    //OMSetBlendState(false);
-    //RenderEngineActors(World->GetEngineActors(), ViewMatrix, ProjectionMatrix, Viewport);
-
-    //// 데칼 렌더링
-    //if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_Decals))
-    //{
-    //    Decals.Sort([](const UDecalComponent* A, const UDecalComponent* B)
-    //    {
-    //        return A->GetSortOrder() < B->GetSortOrder();
-    //    });
-
-    //    for (UDecalComponent* Decal : Decals)
-    //    {
-    //        FOBB DecalWorldOBB = Decal->GetWorldOBB();
-
-    //        if (World->GetUseBVH() && World->GetBVH().IsBuild())
-    //        {
-    //            TArray<UPrimitiveComponent*> CollisionPrimitives = World->GetBVH().GetCollisionWithOBB(DecalWorldOBB);
-    //            for (UPrimitiveComponent* Primitive : CollisionPrimitives)
-    //            {
-    //                Decal->Render(this, Primitive, ViewMatrix, ProjectionMatrix, Viewport);
-    //            }
-    //        }
-    //        else
-    //        {
-    //            for (UPrimitiveComponent* Primitive : RenderPrimitivesWithOutDecal)
-    //            {
-    //                if (IntersectOBBAABB(DecalWorldOBB, Primitive->GetWorldAABB()))
-    //                {
-    //                    Decal->Render(this, Primitive, ViewMatrix, ProjectionMatrix, Viewport);
-    //                }
-    //            }
-    //        }
-    //    }
-    //}
-
+    
     // BVH 바운드 시각화
     if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BVH))
     {
@@ -676,14 +552,7 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
     }
 
     EndLineBatch(FMatrix::Identity(), ViewMatrix, ProjectionMatrix);
-
-    // 빌보드는 마지막에 렌더링
-   /* for (auto& Billboard : World->GetLevel()->GetComponentList<UBillboardComponent>())
-    {
-        Billboard->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
-    }*/
-
-  
+    
 }
 
 void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport)
@@ -787,18 +656,7 @@ void URenderer::RenderPostProcessing(UShader* Shader)
 {
     OMSetBlendState(false);
     OMSetDepthStencilState(EComparisonFunc::Disable);
-    /*UINT Stride = sizeof(FVertexUV);
-    UINT Offset = 0;
-    UStaticMesh* StaticMesh = UResourceManager::GetInstance().Load<UStaticMesh>("ScreenQuad");
-    ID3D11Buffer* VertexBuffer = StaticMesh->GetVertexBuffer();
-    ID3D11Buffer* IndexBuffer = StaticMesh->GetIndexBuffer();
-    RHIDevice->GetDeviceContext()->IASetVertexBuffers(
-        0, 1, &VertexBuffer, &Stride, &Offset
-    );
 
-    RHIDevice->GetDeviceContext()->IASetIndexBuffer(s
-        IndexBuffer, DXGI_FORMAT_R32_UINT, 0
-    );*/
     ID3D11DeviceContext* DeviceContext = RHIDevice->GetDeviceContext();
     DeviceContext->IASetInputLayout(nullptr);
     DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
@@ -853,7 +711,6 @@ void URenderer::RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* V
     }
 }
 
-
 void URenderer::RenderPointLightPass(UWorld* World)
 {
     if (!World) return;
@@ -876,34 +733,27 @@ void URenderer::RenderPointLightPass(UWorld* World)
     }
     // 2️⃣ 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);
-
-    /*const TArray<AActor*>& Actors = World->GetLevel()->GetActors();se
-
-    for (AActor* Actor : Actors)
-    {
-        if (!Actor) continue;
-        for (UActorComponent* Comp : Actor->GetComponents())
-        {
-            if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Comp))
-            {
-                if (UPointLightComponent* Point = Cast<UPointLightComponent>(Prim))
-                {
-                    int idx = PointLightCB.PointLightCount++;
-                    if (idx >= MAX_POINT_LIGHTS) break;
-
-                    PointLightCB.PointLights[idx].Position = FVector4(
-                        Point->GetWorldLocation(), Point->PointData.Radius
-                    );
-                    PointLightCB.PointLights[idx].Color = FVector4(
-                        Point->PointData.Color.R, Point->PointData.Color.G, Point->PointData.Color.B, Point->PointData.Intensity
-                    );
-                    PointLightCB.PointLights[idx].FallOff = Point->PointData.RadiusFallOff;
-                }
-            }
-        }
-    }*/
-
     
+}
+
+void URenderer::RenderDirectionalLightPass(UWorld* World)
+{
+    if (!World) return;
+
+    FDirectionalLightBufferType DirectionalLightCB{};
+    DirectionalLightCB.DirectionalLightCount = 0;
+    for (UDirectionalLightComponent* DirectionalLightComponent : World->GetLevel()->GetComponentList<UDirectionalLightComponent>())
+    {
+        int idx = DirectionalLightCB.DirectionalLightCount++;
+        if (idx >= MAX_POINT_LIGHTS) break;
+
+        DirectionalLightCB.DirectionalLights[idx].Direction = DirectionalLightComponent->GetDirection();
+        DirectionalLightCB.DirectionalLights[idx].Color = FLinearColor(
+            DirectionalLightComponent->GetColor().R,DirectionalLightComponent->GetColor().G,DirectionalLightComponent->GetColor().B,DirectionalLightComponent->GetIntensity()
+            );
+        DirectionalLightCB.DirectionalLights[idx].bEnableSpecular = DirectionalLightComponent->IsEnabledSpecular();
+    }
+    UpdateSetCBuffer(DirectionalLightCB);    
 }
 
 void URenderer::RenderOverlayPass(UWorld* World)
