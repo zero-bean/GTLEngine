@@ -67,6 +67,7 @@ public:
     // View Mode Setting
     void SetViewModeType(EViewModeIndex ViewModeIndex);
     void SetViewModeIndex(EViewModeIndex InViewModeIndex) { CurrentViewMode = InViewModeIndex; }
+    EViewModeIndex GetCurrentViewMode() const { return CurrentViewMode; }
 
     // Shading model control (for uber shader)
     void SetShadingModel(ELightShadingModel Model);

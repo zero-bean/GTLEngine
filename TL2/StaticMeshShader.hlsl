@@ -531,7 +531,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     la.specular += ls.specular + ld.specular;    
     
     // Ambient + Diffuse + Specular
-    float3 ambient = 0.25 * base;
+   // float3 ambient = 0.25 * base;
 
     // Multi-Probe SH-based Ambient Lighting
     float3 shAmbient = EvaluateMultiProbeSHLighting(input.worldPosition, N) * base;

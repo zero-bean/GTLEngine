@@ -103,7 +103,7 @@ private:
 	int32 CaptureResolution = 100;           // Cubemap face resolution (64x64)
 	float UpdateInterval = 0.1f;            // Update every N seconds
 	float SmoothingFactor = 0.1f;           // Temporal smoothing (0=no smooth, 1=instant)
-	float SHIntensity = 1.0f;               // Global intensity multiplier
+	float SHIntensity = 1.0f;              // Global intensity multiplier (낮은 값 = π 변환 보정)
 
 	// Update timing
 	float TimeSinceLastCapture = 0.0f;

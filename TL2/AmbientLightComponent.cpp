@@ -236,6 +236,10 @@ void UAmbientLightComponent::CaptureEnvironment(UWorld* World, URenderer* Render
     D3D11_VIEWPORT OldViewport;
     Context->RSGetViewports(&NumViewports, &OldViewport);
 
+    // Save current view mode and switch to Unlit for capturing base colors
+    EViewModeIndex OldViewMode = Renderer->GetCurrentViewMode();
+    Renderer->SetShadingModel(ELightShadingModel::Unlit);
+
     // Setup cubemap viewport
     D3D11_VIEWPORT CubeViewport = {};
     CubeViewport.Width = static_cast<float>(CaptureResolution);
@@ -278,6 +282,9 @@ void UAmbientLightComponent::CaptureEnvironment(UWorld* World, URenderer* Render
             Renderer->RenderSceneToCubemapFace(World, ViewMatrix, ProjMatrix, ProbeLocation, ActiveViewport);
         }
     }
+
+    // Restore view mode
+    Renderer->SetShadingModel(ELightShadingModel::BlinnPhong);
 
     // Restore render targets and viewport
     Context->OMSetRenderTargets(1, &OldRTV, OldDSV);

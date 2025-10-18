@@ -48,9 +48,24 @@ cbuffer SpotLightBuffer : register(b13)
 
 //===========DirectionalLight==============//
 
+//===========SH Ambient Light==============//
+// Multi-Probe SH Ambient Light
+struct FSHProbeData
+{
+    float4 Position;           // xyz=프로브 위치, w=영향 반경
+    float4 SHCoefficients[9];  // 9개 SH 계수
+    float Intensity;           // 강도
+    float3 Padding;            // 16바이트 정렬
+};
 
+#define MAX_SH_PROBES 8
 
-
+cbuffer MultiSHProbeBuffer : register(b12)
+{
+    int ProbeCount;
+    float3 _pad_multiprobe;
+    FSHProbeData Probes[MAX_SH_PROBES];
+}
 
 struct LightAccum
 {
@@ -149,6 +164,75 @@ LightAccum ComputeSpotLights_BlinnPhong(float3 cameraWorldPos, float3 worldPos, 
         //acc.specular += specular;
     } 
     return acc;
+}
+
+// ------------------------------------------------------------------
+// Spherical Harmonics Basis Functions (L2, 9 coefficients)
+// ------------------------------------------------------------------
+float SHBasis0(float3 n) { return 0.282095; }
+float SHBasis1(float3 n) { return 0.488603 * n.y; }
+float SHBasis2(float3 n) { return 0.488603 * n.z; }
+float SHBasis3(float3 n) { return 0.488603 * n.x; }
+float SHBasis4(float3 n) { return 1.092548 * n.x * n.y; }
+float SHBasis5(float3 n) { return 1.092548 * n.y * n.z; }
+float SHBasis6(float3 n) { return 0.315392 * (3.0 * n.z * n.z - 1.0); }
+float SHBasis7(float3 n) { return 1.092548 * n.x * n.z; }
+float SHBasis8(float3 n) { return 0.546274 * (n.x * n.x - n.y * n.y); }
+
+// ------------------------------------------------------------------
+// Evaluate Multi-Probe SH Lighting
+// Blends multiple probes based on distance
+// ------------------------------------------------------------------
+float3 EvaluateMultiProbeSHLighting(float3 worldPos, float3 normal)
+{
+    if (ProbeCount == 0)
+        return float3(0, 0, 0);
+
+    float3 n = normalize(normal);
+    float3 totalLighting = 0.0;
+    float totalWeight = 0.0;
+
+    // Blend all probes based on distance
+    [loop]
+    for (int i = 0; i < ProbeCount; ++i)
+    {
+        float3 probePos = Probes[i].Position.xyz;
+        float radius = Probes[i].Position.w;
+
+        float dist = length(worldPos - probePos);
+
+        // Distance-based weight (inverse distance falloff)
+        float weight = saturate(1.0 - (dist / radius));
+        weight = weight * weight; // Square for smoother falloff
+
+        if (weight > 0.001)
+        {
+            // Evaluate SH for this probe
+            float3 probeLighting = 0.0;
+            probeLighting += Probes[i].SHCoefficients[0].rgb * SHBasis0(n);
+            probeLighting += Probes[i].SHCoefficients[1].rgb * SHBasis1(n);
+            probeLighting += Probes[i].SHCoefficients[2].rgb * SHBasis2(n);
+            probeLighting += Probes[i].SHCoefficients[3].rgb * SHBasis3(n);
+            probeLighting += Probes[i].SHCoefficients[4].rgb * SHBasis4(n);
+            probeLighting += Probes[i].SHCoefficients[5].rgb * SHBasis5(n);
+            probeLighting += Probes[i].SHCoefficients[6].rgb * SHBasis6(n);
+            probeLighting += Probes[i].SHCoefficients[7].rgb * SHBasis7(n);
+            probeLighting += Probes[i].SHCoefficients[8].rgb * SHBasis8(n);
+
+            probeLighting *= Probes[i].Intensity;
+
+            totalLighting += probeLighting * weight;
+            totalWeight += weight;
+        }
+    }
+
+    // Normalize by total weight
+    if (totalWeight > 0.001)
+    {
+        totalLighting /= totalWeight;
+    }
+
+    return max(totalLighting, 0.0);
 }
 
 #endif

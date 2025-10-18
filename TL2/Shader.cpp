@@ -6,6 +6,7 @@ static D3D_SHADER_MACRO MACRO_PHONG[] = {
     {"LIGHTING_MODEL_BLINN_PHONG","0"},
     {"LIGHTING_MODEL_BRDF","0"},
     {"LIGHTING_MODEL_LAMBERT","0"},
+    {"LIGHTING_MODEL_UNLIT","0"},
     {nullptr,nullptr}
 };
 
@@ -14,6 +15,7 @@ static D3D_SHADER_MACRO MACRO_BLINN[] = {
     {"LIGHTING_MODEL_BLINN_PHONG","1"},
     {"LIGHTING_MODEL_BRDF","0"},
     {"LIGHTING_MODEL_LAMBERT","0"},
+    {"LIGHTING_MODEL_UNLIT","0"},
     {nullptr,nullptr}
 };
 
@@ -22,6 +24,7 @@ static D3D_SHADER_MACRO MACRO_LAMBERT[] = {
     {"LIGHTING_MODEL_BLINN_PHONG","0"},
     {"LIGHTING_MODEL_BRDF","0"},
     {"LIGHTING_MODEL_LAMBERT","1"},
+    {"LIGHTING_MODEL_UNLIT","0"},
     {nullptr,nullptr}
 };
 
@@ -30,26 +33,39 @@ static D3D_SHADER_MACRO MACRO_BRDF[] = {
     {"LIGHTING_MODEL_BLINN_PHONG","0"},
     {"LIGHTING_MODEL_BRDF","1"},
     {"LIGHTING_MODEL_LAMBERT","0"},
+    {"LIGHTING_MODEL_UNLIT","0"},
     {nullptr,nullptr}
 
-}; 
+};
+
+static D3D_SHADER_MACRO MACRO_UNLIT[] = {
+    {"LIGHTING_MODEL_PHONG","0"},
+    {"LIGHTING_MODEL_BLINN_PHONG","0"},
+    {"LIGHTING_MODEL_BRDF","0"},
+    {"LIGHTING_MODEL_LAMBERT","0"},
+    {"LIGHTING_MODEL_UNLIT","1"},
+    {nullptr,nullptr}
+};
 
 const D3D_SHADER_MACRO* UShader::GetMacros(ELightShadingModel Model)
 {
     switch (Model)
     {
     case ELightShadingModel::Phong:
-        return MACRO_PHONG;  
-        
+        return MACRO_PHONG;
+
     case ELightShadingModel::BlinnPhong:
-        return MACRO_BLINN; 
-        
+        return MACRO_BLINN;
+
     case ELightShadingModel::BRDF:
-        return MACRO_BRDF;  
-        
+        return MACRO_BRDF;
+
     case ELightShadingModel::Lambert:
-        return MACRO_LAMBERT; 
-        
+        return MACRO_LAMBERT;
+
+    case ELightShadingModel::Unlit:
+        return MACRO_UNLIT;
+
     default:
         return MACRO_BLINN;
     }

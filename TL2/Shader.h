@@ -7,6 +7,7 @@ enum class ELightShadingModel : uint32_t
 	BlinnPhong = 1,
 	Lambert= 2,
 	BRDF = 3,
+	Unlit = 4,
 	Count,
 };
 class UShader : public UResourceBase
@@ -31,12 +32,13 @@ protected:
 	ELightShadingModel ActiveModel = ELightShadingModel::BlinnPhong;
 
 	// Default macro table; actual selection is decided at load time.
-	D3D_SHADER_MACRO DefinesRender[5] =
+	D3D_SHADER_MACRO DefinesRender[6] =
 	{
 		{ "LIGHTING_MODEL_PHONG",  "0" },
 		{ "LIGHTING_MODEL_BLINN_PHONG",  "1" },
 		{ "LIGHTING_MODEL_BRDF",  "0" },
 		{ "LIGHTING_MODEL_LAMBERT",  "0" },
+		{ "LIGHTING_MODEL_UNLIT",  "0" },
 		{ nullptr, nullptr }
 	};
 	 
