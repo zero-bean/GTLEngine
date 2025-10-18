@@ -1,0 +1,81 @@
+{
+  "Version" : 2,
+  "NextUUID" : 738,
+  "PerspectiveCamera" : {
+    "FOV" : [60.000000],
+    "FarClip" : [4000.000000],
+    "Location" : [-5.714909, -0.099754, 5.597308],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 44.400017, 1.000002]
+  },
+  "Actors" : [
+    {
+      "UUID" : 661,
+      "Type" : "AActor",
+      "Name" : "Actor_0",
+      "RootComponentUUID" : 662
+    },
+    {
+      "UUID" : 679,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Sphere2_0",
+      "RootComponentUUID" : 680
+    },
+    {
+      "UUID" : 681,
+      "Type" : "AActor",
+      "Name" : "Sphere2_0",
+      "RootComponentUUID" : 682
+    }
+  ],
+  "Components" : [
+    {
+      "UUID" : 662,
+      "OwnerActorUUID" : 661,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 663,
+      "OwnerActorUUID" : 661,
+      "ParentComponentUUID" : 662,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
+    },
+    {
+      "UUID" : 664,
+      "OwnerActorUUID" : 661,
+      "ParentComponentUUID" : 662,
+      "Type" : "UDynamicAmbientProbe",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 680,
+      "OwnerActorUUID" : 679,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 2.701768, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Sphere2.obj"
+    },
+    {
+      "UUID" : 682,
+      "OwnerActorUUID" : 681,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, -2.336427, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Sphere2.obj"
+    }
+  ]
+}

@@ -22,6 +22,7 @@
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include "CameraComponent.h"
+#include "DynamicAmbientProbe.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
@@ -508,6 +509,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         RenderFogPass(World,Camera,Viewport);
         RenderFXAAPaxx(World, Camera, Viewport);
         RenderEditorPass(World, Camera, Viewport);
+        RenderSHAmbientLightPass(World);  // Capture SH after scene is rendered
         break;
     }
     case EViewModeIndex::VMI_SceneDepth:
@@ -827,6 +829,46 @@ void URenderer::RenderPostProcessing(UShader* Shader)
 
 }
 
+void URenderer::RenderSceneToCubemapFace(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix, const FVector& ProbePosition, FViewport* Viewport)
+{
+    if (!World || !Viewport)
+        return;
+
+    // 1. View/Projection 상수 버퍼 업데이트 (ProbePosition을 카메라 위치로 사용)
+    UpdateSetCBuffer(ViewProjBufferType(ViewMatrix, ProjMatrix, ProbePosition));
+
+    // 2. 렌더 스테이트 설정
+    RHIDevice->OMSetBlendState(false);
+    RHIDevice->RSSetDefaultState();
+    RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual);
+    RHIDevice->IASetPrimitiveTopology();
+
+    // 3. 씬의 모든 프리미티브 렌더링 (RenderPrimitives 로직 재사용)
+    USelectionManager& SelectionManager = USelectionManager::GetInstance();
+    AActor* SelectedActor = SelectionManager.GetSelectedActor();
+
+    for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
+    {
+        // 안전성 체크: nullptr 또는 비활성 컴포넌트 스킵
+        if (!PrimitiveComponent || !PrimitiveComponent->IsActive())
+            continue;
+
+        // 빌보드나 에디터 전용 컴포넌트는 큐브맵에서 제외
+        if (Cast<UBillboardComponent>(PrimitiveComponent))
+            continue;
+
+        bool bIsSelected = false;
+        if (PrimitiveComponent->GetOwner() == SelectedActor)
+        {
+            bIsSelected = true;
+        }
+
+        FVector rgb(1.0f, 1.0f, 1.0f);
+        UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
+        PrimitiveComponent->Render(this, ViewMatrix, ProjMatrix, Viewport->GetShowFlags());
+    }
+}
+
 void URenderer::RenderFogPass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
 
@@ -877,6 +919,9 @@ void URenderer::RenderPointLightPass(UWorld* World)
     // 2️⃣ 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);
 
+    // 3️⃣ SH Ambient Light 수집 및 업데이트
+  //  RenderSHAmbientLightPass(World);
+
     /*const TArray<AActor*>& Actors = World->GetLevel()->GetActors();se
 
     for (AActor* Actor : Actors)
@@ -903,7 +948,35 @@ void URenderer::RenderPointLightPass(UWorld* World)
         }
     }*/
 
-    
+}
+
+void URenderer::RenderSHAmbientLightPass(UWorld* World)
+{
+    if (!World) return;
+
+    // Find the first active DynamicAmbientProbe in the world
+    const auto& ProbeList = World->GetLevel()->GetComponentList<UDynamicAmbientProbe>();
+
+    if (ProbeList.empty())
+    {
+        // No probe found - upload default (zero) SH
+        FSHAmbientLightBufferType DefaultSH = {};
+        for (int32 i = 0; i < 9; ++i)
+        {
+            DefaultSH.SHCoefficients[i] = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
+        }
+        DefaultSH.Intensity = 0.0f;
+        UpdateSetCBuffer(DefaultSH);
+        return;
+    }
+
+    // Use the first active probe
+    UDynamicAmbientProbe* Probe = ProbeList[0];
+    if (Probe && Probe->IsActive())
+    {
+        const FSHAmbientLightBufferType& SHBuffer = Probe->GetSHBuffer();
+        UpdateSetCBuffer(SHBuffer);
+    }
 }
 
 void URenderer::RenderOverlayPass(UWorld* World)

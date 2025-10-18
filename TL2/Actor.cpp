@@ -46,6 +46,14 @@ void AActor::InitEmptyActor()
 
 void AActor::BeginPlay()
 {
+    // Activate all owned components
+    for (UActorComponent* Component : OwnedComponents)
+    {
+        if (Component && Component->IsActive())
+        {
+            Component->BeginPlay();
+        }
+    }
 }
 
 void AActor::Tick(float DeltaSeconds)
@@ -235,6 +243,9 @@ void AActor::AddComponent(USceneComponent* InComponent)
     {
         return;
     }
+
+    // Set component owner
+    InComponent->SetOwner(this);
 
     OwnedComponents.Add(InComponent);
     if (!RootComponent)

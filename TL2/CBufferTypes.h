@@ -49,6 +49,7 @@ MACRO(ViewportBufferType)					\
 MACRO(DecalAlphaBufferType)					\
 MACRO(FHeightFogBufferType)                  \
 MACRO(FPointLightBufferType)                  \
+MACRO(FSHAmbientLightBufferType)             \
 MACRO(CameraInfoBufferType)                  \
 MACRO(FXAABufferType)                  \
 MACRO(FGammaBufferType)                  \
@@ -67,6 +68,7 @@ CBUFFER_INFO(ViewportBufferType, 6, false, true)
 CBUFFER_INFO(DecalAlphaBufferType, 8, false, true)
 CBUFFER_INFO(FHeightFogBufferType, 8, false, true)
 CBUFFER_INFO(FPointLightBufferType, 9, false, true)
+CBUFFER_INFO(FSHAmbientLightBufferType, 10, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
@@ -203,6 +205,16 @@ struct FHeightFogBufferType
     float FogMaxOpacity;
     float FogActorHeight;
     float Padding;
+};
+
+//PS : b10
+// Spherical Harmonics L2 (2nd order) - 9 coefficients per RGB channel
+// HLSL packs float3 arrays as float4 (16-byte aligned), so we use FVector4 to match
+struct FSHAmbientLightBufferType
+{
+    FVector4 SHCoefficients[9];  // 9 RGB coefficients (w unused, but needed for alignment)
+    float Intensity;             // Global intensity multiplier
+    FVector Padding;             // 16-byte alignment
 };
 
 //PS : b0

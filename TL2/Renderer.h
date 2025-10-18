@@ -87,6 +87,9 @@ public:
     
     void RenderPostProcessing(UShader* Shader);
 
+    // Cubemap scene rendering helper
+    void RenderSceneToCubemapFace(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix, const FVector& ProbePosition, FViewport* Viewport);
+
     //목요일 새벽5시 어쩔수가없다.
     float Gamma = 1.0f;
 
@@ -99,6 +102,7 @@ private:
 
     void RenderPointLightShadowPass(UWorld* World);
     void RenderPointLightPass(UWorld* World);     // 포스트: PointLight 조명/가산
+    void RenderSHAmbientLightPass(UWorld* World); // SH Ambient Light 업데이트
     void RenderOverlayPass(UWorld* World);      // 라인/텍스트/UI/디버그
     void RenderSceneDepthVisualizePass(ACameraActor* Camera);       // 포스트: SceneDepth 뷰 모드 (뎁스 버퍼 시각화)
 

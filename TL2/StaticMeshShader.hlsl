@@ -82,11 +82,63 @@ cbuffer PointLightBuffer : register(b9)
     FPointLightData PointLights[MAX_PointLight];
 }
 
+// Spherical Harmonics L2 Ambient Light (b10)
+cbuffer SHAmbientLightBuffer : register(b10)
+{
+    float4 SHCoefficients[9];  // 9 RGB coefficients for L2 SH
+    float SHIntensity;         // Global intensity multiplier
+    float3 _pad_sh;            // 16-byte alignment
+}
+
 struct LightAccum
 {
     float3 diffuse;
     float3 specular;
 };
+
+// ------------------------------------------------------------------
+// Spherical Harmonics Basis Functions (L2, 9 coefficients)
+// ------------------------------------------------------------------
+float SHBasis0(float3 n) { return 0.282095; }
+float SHBasis1(float3 n) { return 0.488603 * n.y; }
+float SHBasis2(float3 n) { return 0.488603 * n.z; }
+float SHBasis3(float3 n) { return 0.488603 * n.x; }
+float SHBasis4(float3 n) { return 1.092548 * n.x * n.y; }
+float SHBasis5(float3 n) { return 1.092548 * n.y * n.z; }
+float SHBasis6(float3 n) { return 0.315392 * (3.0 * n.z * n.z - 1.0); }
+float SHBasis7(float3 n) { return 1.092548 * n.x * n.z; }
+float SHBasis8(float3 n) { return 0.546274 * (n.x * n.x - n.y * n.y); }
+
+// ------------------------------------------------------------------
+// Evaluate SH Lighting for given normal
+// Returns irradiance (diffuse ambient) from SH coefficients
+// ------------------------------------------------------------------
+float3 EvaluateSHLighting(float3 normal)
+{
+    float3 result = 0.0;
+
+    // Normalize input normal
+    float3 n = normalize(normal);
+
+    // Evaluate each SH band
+    result += SHCoefficients[0] * SHBasis0(n);
+    result += SHCoefficients[1] * SHBasis1(n);
+    result += SHCoefficients[2] * SHBasis2(n);
+    result += SHCoefficients[3] * SHBasis3(n);
+    result += SHCoefficients[4] * SHBasis4(n);
+    result += SHCoefficients[5] * SHBasis5(n);
+    result += SHCoefficients[6] * SHBasis6(n);
+    result += SHCoefficients[7] * SHBasis7(n);
+    result += SHCoefficients[8] * SHBasis8(n);
+
+    // Apply global intensity
+    result *= SHIntensity;
+
+    // Ensure positive values (SH can produce negative values)
+    result = max(result, 0.0);
+
+    return result;
+}
 
 // ------------------------------------------------------------------
 // 안정화된 감쇠 + 방향(표면→광원) 버전의 simple 누적
@@ -273,20 +325,28 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
     LightAccum la = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);
-    
-    // Ambient + Diffuse + Specular
-    float3 ambient = 0.25 * base;
+
+    // SH-based Ambient Lighting
+    float3 shAmbient = EvaluateSHLighting(N) * base;
+
+    // Add material ambient if exists
+    float3 ambient = shAmbient;
     if (HasMaterial)
         ambient += 0.25 * Material.AmbientColor;
 
     float3 diffuseLit = base * la.diffuse;
-    float3 specularLit = la.specular;
-    if (HasMaterial)
-        specularLit *= saturate(Material.SpecularColor);
+    float3 specularLit = la.specular; 
+    //if (HasMaterial)
+    //    specularLit *= saturate(Material.SpecularColor);
 
     float3 finalLit = ambient + diffuseLit + specularLit;
     finalLit = saturate(finalLit); // 과포화 방지
-    
+    if (!HasTexture)
+    {
+        Result.Color = float4(EvaluateSHLighting(N), 1.0);
+        Result.UUID = input.UUID;
+        return Result;
+    }
     Result.Color = float4(finalLit, 1.0);
     Result.UUID = input.UUID;
     return Result;
