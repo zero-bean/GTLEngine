@@ -90,6 +90,24 @@ cbuffer SHAmbientLightBuffer : register(b10)
     float3 _pad_sh;            // 16-byte alignment
 }
 
+// Multi-Probe SH Ambient Light (b11)
+struct FSHProbeData
+{
+    float4 Position;           // xyz=프로브 위치, w=영향 반경
+    float4 SHCoefficients[9];  // 9개 SH 계수
+    float Intensity;           // 강도
+    float3 Padding;            // 16바이트 정렬
+};
+
+#define MAX_SH_PROBES 8
+
+cbuffer MultiSHProbeBuffer : register(b11)
+{
+    int ProbeCount;
+    float3 _pad_multiprobe;
+    FSHProbeData Probes[MAX_SH_PROBES];
+}
+
 struct LightAccum
 {
     float3 diffuse;
@@ -138,6 +156,62 @@ float3 EvaluateSHLighting(float3 normal)
     result = max(result, 0.0);
 
     return result;
+}
+
+// ------------------------------------------------------------------
+// Evaluate Multi-Probe SH Lighting
+// Blends multiple probes based on distance
+// ------------------------------------------------------------------
+float3 EvaluateMultiProbeSHLighting(float3 worldPos, float3 normal)
+{
+    if (ProbeCount == 0)
+        return float3(0, 0, 0);
+
+    float3 n = normalize(normal);
+    float3 totalLighting = 0.0;
+    float totalWeight = 0.0;
+
+    // Blend all probes based on distance
+    [loop]
+    for (int i = 0; i < ProbeCount; ++i)
+    {
+        float3 probePos = Probes[i].Position.xyz;
+        float radius = Probes[i].Position.w;
+
+        float dist = length(worldPos - probePos);
+
+        // Distance-based weight (inverse distance falloff)
+        float weight = saturate(1.0 - (dist / radius));
+        weight = weight * weight; // Square for smoother falloff
+
+        if (weight > 0.001)
+        {
+            // Evaluate SH for this probe
+            float3 probeLighting = 0.0;
+            probeLighting += Probes[i].SHCoefficients[0].rgb * SHBasis0(n);
+            probeLighting += Probes[i].SHCoefficients[1].rgb * SHBasis1(n);
+            probeLighting += Probes[i].SHCoefficients[2].rgb * SHBasis2(n);
+            probeLighting += Probes[i].SHCoefficients[3].rgb * SHBasis3(n);
+            probeLighting += Probes[i].SHCoefficients[4].rgb * SHBasis4(n);
+            probeLighting += Probes[i].SHCoefficients[5].rgb * SHBasis5(n);
+            probeLighting += Probes[i].SHCoefficients[6].rgb * SHBasis6(n);
+            probeLighting += Probes[i].SHCoefficients[7].rgb * SHBasis7(n);
+            probeLighting += Probes[i].SHCoefficients[8].rgb * SHBasis8(n);
+
+            probeLighting *= Probes[i].Intensity;
+
+            totalLighting += probeLighting * weight;
+            totalWeight += weight;
+        }
+    }
+
+    // Normalize by total weight
+    if (totalWeight > 0.001)
+    {
+        totalLighting /= totalWeight;
+    }
+
+    return max(totalLighting, 0.0);
 }
 
 // ------------------------------------------------------------------
@@ -326,16 +400,17 @@ PS_OUTPUT mainPS(PS_INPUT input)
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
     LightAccum la = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);
 
-    // SH-based Ambient Lighting
-    float3 shAmbient = EvaluateSHLighting(N) * base;
+    // Multi-Probe SH-based Ambient Lighting
+    float3 shAmbient = EvaluateMultiProbeSHLighting(input.worldPosition, N) * base;
 
     // Add material ambient if exists
     float3 ambient = shAmbient;
+    //float3 ambient = base*0.25;
     if (HasMaterial)
         ambient += 0.25 * Material.AmbientColor;
 
     float3 diffuseLit = base * la.diffuse;
-    float3 specularLit = la.specular; 
+    float3 specularLit = la.specular;
     //if (HasMaterial)
     //    specularLit *= saturate(Material.SpecularColor);
 
@@ -343,7 +418,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     finalLit = saturate(finalLit); // 과포화 방지
     if (!HasTexture)
     {
-        Result.Color = float4(EvaluateSHLighting(N), 1.0);
+        Result.Color = float4(EvaluateMultiProbeSHLighting(input.worldPosition, N), 1.0);
         Result.UUID = input.UUID;
         return Result;
     }

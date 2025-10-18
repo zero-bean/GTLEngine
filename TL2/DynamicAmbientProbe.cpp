@@ -32,13 +32,19 @@ UDynamicAmbientProbe::~UDynamicAmbientProbe()
 void UDynamicAmbientProbe::BeginPlay()
 {
     Super_t::BeginPlay();
-   
+
+    // Capture once at initialization for static ambient lighting
+    ForceCapture();
 }
 
 void UDynamicAmbientProbe::TickComponent(float DeltaTime)
 {
     Super_t::TickComponent(DeltaTime);
 
+    // Static mode: no updates after initial capture
+    // If you need dynamic updates, uncomment the code below:
+
+    /*
     TimeSinceLastCapture += DeltaTime;
 
     // Update at specified interval
@@ -47,6 +53,7 @@ void UDynamicAmbientProbe::TickComponent(float DeltaTime)
         TimeSinceLastCapture = 0.0f;
         ForceCapture();
     }
+    */
 }
 
 void UDynamicAmbientProbe::EndPlay(EEndPlayReason::Type EndPlayReason)
@@ -100,13 +107,13 @@ void UDynamicAmbientProbe::ForceCapture()
         return;
 
     // Capture environment
-    CaptureEnvironment(World, Renderer);//6면체 캡처를 진행합니다.
+    CaptureEnvironment(World, Renderer); // 6면체 캡처를 진행합니다.
 
     // Project to SH
-    ProjectToSH();//
+    ProjectToSH(); // 큐브맵 → SH 계수 변환
 
-    // Apply temporal smoothing
-    SmoothSH();
+    // Note: Smoothing is skipped for static capture to avoid dimming
+    // (Smoothing is only useful for dynamic updates to prevent flickering)
 }
 
 void UDynamicAmbientProbe::InitializeCubemapTargets()
@@ -400,6 +407,8 @@ void UDynamicAmbientProbe::ProjectToSH()
                     for (int32 i = 0; i < 9; ++i)
                     {
                         float Basis = SHBasis(i, Direction);
+                                     //PixelColor=L(θ,ϕ)=방향별 빛의 색상(입사광 분포)
+                                      //SolidAngle =sinθdθdϕ,각 픽셀이 차지하는 구면 면적
                         FVector Contribution = PixelColor * Basis * SolidAngle;
                         SHBuffer.SHCoefficients[i].X += Contribution.X;
                         SHBuffer.SHCoefficients[i].Y += Contribution.Y;
@@ -572,7 +581,7 @@ float UDynamicAmbientProbe::SHBasis(int32 Index, const FVector& Dir)
     const float y = Dir.Y;
     const float z = Dir.Z;
 
-    switch (Index)
+    switch (Index)//K_l^m
     {
     // L0
     case 0: return 0.282095f;  // (1/2) * sqrt(1/π)

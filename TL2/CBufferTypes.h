@@ -50,6 +50,7 @@ MACRO(DecalAlphaBufferType)					\
 MACRO(FHeightFogBufferType)                  \
 MACRO(FPointLightBufferType)                  \
 MACRO(FSHAmbientLightBufferType)             \
+MACRO(FMultiSHProbeBufferType)               \
 MACRO(CameraInfoBufferType)                  \
 MACRO(FXAABufferType)                  \
 MACRO(FGammaBufferType)                  \
@@ -69,6 +70,7 @@ CBUFFER_INFO(DecalAlphaBufferType, 8, false, true)
 CBUFFER_INFO(FHeightFogBufferType, 8, false, true)
 CBUFFER_INFO(FPointLightBufferType, 9, false, true)
 CBUFFER_INFO(FSHAmbientLightBufferType, 10, false, true)
+CBUFFER_INFO(FMultiSHProbeBufferType, 11, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
@@ -215,6 +217,25 @@ struct FSHAmbientLightBufferType
     FVector4 SHCoefficients[9];  // 9 RGB coefficients (w unused, but needed for alignment)
     float Intensity;             // Global intensity multiplier
     FVector Padding;             // 16-byte alignment
+};
+
+// Single probe data for multi-probe system
+struct FSHProbeData
+{
+    FVector4 Position;           // xyz=프로브 위치, w=영향 반경
+    FVector4 SHCoefficients[9];  // 9개 SH 계수
+    float Intensity;             // 강도
+    FVector Padding;             // 16바이트 정렬
+};
+
+#define MAX_SH_PROBES 8
+
+// Multi-probe buffer (여러 프로브 지원)
+struct FMultiSHProbeBufferType
+{
+    int ProbeCount;              // 활성 프로브 개수
+    FVector _Padding;            // 16바이트 정렬
+    FSHProbeData Probes[MAX_SH_PROBES];  // 최대 8개 프로브
 };
 
 //PS : b0

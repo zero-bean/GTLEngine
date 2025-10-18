@@ -954,29 +954,46 @@ void URenderer::RenderSHAmbientLightPass(UWorld* World)
 {
     if (!World) return;
 
-    // Find the first active DynamicAmbientProbe in the world
+    // Find all active DynamicAmbientProbes in the world
     const auto& ProbeList = World->GetLevel()->GetComponentList<UDynamicAmbientProbe>();
+
+    // Prepare multi-probe buffer
+    FMultiSHProbeBufferType MultiProbeBuffer = {};
+    MultiProbeBuffer.ProbeCount = 0;
 
     if (ProbeList.empty())
     {
-        // No probe found - upload default (zero) SH
-        FSHAmbientLightBufferType DefaultSH = {};
-        for (int32 i = 0; i < 9; ++i)
-        {
-            DefaultSH.SHCoefficients[i] = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
-        }
-        DefaultSH.Intensity = 0.0f;
-        UpdateSetCBuffer(DefaultSH);
+        // No probes found - upload empty buffer
+        UpdateSetCBuffer(MultiProbeBuffer);
         return;
     }
 
-    // Use the first active probe
-    UDynamicAmbientProbe* Probe = ProbeList[0];
-    if (Probe && Probe->IsActive())
+    // Collect up to MAX_SH_PROBES active probes
+    for (UDynamicAmbientProbe* Probe : ProbeList)
     {
+        if (!Probe || !Probe->IsActive())
+            continue;
+
+        if (MultiProbeBuffer.ProbeCount >= MAX_SH_PROBES)
+            break;
+
+        int32 idx = MultiProbeBuffer.ProbeCount;
         const FSHAmbientLightBufferType& SHBuffer = Probe->GetSHBuffer();
-        UpdateSetCBuffer(SHBuffer);
+        FVector ProbePos = Probe->GetWorldLocation();
+
+        // Copy probe data
+        MultiProbeBuffer.Probes[idx].Position = FVector4(ProbePos.X, ProbePos.Y, ProbePos.Z, 1000.0f); // w = influence radius
+        for (int32 i = 0; i < 9; ++i)
+        {
+            MultiProbeBuffer.Probes[idx].SHCoefficients[i] = SHBuffer.SHCoefficients[i];
+        }
+        MultiProbeBuffer.Probes[idx].Intensity = SHBuffer.Intensity;
+
+        MultiProbeBuffer.ProbeCount++;
     }
+
+    // Upload to GPU
+    UpdateSetCBuffer(MultiProbeBuffer);
 }
 
 void URenderer::RenderOverlayPass(UWorld* World)
