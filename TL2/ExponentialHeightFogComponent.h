@@ -41,6 +41,10 @@ public:
     }
     UObject* Duplicate() override;
     void DuplicateSubObjects() override;
+
+    // Editor Details
+    void RenderDetails() override;
+
 private:
     float FogDensity = 1.0f;
     float FogHeightFalloff = 0.003f;

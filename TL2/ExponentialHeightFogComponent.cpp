@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "ExponentialHeightFogComponent.h"
 #include "MeshLoader.h"
+#include "ImGui/imgui.h"
 
 void UExponentialHeightFogComponent::Render(URenderer* Renderer, const FVector& CameraPosition, const FMatrix& View, const FMatrix& Projection, FViewport* Viewport)
 {
@@ -49,4 +50,28 @@ UObject* UExponentialHeightFogComponent::Duplicate()
 void UExponentialHeightFogComponent::DuplicateSubObjects()
 {
 	Super_t::DuplicateSubObjects();
+}
+
+void UExponentialHeightFogComponent::RenderDetails()
+{
+	FFogInfo FogInfo = GetFogInfo();
+	ImGui::Text("Exponential Height Fog Component");
+
+	ImGui::DragFloat("Fog Density", &FogInfo.FogDensity, 0.001f, 0.0f, 10.0f);
+	ImGui::DragFloat("Fog Height Falloff", &FogInfo.FogHeightFalloff, 0.0001f, 0.0f, 10.0f);
+	ImGui::DragFloat("Start Distance", &FogInfo.StartDistance, 0.1f, 0.0f);
+	ImGui::DragFloat("Fog Max Opacity", &FogInfo.FogMaxOpacity, 0.001f, 0.0f, 1.0f);
+	ImGui::DragFloat("Fog Max Opacity Distance", &FogInfo.FogMaxOpacityDistance, 100.0f, 0.0f);
+	ImGui::DragFloat("Fog Cutoff Distance", &FogInfo.FogCutoffDistance, 100.0f, 0.0f);
+	float Color[3]{ FogInfo.FogInscatteringColor.R, FogInfo.FogInscatteringColor.G, FogInfo.FogInscatteringColor.B };
+	if (ImGui::ColorEdit3("Fog Inscattering Color", Color))
+	{
+		FogInfo.FogInscatteringColor.R = Color[0];
+		FogInfo.FogInscatteringColor.G = Color[1];
+		FogInfo.FogInscatteringColor.B = Color[2];
+	}
+	bool bIsRender = IsRender();
+	ImGui::Checkbox("Render", &bIsRender);
+	SetShowflag(bIsRender);
+	SetFogInfo(FogInfo);
 }

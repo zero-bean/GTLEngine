@@ -5,6 +5,7 @@
 #include "ResourceManager.h"
 #include "VertexData.h"
 #include "CameraActor.h"
+#include "ImGui/imgui.h"
 
 TMap<char, FBillboardVertexInfo> UTextRenderComponent::CharInfoMap;
 
@@ -222,4 +223,39 @@ TArray<FBillboardVertexInfo_GPU> UTextRenderComponent::CreateVerticesForString(c
 		vertexBaseIndex += 4;
 	}
 	return vertices;
+}
+
+void UTextRenderComponent::RenderDetails()
+{
+	ImGui::Separator();
+	ImGui::Text("TextRender Component Settings");
+
+	static char textBuffer[256];
+	static UTextRenderComponent* lastSelected = nullptr;
+	if (lastSelected != this)
+	{
+		strncpy_s(textBuffer, sizeof(textBuffer), GetText().c_str(), sizeof(textBuffer) - 1);
+		lastSelected = this;
+	}
+
+	ImGui::Text("Text Content");
+
+	if (ImGui::InputText("##TextContent", textBuffer, sizeof(textBuffer)))
+	{
+		// 실시간으로 SetText 함수 호출
+		SetText(FString(textBuffer));
+	}
+
+	ImGui::Spacing();
+
+	//// 4. 텍스트 색상을 편집하는 Color Picker를 추가합니다.
+	//FLinearColor currentColor = GetTextColor();
+	//float color[3] = { currentColor.R, currentColor.G, currentColor.B }; // ImGui는 float 배열 사용
+
+	//ImGui::Text("Text Color");
+	//if (ImGui::ColorEdit3("##TextColor", color))
+	//{
+	//	// 색상이 변경되면 컴포넌트의 SetTextColor 함수를 호출
+	//	SetTextColor(FLinearColor(color[0], color[1], color[2]));
+	//}
 }

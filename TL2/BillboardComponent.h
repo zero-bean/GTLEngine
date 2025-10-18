@@ -43,6 +43,9 @@ public:
     // Serialize (V2용)
     void Serialize(bool bIsLoading, FComponentData& InOut) override;
 
+    // Editor Details
+    void RenderDetails() override;
+
 private:
     void CreateBillboardVertices();
 

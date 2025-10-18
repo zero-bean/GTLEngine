@@ -7,6 +7,58 @@
 #include "ObjManager.h"
 #include"CameraActor.h"
 #include "SceneLoader.h"
+#include "ImGui/imgui.h"
+#include <filesystem>
+
+// Helper function to extract base filename without extension
+static inline FString GetBaseNameNoExt(const FString& Path)
+{
+	const size_t sep = Path.find_last_of("/\\");
+	const size_t start = (sep == FString::npos) ? 0 : sep + 1;
+
+	const FString ext = ".obj";
+	size_t end = Path.size();
+	if (end >= ext.size() && Path.compare(end - ext.size(), ext.size(), ext) == 0)
+	{
+		end -= ext.size();
+	}
+	if (start <= end) return Path.substr(start, end - start);
+	return Path;
+}
+
+// Helper function to get normal map files from Data/textures/NormalMap folder
+static TArray<FString> GetNormalMapFiles()
+{
+    TArray<FString> normalMapFiles;
+    try
+    {
+        std::filesystem::path normalMapPath = "Data/textures/NormalMap";
+        if (std::filesystem::exists(normalMapPath) && std::filesystem::is_directory(normalMapPath))
+        {
+            for (const auto& entry : std::filesystem::directory_iterator(normalMapPath))
+            {
+                if (entry.is_regular_file())
+                {
+                    auto path = entry.path();
+                    FString filename = path.filename().string();
+                    FString extension = path.extension().string();
+                    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+
+                    if (extension == ".dds" || extension == ".png" || extension == ".jpg" || extension == ".jpeg")
+                    {
+                        FString relativePath = "Data/textures/NormalMap/" + filename;
+                        normalMapFiles.push_back(relativePath);
+                    }
+                }
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        UE_LOG("Failed to scan normal map directory: %s", e.what());
+    }
+    return normalMapFiles;
+}
 
 UStaticMeshComponent::UStaticMeshComponent()
 {
@@ -201,4 +253,228 @@ void UStaticMeshComponent::DuplicateSubObjects()
 {
     // 부모의 깊은 복사 수행 (AttachChildren 재귀 복제)
     Super_t::DuplicateSubObjects();
+}
+
+void UStaticMeshComponent::RenderDetails()
+{
+	ImGui::Text("Static Mesh Override");
+	if (!this)
+	{
+		ImGui::TextColored(ImVec4(1, 0.6f, 0.6f, 1), "StaticMeshComponent not found.");
+	}
+	else
+	{
+		// 현재 메시 경로 표시
+		FString CurrentPath;
+		UStaticMesh* CurMesh = GetStaticMesh();
+		if (CurMesh)
+		{
+			CurrentPath = CurMesh->GetFilePath();
+			ImGui::Text("Current: %s", CurrentPath.c_str());
+		}
+		else
+		{
+			ImGui::Text("Current: <None>");
+		}
+
+		// 리소스 매니저에서 로드된 모든 StaticMesh 경로 수집
+		auto& RM = UResourceManager::GetInstance();
+		TArray<FString> Paths = RM.GetAllStaticMeshFilePaths();
+
+		if (Paths.empty())
+		{
+			ImGui::TextColored(ImVec4(1, 0.6f, 0.6f, 1), "No StaticMesh resources loaded.");
+		}
+		else
+		{
+			// 표시용 이름(파일명 스템)
+			TArray<FString> DisplayNames;
+			DisplayNames.reserve(Paths.size());
+			for (const FString& p : Paths)
+				DisplayNames.push_back(GetBaseNameNoExt(p));
+
+			// ImGui 콤보 아이템 배열
+			TArray<const char*> Items;
+			Items.reserve(DisplayNames.size());
+			for (const FString& n : DisplayNames)
+				Items.push_back(n.c_str());
+
+			// 선택 인덱스 유지
+			static int SelectedMeshIdx = -1;
+
+			// 기본 선택: Cube가 있으면 자동 선택
+			if (SelectedMeshIdx == -1)
+			{
+				for (int i = 0; i < static_cast<int>(Paths.size()); ++i)
+				{
+					if (DisplayNames[i] == "Cube" || Paths[i] == "Data/Cube.obj")
+					{
+						SelectedMeshIdx = i;
+						break;
+					}
+				}
+			}
+
+			ImGui::SetNextItemWidth(240);
+			ImGui::Combo("StaticMesh", &SelectedMeshIdx, Items.data(), static_cast<int>(Items.size()));
+			ImGui::SameLine();
+			if (ImGui::Button("Apply Mesh"))
+			{
+				if (SelectedMeshIdx >= 0 && SelectedMeshIdx < static_cast<int>(Paths.size()))
+				{
+					const FString& NewPath = Paths[SelectedMeshIdx];
+					SetStaticMesh(NewPath);
+
+					UE_LOG("Applied StaticMesh: %s", NewPath.c_str());
+				}
+			}
+
+			// 현재 메시로 선택 동기화 버튼 (옵션)
+			ImGui::SameLine();
+			if (ImGui::Button("Select Current"))
+			{
+				SelectedMeshIdx = -1;
+				if (!CurrentPath.empty())
+				{
+					for (int i = 0; i < static_cast<int>(Paths.size()); ++i)
+					{
+						if (Paths[i] == CurrentPath ||
+							DisplayNames[i] == GetBaseNameNoExt(CurrentPath))
+						{
+							SelectedMeshIdx = i;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		// Material 설정
+
+		const TArray<FString> MaterialNames = UResourceManager::GetInstance().GetAllFilePaths<UMaterial>();
+		// ImGui 콤보 아이템 배열
+		TArray<const char*> MaterialNamesCharP;
+		MaterialNamesCharP.reserve(MaterialNames.size());
+		for (const FString& n : MaterialNames)
+			MaterialNamesCharP.push_back(n.c_str());
+
+		if (CurMesh)
+		{
+			const uint64 MeshGroupCount = CurMesh->GetMeshGroupCount();
+
+			if (0 < MeshGroupCount)
+			{
+				ImGui::Separator();
+			}
+
+			static TArray<int32> SelectedMaterialIdxAt; // i번 째 Material Slot이 가지고 있는 MaterialName이 MaterialNames의 몇번쩨 값인지.
+			if (SelectedMaterialIdxAt.size() < MeshGroupCount)
+			{
+				SelectedMaterialIdxAt.resize(MeshGroupCount);
+			}
+
+			// 현재 SMC의 MaterialSlots 정보를 UI에 반영
+			const TArray<FMaterialSlot>& MaterialSlots = GetMaterailSlots();
+			for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
+			{
+				for (uint32 MaterialIndex = 0; MaterialIndex < MaterialNames.size(); ++MaterialIndex)
+				{
+					if (MaterialSlots[MaterialSlotIndex].MaterialName == MaterialNames[MaterialIndex])
+					{
+						SelectedMaterialIdxAt[MaterialSlotIndex] = MaterialIndex;
+					}
+				}
+			}
+
+			// Material 선택
+			for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
+			{
+				ImGui::PushID(static_cast<int>(MaterialSlotIndex));
+				if (ImGui::Combo("Material", &SelectedMaterialIdxAt[MaterialSlotIndex], MaterialNamesCharP.data(), static_cast<int>(MaterialNamesCharP.size())))
+				{
+					SetMaterialByUser(static_cast<uint32>(MaterialSlotIndex), MaterialNames[SelectedMaterialIdxAt[MaterialSlotIndex]]);
+				}
+
+				// Normal Map 설정
+				UMaterial* Material = UResourceManager::GetInstance().Load<UMaterial>(MaterialSlots[MaterialSlotIndex].MaterialName);
+				if (Material)
+				{
+					static TArray<FString> NormalMapTexturePaths = GetNormalMapFiles();
+
+					// 표시용 이름 배열 생성 (경로, 확장자 제거)
+					TArray<FString> DisplayNames;
+					DisplayNames.reserve(NormalMapTexturePaths.size());
+					for (const FString& path : NormalMapTexturePaths)
+					{
+						DisplayNames.push_back(std::filesystem::path(path).stem().string());
+					}
+
+					// 현재 선택된 텍스처 찾기
+					UTexture* CurrentNormalTexture = Material->GetNormalTexture();
+					const char* CurrentTextureDisplayName = "None";
+					if (CurrentNormalTexture)
+					{
+						FString CurrentPath = CurrentNormalTexture->GetFilePath();
+						for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
+						{
+							if (NormalMapTexturePaths[i] == CurrentPath)
+							{
+								CurrentTextureDisplayName = DisplayNames[i].c_str();
+								break;
+							}
+						}
+					}
+
+					// 콤보박스 시작
+					if (ImGui::BeginCombo("Normal Map", CurrentTextureDisplayName))
+					{
+						// "None" 옵션
+						bool is_none_selected = (CurrentNormalTexture == nullptr);
+						if (ImGui::Selectable("None", is_none_selected))
+						{
+							Material->SetNormalTexture(nullptr);
+						}
+						if (is_none_selected)
+							ImGui::SetItemDefaultFocus();
+
+						// 나머지 텍스처 옵션들
+						for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
+						{
+							bool is_selected = (CurrentNormalTexture && CurrentNormalTexture->GetFilePath() == NormalMapTexturePaths[i]);
+							if (ImGui::Selectable(DisplayNames[i].c_str(), is_selected))
+							{
+								UTexture* SelectedTexture = UResourceManager::GetInstance().Load<UTexture>(NormalMapTexturePaths[i]);
+								Material->SetNormalTexture(SelectedTexture);
+							}
+
+							// 콤보박스 항목 호버 시 미리보기
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::BeginTooltip();
+								UTexture* HoveredTexture = UResourceManager::GetInstance().Load<UTexture>(NormalMapTexturePaths[i]);
+								if (HoveredTexture && HoveredTexture->GetShaderResourceView())
+								{
+									ImGui::Image(HoveredTexture->GetShaderResourceView(), ImVec2(128, 128));
+								}
+								ImGui::TextUnformatted(DisplayNames[i].c_str());
+								ImGui::EndTooltip();
+							}
+
+							if (is_selected)
+								ImGui::SetItemDefaultFocus();
+						}
+						ImGui::EndCombo();
+					}
+
+					// 현재 선택된 텍스처 미리보기
+					if (CurrentNormalTexture && CurrentNormalTexture->GetShaderResourceView())
+					{
+						ImGui::Image(CurrentNormalTexture->GetShaderResourceView(), ImVec2(128, 128));
+					}
+				}
+
+				ImGui::PopID();
+			}
+		}
+	}
 }

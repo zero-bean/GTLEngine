@@ -7,12 +7,6 @@ class UUIManager;
 class UWorld;
 class AActor;
 class AGizmoActor;
-class UPointLightComponent;
-class UDecalComponent;
-class URotationMovementComponent;
-class UProjectileMovementComponent;
-class USpotLightComponent;
-class UDirectionalLightComponent;
 
 class UTargetActorTransformWidget
 	: public UWidget
@@ -65,18 +59,4 @@ private:
 	// 헬퍼 메서드
 	//AActor* GetCurrentSelectedActor() const;
 	void ResetChangeFlags();
-
-	// Render component details func.
-	// TODO: define UComponentDetailsWidget class, add to ComponentWidgetRegistry (TMap)
-	void RenderExponentialHeightFogComponentDetails(UExponentialHeightFogComponent* InComponent);
-	void RenderStaticMeshComponentDetails(UStaticMeshComponent* InComponent);
-	void RenderBillboardComponentDetails(UBillboardComponent* InComponent);
-	void RenderTextRenderComponentDetails(UTextRenderComponent* InComponent);
-	void RenderPointLightComponentDetails(UPointLightComponent* InComponent);
-	void RenderDecalComponentDetails(UDecalComponent* InComponent);
-	void RenderRotationMovementComponentDetails(URotationMovementComponent* InComponent);
-	void RenderProjectileMovementComponentDetails(UProjectileMovementComponent* InComponent);
-	void RenderFXAAComponentDetails(UFXAAComponent* InComponent);
-	void RenderSpotLightComponentDetails(USpotLightComponent* InComponent);
-	void RenderDirectionalLightComponentDetails(UDirectionalLightComponent* InComponent);
 };

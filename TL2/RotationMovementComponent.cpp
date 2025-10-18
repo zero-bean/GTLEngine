@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "RotationMovementComponent.h"
+#include "ImGui/imgui.h"
 
 URotationMovementComponent::URotationMovementComponent()
 	: RotationRate(FVector(0.f, 80.f, 0.f))
@@ -73,4 +74,31 @@ UObject* URotationMovementComponent::Duplicate()
 void URotationMovementComponent::DuplicateSubObjects()
 {
 	UMovementComponent::DuplicateSubObjects();
+}
+
+void URotationMovementComponent::RenderDetails()
+{
+	ImGui::Text("Rotation Movement Component Settings");
+	ImGui::Separator();
+
+	// Rotate in Local Space
+	bool bLocalRotation = GetRotationInLocalSpace();
+	if (ImGui::Checkbox("Rotate in Local Space", &bLocalRotation))
+	{
+		SetRotationInLocalSpace(bLocalRotation);
+	}
+
+	// Rotation Rate
+	FVector RotationRate = GetRotationRate();
+	if (ImGui::DragFloat3("Rotation Rate", &RotationRate.X, 0.1f))
+	{
+		SetRotationRate(RotationRate);
+	}
+
+	// Pivot Translation
+	FVector PivotTranslation = GetPivotTranslation();
+	if (ImGui::DragFloat3("Pivot Translation", &PivotTranslation.X, 0.1f))
+	{
+		SetPivotTranslation(PivotTranslation);
+	}
 }

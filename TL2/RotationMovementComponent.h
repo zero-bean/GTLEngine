@@ -12,6 +12,9 @@ public:
 	UObject* Duplicate() override;
 	void DuplicateSubObjects() override;
 
+	// Editor Details
+	void RenderDetails() override;
+
 	// Getter/Setter Func
 	FVector GetRotationRate() const { return RotationRate; }
 	FVector GetPivotTranslation() const { return PivotTranslation; }

@@ -47,6 +47,9 @@ public:
     UObject* Duplicate() override;
     void DuplicateSubObjects() override;
 
+    // Editor Details
+    void RenderDetails() override;
+
 
 
 protected:
