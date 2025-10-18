@@ -183,27 +183,35 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
 
         for (uint32 i = 0; i < NumMeshGroupInfos; ++i)
         {
-            UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
+            const FMaterialSlot& CurrentSlot = InComponentMaterialSlots[i]; //  현재 슬롯 정보를 가져옵니다.
+            UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(CurrentSlot.MaterialName);
+            UTexture* NormalTexture = nullptr; // 최종적으로 바인딩될 노멀 텍스처
             const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
             bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
 
-            // Check for normal texture directly from the UMaterial instance
-            UTexture* NormalTexture = Material->GetNormalTexture();
-            bool bHasNormalTexture = (NormalTexture != nullptr);
+            // 오버라이드가 켜져있으면, 컴포넌트의 오버라이드 텍스처를 사용합니다.
+            if (CurrentSlot.bOverrideNormalTexture)
+            {
+                NormalTexture = CurrentSlot.NormalTextureOverride;
+            }
+            // 오버라이드가 꺼져있으면, 원본 머티리얼의 텍스처를 사용합니다.
+            else
+            {
+                NormalTexture = Material->GetNormalTexture();
+            }
 
-            // 재료 변경 추적
+            bool bHasNormalTexture = (NormalTexture != nullptr); // 머티리얼의 노말맵 보유 여부
+
             if (LastMaterial != Material)
             {
                 StatsCollector.IncrementMaterialChanges();
                 LastMaterial = const_cast<UMaterial*>(Material);
             }
 
-            // Diffuse Texture
             if (bHasTexture)
             {
                 FTextureData* TextureData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.DiffuseTextureFileName);
 
-                // 텍스처 변경 추적 (임시로 FTextureData*를 UTexture*로 캠스트)
                 UTexture* CurrentTexture = reinterpret_cast<UTexture*>(TextureData);
                 if (LastTexture != CurrentTexture)
                 {
@@ -214,16 +222,20 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &(TextureData->TextureSRV));
             }
 
-            // Normal Texture
+            // 노멀 맵이 존재한다면, 최종적으로 결정된 NormalTexture의 SRV를 바인딩합니다.
             if (bHasNormalTexture)
             {
                 ID3D11ShaderResourceView* NormalSRV = NormalTexture->GetShaderResourceView();
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NormalSRV);
             }
+            // 텍스처가 없는 경우, 슬롯을 명시적으로 비웁니다.
+            else
+            {
+                ID3D11ShaderResourceView* NullSRV = nullptr;
+                RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NullSRV);
+            }
 
-            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture }); // PSSet도 해줌
-
-            // DrawCall 수실행 및 통계 추가
+            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture }); 
             RHIDevice->GetDeviceContext()->DrawIndexed(MeshGroupInfos[i].IndexCount, MeshGroupInfos[i].StartIndex, 0);
             StatsCollector.IncrementDrawCalls();
         }
@@ -231,7 +243,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
     else
     {
         FObjMaterialInfo ObjMaterialInfo;
-        RHIDevice->UpdateSetCBuffer({ FMaterialInPs(ObjMaterialInfo), (uint32)false, (uint32)false, (uint32)false }); // PSSet도 해줌
+        RHIDevice->UpdateSetCBuffer({ FMaterialInPs(ObjMaterialInfo), (uint32)false, (uint32)false, (uint32)false }); 
         RHIDevice->GetDeviceContext()->DrawIndexed(IndexCount, 0, 0);
         StatsCollector.IncrementDrawCalls();
     }

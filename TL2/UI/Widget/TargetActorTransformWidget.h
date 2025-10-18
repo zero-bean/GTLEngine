@@ -57,6 +57,5 @@ private:
 	bool bUniformScale = false;
 	
 	// 헬퍼 메서드
-	//AActor* GetCurrentSelectedActor() const;
 	void ResetChangeFlags();
 };
