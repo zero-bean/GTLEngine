@@ -128,13 +128,14 @@ cbuffer SHAmbientLightBuffer : register(b10)
     float3 _pad_sh;            // 16-byte alignment
 }
 
-// Multi-Probe SH Ambient Light (b11)
+// Multi-Probe SH Ambient Light (b12)
 struct FSHProbeData
 {
     float4 Position;           // xyz=프로브 위치, w=영향 반경
     float4 SHCoefficients[9];  // 9개 SH 계수
     float Intensity;           // 강도
-    float3 Padding;            // 16바이트 정렬
+    float Falloff;             // 감쇠 지수
+    float2 Padding;            // 16바이트 정렬
 };
 
 #define MAX_SH_PROBES 8

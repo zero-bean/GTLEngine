@@ -951,14 +951,17 @@ void URenderer::RenderSHAmbientLightPass(UWorld* World)
         int32 idx = MultiProbeBuffer.ProbeCount;
         const FSHAmbientLightBufferType& SHBuffer = Probe->GetSHBuffer();
         FVector ProbePos = Probe->GetWorldLocation();
+        float ProbeRadius = Probe->GetRadius();
+        float ProbeFalloff = Probe->GetFalloff();
 
         // Copy probe data
-        MultiProbeBuffer.Probes[idx].Position = FVector4(ProbePos.X, ProbePos.Y, ProbePos.Z, 1000.0f); // w = influence radius
+        MultiProbeBuffer.Probes[idx].Position = FVector4(ProbePos.X, ProbePos.Y, ProbePos.Z, ProbeRadius); // w = influence radius
         for (int32 i = 0; i < 9; ++i)
         {
             MultiProbeBuffer.Probes[idx].SHCoefficients[i] = SHBuffer.SHCoefficients[i];
         }
         MultiProbeBuffer.Probes[idx].Intensity = SHBuffer.Intensity;
+        MultiProbeBuffer.Probes[idx].Falloff = ProbeFalloff;
 
         MultiProbeBuffer.ProbeCount++;
     }

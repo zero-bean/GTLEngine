@@ -615,6 +615,12 @@ UObject* UAmbientLightComponent::Duplicate()
     UAmbientLightComponent* DuplicatedComponent = NewObject<UAmbientLightComponent>();
     CopyCommonProperties(DuplicatedComponent);
     DuplicatedComponent->AmbientData = this->AmbientData;
+    DuplicatedComponent->Radius = this->Radius;
+    DuplicatedComponent->Falloff = this->Falloff;
+    DuplicatedComponent->CaptureResolution = this->CaptureResolution;
+    DuplicatedComponent->UpdateInterval = this->UpdateInterval;
+    DuplicatedComponent->SmoothingFactor = this->SmoothingFactor;
+    DuplicatedComponent->SHIntensity = this->SHIntensity;
     DuplicatedComponent->DuplicateSubObjects();
     return DuplicatedComponent;
 }
@@ -622,4 +628,72 @@ UObject* UAmbientLightComponent::Duplicate()
 void UAmbientLightComponent::DuplicateSubObjects()
 {
     Super_t::DuplicateSubObjects();
+}
+
+void UAmbientLightComponent::RenderDetails()
+{
+	ImGui::Separator();
+	ImGui::Text("Ambient Light Component Settings");
+
+	// SH Intensity
+	float intensity = GetSHIntensity();
+	if (ImGui::DragFloat("SH Intensity", &intensity, 0.01f, 0.0f, 10.0f))
+	{
+		SetSHIntensity(intensity);
+	}
+
+	ImGui::Spacing();
+
+	// Localized Ambient Light Settings
+	ImGui::Text("Localized Settings:");
+
+	// Radius
+	float radius = GetRadius();
+	if (ImGui::DragFloat("Radius", &radius, 1.0f, 0.0f, 10000.0f))
+	{
+		SetRadius(radius);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Global"))
+	{
+		SetRadius(0.0f);  // 0 = global ambient light
+	}
+
+	// Falloff
+	float falloff = GetFalloff();
+	if (ImGui::DragFloat("Falloff", &falloff, 0.05f, 0.1f, 10.0f))
+	{
+		SetFalloff(falloff);
+	}
+
+	ImGui::Spacing();
+
+	// Capture Settings
+	ImGui::Text("Capture Settings:");
+
+	int32 resolution = GetCaptureResolution();
+	if (ImGui::DragInt("Resolution", &resolution, 1, 16, 512))
+	{
+		SetCaptureResolution(resolution);
+	}
+
+	float updateInterval = GetUpdateInterval();
+	if (ImGui::DragFloat("Update Interval", &updateInterval, 0.01f, 0.0f, 10.0f))
+	{
+		SetUpdateInterval(updateInterval);
+	}
+
+	float smoothing = GetSmoothingFactor();
+	if (ImGui::DragFloat("Smoothing", &smoothing, 0.01f, 0.0f, 1.0f))
+	{
+		SetSmoothingFactor(smoothing);
+	}
+
+	ImGui::Spacing();
+
+	// Force Capture Button
+	if (ImGui::Button("Force Capture Now"))
+	{
+		ForceCapture();
+	}
 }

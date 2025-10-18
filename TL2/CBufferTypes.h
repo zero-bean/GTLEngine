@@ -241,7 +241,10 @@ struct FSHAmbientLightBufferType
 {
     FVector4 SHCoefficients[9];  // 9 RGB coefficients (w unused, but needed for alignment)
     float Intensity;             // Global intensity multiplier
-    FVector Padding;             // 16-byte alignment
+    FVector Position;            // World position of ambient light probe
+    float Radius;                // Influence radius (0 = global)
+    FVector _Padding;            // 16-byte alignment
+    float Falloff;               // Falloff exponent
 };
 
 // Single probe data for multi-probe system
@@ -250,7 +253,8 @@ struct FSHProbeData
     FVector4 Position;           // xyz=프로브 위치, w=영향 반경
     FVector4 SHCoefficients[9];  // 9개 SH 계수
     float Intensity;             // 강도
-    FVector Padding;             // 16바이트 정렬
+    float Falloff;               // 감쇠 지수
+    FVector2D Padding;           // 16바이트 정렬
 };
 
 #define MAX_SH_PROBES 8

@@ -56,6 +56,13 @@ public:
 	void SetSHIntensity(float InIntensity) { SHIntensity = InIntensity; }
 	float GetSHIntensity() const { return SHIntensity; }
 
+	// Radius and falloff for localized ambient lighting
+	void SetRadius(float InRadius) { Radius = InRadius; }
+	float GetRadius() const { return Radius; }
+
+	void SetFalloff(float InFalloff) { Falloff = InFalloff; }
+	float GetFalloff() const { return Falloff; }
+
 	// Get current SH coefficients
 	const FSHAmbientLightBufferType& GetSHBuffer() const { return SHBuffer; }
 
@@ -64,6 +71,9 @@ public:
 
 	// Legacy ambient light property
 	FAmbientLightProperty AmbientData;
+
+	// Details panel
+	void RenderDetails() override;
 
 protected:
 	UObject* Duplicate() override;
@@ -104,6 +114,10 @@ private:
 	float UpdateInterval = 0.1f;            // Update every N seconds
 	float SmoothingFactor = 0.1f;           // Temporal smoothing (0=no smooth, 1=instant)
 	float SHIntensity = 1.0f;              // Global intensity multiplier (낮은 값 = π 변환 보정)
+
+	// Localized ambient lighting
+	float Radius = 1000.0f;                 // Influence radius (0 = global, >0 = localized)
+	float Falloff = 1.0f;                   // Falloff exponent (higher = sharper edge)
 
 	// Update timing
 	float TimeSinceLastCapture = 0.0f;
