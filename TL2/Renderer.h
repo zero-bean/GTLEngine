@@ -39,7 +39,7 @@ public:
 public:
     void Update(float DeltaSecond);
 
-	void BeginFrame();
+    void BeginFrame();
 
     void PrepareShader(UShader* InShader);
 
@@ -143,6 +143,9 @@ private:
     UMaterial* LastMaterial = nullptr;
     UShader* LastShader = nullptr;
     UTexture* LastTexture = nullptr;
+
+    // 뷰모드 선택 시, 해당 뷰모드 전용으로 사용하는 쉐이더
+    UShader* OverrideShader = nullptr;
 
     // Shader for Scene Depth Pass
     UShader* DepthOnlyShader = nullptr;

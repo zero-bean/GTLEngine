@@ -221,7 +221,7 @@ void SViewportWindow::RenderToolbar()
 
 		if (ImGui::Button("Reset")) { /* TODO: 카메라 Reset */ }
 
-		const char* viewModes[] = { "Lit", "Unlit", "Wireframe", "SceneDepth" };
+		const char* viewModes[] = { "Lit", "Unlit", "Wireframe", "SceneDepth", "WorldNormal"};
 		int currentViewMode = static_cast<int>(ViewportClient-> GetViewModeIndex())-1; // 0=Lit, 1=Unlit, 2=Wireframe -1이유 1부터 시작이여서 
 
 		ImGui::SameLine();
@@ -239,6 +239,7 @@ void SViewportWindow::RenderToolbar()
 			case 1: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Unlit); break;
 			case 2: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Wireframe); break;
 			case 3: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_SceneDepth); break;
+			case 4: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_WorldNormal); break;
 			}
 		}
 

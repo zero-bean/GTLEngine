@@ -286,6 +286,11 @@ PS_OUTPUT mainPS(PS_INPUT input)
     float3 finalLit = ambient + diffuseLit + specularLit;
     finalLit = saturate(finalLit); // 과포화 방지
     
+    if (GIzmo == 1)
+    {
+        finalLit = base;
+    }
+    
     Result.Color = float4(finalLit, 1.0);
     Result.UUID = input.UUID;
     return Result;
