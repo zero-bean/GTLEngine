@@ -201,15 +201,18 @@ PS_OUTPUT mainPS(PS_INPUT input)
     LightAccum directionalLight = (LightAccum) (0); 
     
 #if LIGHTING_MODEL_PHONG
-
+    
+    pointLight.diffuse = float4(1, 0, 0, 1);
 #elif  LIGHTING_MODEL_BLINN_PHONG
     pointLight = ComputePointLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
     spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
     //TODO: DirectionLight 
 #elif  LIGHTING_MODEL_BRDF
-
+    
+    pointLight.diffuse = float4(0, 1, 0, 1);
 #elif LIGHTING_MODEL_LAMBERT
-
+    
+    pointLight.diffuse = float4(0, 0, 1, 1);
 #endif
     
     accLight.diffuse += pointLight.diffuse + spotLight.diffuse + directionalLight.diffuse;

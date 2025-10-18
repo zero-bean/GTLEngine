@@ -71,6 +71,8 @@ void URenderer::PrepareShader(UShader* InShader)
         LastShader = InShader;
     }
     
+    // Ensure uber-shader variant matches current selection
+    InShader->SetActiveMode(CurrentShadingModel);
     RHIDevice->GetDeviceContext()->VSSetShader(InShader->GetVertexShader(), nullptr, 0);
     RHIDevice->GetDeviceContext()->PSSetShader(InShader->GetPixelShader(), nullptr, 0);
     RHIDevice->GetDeviceContext()->IASetInputLayout(InShader->GetInputLayout());
@@ -1263,6 +1265,17 @@ void URenderer::ClearLineBatch()
     LineBatchData->Indices.clear();
     
     bLineBatchActive = false;
+}
+
+// Shading model accessors (used by UI)
+void URenderer::SetShadingModel(ELightShadingModel Model)
+{
+    CurrentShadingModel = Model;
+}
+
+ELightShadingModel URenderer::GetShadingModel() const
+{
+    return CurrentShadingModel;
 }
 
 

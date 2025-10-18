@@ -45,10 +45,10 @@ const D3D_SHADER_MACRO* UShader::GetMacros(ELightShadingModel Model)
         return MACRO_BLINN; 
         
     case ELightShadingModel::BRDF:
-        return MACRO_LAMBERT;  
+        return MACRO_BRDF;  
         
     case ELightShadingModel::Lambert:
-        return MACRO_BRDF; 
+        return MACRO_LAMBERT; 
         
     default:
         return MACRO_BLINN;
@@ -157,4 +157,5 @@ void UShader::ReleaseResources()
             PixelShaders[i] = nullptr;
         }
     }
+     
 }

@@ -2,6 +2,7 @@
 #include "BillboardComponent.h"
 #include "RHIDevice.h"
 #include "LineDynamicMesh.h"
+#include "Shader.h"
 
 class UStaticMeshComponent;
 class UTextRenderComponent;
@@ -66,6 +67,10 @@ public:
     // View Mode Setting
     void SetViewModeType(EViewModeIndex ViewModeIndex);
     void SetViewModeIndex(EViewModeIndex InViewModeIndex) { CurrentViewMode = InViewModeIndex; }
+
+    // Shading model control (for uber shader)
+    void SetShadingModel(ELightShadingModel Model);
+    ELightShadingModel GetShadingModel() const;
 
     // Batch Line Rendering System
     void BeginLineBatch();
@@ -159,5 +164,8 @@ private:
 
     void InitializeLineBatch();
     void ResetRenderStateTracking();
+    
+    // Global shading model selection used by uber shader(s)
+    ELightShadingModel CurrentShadingModel = ELightShadingModel::BlinnPhong;
 };
 
