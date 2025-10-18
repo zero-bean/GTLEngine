@@ -7,7 +7,7 @@ class UBillboardComponent;
 class ASpotLightActor : public AActor
 {
 public:
-	DECLARE_CLASS(ASpotLightActor, AActor)
+	DECLARE_SPAWNABLE_CLASS(ASpotLightActor, AActor, "Spot Light")
 
 	ASpotLightActor();
 	~ASpotLightActor() override;

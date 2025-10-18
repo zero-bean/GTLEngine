@@ -169,9 +169,8 @@ FMeshData* UMeshLoader::LoadMesh(const std::filesystem::path& FilePath)
         }
     }
 
-    // Tangent, Bitangent 계산
+    // Tangent 계산
     MeshData->Tangent.resize(MeshData->Vertices.size(), FVector(0.f, 0.f, 0.f));
-    MeshData->Bitangent.resize(MeshData->Vertices.size(), FVector(0.f, 0.f, 0.f));
 
     for (size_t i = 0; i < MeshData->Indices.size(); i += 3)
     {
@@ -200,16 +199,11 @@ FMeshData* UMeshLoader::LoadMesh(const std::filesystem::path& FilePath)
             continue;
         }
 
-        FVector tangent = (deltaPos1 * deltaUV2.Y - deltaPos2 * deltaUV1.Y) * r;
-        FVector bitangent = (deltaPos2 * deltaUV1.X - deltaPos1 * deltaUV2.X) * r;
+        FVector tangent = (deltaPos1) * r;
 
         MeshData->Tangent[i0] += tangent;
         MeshData->Tangent[i1] += tangent;
         MeshData->Tangent[i2] += tangent;
-
-        MeshData->Bitangent[i0] += bitangent;
-        MeshData->Bitangent[i1] += bitangent;
-        MeshData->Bitangent[i2] += bitangent;
     }
 
     for (size_t i = 0; i < MeshData->Vertices.size(); ++i)
@@ -220,14 +214,7 @@ FMeshData* UMeshLoader::LoadMesh(const std::filesystem::path& FilePath)
         // Gram-Schmidt 직교화
         FVector tangent = (t - n * n.Dot(t)).GetSafeNormal();
 
-        // 왼손 좌표계인지 확인
-        if (FVector::Cross(n, t).Dot(MeshData->Bitangent[i]) < 0.0f)
-        {
-            tangent = tangent * -1.0f;
-        }
-
         MeshData->Tangent[i] = tangent;
-        MeshData->Bitangent[i] = FVector::Cross(n, tangent).GetSafeNormal();
     }
 
     MeshCache[FilePath.string()] = MeshData;

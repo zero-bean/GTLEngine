@@ -202,8 +202,6 @@ struct FMeshData
     TArray<FVector> Normal;
     // 탄젠트
     TArray<FVector> Tangent;
-    // 바이탄젠트
-    TArray<FVector> Bitangent;
 };
 
 enum class EPrimitiveTopology
@@ -290,6 +288,7 @@ enum class EVertexLayoutType : uint8
 
     PositionColor,
     PositionColorTexturNormal,
+    PositionColorTexturNormalTangent,
     PositionUV,
     PositionBillBoard,
     PositionCollisionDebug,
@@ -319,20 +318,9 @@ enum class EPrimitiveType : uint32
     End,
 };
 
-enum class ESpawnActorType : uint32
-{
-    Actor,
-    StaticMesh,
-    Decal,
-    DecalSpotLight,
-    HeightFog,
-    FXAA,
-    
-    //Light
-    SpotLight,
+// ESpawnActorType은 더 이상 사용되지 않습니다.
+// Reflection 기반 시스템(UClassRegistry::GetSpawnableClasses)을 사용하세요.
 
-    Count
-};
 /**
  * Show Flag system for toggling rendering features globally
  * Uses bit flags for efficient storage and checking

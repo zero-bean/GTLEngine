@@ -508,6 +508,68 @@ public:
             }
         }
         
+        // Tangent, Bitangent 계산
+        TArray<FVector> Tangents(OutStaticMesh->Vertices.size(), FVector(0.f, 0.f, 0.f));
+        TArray<FVector> Bitangents(OutStaticMesh->Vertices.size(), FVector(0.f, 0.f, 0.f));
+
+        for (size_t i = 0; i < OutStaticMesh->Indices.size(); i += 3)
+        {
+            uint32 i0 = OutStaticMesh->Indices[i];
+            uint32 i1 = OutStaticMesh->Indices[i + 1];
+            uint32 i2 = OutStaticMesh->Indices[i + 2];
+
+            const FVector& v0 = OutStaticMesh->Vertices[i0].Pos;
+            const FVector& v1 = OutStaticMesh->Vertices[i1].Pos;
+            const FVector& v2 = OutStaticMesh->Vertices[i2].Pos;
+
+            const FVector2D& uv0 = OutStaticMesh->Vertices[i0].Tex;
+            const FVector2D& uv1 = OutStaticMesh->Vertices[i1].Tex;
+            const FVector2D& uv2 = OutStaticMesh->Vertices[i2].Tex;
+
+            FVector deltaPos1 = v1 - v0;
+            FVector deltaPos2 = v2 - v0;
+
+            FVector2D deltaUV1 = uv1 - uv0;
+            FVector2D deltaUV2 = uv2 - uv0;
+
+            float r = 1.0f / (deltaUV1.X * deltaUV2.Y - deltaUV1.Y * deltaUV2.X);
+
+            if (isinf(r) || isnan(r))
+            {
+                continue;
+            }
+
+            FVector tangent = (deltaPos1 * deltaUV2.Y - deltaPos2 * deltaUV1.Y) * r;
+            FVector bitangent = (deltaPos2 * deltaUV1.X - deltaPos1 * deltaUV2.X) * r;
+
+            Tangents[i0] += tangent;
+            Tangents[i1] += tangent;
+            Tangents[i2] += tangent;
+
+            Bitangents[i0] += bitangent;
+            Bitangents[i1] += bitangent;
+            Bitangents[i2] += bitangent;
+        }
+
+        for (size_t i = 0; i < OutStaticMesh->Vertices.size(); ++i)
+        {
+            const FVector& n = OutStaticMesh->Vertices[i].Normal;
+            const FVector& t = Tangents[i];
+            const FVector& b = Bitangents[i];
+
+            // Gram-Schmidt 직교화
+            FVector tangent = (t - n * n.Dot(t)).GetSafeNormal();
+
+            // 왼손 좌표계인지 확인
+            if (FVector::Cross(n, tangent).Dot(b) < 0.0f)
+            {
+                tangent = tangent * -1.0f;
+            }
+
+            OutStaticMesh->Vertices[i].Tangent = tangent;
+            OutStaticMesh->Vertices[i].Bitangent = FVector::Cross(n, tangent).GetSafeNormal();
+        }
+        
         // 2) Material 관련 각 case 처리
         if (!InObjInfo.bHasMtl)
         {
@@ -525,13 +587,13 @@ public:
         }
 
         // 3) 리소스 매니저에 Material 리소스 맵핑
-        /*for (const FObjMaterialInfo& InMaterialInfo : InMaterialInfos)
+        for (const FObjMaterialInfo& InMaterialInfo : InMaterialInfos)
         {
             UMaterial* Material = NewObject<UMaterial>();
             Material->SetMaterialInfo(InMaterialInfo);
 
             UResourceManager::GetInstance().Add<UMaterial>(InMaterialInfo.MaterialName, Material);
-        }*/
+        }
 
         // 4) GroupInfo 정보 설정
         for (uint32 i = 0; i < NumGroup; ++i)

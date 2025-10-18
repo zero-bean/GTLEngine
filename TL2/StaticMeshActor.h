@@ -5,7 +5,7 @@
 class AStaticMeshActor : public AActor
 {
 public:
-    DECLARE_CLASS(AStaticMeshActor, AActor)
+    DECLARE_SPAWNABLE_CLASS(AStaticMeshActor, AActor, "Static Mesh")
 
     AStaticMeshActor();
     virtual void Tick(float DeltaTime) override;

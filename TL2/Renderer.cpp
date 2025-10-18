@@ -115,11 +115,8 @@ void URenderer::RenderFrame(UWorld* World)
     BeginFrame();
     UUIManager::GetInstance().Render();
 
-    //원래 컴포넌트가 생성되고 레벨에 알아서 등록하고 해제하는게 훨씬 효율적인데 그렇게 하면 지금 구조상 생성자에서 레벨에 등록할 수밖에 없고
-    //그러면 파이월드로 넘어가면서 듀플리케이트 하는 시점이 GWorld가 파이월드가 되기 전이라서 기존의 에디터월드 레벨에 중복으로 등록되고
-    //파이월드에는 컴포넌트 등록 안되어있어서 터짐. 파이월드에 등록하는건 beingplay에서 하면 된다지만 생성자가 아닌 곳에서 생성이후 렌더링 전 레벨에 등록할
-    //방안이 떠오르지 않아서 일단 급한대로 매프레임 컴포넌트 수집하는 형태로 작성함
-    World->GetLevel()->CollectComponentsToRender();
+    // 컴포넌트는 OnRegister 시점에 자동으로 레벨에 등록됨
+    // InitializeActorsForPlay에서 RegisterComponent 호출
 
     RenderViewPorts(World);
 
@@ -145,8 +142,12 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
     case EVertexLayoutType::PositionBillBoard:
         stride = sizeof(FBillboardVertexInfo_GPU);
         break;
+    case EVertexLayoutType::PositionColorTexturNormalTangent:
+        stride = sizeof(FVertexDynamic);
+        break;
     case EVertexLayoutType::PositionUV:
         stride = sizeof(FVertexUV);
+        break;
     default:
         // Handle unknown or unsupported vertex types
         assert(false && "Unknown vertex type!");
@@ -176,10 +177,13 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
         const uint32 NumMeshGroupInfos = static_cast<uint32>(MeshGroupInfos.size());
         for (uint32 i = 0; i < NumMeshGroupInfos; ++i)
         {
-            const UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
+            UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
             const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
             bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
-            bool bHasNormalTexture = !(MaterialInfo.NormalTextureFileName == FName::None());
+
+            // Check for normal texture directly from the UMaterial instance
+            UTexture* NormalTexture = Material->GetNormalTexture();
+            bool bHasNormalTexture = (NormalTexture != nullptr);
 
             // 재료 변경 추적
             if (LastMaterial != Material)
@@ -207,8 +211,8 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
             // Normal Texture
             if (bHasNormalTexture)
             {
-                FTextureData* NormalTextureData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.NormalTextureFileName);
-                RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &(NormalTextureData->TextureSRV));
+                ID3D11ShaderResourceView* NormalSRV = NormalTexture->GetShaderResourceView();
+                RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NormalSRV);
             }
 
             RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture }); // PSSet도 해줌
@@ -749,6 +753,10 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 
     for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
     {
+        // 안전성 체크: nullptr 또는 비활성 컴포넌트 스킵
+        if (!PrimitiveComponent || !PrimitiveComponent->IsActive())
+            continue;
+
         bool bIsSelected = false;
         if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BoundingBoxes))
         {

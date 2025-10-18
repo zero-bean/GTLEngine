@@ -24,8 +24,16 @@ struct FMaterialInPs
     {
         DiffuseColor = InMaterialInfo.DiffuseColor;
         AmbientColor = InMaterialInfo.AmbientColor;
+        SpecularColor = InMaterialInfo.SpecularColor;
+        SpecularExponent = InMaterialInfo.SpecularExponent;
+        EmissiveColor = InMaterialInfo.EmissiveColor;
+        Transparency = InMaterialInfo.Transparency;
+        OpticalDensity = InMaterialInfo.OpticalDensity;
+        IlluminationModel = InMaterialInfo.IlluminationModel;
+        TransmissionFilter = InMaterialInfo.TransmissionFilter;
     }
 };
+
 
 
 #define CBUFFER_INFO(TYPENAME, SLOTNUM, SETVS, SETPS)\
@@ -139,7 +147,7 @@ struct UVScrollCB
     float Pad;
 };
 
-// PS : b7
+//PS : b7
 struct DecalMatrixCB
 {
     FMatrix DecalWorldMatrix;

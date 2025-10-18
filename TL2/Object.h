@@ -17,9 +17,15 @@ struct UClass
     std::size_t   Size = 0;
     UObject* (*CreateInstance)() = nullptr; // 인스턴스 생성 함수 포인터
 
+    // 스폰 메타데이터
+    const char* DisplayName = nullptr;  // UI 표시용 이름 (nullptr이면 Name 사용)
+    bool bSpawnable = false;            // 에디터에서 스폰 가능 여부
+
     constexpr UClass() = default;
-    constexpr UClass(const char* n, const UClass* s, std::size_t z, UObject* (*creator)() = nullptr)
-        :Name(n), Super(s), Size(z), CreateInstance(creator) {
+    constexpr UClass(const char* n, const UClass* s, std::size_t z, UObject* (*creator)() = nullptr,
+                     const char* displayName = nullptr, bool spawnable = false)
+        :Name(n), Super(s), Size(z), CreateInstance(creator),
+         DisplayName(displayName), bSpawnable(spawnable) {
     }
     bool IsChildOf(const UClass* Base) const noexcept
     {
@@ -28,6 +34,9 @@ struct UClass
             if (c == Base) return true;
         return false;
     }
+
+    // UI 표시용 이름 반환 (DisplayName이 없으면 Name 사용)
+    const char* GetDisplayName() const { return DisplayName ? DisplayName : Name; }
 };
 
 // ── 글로벌 클래스 레지스트리 ─────────────────────────────
@@ -62,6 +71,24 @@ public:
             if (Class && Class->IsChildOf(BaseClass) && Class != BaseClass)
             {
                 Result.push_back(Class);
+            }
+        }
+        return Result;
+    }
+
+    // 스폰 가능한 클래스만 가져오기
+    TArray<UClass*> GetSpawnableClasses(const UClass* BaseClass = nullptr) const
+    {
+        TArray<UClass*> Result;
+        for (UClass* Class : RegisteredClasses)
+        {
+            if (Class && Class->bSpawnable)
+            {
+                // BaseClass가 지정되면 해당 타입의 자식만 필터링
+                if (!BaseClass || Class->IsChildOf(BaseClass))
+                {
+                    Result.push_back(Class);
+                }
             }
         }
         return Result;
@@ -186,6 +213,26 @@ public:                                                                       \
     {                                                                         \
         static UClass Cls{ #ThisClass, SuperClass::StaticClass(),             \
                             sizeof(ThisClass), nullptr };                     \
+        static bool bRegistered = false;                                      \
+        if (!bRegistered)                                                     \
+        {                                                                     \
+            UClassRegistry::Get().RegisterClass(&Cls);                        \
+            bRegistered = true;                                               \
+        }                                                                     \
+        return &Cls;                                                          \
+    }                                                                         \
+    virtual UClass* GetClass() const override { return ThisClass::StaticClass(); }
+
+// ── 에디터에서 스폰 가능한 Actor용 매크로 ─────────────────────
+#define DECLARE_SPAWNABLE_CLASS(ThisClass, SuperClass, DisplayName)           \
+public:                                                                       \
+    using Super_t = SuperClass;                                               \
+    static UObject* CreateInstance() { return new ThisClass(); }              \
+    static UClass* StaticClass()                                              \
+    {                                                                         \
+        static UClass Cls{ #ThisClass, SuperClass::StaticClass(),             \
+                            sizeof(ThisClass), &ThisClass::CreateInstance,    \
+                            DisplayName, true };                              \
         static bool bRegistered = false;                                      \
         if (!bRegistered)                                                     \
         {                                                                     \

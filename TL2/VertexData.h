@@ -32,7 +32,6 @@ struct FVertexDynamic
     FVector4 Color;
     FVector2D UV;
     FVector Tangent;
-    FVector Bitangent;
 
     void FillFrom(const FMeshData& mesh, size_t i)
     {
@@ -41,7 +40,6 @@ struct FVertexDynamic
         UV = (i < mesh.UV.size()) ? mesh.UV[i] : FVector2D(0, 0);
         Normal = (i < mesh.Normal.size()) ? mesh.Normal[i] : FVector(0, 0, 1);
         Tangent = (i < mesh.Tangent.size()) ? mesh.Tangent[i] : FVector(1, 0, 0);
-        Bitangent = (i < mesh.Bitangent.size()) ? mesh.Bitangent[i] : FVector(0, 1, 0);
     }
 
     void FillFrom(const FNormalVertex& src) {
@@ -50,7 +48,6 @@ struct FVertexDynamic
         UV = src.Tex;
         Normal = FVector{ src.Normal.X, src.Normal.Y, src.Normal.Z };
         Tangent = src.Tangent;
-        Bitangent = src.Bitangent;
     }
 };
 

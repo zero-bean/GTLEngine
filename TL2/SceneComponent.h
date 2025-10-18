@@ -77,6 +77,10 @@ public:
     const TArray<USceneComponent*>& GetAttachChildren() const { return AttachChildren; }
     UWorld* GetWorld() { return GEngine->GetActiveWorld(); }
 
+    // Component registration (Override from ActorComponent)
+    void OnRegister() override;
+    void OnUnregister() override;
+
     // Duplicate function
     UObject* Duplicate() override;
     void DuplicateSubObjects() override;

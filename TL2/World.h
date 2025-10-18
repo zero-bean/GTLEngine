@@ -197,6 +197,15 @@ inline T* UWorld::SpawnActor(const FTransform& Transform)
 	if (Level)
 	{
 		Level->AddActor(NewActor);
+
+		// 스폰된 액터의 모든 컴포넌트를 레벨에 등록
+		for (UActorComponent* Comp : NewActor->GetComponents())
+		{
+			if (Comp && !Comp->bIsRegistered)
+			{
+				Comp->RegisterComponent();
+			}
+		}
 	}
 
 	return NewActor;
