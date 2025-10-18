@@ -184,9 +184,49 @@ void UStaticMeshComponent::Serialize(bool bIsLoading, FComponentData& InOut)
         {
             SetStaticMesh(InOut.StaticMesh);
         }
-        // TODO: Materials 로드
+
+        // 씬 파일에 저장된 슬롯 수와 현재 메시의 슬롯 수 중 작은 값을 기준으로 복원 (안전성)
+        size_t SlotCountToLoad = std::min((size_t)MaterailSlots.size(), InOut.Materials.size());
+
+        for (size_t i = 0; i < SlotCountToLoad; ++i)
+        {
+            // 1. 원본 머티리얼 설정
+            MaterailSlots[i].MaterialName = InOut.Materials[i];
+            MaterailSlots[i].bChangedByUser = true; // 씬에서 로드했으므로 유저가 변경한 것으로 간주
+
+            // 2. 오버라이드 정보 로드 
+            if (i < InOut.MaterialNormalMapOverrides.size())
+            {
+                const FString& OverridePath = InOut.MaterialNormalMapOverrides[i];
+
+                if (OverridePath.empty())
+                {
+                    // 오버라이드 없음
+                    MaterailSlots[i].bOverrideNormalTexture = false;
+                    MaterailSlots[i].NormalTextureOverride = nullptr;
+                }
+                else if (OverridePath == "NONE") 
+                {
+                    // '없음'으로 오버라이드
+                    MaterailSlots[i].bOverrideNormalTexture = true;
+                    MaterailSlots[i].NormalTextureOverride = nullptr;
+                }
+                else 
+                {
+                    // 텍스처 경로로 오버라이드
+                    MaterailSlots[i].bOverrideNormalTexture = true;
+                    MaterailSlots[i].NormalTextureOverride = UResourceManager::GetInstance().Load<UTexture>(OverridePath);
+                }
+            }
+            else
+            {
+                // 레거시 씬 파일 (오버라이드 정보가 없음)
+                MaterailSlots[i].bOverrideNormalTexture = false;
+                MaterailSlots[i].NormalTextureOverride = nullptr;
+            }
+        }
     }
-    else
+    else // (bIsLoading == false)
     {
         // StaticMesh 저장
         if (UStaticMesh* Mesh = GetStaticMesh())
@@ -197,7 +237,35 @@ void UStaticMeshComponent::Serialize(bool bIsLoading, FComponentData& InOut)
         {
             InOut.StaticMesh.clear();
         }
-        // TODO: Materials 저장
+
+        InOut.Materials.clear();
+        InOut.MaterialNormalMapOverrides.clear();
+
+        for (const FMaterialSlot& Slot : MaterailSlots)
+        {
+            // 1. 원본 머티리얼 저장
+            InOut.Materials.push_back(Slot.MaterialName);
+
+            // 2. 오버라이드 정보 저장
+            if (!Slot.bOverrideNormalTexture)
+            {
+                // 오버라이드 없음 -> 빈 문자열
+                InOut.MaterialNormalMapOverrides.push_back("");
+            }
+            else
+            {
+                if (Slot.NormalTextureOverride == nullptr)
+                {
+                    // '없음'으로 오버라이드 -> "NONE"
+                    InOut.MaterialNormalMapOverrides.push_back("NONE");
+                }
+                else
+                {
+                    // 텍스처 경로로 오버라이드
+                    InOut.MaterialNormalMapOverrides.push_back(Slot.NormalTextureOverride->GetFilePath());
+                }
+            }
+        }
     }
 }
 

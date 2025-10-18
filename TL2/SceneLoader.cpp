@@ -294,6 +294,19 @@ void FSceneLoader::SaveV2(const FSceneData& SceneData, const FString& SceneName)
                     if (m + 1 < Comp.Materials.size()) oss << ", ";
                 }
                 oss << "]";
+
+                // Normal Map Texture
+                if (!Comp.MaterialNormalMapOverrides.empty() && Comp.MaterialNormalMapOverrides.size() == Comp.Materials.size())
+                {
+                    oss << ",\n";
+                    oss << "      \"MaterialNormalMapOverrides\" : [";
+                    for (size_t m = 0; m < Comp.MaterialNormalMapOverrides.size(); ++m)
+                    {
+                        oss << "\"" << Comp.MaterialNormalMapOverrides[m] << "\"";
+                        if (m + 1 < Comp.MaterialNormalMapOverrides.size()) oss << ", ";
+                    }
+                    oss << "]";
+                }
             }
         }
 
@@ -495,6 +508,16 @@ FSceneData FSceneLoader::ParseV2(const JSON& Json)
                 for (size_t m = 0; m < matsJson.size(); ++m)
                 {
                     Comp.Materials.push_back(matsJson.at(m).ToString());
+                }
+            }
+
+            // Normal Map Texture
+            if (CompJson.hasKey("MaterialNormalMapOverrides"))
+            {
+                const JSON& normsJson = CompJson.at("MaterialNormalMapOverrides");
+                for (size_t m = 0; m < normsJson.size(); ++m)
+                {
+                    Comp.MaterialNormalMapOverrides.push_back(normsJson.at(m).ToString());
                 }
             }
 
