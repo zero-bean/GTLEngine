@@ -22,7 +22,7 @@
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include "CameraComponent.h"
-#include "DynamicAmbientProbe.h"
+#include "AmbientLightComponent.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
@@ -954,8 +954,8 @@ void URenderer::RenderSHAmbientLightPass(UWorld* World)
 {
     if (!World) return;
 
-    // Find all active DynamicAmbientProbes in the world
-    const auto& ProbeList = World->GetLevel()->GetComponentList<UDynamicAmbientProbe>();
+    // Find all active AmbientLightComponents in the world
+    const auto& ProbeList = World->GetLevel()->GetComponentList<UAmbientLightComponent>();
 
     // Prepare multi-probe buffer
     FMultiSHProbeBufferType MultiProbeBuffer = {};
@@ -969,7 +969,7 @@ void URenderer::RenderSHAmbientLightPass(UWorld* World)
     }
 
     // Collect up to MAX_SH_PROBES active probes
-    for (UDynamicAmbientProbe* Probe : ProbeList)
+    for (UAmbientLightComponent* Probe : ProbeList)
     {
         if (!Probe || !Probe->IsActive())
             continue;

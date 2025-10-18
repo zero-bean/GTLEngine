@@ -63,7 +63,7 @@
       "UUID" : 664,
       "OwnerActorUUID" : 661,
       "ParentComponentUUID" : 662,
-      "Type" : "UDynamicAmbientProbe",
+      "Type" : "UAmbientLightComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000]
