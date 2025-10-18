@@ -59,19 +59,81 @@ void UStaticMeshComponent::SetStaticMesh(const FString& PathFileName)
 	StaticMesh = FObjManager::LoadObjStaticMesh(PathFileName);
     
     const TArray<FGroupInfo>& GroupInfos = StaticMesh->GetMeshGroupInfo();
+
+    // 기존 오버라이드 정보를 유지하기 위해 임시 백업합니다.
+    TArray<FMaterialSlot> OldSlots = std::move(MaterailSlots);
+
+    // 슬롯 배열 크기 재설정합니다.
+    MaterailSlots.clear();
+    MaterailSlots.resize(GroupInfos.size());
+
     if (MaterailSlots.size() < GroupInfos.size())
     {
         MaterailSlots.resize(GroupInfos.size());
     }
 
     // MaterailSlots.size()가 GroupInfos.size() 보다 클 수 있기 때문에, GroupInfos.size()로 설정
-    for (int i = 0; i < GroupInfos.size(); ++i) 
+    for (int i = 0; i < GroupInfos.size(); ++i)
     {
-        if (MaterailSlots[i].bChangedByUser == false)
+        // 이전 슬롯 정보가 있고, 유저가 변경한 적이 있다면 그대로 복원합니다.
+        if (i < OldSlots.size() && OldSlots[i].bChangedByUser)
+        {
+            MaterailSlots[i] = OldSlots[i];
+        }
+        // 아니라면, 새 메시의 기본 머티리얼로 설정합니다.
+        else 
         {
             MaterailSlots[i].MaterialName = GroupInfos[i].InitialMaterialName;
+            MaterailSlots[i].bChangedByUser = false;
+            MaterailSlots[i].bOverrideNormalTexture = false;
+            MaterailSlots[i].NormalTextureOverride = nullptr; 
         }
     }
+}
+
+void UStaticMeshComponent::SetNormalTextureOverride(int32 SlotIndex, UTexture* InTexture)
+{
+    if (SlotIndex >= 0 && SlotIndex < MaterailSlots.size())
+    {
+        MaterailSlots[SlotIndex].NormalTextureOverride = InTexture;
+        MaterailSlots[SlotIndex].bOverrideNormalTexture = true;
+        MaterailSlots[SlotIndex].bChangedByUser = true;
+    }
+}
+
+void UStaticMeshComponent::ClearNormalTextureOverride(int32 SlotIndex)
+{
+    if (SlotIndex >= 0 && SlotIndex < MaterailSlots.size())
+    {
+        MaterailSlots[SlotIndex].NormalTextureOverride = nullptr;
+        MaterailSlots[SlotIndex].bOverrideNormalTexture = false;
+        // bChangedByUser는 되돌리지 않습니다.
+        // 원본 머티리얼은 여전히 유저가 설정한 것일 수 있습니다.
+    }
+}
+
+UTexture* UStaticMeshComponent::GetNormalTextureOverride(int32 SlotIndex) const
+{
+    if (SlotIndex >= 0 && SlotIndex < MaterailSlots.size())
+    {
+        // 오버라이드가 활성화된 경우에만 텍스처 반환
+        if (MaterailSlots[SlotIndex].bOverrideNormalTexture)
+        {
+            return MaterailSlots[SlotIndex].NormalTextureOverride;
+        }
+    }
+
+    return nullptr; // 오버라이드가 활성화되지 않았으면 nullptr 반환
+}
+
+bool UStaticMeshComponent::HasNormalTextureOverride(int32 SlotIndex) const
+{
+    if (SlotIndex >= 0 && SlotIndex < MaterailSlots.size())
+    {
+        return MaterailSlots[SlotIndex].bOverrideNormalTexture;
+    }
+
+    return false;
 }
 
 void UStaticMeshComponent::Serialize(bool bIsLoading, FPrimitiveData& InOut)
