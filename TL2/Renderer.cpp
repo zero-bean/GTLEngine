@@ -75,10 +75,10 @@ void URenderer::PrepareShader(UShader* InShader)
     }
     
     // Ensure uber-shader variant matches current selection
-    InShader->SetActiveMode(CurrentShadingModel);
-    RHIDevice->GetDeviceContext()->VSSetShader(InShader->GetVertexShader(), nullptr, 0);
-    RHIDevice->GetDeviceContext()->PSSetShader(InShader->GetPixelShader(), nullptr, 0);
-    RHIDevice->GetDeviceContext()->IASetInputLayout(InShader->GetInputLayout());
+    ShaderToUse->SetActiveMode(CurrentShadingModel);
+    RHIDevice->GetDeviceContext()->VSSetShader(ShaderToUse->GetVertexShader(), nullptr, 0);
+    RHIDevice->GetDeviceContext()->PSSetShader(ShaderToUse->GetPixelShader(), nullptr, 0);
+    RHIDevice->GetDeviceContext()->IASetInputLayout(ShaderToUse->GetInputLayout());
 }
 
 void URenderer::OMSetBlendState(bool bIsChecked)
