@@ -94,6 +94,7 @@ struct FRotationMovementProperty
     FVector PivotTranslation = FVector(0, 0, 0);
     bool bRotationInLocalSpace = false;
 };
+
 struct FComponentData
 {
     uint32 UUID = 0;
@@ -109,6 +110,7 @@ struct FComponentData
     // Type별 속성
     FString StaticMesh;  // StaticMeshComponent: Asset path
     TArray<FString> Materials;  // StaticMeshComponent: Materials
+    TArray<FString> MaterialNormalMapOverrides;
     FString TexturePath;  // DecalComponent, BillboardComponent: Texture path
     FPointLightProperty PointLightProperty; // PointLightComponent
     FAmbientLightProperty AmbientLightProperty; // AmbientLightComponent
@@ -117,8 +119,6 @@ struct FComponentData
     FProjectileMovementProperty ProjectileMovementProperty;
     FRotationMovementProperty RotationMovementProperty;
 };
-
-
 
 class FSceneLoader
 {
