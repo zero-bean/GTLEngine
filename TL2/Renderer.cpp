@@ -733,6 +733,7 @@ void URenderer::RenderFogPass(UWorld* World, ACameraActor* Camera, FViewport* Vi
    }
 
 }
+
 void URenderer::RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
     UpdateSetCBuffer(FGammaBufferType(Gamma));
@@ -744,7 +745,6 @@ void URenderer::RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* V
         break;
     }
 }
-
 
 void URenderer::RenderPointLightPass(UWorld* World)
 {
@@ -986,6 +986,7 @@ void URenderer::AddLines(const TArray<FVector>& LineList, const FVector4& Color)
         LineBatchData->Indices.push_back(currentIndex);
     }
 }
+
 void URenderer::EndLineBatch(const FMatrix& ModelMatrix, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix)
 {
     if (!bLineBatchActive || !LineBatchData || !DynamicLineMesh || LineBatchData->Vertices.empty())
@@ -1027,7 +1028,6 @@ void URenderer::EndLineBatch(const FMatrix& ModelMatrix, const FMatrix& ViewMatr
     bLineBatchActive = false;
 }
 
-
 UPrimitiveComponent* URenderer::GetCollidedPrimitive(int MouseX, int MouseY) const
 {
     //GPU와 동기화 문제 때문에 Map이 호출될때까지 기다려야해서 피킹 하는 프레임에 엄청난 프레임 드랍이 일어남.
@@ -1064,7 +1064,6 @@ UPrimitiveComponent* URenderer::GetCollidedPrimitive(int MouseX, int MouseY) con
         return nullptr;
     return Cast<UPrimitiveComponent>(GUObjectArray[PickedId]);
 }
-
 
 void URenderer::ResetRenderStateTracking()
 {

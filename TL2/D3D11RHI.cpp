@@ -273,7 +273,7 @@ void D3D11RHI::OMSetDepthOnlyTarget()
 void D3D11RHI::OMSetRenderTargets(const ERenderTargetType RenderTargetType)
 {
 
-    TArray< ID3D11RenderTargetView*> RTVList;
+    TArray<ID3D11RenderTargetView*> RTVList;
     ID3D11DepthStencilView* Depth = DepthStencilView;
     if (((int)RenderTargetType & (int)ERenderTargetType::None) > 0)
     {
