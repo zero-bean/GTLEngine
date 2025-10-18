@@ -933,14 +933,9 @@
     <FxCompile Include="DecalShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="DecalShaderScreen.hlsl" />
     <FxCompile Include="DecalSpotLightShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Copy.hlsl" />
-    <FxCompile Include="FXAA.hlsl" />
-    <FxCompile Include="HeightFogShader.hlsl" />
-    <FxCompile Include="SceneDepth.hlsl" />
     <FxCompile Include="DepthPrepassShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -950,6 +945,22 @@
     <FxCompile Include="Gamma.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="DecalShaderScreen.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="HeightFogShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="SceneDepth.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Copy.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="WorldNormalShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="FXAA.hlsl">
     <FxCompile Include="UberLit.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>

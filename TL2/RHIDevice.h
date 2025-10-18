@@ -34,6 +34,7 @@ enum class ERenderTargetType
     //for RTV
     NoDepth = 1<<5,
 };
+
 // 비트 OR 연산자
 inline ERenderTargetType operator|(ERenderTargetType lhs, ERenderTargetType rhs)
 {
