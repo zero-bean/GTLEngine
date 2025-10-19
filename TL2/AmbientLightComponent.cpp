@@ -46,14 +46,14 @@ void UAmbientLightComponent::TickComponent(float DeltaTime)
     // If you need dynamic updates, uncomment the code below:
 
     
-    //TimeSinceLastCapture += DeltaTime;
+    TimeSinceLastCapture += DeltaTime;
 
-    //// Update at specified interval
-    //if (TimeSinceLastCapture >= UpdateInterval)
-    //{
-    //    TimeSinceLastCapture = 0.0f;
-    //    ForceCapture();
-    //}
+    // Update at specified interval
+    if (TimeSinceLastCapture >= UpdateInterval)
+    {
+        TimeSinceLastCapture = 0.0f;
+        ForceCapture();
+    }
     
 }
 
@@ -415,15 +415,16 @@ void UAmbientLightComponent::ProjectToSH()
                     // Accumulate SH coefficients (store as FVector4)
                     for (int32 i = 0; i < 9; ++i)
                     {
+                                    //PixelColor=L(θ,ϕ)=방향별 빛의 색상(입사광 분포)
                         float Basis = SHBasis(i, Direction);
-                                     //PixelColor=L(θ,ϕ)=방향별 빛의 색상(입사광 분포)
+                                    //SHBasis(i,Dir)=Ylm​(θ,φ)
                                       //SolidAngle =sinθdθdϕ,각 픽셀이 차지하는 구면 면적
                         FVector Contribution = PixelColor * Basis * SolidAngle;
                         SHBuffer.SHCoefficients[i].X += Contribution.X;
                         SHBuffer.SHCoefficients[i].Y += Contribution.Y;
                         SHBuffer.SHCoefficients[i].Z += Contribution.Z;
                     }
-                }
+                }//최종적으로 clm​=∫Ω​L(θ,φ) Ylm​(θ,φ)dΩ
             }
 
             Context->Unmap(StagingTexture, 0);
@@ -433,6 +434,11 @@ void UAmbientLightComponent::ProjectToSH()
     }
 
     // Apply radiance to irradiance conversion (cosine convolution)
+    // 큐브맵으로부터 얻은 방향별 복사휘도(빛의 세기) 를,
+   // 실제 표면에 닿는 확산광(irradiance) 로 바꾸는 단계야.
+   // 
+   // E(n)=l,m∑​(kl​*clm​)*Y_l^m​(n)
+    // Lambert 코사인 필터링 상수 (radiance→irradiance 변환)
     // L0 band (DC) - multiply by π
     SHBuffer.SHCoefficients[0].X *= SH_A0;
     SHBuffer.SHCoefficients[0].Y *= SH_A0;
