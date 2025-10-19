@@ -592,11 +592,11 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
     }
 
     // SpotLight cone visualization
-    for (USpotLightComponent* Spot : World->GetLevel()->GetComponentList<USpotLightComponent>())
+    for (ULightComponent* LightComponent : World->GetLevel()->GetComponentList<ULightComponent>())
     {
-        if (Spot)
+        if (LightComponent)
         {
-            Spot->DrawDebugLines(this);
+            LightComponent->DrawDebugLines(this);
         }
     }
 
@@ -912,17 +912,18 @@ void URenderer::RenderSHAmbientLightPass(UWorld* World)
         int32 idx = MultiProbeBuffer.ProbeCount;
         const FSHAmbientLightBufferType& SHBuffer = Probe->GetSHBuffer();
         FVector ProbePos = Probe->GetWorldLocation();
-        float ProbeRadius = Probe->GetRadius();
+        FVector BoxExtent = Probe->GetBoxExtent();
         float ProbeFalloff = Probe->GetFalloff();
 
         // Copy probe data
-        MultiProbeBuffer.Probes[idx].Position = FVector4(ProbePos.X, ProbePos.Y, ProbePos.Z, ProbeRadius); // w = influence radius
+        MultiProbeBuffer.Probes[idx].Position = FVector4(ProbePos.X, ProbePos.Y, ProbePos.Z, BoxExtent.Z); // w = BoxExtent.Z
         for (int32 i = 0; i < 9; ++i)
         {
             MultiProbeBuffer.Probes[idx].SHCoefficients[i] = SHBuffer.SHCoefficients[i];
         }
         MultiProbeBuffer.Probes[idx].Intensity = SHBuffer.Intensity;
         MultiProbeBuffer.Probes[idx].Falloff = ProbeFalloff;
+        MultiProbeBuffer.Probes[idx].BoxExtent = FVector2D(BoxExtent.X, BoxExtent.Y);
 
         MultiProbeBuffer.ProbeCount++;
     }
