@@ -185,6 +185,12 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
         {
             const FMaterialSlot& CurrentSlot = InComponentMaterialSlots[i]; //  현재 슬롯 정보를 가져옵니다.
             UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(CurrentSlot.MaterialName);
+
+            if (Material == nullptr)
+            {
+                continue;
+            }
+
             UTexture* NormalTexture = nullptr; // 최종적으로 바인딩될 노멀 텍스처
             const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
             bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());

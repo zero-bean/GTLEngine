@@ -108,6 +108,7 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
     WithoutExtensionPath.replace_extension("");
     const FString StemPath = WithoutExtensionPath.string(); // 확장자를 제외한 경로
     const FString BinPathFileName = StemPath + ".bin";
+    FString MatBinPathFileName = StemPath + "Mat.bin";
     if (std::filesystem::exists(BinPathFileName))
     {
         // obj 정보 bin으로 가져오기
@@ -116,25 +117,24 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
         Reader.Close();
 
         // MaterialInfo도 bin으로 가져오기
-        FString MatBinPathFileName = StemPath + "Mat.bin";
         if (!std::filesystem::exists(MatBinPathFileName))
         {
             UE_LOG("\'%s\' does not exists!", MatBinPathFileName);
-            assert(std::filesystem::exists(StemPath + "Mat.bin") && "material bin file dont exists!");
+            assert(std::filesystem::exists(MatBinPathFileName) && "material bin file dont exists!");
 
             // 존재하지 않으므로 obj(mtl 파싱 위해선 obj도 파싱 필요) 및 Mtl 파싱
             FObjInfo RawObjInfo;
             FObjImporter::LoadObjModel(NormalizedPathStr, &RawObjInfo, MaterialInfos, true, true);
 
             // MaterialInfos를 관련 파일명으로 bin 저장
-            FWindowsBinWriter MatWriter(StemPath + "Mat.bin");
+            FWindowsBinWriter MatWriter(MatBinPathFileName);
             Serialization::WriteArray<FObjMaterialInfo>(MatWriter, MaterialInfos);
             MatWriter.Close();
         }
         else
         {
             UE_LOG("bin file \'%s\', \'%s\' load completed", BinPathFileName, MatBinPathFileName);
-            FWindowsBinReader MatReader(StemPath + "Mat.bin");
+            FWindowsBinReader MatReader(MatBinPathFileName);
             Serialization::ReadArray<FObjMaterialInfo>(MatReader, MaterialInfos);
             MatReader.Close();
         }
@@ -153,21 +153,33 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
         Writer.Close();
 
         // MaterialInfos도 관련 파일명으로 bin 저장
-        FWindowsBinWriter MatWriter(StemPath + "Mat.bin");
+        FWindowsBinWriter MatWriter(MatBinPathFileName);
         Serialization::WriteArray<FObjMaterialInfo>(MatWriter, MaterialInfos);
         MatWriter.Close();
     }
 
     // 리소스 매니저에 Material 리소스 맵핑 (중복 방지)
+    // 1. 각 재질을 이름으로 추가
     for (const FObjMaterialInfo& InMaterialInfo : MaterialInfos)
     {
-        // 이미 존재하는 머티리얼인지 확인
         if (!UResourceManager::GetInstance().Get<UMaterial>(InMaterialInfo.MaterialName))
         {
             UMaterial* Material = NewObject<UMaterial>();
             Material->SetMaterialInfo(InMaterialInfo);
-
             UResourceManager::GetInstance().Add<UMaterial>(InMaterialInfo.MaterialName, Material);
+        }
+    }
+
+    // 2. 첫 번째 재질을 파일 경로(*Mat.bin)를 키로 하여 추가
+    if (!MaterialInfos.empty())
+    {
+        if (!UResourceManager::GetInstance().Get<UMaterial>(MatBinPathFileName))
+        {
+            UMaterial* FirstMaterial = UResourceManager::GetInstance().Get<UMaterial>(MaterialInfos[0].MaterialName);
+            if (FirstMaterial)
+            {
+                UResourceManager::GetInstance().Add<UMaterial>(MatBinPathFileName, FirstMaterial);
+            }
         }
     }
 

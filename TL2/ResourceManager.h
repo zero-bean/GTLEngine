@@ -24,11 +24,6 @@ public:
 
     ID3D11Device* GetDevice() { return Device; }
 
-    //font 렌더링을 위함(dynamicVertexBuffer 만듦.)
-    //FResourceData* CreateOrGetResourceData(const FString& Name, uint32 Size, const TArray<uint32>& Indicies);
-    //    FTextureData* GetOrCreateTexture
-
-
     void CreateTextBillboardTexture();
 
     void UpdateDynamicVertexBuffer(const FString& name, TArray<FBillboardVertexInfo_GPU>& vertices);
@@ -47,6 +42,17 @@ public:
     void CreateScreenQuatMesh();
     void InitShaderILMap();
 
+    /**
+     * @brief UI에 표시할 에셋 목록들을 필터링하여 캐시합니다.
+     * 모든 리소스 로드가 완료된 후(예: Preload() 이후) 단 한 번 호출되어야 합니다.
+     */
+    void BuildFilteredResourceLists();
+
+    // --- UI 캐시 접근자 ---
+    const TArray<FString>& GetFilteredObjPaths() const { return FilteredObjPaths; }
+    const TArray<FString>& GetFilteredHlslPaths() const { return FilteredHlslPaths; }
+    const TArray<FString>& GetFilteredNormalMapPaths() const { return FilteredNormalMapPaths; }
+    const TArray<FString>& GetFilteredMaterialPaths() const { return FilteredMaterialPaths; }
 
     template<typename T>
     bool Add(const FString& InFilePath, UObject* InObject);
@@ -91,10 +97,17 @@ protected:
     TMap<FString, TArray<D3D11_INPUT_ELEMENT_DESC>> ShaderToInputLayoutMap;
     TMap<FString, FString> TextureToShaderMap;
 
-
 private:
     TMap<FString, UMaterial*> MaterialMap;
+
+    // 오직 UI용도로 쓰이며, 필터링된 리소스 경로 캐시 변수입니다.
+    mutable TArray<FString> FilteredObjPaths;
+    mutable TArray<FString> FilteredHlslPaths;
+    mutable TArray<FString> FilteredNormalMapPaths;
+    mutable TArray<FString> FilteredMaterialPaths;
 };
+
+
 //-----definition
 template<typename T>
 bool UResourceManager::Add(const FString& InFilePath, UObject* InObject)

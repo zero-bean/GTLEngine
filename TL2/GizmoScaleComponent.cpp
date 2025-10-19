@@ -3,7 +3,7 @@
 
 UGizmoScaleComponent::UGizmoScaleComponent()
 {
-    SetStaticMesh("Data/ScaleHandle.obj");
+    SetStaticMesh("Data/Gizmo/ScaleHandle.obj");
     SetMaterial("Primitive.hlsl");
 }
 
