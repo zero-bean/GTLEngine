@@ -29,7 +29,7 @@ private:
 
 protected:
 	float Intensity = 1.0f;
-	float Temperature = 0;
+	float Temperature = 1000.0f;
 	// 최종 색상 = Light Color * Temperature Color
 	FLinearColor FinalColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	// 원래 쓰던 색상 - Light Color
