@@ -27,3 +27,8 @@ void ULightComponent::Serialize(bool bIsLoading, FComponentData& InOut)
         InOut.RelativeScale = GetRelativeScale();
     }
 }
+
+void ULightComponent::DrawDebugLines(class URenderer* Renderer)
+{
+    // Base implementation - derived classes can override
+}

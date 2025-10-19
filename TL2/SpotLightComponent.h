@@ -32,8 +32,9 @@ public:
     // Editor Details
     void RenderDetails() override;
 
+    void DrawDebugLines(class URenderer* Renderer) override;
     // Debug visualization
-    void DrawDebugLines(class URenderer* Renderer);
+
 
 protected:
     UObject* Duplicate() override;
