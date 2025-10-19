@@ -51,54 +51,23 @@ public:
 
     void RegisterClass(UClass* InClass)
     {
-        if (InClass && InClass->Name)
+        if (InClass)
         {
-            // 이름 기반으로 등록 (중복 방지)
-            ClassMap[FName(InClass->Name)] = InClass;
+            RegisteredClasses.push_back(InClass);
         }
     }
 
-    // 이름으로 클래스 찾기 (O(1))
-    UClass* FindClass(const char* ClassName) const
+    const TArray<UClass*>& GetAllClasses() const
     {
-        if (!ClassName) return nullptr;
-        auto It = ClassMap.find(FName(ClassName));
-        return (It != ClassMap.end()) ? It->second : nullptr;
-    }
-
-    // FString 버전
-    UClass* FindClass(const FString& ClassName) const
-    {
-        auto It = ClassMap.find(FName(ClassName));
-        return (It != ClassMap.end()) ? It->second : nullptr;
-    }
-
-    // FName 버전 (가장 효율적)
-    UClass* FindClass(const FName& ClassName) const
-    {
-        auto It = ClassMap.find(ClassName);
-        return (It != ClassMap.end()) ? It->second : nullptr;
-    }
-
-    // 모든 클래스 가져오기
-    TArray<UClass*> GetAllClasses() const
-    {
-        TArray<UClass*> Result;
-        Result.reserve(ClassMap.size());
-        for (const auto& Pair : ClassMap)
-        {
-            Result.push_back(Pair.second);
-        }
-        return Result;
+        return RegisteredClasses;
     }
 
     // 특정 베이스 클래스의 모든 자식 클래스 가져오기
     TArray<UClass*> GetDerivedClasses(const UClass* BaseClass) const
     {
         TArray<UClass*> Result;
-        for (const auto& Pair : ClassMap)
+        for (UClass* Class : RegisteredClasses)
         {
-            UClass* Class = Pair.second;
             if (Class && Class->IsChildOf(BaseClass) && Class != BaseClass)
             {
                 Result.push_back(Class);
@@ -111,9 +80,8 @@ public:
     TArray<UClass*> GetSpawnableClasses(const UClass* BaseClass = nullptr) const
     {
         TArray<UClass*> Result;
-        for (const auto& Pair : ClassMap)
+        for (UClass* Class : RegisteredClasses)
         {
-            UClass* Class = Pair.second;
             if (Class && Class->bSpawnable)
             {
                 // BaseClass가 지정되면 해당 타입의 자식만 필터링
@@ -127,7 +95,7 @@ public:
     }
 
 private:
-    TMap<FName, UClass*> ClassMap;
+    TArray<UClass*> RegisteredClasses;
 };
 
 class UObject
