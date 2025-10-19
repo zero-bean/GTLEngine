@@ -45,7 +45,7 @@ void UAmbientLightComponent::TickComponent(float DeltaTime)
     // Static mode: no updates after initial capture
     // If you need dynamic updates, uncomment the code below:
 
-    /*
+    
     TimeSinceLastCapture += DeltaTime;
 
     // Update at specified interval
@@ -54,7 +54,7 @@ void UAmbientLightComponent::TickComponent(float DeltaTime)
         TimeSinceLastCapture = 0.0f;
         ForceCapture();
     }
-    */
+    
 }
 
 void UAmbientLightComponent::EndPlay(EEndPlayReason::Type EndPlayReason)
@@ -115,6 +115,7 @@ void UAmbientLightComponent::ForceCapture()
 
     // Note: Smoothing is skipped for static capture to avoid dimming
     // (Smoothing is only useful for dynamic updates to prevent flickering)
+    SmoothSH();
 }
 
 void UAmbientLightComponent::InitializeCubemapTargets()
@@ -483,37 +484,56 @@ void UAmbientLightComponent::SmoothSH()
 FMatrix UAmbientLightComponent::GetCubeFaceViewMatrix(ECubeFace Face) const
 {
     FVector ProbePos = GetWorldLocation();
-    FVector Target, Up;
+    FVector Forward, Up, Right;
 
+    // DirectX Left-Handed 좌표계에서 큐브맵 각 면의 방향 직접 정의
+    // 카메라 공간에서 각 축의 방향을 정의
     switch (Face)
     {
-    case ECubeFace::PositiveX: // +X
-        Target = ProbePos + FVector(1.0f, 0.0f, 0.0f);
+    case ECubeFace::PositiveX: // +X 면 (카메라가 +X를 바라봄)
+        Right = FVector(0.0f, 0.0f, -1.0f);
         Up = FVector(0.0f, 1.0f, 0.0f);
+        Forward = FVector(1.0f, 0.0f, 0.0f);
         break;
-    case ECubeFace::NegativeX: // -X
-        Target = ProbePos + FVector(-1.0f, 0.0f, 0.0f);
+    case ECubeFace::NegativeX: // -X 면 (카메라가 -X를 바라봄)
+        Right = FVector(0.0f, 0.0f, 1.0f);
         Up = FVector(0.0f, 1.0f, 0.0f);
+        Forward = FVector(-1.0f, 0.0f, 0.0f);
         break;
-    case ECubeFace::PositiveY: // +Y
-        Target = ProbePos + FVector(0.0f, 1.0f, 0.0f);
+    case ECubeFace::PositiveY: // +Y 면 (카메라가 +Y를 바라봄)
+        Right = FVector(1.0f, 0.0f, 0.0f);
         Up = FVector(0.0f, 0.0f, -1.0f);
+        Forward = FVector(0.0f, 1.0f, 0.0f);
         break;
-    case ECubeFace::NegativeY: // -Y
-        Target = ProbePos + FVector(0.0f, -1.0f, 0.0f);
+    case ECubeFace::NegativeY: // -Y 면 (카메라가 -Y를 바라봄)
+        Right = FVector(1.0f, 0.0f, 0.0f);
         Up = FVector(0.0f, 0.0f, 1.0f);
+        Forward = FVector(0.0f, -1.0f, 0.0f);
         break;
-    case ECubeFace::PositiveZ: // +Z
-        Target = ProbePos + FVector(0.0f, 0.0f, 1.0f);
+    case ECubeFace::PositiveZ: // +Z 면 (카메라가 +Z를 바라봄)
+        Right = FVector(1.0f, 0.0f, 0.0f);
         Up = FVector(0.0f, 1.0f, 0.0f);
+        Forward = FVector(0.0f, 0.0f, 1.0f);
         break;
-    case ECubeFace::NegativeZ: // -Z
-        Target = ProbePos + FVector(0.0f, 0.0f, -1.0f);
+    case ECubeFace::NegativeZ: // -Z 면 (카메라가 -Z를 바라봄)
+        Right = FVector(-1.0f, 0.0f, 0.0f);
         Up = FVector(0.0f, 1.0f, 0.0f);
+        Forward = FVector(0.0f, 0.0f, -1.0f);
         break;
     }
 
-    return FMatrix::LookAtLH(ProbePos, Target, Up);
+    // View Matrix 직접 구성 (Left-Handed)
+    // Row-major 형식
+    FMatrix ViewMatrix;
+    ViewMatrix.M[0][0] = Right.X;   ViewMatrix.M[0][1] = Up.X;   ViewMatrix.M[0][2] = Forward.X;   ViewMatrix.M[0][3] = 0.0f;
+    ViewMatrix.M[1][0] = Right.Y;   ViewMatrix.M[1][1] = Up.Y;   ViewMatrix.M[1][2] = Forward.Y;   ViewMatrix.M[1][3] = 0.0f;
+    ViewMatrix.M[2][0] = Right.Z;   ViewMatrix.M[2][1] = Up.Z;   ViewMatrix.M[2][2] = Forward.Z;   ViewMatrix.M[2][3] = 0.0f;
+    ViewMatrix.M[3][0] = -FVector::Dot(Right, ProbePos);
+    ViewMatrix.M[3][1] = -FVector::Dot(Up, ProbePos);
+    ViewMatrix.M[3][2] = -FVector::Dot(Forward, ProbePos);
+    ViewMatrix.M[3][3] = 1.0f;
+
+    return ViewMatrix;
 }
 
 FMatrix UAmbientLightComponent::GetCubeFaceProjectionMatrix() const
@@ -530,17 +550,18 @@ FMatrix UAmbientLightComponent::GetCubeFaceProjectionMatrix() const
 FVector UAmbientLightComponent::CubeUVToDir(ECubeFace Face, float U, float V)
 {
     // Convert UV [0,1] to [-1,1]
+    // DirectX uses top-left origin for textures, so V needs to be flipped
     float S = U * 2.0f - 1.0f;
-    float T = V * 2.0f - 1.0f;
+    float T = -(V * 2.0f - 1.0f);  // V 반전 (DirectX 텍스처 좌표계)
 
     FVector Dir;
     switch (Face)
     {
     case ECubeFace::PositiveX:
-        Dir = FVector(1.0f, S, -T);
+        Dir = FVector(1.0f, -S, -T);
         break;
     case ECubeFace::NegativeX:
-        Dir = FVector(-1.0f, -S, -T);
+        Dir = FVector(-1.0f, S, -T);
         break;
     case ECubeFace::PositiveY:
         Dir = FVector(S, 1.0f, T);

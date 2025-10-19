@@ -788,7 +788,7 @@ void URenderer::RenderSceneToCubemapFace(UWorld* World, const FMatrix& ViewMatri
 
     // 2. 렌더 스테이트 설정
     RHIDevice->OMSetBlendState(false);
-    RHIDevice->RSSetDefaultState();
+    RHIDevice->RSSetNoCullState();  // 큐브맵 렌더링 시 winding order 문제 방지
     RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual);
     RHIDevice->IASetPrimitiveTopology();
 
