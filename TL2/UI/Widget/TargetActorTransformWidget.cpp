@@ -1243,13 +1243,20 @@ void UTargetActorTransformWidget::RenderPointLightComponentDetails(UPointLightCo
 	ImGui::Text("PointLight Component Settings");
 
 	// 🔸 색상 설정 (RGB Color Picker)
-	float color[3] = { InComponent->GetColor().R, InComponent->GetColor().G, InComponent->GetColor().B};
-	if (ImGui::ColorEdit3("Color", color))
+	float TintColor[3] = { InComponent->GetTintColor().R, InComponent->GetTintColor().G, InComponent->GetTintColor().B};
+	if (ImGui::ColorEdit3("Color", TintColor))
 	{
-		InComponent->SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+		InComponent->SetTintColor(FLinearColor(TintColor[0], TintColor[1], TintColor[2], 1.0f));
 	}
 
 	ImGui::Spacing();
+
+	// 색 온도 설정
+	float Temperature = InComponent->GetColorTemperature();
+	if (ImGui::DragFloat("Temperature", &Temperature, 11.029f, 1000.0f, 15000.0f))
+	{
+		InComponent->SetColorTemperature(Temperature);
+	}
 
 	// 🔸 밝기 (Intensity)
 	float intensity = InComponent->GetIntensity();
@@ -1277,7 +1284,7 @@ void UTargetActorTransformWidget::RenderPointLightComponentDetails(UPointLightCo
 	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
 	ImGui::Text("Preview:");
 	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
+	ImGui::TextColored(ImVec4(TintColor[0], TintColor[1], TintColor[2], 1.0f), "● PointLight Active");
 }
 
 void UTargetActorTransformWidget::RenderDecalComponentDetails(UDecalComponent* InComponent)
@@ -1482,13 +1489,20 @@ void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComp
 	ImGui::Text("SpotLight Component Settings");
 	
 	// 🔸 색상 설정 (RGB Color Picker)
-	float color[3] = { InComponent->GetColor().R, InComponent->GetColor().G, InComponent->GetColor().B};
+	float color[3] = { InComponent->GetTintColor().R, InComponent->GetTintColor().G, InComponent->GetTintColor().B};
 	if (ImGui::ColorEdit3("Color", color))
 	{
-		InComponent->SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+		InComponent->SetTintColor(FLinearColor(color[0], color[1], color[2], 1.0f));
 	}
 	
 	ImGui::Spacing();
+
+	// 색 온도 설정
+	float Temperature = InComponent->GetColorTemperature();
+	if (ImGui::DragFloat("Temperature", &Temperature, 11.029f, 1000.0f, 15000.0f))
+	{
+		InComponent->SetColorTemperature(Temperature);
+	}
 
 	// 🔸 반지름
 	float radius = InComponent->GetRadius();
@@ -1559,13 +1573,20 @@ void UTargetActorTransformWidget::RenderDirectionalLightComponentDetails(UDirect
 	ImGui::Text("PointLight Component Settings");
 
 	// 🔸 색상 설정 (RGB Color Picker)
-	float color[3] = { InComponent->GetColor().R, InComponent->GetColor().G, InComponent->GetColor().B};
+	float color[3] = { InComponent->GetTintColor().R, InComponent->GetTintColor().G, InComponent->GetTintColor().B};
 	if (ImGui::ColorEdit3("Color", color))
 	{
-		InComponent->SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+		InComponent->SetTintColor(FLinearColor(color[0], color[1], color[2], 1.0f));
 	}
 
 	ImGui::Spacing();
+
+	// 색 온도 설정
+	float Temperature = InComponent->GetColorTemperature();
+	if (ImGui::DragFloat("Temperature", &Temperature, 11.029f, 1000.0f, 15000.0f))
+	{
+		InComponent->SetColorTemperature(Temperature);
+	}
 
 	// 🔸 밝기 (Intensity)
 	float intensity = InComponent->GetIntensity();

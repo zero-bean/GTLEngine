@@ -226,7 +226,16 @@ PS_OUTPUT mainPS(PS_INPUT input)
         specularLit *= saturate(Material.SpecularColor);
 
     float3 finalLit = ambient + diffuseLit + specularLit;
-    finalLit = saturate(finalLit); // 과포화 방지
+    //finalLit = saturate(finalLit); // 과포화 방지
+    
+    // 톤 매핑
+    //finalLit = finalLit / (finalLit + 1.0f);
+
+    // 노출 방식
+    finalLit = 1.0f - exp(-finalLit * 1.25f);
+
+    // 감마 보정
+    finalLit = pow(finalLit, 1.0f / 2.2f);    
     
     Result.Color = float4(finalLit, 1.0);
     Result.UUID = input.UUID;

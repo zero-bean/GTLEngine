@@ -819,7 +819,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
             PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
         );
         PointLightCB.PointLights[idx].Color = FVector4(
-            PointLightComponent->GetColor().R, PointLightComponent->GetColor().G, PointLightComponent->GetColor().B, PointLightComponent->GetIntensity()
+            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetIntensity()
         );
         PointLightCB.PointLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
     }
@@ -841,7 +841,7 @@ void URenderer::RenderDirectionalLightPass(UWorld* World)
 
         DirectionalLightCB.DirectionalLights[idx].Direction = DirectionalLightComponent->GetDirection();
         DirectionalLightCB.DirectionalLights[idx].Color = FLinearColor(
-            DirectionalLightComponent->GetColor().R,DirectionalLightComponent->GetColor().G,DirectionalLightComponent->GetColor().B,DirectionalLightComponent->GetIntensity()
+            DirectionalLightComponent->GetFinalColor().R,DirectionalLightComponent->GetFinalColor().G,DirectionalLightComponent->GetFinalColor().B,DirectionalLightComponent->GetIntensity()
             );
         DirectionalLightCB.DirectionalLights[idx].bEnableSpecular = DirectionalLightComponent->IsEnabledSpecular();
     }
@@ -863,7 +863,7 @@ void URenderer::RenderSpotLightPass(UWorld* World)
             PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
         );
         SpotLightCB.SpotLights[idx].Color = FVector4(
-            PointLightComponent->GetColor().R, PointLightComponent->GetColor().G, PointLightComponent->GetColor().B, PointLightComponent->GetIntensity()
+            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetIntensity()
         );
         SpotLightCB.SpotLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
         // If set on component, propagate cone angles

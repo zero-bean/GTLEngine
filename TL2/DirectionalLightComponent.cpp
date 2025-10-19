@@ -19,13 +19,13 @@ void UDirectionalLightComponent::Serialize(bool bIsLoading, FComponentData& InOu
     if (bIsLoading)
     {
         Intensity = InOut.DirectionalLightProperty.Intensity;
-        Color = InOut.DirectionalLightProperty.Color;
+        FinalColor = InOut.DirectionalLightProperty.Color;
         bEnableSpecular = InOut.DirectionalLightProperty.bEnableSpecular;
     }
     else
     {
         InOut.DirectionalLightProperty.Intensity = Intensity;
-        InOut.DirectionalLightProperty.Color = Color;
+        InOut.DirectionalLightProperty.Color = FinalColor;
         InOut.DirectionalLightProperty.bEnableSpecular = bEnableSpecular;
     }
 }
@@ -46,7 +46,7 @@ UObject* UDirectionalLightComponent::Duplicate()
     UDirectionalLightComponent* DuplicatedComponent = NewObject<UDirectionalLightComponent>();
     CopyCommonProperties(DuplicatedComponent);
     DuplicatedComponent->Intensity = this->Intensity;
-    DuplicatedComponent->Color = this->Color;    
+    DuplicatedComponent->FinalColor = this->FinalColor;    
     DuplicatedComponent->bEnableSpecular = this->bEnableSpecular;
     DuplicatedComponent->DuplicateSubObjects();
     return DuplicatedComponent;
