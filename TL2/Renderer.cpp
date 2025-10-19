@@ -591,51 +591,12 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
         AddLines(World->GetBVH().GetBVHBoundsWire(), FVector4(0.5f, 0.5f, 1, 1));
     }
 
-    // SpotLight cone visualization via line batch
+    // SpotLight cone visualization
+    for (USpotLightComponent* Spot : World->GetLevel()->GetComponentList<USpotLightComponent>())
     {
-        const FVector CameraPos = (World->GetCameraActor() ? World->GetCameraActor()->GetActorLocation() : FVector(0,0,0));
-        for (USpotLightComponent* Spot : World->GetLevel()->GetComponentList<USpotLightComponent>())
+        if (Spot)
         {
-            if (!Spot || !Spot->IsRender()) continue;
-
-            const FVector SpotPos = Spot->GetWorldLocation();
-            FVector dir = Spot->GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();
-            const float range = Spot->GetRadius();
-            if (range <= KINDA_SMALL_NUMBER || dir.SizeSquared() < KINDA_SMALL_NUMBER)
-            {
-                continue;
-            }
-            const float angleDeg = FMath::Clamp(Spot->GetOuterConeAngle(), 0.0f, 89.0f);
-            const float angleRad = DegreeToRadian(angleDeg);
-            const float circleRadius = std::tan(angleRad) * range;
-            const FVector center = SpotPos + dir * range;
-
-            // Build orthonormal basis (u,v) for circle plane (perpendicular to dir)
-            FVector arbitraryUp = fabsf(dir.Z) > 0.99f ? FVector(1, 0, 0) : FVector(0, 0, 1);
-            FVector u = FVector::Cross(arbitraryUp, dir).GetSafeNormal();
-            FVector v = FVector::Cross(dir, u).GetSafeNormal();
-
-            const int segments = FMath::Clamp(Spot->GetCircleSegments(), 3, 512);
-            const float step = TWO_PI / static_cast<float>(segments);
-            const FVector4 color(1.0f, 1.0f, 1.0f, 1.0f);
-
-            FVector prevPoint;
-            for (int i = 0; i <= segments; ++i)
-            {
-                float t = step * i;
-                FVector p = center + u * (cosf(t) * circleRadius) + v * (sinf(t) * circleRadius);
-
-                // Draw circle edge
-                if (i > 0)
-                {
-                    AddLine(prevPoint, p, color);
-                }
-                prevPoint = p;
-
-                // Draw camera-to-circle vertex line
-                AddLine(CameraPos, p, color);
-                AddLine(SpotPos, p, color);
-            }
+            Spot->DrawDebugLines(this);
         }
     }
 

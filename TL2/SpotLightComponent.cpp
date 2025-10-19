@@ -1,9 +1,12 @@
 ﻿#include "pch.h"
 #include "SpotLightComponent.h"
 #include "ImGui/imgui.h"
+#include "Renderer.h"
+#include "World.h"
+#include "CameraActor.h"
 
 USpotLightComponent::USpotLightComponent() : Direction(1.0, 0.0f, 0.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), AttFactor( 0, 0, 1), InAntOutSmooth(1)
-{ 
+{
 
 }
 
@@ -18,6 +21,50 @@ UObject* USpotLightComponent::Duplicate()
 
 void USpotLightComponent::DuplicateSubObjects()
 {
+}
+
+void USpotLightComponent::DrawDebugLines(URenderer* Renderer)
+{
+	if (!Renderer || !IsRender())
+		return;
+
+	const FVector SpotPos = GetWorldLocation();
+	FVector dir = GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();
+	const float range = GetRadius();
+
+	if (range <= KINDA_SMALL_NUMBER || dir.SizeSquared() < KINDA_SMALL_NUMBER)
+		return;
+
+	const float angleDeg = FMath::Clamp(GetOuterConeAngle(), 0.0f, 89.0f);
+	const float angleRad = DegreeToRadian(angleDeg);
+	const float circleRadius = std::tan(angleRad) * range;
+	const FVector center = SpotPos + dir * range;
+
+	// Build orthonormal basis (u,v) for circle plane (perpendicular to dir)
+	FVector arbitraryUp = fabsf(dir.Z) > 0.99f ? FVector(1, 0, 0) : FVector(0, 0, 1);
+	FVector u = FVector::Cross(arbitraryUp, dir).GetSafeNormal();
+	FVector v = FVector::Cross(dir, u).GetSafeNormal();
+
+	const int segments = FMath::Clamp(GetCircleSegments(), 3, 512);
+	const float step = TWO_PI / static_cast<float>(segments);
+	const FVector4 color(1.0f, 1.0f, 0.0f, 1.0f); // Yellow for spotlight
+
+	FVector prevPoint;
+	for (int i = 0; i <= segments; ++i)
+	{
+		float t = step * i;
+		FVector p = center + u * (cosf(t) * circleRadius) + v * (sinf(t) * circleRadius);
+
+		// Draw circle edge
+		if (i > 0)
+		{
+			Renderer->AddLine(prevPoint, p, color);
+		}
+		prevPoint = p;
+
+		// Draw spotlight-to-circle vertex line
+		Renderer->AddLine(SpotPos, p, color);
+	}
 }
 
 void USpotLightComponent::RenderDetails()
