@@ -7,6 +7,7 @@
 #include "SMultiViewportWindow.h"
 #include "EditorEngine.h"
 #include"GameEngine.h"
+#include "ObjManager.h"
 // TODO: Delete it, just Test
 
 float CLIENTWIDTH = 1024.0f;
