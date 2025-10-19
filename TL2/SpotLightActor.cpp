@@ -1,4 +1,4 @@
-// Recreated after accidental truncation
+﻿// Recreated after accidental truncation
 #include "pch.h"
 #include "SpotLightActor.h"
 #include "SpotLightComponent.h"
@@ -28,6 +28,10 @@ ASpotLightActor::~ASpotLightActor()
 
 void ASpotLightActor::Tick(float DeltaTime)
 {
+    SpotLightComponent->SetRelativeRotation(GetActorRotation()); 
+
+    FVector fwd = GetActorRotation().RotateVector(FVector(0, 0, 1));
+    SpotLightComponent->SetDirection(fwd);
 }
 
 UObject* ASpotLightActor::Duplicate()
