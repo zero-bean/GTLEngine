@@ -12,6 +12,9 @@ public:
 	UObject* Duplicate() override;
 	void DuplicateSubObjects() override;
 
+	// Editor Details
+	void RenderDetails() override;
+
 	// Getter/Setter Func
 	float GetInitialSpeed() const { return InitialSpeed; }
 	float GetMaxSpeed() const { return MaxSpeed; }

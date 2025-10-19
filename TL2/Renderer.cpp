@@ -22,6 +22,7 @@
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include "CameraComponent.h"
+#include "AmbientLightComponent.h"
 #include "SpotLightComponent.h"
 #include "DirectionalLightComponent.h"
 
@@ -502,6 +503,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         RenderFogPass(World,Camera,Viewport);
         RenderFXAAPaxx(World, Camera, Viewport);
         RenderEditorPass(World, Camera, Viewport);
+        RenderSHAmbientLightPass(World);  // Capture SH after scene is rendered
         break;
     }
     case EViewModeIndex::VMI_SceneDepth:
@@ -776,6 +778,46 @@ void URenderer::RenderPostProcessing(UShader* Shader)
 
 }
 
+void URenderer::RenderSceneToCubemapFace(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix, const FVector& ProbePosition, FViewport* Viewport)
+{
+    if (!World || !Viewport)
+        return;
+
+    // 1. View/Projection 상수 버퍼 업데이트 (ProbePosition을 카메라 위치로 사용)
+    UpdateSetCBuffer(ViewProjBufferType(ViewMatrix, ProjMatrix, ProbePosition));
+
+    // 2. 렌더 스테이트 설정
+    RHIDevice->OMSetBlendState(false);
+    RHIDevice->RSSetNoCullState();  // 큐브맵 렌더링 시 winding order 문제 방지
+    RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual);
+    RHIDevice->IASetPrimitiveTopology();
+
+    // 3. 씬의 모든 프리미티브 렌더링 (RenderPrimitives 로직 재사용)
+    USelectionManager& SelectionManager = USelectionManager::GetInstance();
+    AActor* SelectedActor = SelectionManager.GetSelectedActor();
+
+    for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
+    {
+        // 안전성 체크: nullptr 또는 비활성 컴포넌트 스킵
+        if (!PrimitiveComponent || !PrimitiveComponent->IsActive())
+            continue;
+
+        // 빌보드나 에디터 전용 컴포넌트는 큐브맵에서 제외
+        if (Cast<UBillboardComponent>(PrimitiveComponent))
+            continue;
+
+        bool bIsSelected = false;
+        if (PrimitiveComponent->GetOwner() == SelectedActor)
+        {
+            bIsSelected = true;
+        }
+
+        FVector rgb(1.0f, 1.0f, 1.0f);
+        UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
+        PrimitiveComponent->Render(this, ViewMatrix, ProjMatrix, Viewport->GetShowFlags());
+    }
+}
+
 void URenderer::RenderFogPass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
 
@@ -876,6 +918,56 @@ void URenderer::RenderSpotLightPass(UWorld* World)
     }
     // 2?? 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(SpotLightCB); 
+}
+
+
+void URenderer::RenderSHAmbientLightPass(UWorld* World)
+{
+    if (!World) return;
+
+    // Find all active AmbientLightComponents in the world
+    const auto& ProbeList = World->GetLevel()->GetComponentList<UAmbientLightComponent>();
+
+    // Prepare multi-probe buffer
+    FMultiSHProbeBufferType MultiProbeBuffer = {};
+    MultiProbeBuffer.ProbeCount = 0;
+
+    if (ProbeList.empty())
+    {
+        // No probes found - upload empty buffer
+        UpdateSetCBuffer(MultiProbeBuffer);
+        return;
+    }
+
+    // Collect up to MAX_SH_PROBES active probes
+    for (UAmbientLightComponent* Probe : ProbeList)
+    {
+        if (!Probe || !Probe->IsActive())
+            continue;
+
+        if (MultiProbeBuffer.ProbeCount >= MAX_SH_PROBES)
+            break;
+
+        int32 idx = MultiProbeBuffer.ProbeCount;
+        const FSHAmbientLightBufferType& SHBuffer = Probe->GetSHBuffer();
+        FVector ProbePos = Probe->GetWorldLocation();
+        float ProbeRadius = Probe->GetRadius();
+        float ProbeFalloff = Probe->GetFalloff();
+
+        // Copy probe data
+        MultiProbeBuffer.Probes[idx].Position = FVector4(ProbePos.X, ProbePos.Y, ProbePos.Z, ProbeRadius); // w = influence radius
+        for (int32 i = 0; i < 9; ++i)
+        {
+            MultiProbeBuffer.Probes[idx].SHCoefficients[i] = SHBuffer.SHCoefficients[i];
+        }
+        MultiProbeBuffer.Probes[idx].Intensity = SHBuffer.Intensity;
+        MultiProbeBuffer.Probes[idx].Falloff = ProbeFalloff;
+
+        MultiProbeBuffer.ProbeCount++;
+    }
+
+    // Upload to GPU
+    UpdateSetCBuffer(MultiProbeBuffer);
 }
 
 void URenderer::RenderOverlayPass(UWorld* World)

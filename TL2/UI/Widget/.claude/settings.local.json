@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Jungle/KRAFTON_TechLab_Week04/TL2/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -5,6 +5,59 @@
 #include "ResourceManager.h"
 #include "StaticMeshComponent.h"
 #include "SceneLoader.h"
+#include "ImGui/imgui.h"
+#include <filesystem>
+
+// Helper function to extract base filename without extension
+static inline FString GetBaseNameNoExt(const FString& Path)
+{
+	const size_t sep = Path.find_last_of("/\\");
+	const size_t start = (sep == FString::npos) ? 0 : sep + 1;
+
+	const FString ext = ".obj";
+	size_t end = Path.size();
+	if (end >= ext.size() && Path.compare(end - ext.size(), ext.size(), ext) == 0)
+	{
+		end -= ext.size();
+	}
+	if (start <= end) return Path.substr(start, end - start);
+	return Path;
+}
+
+// Helper function to get icon files from Editor/Icon folder
+static TArray<FString> GetIconFiles()
+{
+	TArray<FString> iconFiles;
+	try
+	{
+		std::filesystem::path iconPath = "Editor/Icon";
+		if (std::filesystem::exists(iconPath) && std::filesystem::is_directory(iconPath))
+		{
+			for (const auto& entry : std::filesystem::directory_iterator(iconPath))
+			{
+				if (entry.is_regular_file())
+				{
+					auto filename = entry.path().filename().string();
+					// .dds 확장자만 포함
+					if (filename.ends_with(".dds"))
+					{
+						// 상대경로 포맷으로 저장 (Editor/Icon/filename.dds)
+						FString relativePath = "Editor/Icon/" + filename;
+						iconFiles.push_back(relativePath);
+					}
+				}
+			}
+		}
+	}
+	catch (const std::exception&)
+	{
+		// 파일 시스템 오류 발생 시 기본값으로 폴백
+		iconFiles.push_back("Editor/Icon/Pawn_64x.dds");
+		iconFiles.push_back("Editor/Icon/PointLight_64x.dds");
+		iconFiles.push_back("Editor/Icon/SpotLight_64x.dds");
+	}
+	return iconFiles;
+}
 
 IMPLEMENT_CLASS(UDecalComponent)
 
@@ -283,4 +336,124 @@ void UDecalComponent::Serialize(bool bIsLoading, FComponentData& InOut)
         // TexturePath 저장
         InOut.TexturePath = TexturePath;
     }
+}
+
+void UDecalComponent::RenderDetails()
+{
+	ImGui::Text("Decal Component Settings");
+
+	// Decal Texture Setting
+	ImGui::Separator();
+
+	// Editor/Icon 폴더에서 동적으로 스프라이트 옵션 로드
+	static TArray<FString> SpriteOptions;
+	static bool bSpriteOptionsLoaded = false;
+	static int currentSpriteIndex = 0; // 현재 선택된 스프라이트 인덱스
+
+	if (!bSpriteOptionsLoaded)
+	{
+		// Editor/Icon 폴더에서 .dds 파일들을 찾아서 추가
+		SpriteOptions = GetIconFiles();
+		bSpriteOptionsLoaded = true;
+
+		// 현재 텍스처와 일치하는 인덱스 찾기
+		FString CurrentTexture = GetTexturePath();
+		for (int i = 0; i < SpriteOptions.size(); ++i)
+		{
+			if (SpriteOptions[i] == CurrentTexture)
+			{
+				currentSpriteIndex = i;
+				break;
+			}
+		}
+	}
+
+	// 스프라이트 선택 드롭다운 메뉴
+	ImGui::Text("Sprite Texture:");
+	FString currentDisplayName = (currentSpriteIndex >= 0 && currentSpriteIndex < SpriteOptions.size())
+		? GetBaseNameNoExt(SpriteOptions[currentSpriteIndex])
+		: "Select Sprite";
+
+	if (ImGui::BeginCombo("##SpriteCombo", currentDisplayName.c_str()))
+	{
+		for (int i = 0; i < SpriteOptions.size(); ++i)
+		{
+			FString displayName = GetBaseNameNoExt(SpriteOptions[i]);
+			bool isSelected = (currentSpriteIndex == i);
+
+			if (ImGui::Selectable(displayName.c_str(), isSelected))
+			{
+				currentSpriteIndex = i;
+				SetDecalTexture(SpriteOptions[i]);
+			}
+
+			// 현재 선택된 항목에 포커스 설정
+			if (isSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	// 새로고침 버튼 (같은 줄에)
+	ImGui::SameLine();
+	if (ImGui::Button("Refresh"))
+	{
+		bSpriteOptionsLoaded = false; // 다음에 다시 로드하도록
+		currentSpriteIndex = 0; // 인덱스 리셋
+	}
+
+	ImGui::Separator();
+
+	int32 SortOrder = GetSortOrder();
+	if (ImGui::DragInt("Sort Order", &SortOrder));
+	{
+		SetSortOrder(SortOrder);
+	}
+
+	ImGui::Separator();
+
+	// Decal Fade In/Out
+	float FadeScreenSize = GetFadeScreenSize();
+	if (ImGui::DragFloat("Fade Screen Size", &FadeScreenSize, 0.01f, 0.0f, 100.0f))
+	{
+		SetFadeScreenSize(FadeScreenSize);
+	}
+
+	float FadeStartDelay = GetFadeStartDelay();
+	if (ImGui::DragFloat("Fade Start Delay", &FadeStartDelay, 0.1f))
+	{
+		SetFadeStartDelay(FadeStartDelay);
+	}
+
+	float FadeDuration = GetFadeDuration();
+	if (ImGui::DragFloat("Fade Duration", &FadeDuration, 0.1f))
+	{
+		SetFadeDuration(FadeDuration);
+	}
+
+	float FadeInStartDelay = GetFadeInStartDelay();
+	if (ImGui::DragFloat("Fade In StartDelay", &FadeInStartDelay, 0.1f))
+	{
+		SetFadeInStartDelay(FadeInStartDelay);
+	}
+
+	float FadeInDuration = GetFadeInDuration();
+	if (ImGui::DragFloat("Fade In Duration", &FadeInDuration, 0.1f))
+	{
+		SetFadeInDuration(FadeInDuration);
+	}
+
+	ImGui::Separator();
+
+	// Decal UV Tiling
+	FVector2D Tiling = GetUVTiling();
+	if (ImGui::DragFloat2("UV Tiling", &Tiling.X, 0.1f, 1.0f, 10.0f))
+	{
+		SetUVTiling(Tiling);
+	}
+	FVector DecalSize = GetDecalSize();
+	if (ImGui::DragFloat3("Decal Size", &DecalSize.X, 0.1f, 1.0f, 10.0f))
+	{
+		SetDecalSize(DecalSize);
+	}
 }

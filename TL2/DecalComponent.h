@@ -55,6 +55,9 @@ public:
     void SetFadeInStartDelay(float InFadeInStartDelay) { FadeInStartDelay = InFadeInStartDelay; }
     void SetFadeInDuration(float InFadeInDuration) { FadeInDuration = InFadeInDuration; }
 
+    // Editor Details
+    void RenderDetails() override;
+
 protected:
     virtual void UpdateDecalProjectionMatrix();
 

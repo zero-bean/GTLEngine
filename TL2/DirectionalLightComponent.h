@@ -21,6 +21,9 @@ public:
 	int32 IsEnabledSpecular() const { return bEnableSpecular; }
 	void SetSpecularEnable(bool bEnable);
 
+	// Editor Details
+	void RenderDetails() override;
+
 protected:
 	UObject* Duplicate() override;
 	void DuplicateSubObjects() override;

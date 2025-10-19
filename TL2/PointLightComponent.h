@@ -31,7 +31,10 @@ public:
     void SetRadius(float R) { Radius = R; }
     
     float GetRadiusFallOff() { return RadiusFallOff; }
-    void SetRadiusFallOff(float FallOff) { RadiusFallOff = FallOff; } 
+    void SetRadiusFallOff(float FallOff) { RadiusFallOff = FallOff; }
+
+    // Editor Details
+    void RenderDetails() override;
 
 protected:
     UObject* Duplicate() override;

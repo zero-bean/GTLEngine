@@ -12,6 +12,10 @@ public:
 
     UObject* Duplicate() override;
     void DuplicateSubObjects() override;
+
+    // Editor Details
+    void RenderDetails() override;
+
     float GetSlideX() {return SlideX ;}
     float GetSpanMax() {return SpanMax;}
     int GetReduceMin() {return ReduceMin;}

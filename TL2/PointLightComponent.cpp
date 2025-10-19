@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include "World.h"
 #include"SceneLoader.h"
+#include "ImGui/imgui.h"
 
 
 UPointLightComponent::UPointLightComponent()
@@ -73,6 +74,49 @@ UObject* UPointLightComponent::Duplicate()
 void UPointLightComponent::DuplicateSubObjects()
 {
 	Super_t::DuplicateSubObjects();
+}
+
+void UPointLightComponent::RenderDetails()
+{
+	ImGui::Separator();
+	ImGui::Text("PointLight Component Settings");
+
+	// 🔸 색상 설정 (RGB Color Picker)
+	float color[3] = { GetColor().R, GetColor().G, GetColor().B};
+	if (ImGui::ColorEdit3("Color", color))
+	{
+		SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+	}
+
+	ImGui::Spacing();
+
+	// 🔸 밝기 (Intensity)
+	float intensity = GetIntensity();
+	if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
+	{
+		SetIntensity(intensity);
+	}
+
+	// 🔸 반경 (Radius)
+	float radius = GetRadius();
+	if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 1000.0f))
+	{
+		SetRadius(radius);
+	}
+
+	// 🔸 감쇠 정도 (FallOff)
+	float falloff = GetRadiusFallOff();
+	if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
+	{
+		SetRadiusFallOff(falloff);
+	}
+
+	ImGui::Spacing();
+
+	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
+	ImGui::Text("Preview:");
+	ImGui::SameLine();
+	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
 }
 
 

@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "FXAAComponent.h"
+#include "ImGui/imgui.h"
 
 void UFXAAComponent::Render(URenderer* Renderer)
 {
@@ -26,4 +27,28 @@ UObject* UFXAAComponent::Duplicate()
 void UFXAAComponent::DuplicateSubObjects()
 {
 	USceneComponent::DuplicateSubObjects();
+}
+
+void UFXAAComponent::RenderDetails()
+{
+	float SlideX = GetSlideX();
+	float SpanMax = GetSpanMax();
+	int ReduceMin = GetReduceMin();
+	float ReduceMul = GetReduceMul();
+	if (ImGui::DragFloat("SlideX", &SlideX, 0.01f, 0, 1))
+	{
+		SetSlideX(SlideX);
+	}
+	if (ImGui::DragFloat("SpanMax", &SpanMax, 0.01f, 0, 12))
+	{
+		SetSpanMax(SpanMax);
+	}
+	if (ImGui::DragInt("ReduceMin", &ReduceMin, 1.0f, 0, 128))
+	{
+		SetReduceMin(ReduceMin);
+	}
+	if (ImGui::DragFloat("ReduceMul", &ReduceMul, 0.01f, 0, 1))
+	{
+		SetReduceMul(ReduceMul);
+	}
 }

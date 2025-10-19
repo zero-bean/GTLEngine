@@ -60,6 +60,9 @@ MACRO(CameraInfoBufferType)\
 MACRO(FXAABufferType)\
 MACRO(FGammaBufferType)\
 MACRO(FDirectionalLightBufferType)\
+MACRO(FSHAmbientLightBufferType)             \
+MACRO(FMultiSHProbeBufferType)               \
+
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
@@ -76,6 +79,8 @@ CBUFFER_INFO(DecalAlphaBufferType, 8, false, true)
 CBUFFER_INFO(FHeightFogBufferType, 8, false, true)
 CBUFFER_INFO(FPointLightBufferType, 9, false, true)
 CBUFFER_INFO(FSpotLightBufferType, 13, false, true)
+CBUFFER_INFO(FSHAmbientLightBufferType, 10, false, true)
+CBUFFER_INFO(FMultiSHProbeBufferType, 12, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
@@ -229,7 +234,40 @@ struct FHeightFogBufferType
     float Padding;
 };
 
-// PS : b0
+//PS : b10
+// Spherical Harmonics L2 (2nd order) - 9 coefficients per RGB channel
+// HLSL packs float3 arrays as float4 (16-byte aligned), so we use FVector4 to match
+struct FSHAmbientLightBufferType
+{
+    FVector4 SHCoefficients[9];  // 9 RGB coefficients (w unused, but needed for alignment)
+    float Intensity;             // Global intensity multiplier
+    FVector Position;            // World position of ambient light probe
+    float Radius;                // Influence radius (0 = global)
+    FVector _Padding;            // 16-byte alignment
+    float Falloff;               // Falloff exponent
+};
+
+// Single probe data for multi-probe system
+struct FSHProbeData
+{
+    FVector4 Position;           // xyz=프로브 위치, w=영향 반경
+    FVector4 SHCoefficients[9];  // 9개 SH 계수
+    float Intensity;             // 강도
+    float Falloff;               // 감쇠 지수
+    FVector2D Padding;           // 16바이트 정렬
+};
+
+#define MAX_SH_PROBES 8
+
+// Multi-probe buffer (여러 프로브 지원)
+struct FMultiSHProbeBufferType
+{
+    int ProbeCount;              // 활성 프로브 개수
+    FVector _Padding;            // 16바이트 정렬
+    FSHProbeData Probes[MAX_SH_PROBES];  // 최대 8개 프로브
+};
+
+//PS : b0
 struct CameraInfoBufferType
 {
     float NearClip;

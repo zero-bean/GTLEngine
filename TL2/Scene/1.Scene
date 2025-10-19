@@ -1,0 +1,160 @@
+{
+  "Version" : 2,
+  "NextUUID" : 826,
+  "PerspectiveCamera" : {
+    "FOV" : [60.000000],
+    "FarClip" : [4000.000000],
+    "Location" : [-35.350487, -1.512199, 3.693988],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 5.500026, 11.999899]
+  },
+  "Actors" : [
+    {
+      "UUID" : 757,
+      "Type" : "AActor",
+      "Name" : "Cube_0",
+      "RootComponentUUID" : 758
+    },
+    {
+      "UUID" : 661,
+      "Type" : "AActor",
+      "Name" : "Actor_0",
+      "RootComponentUUID" : 662
+    },
+    {
+      "UUID" : 679,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Sphere2_0",
+      "RootComponentUUID" : 680
+    },
+    {
+      "UUID" : 753,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Cube_0",
+      "RootComponentUUID" : 754
+    },
+    {
+      "UUID" : 681,
+      "Type" : "AActor",
+      "Name" : "Sphere2_0",
+      "RootComponentUUID" : 682
+    },
+    {
+      "UUID" : 750,
+      "Type" : "AActor",
+      "Name" : "Actor_0",
+      "RootComponentUUID" : 751
+    },
+    {
+      "UUID" : 755,
+      "Type" : "AActor",
+      "Name" : "Cube_0",
+      "RootComponentUUID" : 756
+    }
+  ],
+  "Components" : [
+    {
+      "UUID" : 758,
+      "OwnerActorUUID" : 757,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, -8.893693, -5.299736],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [22.901215, 35.089985, 1.000000],
+      "StaticMesh" : "Data/apple_mid.obj",
+      "Materials" : ["MatID_1"],
+      "MaterialNormalMapOverrides" : [""]
+    },
+    {
+      "UUID" : 663,
+      "OwnerActorUUID" : 661,
+      "ParentComponentUUID" : 662,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
+    },
+    {
+      "UUID" : 664,
+      "OwnerActorUUID" : 661,
+      "ParentComponentUUID" : 662,
+      "Type" : "UAmbientLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 662,
+      "OwnerActorUUID" : 661,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 680,
+      "OwnerActorUUID" : 679,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-7.115018, 2.701768, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Sphere2.obj"
+    },
+    {
+      "UUID" : 754,
+      "OwnerActorUUID" : 753,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, -8.893693, 3.175477],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [22.901215, 35.089985, 1.000000],
+      "StaticMesh" : "Data/apple_mid.obj",
+      "Materials" : ["MatID_1"],
+      "MaterialNormalMapOverrides" : [""]
+    },
+    {
+      "UUID" : 682,
+      "OwnerActorUUID" : 681,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, -2.336427, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Sphere2.obj"
+    },
+    {
+      "UUID" : 751,
+      "OwnerActorUUID" : 750,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 752,
+      "OwnerActorUUID" : 750,
+      "ParentComponentUUID" : 751,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
+    },
+    {
+      "UUID" : 756,
+      "OwnerActorUUID" : 755,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 39.193394, 0.852355],
+      "RelativeRotation" : [89.094940, 0.000000, 0.000000],
+      "RelativeScale" : [2.540000, 2.540000, 0.834744],
+      "StaticMesh" : "Data/PUBGBOX/PubgBox.obj",
+      "Materials" : ["01_-_Default.001"],
+      "MaterialNormalMapOverrides" : [""]
+    }
+  ]
+}

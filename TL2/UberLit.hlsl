@@ -190,33 +190,47 @@ PS_OUTPUT mainPS(PS_INPUT input)
         N = normalize(mul(tangentNormal, TBN));
     }
 
-    float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
+    float3 finalLit;
+
+#if LIGHTING_MODEL_UNLIT
+    // Unlit mode: just return base color without any lighting
+    finalLit = base;
     
+    
+    Result.Color = float4(finalLit, 1.0);
+    Result.UUID = input.UUID;
+    return Result;
+#else
+    float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
+
     LightAccum accLight = (LightAccum) (0);
     LightAccum pointLight = (LightAccum) (0);
     LightAccum spotLight = (LightAccum) (0);
-    LightAccum directionalLight = (LightAccum) (0); 
-    
+    LightAccum directionalLight = (LightAccum) (0);
+
 #if LIGHTING_MODEL_PHONG
-    
+
     pointLight.diffuse = float4(1, 0, 0, 1);
 #elif  LIGHTING_MODEL_BLINN_PHONG
     pointLight = ComputePointLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
     spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
-    //TODO: DirectionLight 
+    //TODO: DirectionLight
 #elif  LIGHTING_MODEL_BRDF
-    
+
     pointLight.diffuse = float4(0, 1, 0, 1);
 #elif LIGHTING_MODEL_LAMBERT
-    
+
     pointLight.diffuse = float4(0, 0, 1, 1);
 #endif
-    
+
     accLight.diffuse += pointLight.diffuse + spotLight.diffuse + directionalLight.diffuse;
     accLight.specular += pointLight.specular + spotLight.specular + directionalLight.specular;
-   
+
+    // Multi-Probe SH-based Ambient Lighting
+    float3 shAmbient = EvaluateMultiProbeSHLighting(input.worldPosition, N) * base;
+
     // Ambient + Diffuse + Specular
-    float3 ambient = 0.25 * base;
+    float3 ambient = shAmbient;
     if (HasMaterial)
         ambient += 0.25 * Material.AmbientColor;
 
@@ -225,7 +239,9 @@ PS_OUTPUT mainPS(PS_INPUT input)
     if (HasMaterial)
         specularLit *= saturate(Material.SpecularColor);
 
-    float3 finalLit = ambient + diffuseLit + specularLit;
+    finalLit = ambient + diffuseLit + specularLit;
+#endif
+    
     //finalLit = saturate(finalLit); // 과포화 방지
     
     // 톤 매핑

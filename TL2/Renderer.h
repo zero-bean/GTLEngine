@@ -67,6 +67,7 @@ public:
     // View Mode Setting
     void SetViewModeType(EViewModeIndex ViewModeIndex);
     void SetViewModeIndex(EViewModeIndex InViewModeIndex) { CurrentViewMode = InViewModeIndex; }
+    EViewModeIndex GetCurrentViewMode() const { return CurrentViewMode; }
 
     // Shading model control (for uber shader)
     void SetShadingModel(ELightShadingModel Model);
@@ -92,6 +93,9 @@ public:
     
     void RenderPostProcessing(UShader* Shader);
 
+    // Cubemap scene rendering helper
+    void RenderSceneToCubemapFace(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix, const FVector& ProbePosition, FViewport* Viewport);
+
     //목요일 새벽5시 어쩔수가없다.
     float Gamma = 1.0f;
 
@@ -103,6 +107,7 @@ private:
     void RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* Viewport);    
 
     void RenderPointLightPass(UWorld* World);     // 포스트: PointLight 조명/가산
+    void RenderSHAmbientLightPass(UWorld* World); // SH Ambient Light 업데이트
     void RenderDirectionalLightPass(UWorld* World);
     void RenderSpotLightPass(UWorld* World);     // 포스트: SpotLight 조명/가산
     void RenderOverlayPass(UWorld* World);      // 라인/텍스트/UI/디버그

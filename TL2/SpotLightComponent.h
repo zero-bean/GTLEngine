@@ -28,6 +28,10 @@ public:
     // Debug/Visualization settings
     void SetCircleSegments(int InSegments) { CircleSegments = InSegments; }
     int  GetCircleSegments() const { return CircleSegments; }
+
+    // Editor Details
+    void RenderDetails() override;
+
 protected:
     UObject* Duplicate() override;
     void DuplicateSubObjects() override;

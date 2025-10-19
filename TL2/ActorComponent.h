@@ -51,7 +51,14 @@ public:
 
     UObject* Duplicate() override;
     void DuplicateSubObjects() override;
-    EComponentWorldTickMode WorldTickMode; // 
+    EComponentWorldTickMode WorldTickMode; //
+
+    // ───────────────
+    // Editor Details
+    // ───────────────
+    // 각 컴포넌트가 자신의 디테일 패널을 렌더링하는 가상 함수
+    virtual void RenderDetails() {}
+ 
 protected:
     // [PIE] 외부에서 초기화 필요
     AActor* Owner = nullptr;  // 자신을 보유한 액터
