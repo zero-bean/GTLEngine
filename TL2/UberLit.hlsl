@@ -214,7 +214,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
 #elif  LIGHTING_MODEL_BLINN_PHONG
     pointLight = ComputePointLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
     spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
-    //TODO: DirectionLight
+    directionalLight = ComputeDirectionalLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
 #elif  LIGHTING_MODEL_BRDF
 
     pointLight.diffuse = float4(0, 1, 0, 1);
