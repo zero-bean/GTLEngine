@@ -7,6 +7,8 @@
 #include "BillboardComponent.h"
 #include "TextRenderComponent.h"
 #include "MovementComponent.h"
+#include "World.h"
+#include "Level.h"
 
 AActor::AActor()
 {
@@ -381,6 +383,15 @@ bool AActor::DeleteComponent(UActorComponent* ComponentToDelete)
 
     // 4. [메모리 해제] 모든 연결이 정리되었으므로, 마지막으로 객체를 삭제합니다.
     ObjectFactory::DeleteObject(ComponentToDelete);
+
+    // 5. [레벨 캐시 무효화] 레벨의 ComponentCache를 클리어하여 삭제된 컴포넌트 참조 방지
+    if (UWorld* CurrentWorld = GetWorld())
+    {
+        if (ULevel* CurrentLevel = CurrentWorld->GetLevel())
+        {
+            CurrentLevel->ClearComponentCache();
+        }
+    }
 
     return true;
 }

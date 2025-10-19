@@ -46,14 +46,14 @@ void UAmbientLightComponent::TickComponent(float DeltaTime)
     // If you need dynamic updates, uncomment the code below:
 
     
-    TimeSinceLastCapture += DeltaTime;
+    //TimeSinceLastCapture += DeltaTime;
 
-    // Update at specified interval
-    if (TimeSinceLastCapture >= UpdateInterval)
-    {
-        TimeSinceLastCapture = 0.0f;
-        ForceCapture();
-    }
+    //// Update at specified interval
+    //if (TimeSinceLastCapture >= UpdateInterval)
+    //{
+    //    TimeSinceLastCapture = 0.0f;
+    //    ForceCapture();
+    //}
     
 }
 
@@ -115,7 +115,7 @@ void UAmbientLightComponent::ForceCapture()
 
     // Note: Smoothing is skipped for static capture to avoid dimming
     // (Smoothing is only useful for dynamic updates to prevent flickering)
-    SmoothSH();
+   // SmoothSH();
 }
 
 void UAmbientLightComponent::InitializeCubemapTargets()
