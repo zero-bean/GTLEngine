@@ -318,7 +318,7 @@ LightAccum ComputePointLights_LambertPhong(float3 worldPos, float3 worldNormal, 
     return acc;
 }
 
-LightAccum ComputeDirectionalLights(float3 WorldPosition, float3 WorldNormal, float Shininess)
+LightAccum ComputeDirectionalLights_BlinnPhong(float3 WorldPosition, float3 WorldNormal, float Shininess)
 {
     LightAccum acc = (LightAccum) 0;
 
@@ -526,7 +526,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
     LightAccum la = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);
     LightAccum ls = ComputeSpotLights(input.worldPosition, N, shininess);
-    LightAccum ld = ComputeDirectionalLights(input.worldPosition, N, shininess); 
+    LightAccum ld = ComputeDirectionalLights_BlinnPhong(input.worldPosition, N, shininess); 
     
     la.diffuse += ls.diffuse + ld.diffuse;
     la.specular += ls.specular + ld.specular;    

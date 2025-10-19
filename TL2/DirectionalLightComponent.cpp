@@ -64,13 +64,19 @@ void UDirectionalLightComponent::RenderDetails()
 	ImGui::Text("PointLight Component Settings");
 
 	// 🔸 색상 설정 (RGB Color Picker)
-	float color[3] = { GetColor().R, GetColor().G, GetColor().B};
+	float color[3] = { GetTintColor().R, GetTintColor().G, GetTintColor().B};
 	if (ImGui::ColorEdit3("Color", color))
 	{
-		SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+		SetTintColor(FLinearColor(color[0], color[1], color[2], 1.0f));
 	}
 
 	ImGui::Spacing();
+
+	float Temperature = GetColorTemperature();
+	if (ImGui::DragFloat("Temperature", &Temperature, 11.029f, 1000.0f, 15000.0f))
+	{
+		SetColorTemperature(Temperature);
+	}
 
 	// 🔸 밝기 (Intensity)
 	float intensity = GetIntensity();
