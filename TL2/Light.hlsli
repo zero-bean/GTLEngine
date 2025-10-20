@@ -256,7 +256,7 @@ float3 Diffuse_Lambert(float3 BaseColor)
     return BaseColor / PI;
 }
 
-float GGXNormalDistributionFunction(float NdotH, float alpha)
+float D_GGXNormalDistributionFunction(float NdotH, float alpha)
 {
     //specular
     float a2 = alpha * alpha; // aplha = roughness
@@ -264,15 +264,21 @@ float GGXNormalDistributionFunction(float NdotH, float alpha)
     return a2 / (PI * denom * denom);
 }
 
-float3 ShilkApprox(float3 F0, float VdotH)
+float3 F_ShilckApprox(float3 F0, float VdotH)
 {
     float m = 1.0 - saturate(VdotH);
     float m5 = m * m * m * m * m;
     return F0 + (1.0 - F0) * m5;
 
 }
+float G_Smith(float a2, float NdotV, float NdotL)
+{
+    float G_SmithV = NdotV + sqrt(NdotV * (NdotV - NdotV * a2) + a2);
+    float G_SmithL = NdotL + sqrt(NdotL * (NdotL - NdotL * a2) + a2);
+    return (4 * NdotV * NdotL) / (G_SmithV * G_SmithL);
+} 
 
-void BRDFOnly(float3 Li, float3 N, float3 V, float3 L, float atten,
+void ComputeBRDF(float3 Li, float3 N, float3 V, float3 L, float atten,
     float3 baseColor, float alpha, float3 F0, inout LightAccum acc)
 {
     
@@ -283,13 +289,14 @@ void BRDFOnly(float3 Li, float3 N, float3 V, float3 L, float atten,
     float VdotH = saturate(dot(V, H));
 
 
-    float D = GGXNormalDistributionFunction(NdotH, alpha); 
-    float3 F = ShilkApprox(F0, VdotH);
+    float D = D_GGXNormalDistributionFunction(NdotH, alpha); 
+    float3 F = F_ShilckApprox(F0, VdotH);
+    float G = G_Smith(alpha, NdotV, NdotV);
     
     
-    //float denom = max(4.0f * NdotV, 1e-3);
-float3 lit = Li * NdotL * atten;
-    float3 specBRDF = D * F;  
+    float denom = max(4.0f * NdotV, 1e-3);
+    float3 lit = Li * NdotL * atten;
+    float3 specBRDF = D * F * G /denom;
     float3 diffBRDF = Diffuse_Lambert(baseColor) * NdotL;
 
     
@@ -326,7 +333,7 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
         float3 Li = pointLight.Color.rgb * pointLight.Color.a;
         float3 F0 = float3(0.02, 0.02, 0.02);
         
-        BRDFOnly(Li, N, V, L, atten ,BaseColor, 1.0, F0, acc);
+        ComputeBRDF(Li, N, V, L, atten, BaseColor, 1.0, F0, acc);
          
     } 
     
@@ -363,9 +370,11 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
         
         
         float3 F0 = float3(0.02, 0.02, 0.02);
-        BRDFOnly(Li, N, V, L, atten, BaseColor, 1.0, F0, acc); 
+        ComputeBRDF(Li, N, V, L, atten, BaseColor, 1.0, F0, acc);
     }
     
+    
+    // TODO: Direction 
 
         return acc;
 }
