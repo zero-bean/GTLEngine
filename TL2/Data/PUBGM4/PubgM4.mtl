@@ -10,7 +10,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd glacier.png
-map_Bump -bm 1.000000 glacier normal.png
+map_Bump -bm 1.000000 glacier nrm.png
 
 newmtl back
 Ns 319.999939
@@ -21,7 +21,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd glacier.png
-map_Bump -bm 1.000000 glacier normal.png
+map_Bump -bm 1.000000 glacier nrm.png
 
 newmtl magazine
 Ns 319.999939
@@ -32,7 +32,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd glacier.png
-map_Bump -bm 1.000000 glacier normal.png
+map_Bump -bm 1.000000 glacier nrm.png
 
 newmtl main
 Ns 319.999939
@@ -43,4 +43,4 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd glacier.png
-map_Bump -bm 1.000000 glacier normal.png
+map_Bump -bm 1.000000 glacier nrm.png

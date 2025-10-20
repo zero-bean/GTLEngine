@@ -29,6 +29,8 @@ public:
 
     void RenderAttenuationRadius(URenderer* Renderer);
 
+    void DrawDebugLines(class URenderer* Renderer) override;
+
 protected:
     UObject* Duplicate() override;
     void DuplicateSubObjects() override;

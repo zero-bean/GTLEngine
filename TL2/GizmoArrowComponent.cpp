@@ -3,7 +3,7 @@
 
 UGizmoArrowComponent::UGizmoArrowComponent()
 {
-    SetStaticMesh("Data/Arrow.obj");
+    SetStaticMesh("Data/Gizmo/Arrow.obj");
     SetMaterial("Primitive.hlsl");
 }
 

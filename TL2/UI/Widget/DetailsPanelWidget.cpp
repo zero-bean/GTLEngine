@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "DetailsPanelWidget.h"
 #include "../UIManager.h"
 #include "../../ImGui/imgui.h"

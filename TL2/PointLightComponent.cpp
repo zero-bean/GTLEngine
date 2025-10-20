@@ -163,4 +163,9 @@ void UPointLightComponent::RenderAttenuationRadius(URenderer* Renderer)
 	}	
 }
 
+void UPointLightComponent::DrawDebugLines(URenderer* Renderer)
+{
+}
+
+
 

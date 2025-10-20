@@ -65,10 +65,11 @@ cbuffer FDirectionalLightBufferType : register(b11)
 // Multi-Probe SH Ambient Light
 struct FSHProbeData
 {
-    float4 Position;           // xyz=프로브 위치, w=영향 반경
+    float4 Position;           // xyz=프로브 위치, w=BoxExtent.Z
     float4 SHCoefficients[9];  // 9개 SH 계수
     float Intensity;           // 강도
-    float3 Padding;            // 16바이트 정렬
+    float Falloff;             // 감쇠 지수
+    float2 BoxExtent;          // xy=BoxExtent.X, BoxExtent.Y (Z는 Position.w에 저장)
 };
 
 #define MAX_SH_PROBES 8
@@ -236,50 +237,62 @@ float3 EvaluateMultiProbeSHLighting(float3 worldPos, float3 normal)
         return float3(0, 0, 0);
 
     float3 n = normalize(normal);
+    n = -n;
     float3 totalLighting = 0.0;
     float totalWeight = 0.0;
 
-    // Blend all probes based on distance
+    // Blend all probes based on box distance
     [loop]
     for (int i = 0; i < ProbeCount; ++i)
     {
         float3 probePos = Probes[i].Position.xyz;
-        float radius = Probes[i].Position.w;
+        float3 boxExtent = float3(Probes[i].BoxExtent.xy, Probes[i].Position.w);
 
-        float dist = length(worldPos - probePos);
+        // Calculate distance from box center on each axis
+        float3 offset = abs(worldPos - probePos);
 
-        // Distance-based weight (inverse distance falloff)
-        float weight = saturate(1.0 - (dist / radius));
-        weight = weight * weight; // Square for smoother falloff
+        // Check if inside box (all axes within extent)
+        bool3 insideBox = offset <= boxExtent;
 
-        if (weight > 0.001)
+        if (insideBox.x && insideBox.y && insideBox.z)
         {
-            // Evaluate SH for this probe
-            float3 probeLighting = 0.0;
-            probeLighting += Probes[i].SHCoefficients[0].rgb * SHBasis0(n);
-            probeLighting += Probes[i].SHCoefficients[1].rgb * SHBasis1(n);
-            probeLighting += Probes[i].SHCoefficients[2].rgb * SHBasis2(n);
-            probeLighting += Probes[i].SHCoefficients[3].rgb * SHBasis3(n);
-            probeLighting += Probes[i].SHCoefficients[4].rgb * SHBasis4(n);
-            probeLighting += Probes[i].SHCoefficients[5].rgb * SHBasis5(n);
-            probeLighting += Probes[i].SHCoefficients[6].rgb * SHBasis6(n);
-            probeLighting += Probes[i].SHCoefficients[7].rgb * SHBasis7(n);
-            probeLighting += Probes[i].SHCoefficients[8].rgb * SHBasis8(n);
+            // Inside box: full influence with optional falloff from edges
+            float3 normalizedDist = offset / max(boxExtent, 0.001);
+            float distFromEdge = 1.0 - max(max(normalizedDist.x, normalizedDist.y), normalizedDist.z);
+            float weight = pow(distFromEdge, Probes[i].Falloff);
 
-            probeLighting *= Probes[i].Intensity;
+            if (weight > 0.001)
+            {
+                // Evaluate SH for this probe
+                float3 probeLighting = 0.0;
+                probeLighting += Probes[i].SHCoefficients[0].rgb * SHBasis0(n);
+                probeLighting += Probes[i].SHCoefficients[1].rgb * SHBasis1(n);
+                probeLighting += Probes[i].SHCoefficients[2].rgb * SHBasis2(n);
+                probeLighting += Probes[i].SHCoefficients[3].rgb * SHBasis3(n);
+                probeLighting += Probes[i].SHCoefficients[4].rgb * SHBasis4(n);
+                probeLighting += Probes[i].SHCoefficients[5].rgb * SHBasis5(n);
+                probeLighting += Probes[i].SHCoefficients[6].rgb * SHBasis6(n);
+                probeLighting += Probes[i].SHCoefficients[7].rgb * SHBasis7(n);
+                probeLighting += Probes[i].SHCoefficients[8].rgb * SHBasis8(n);
 
-            totalLighting += probeLighting * weight;
-            totalWeight += weight;
+                probeLighting *= Probes[i].Intensity;
+
+                totalLighting += probeLighting * weight;
+                totalWeight += weight;
+            }
         }
     }
 
-    // Normalize by total weight
+    // Normalize by total weight (preserve brightness when multiple probes overlap)
+    // Using max(totalWeight, 1.0) prevents darkening when probes overlap
     if (totalWeight > 0.001)
     {
-        totalLighting /= totalWeight;
+        totalLighting /= max(totalWeight, 1.0);
     }
 
-    return max(totalLighting, 0.0);
+    // SH lighting can be negative (represents directionality)
+    // Clamping should be done after combining with albedo, not here
+    return totalLighting;
 }
 
 #endif

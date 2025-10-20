@@ -50,6 +50,8 @@ void USceneManagerWidget::RenderWidget()
         int current = static_cast<int>(Renderer->GetShadingModel());
         ImGui::Text("Shading Model");
         // Layout radios in two rows
+        ImGui::RadioButton("Gouraud", &current, static_cast<int>(ELightShadingModel::Gouraud));
+        ImGui::SameLine();
         ImGui::RadioButton("Phong", &current, static_cast<int>(ELightShadingModel::Phong));
         ImGui::SameLine();
         ImGui::RadioButton("Blinn-Phong", &current, static_cast<int>(ELightShadingModel::BlinnPhong));

@@ -77,14 +77,14 @@ CBUFFER_INFO(ViewportBufferType, 6, false, true)
 
 CBUFFER_INFO(DecalAlphaBufferType, 8, false, true)
 CBUFFER_INFO(FHeightFogBufferType, 8, false, true)
-CBUFFER_INFO(FPointLightBufferType, 9, false, true)
-CBUFFER_INFO(FSpotLightBufferType, 13, false, true)
+CBUFFER_INFO(FPointLightBufferType, 9, true, true)
+CBUFFER_INFO(FSpotLightBufferType, 13, true, true)
 CBUFFER_INFO(FSHAmbientLightBufferType, 10, false, true)
 CBUFFER_INFO(FMultiSHProbeBufferType, 12, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
-CBUFFER_INFO(FDirectionalLightBufferType, 11, false, true)
+CBUFFER_INFO(FDirectionalLightBufferType, 11, true, true)
 
 // VS : b0
 struct ModelBufferType
@@ -250,11 +250,11 @@ struct FSHAmbientLightBufferType
 // Single probe data for multi-probe system
 struct FSHProbeData
 {
-    FVector4 Position;           // xyz=프로브 위치, w=영향 반경
+    FVector4 Position;           // xyz=프로브 위치, w=BoxExtent.Z
     FVector4 SHCoefficients[9];  // 9개 SH 계수
     float Intensity;             // 강도
     float Falloff;               // 감쇠 지수
-    FVector2D Padding;           // 16바이트 정렬
+    FVector2D BoxExtent;         // xy=BoxExtent.X, BoxExtent.Y (Z는 Position.w에 저장)
 };
 
 #define MAX_SH_PROBES 8
