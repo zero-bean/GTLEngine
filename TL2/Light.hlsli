@@ -190,6 +190,7 @@ float3 EvaluateMultiProbeSHLighting(float3 worldPos, float3 normal)
         return float3(0, 0, 0);
 
     float3 n = normalize(normal);
+    n.x = -n.x;  // Flip X axis to match cubemap coordinate system
     float3 totalLighting = 0.0;
     float totalWeight = 0.0;
 
@@ -242,7 +243,9 @@ float3 EvaluateMultiProbeSHLighting(float3 worldPos, float3 normal)
         totalLighting /= max(totalWeight, 1.0);
     }
 
-    return max(totalLighting, 0.0);
+    // SH lighting can be negative (represents directionality)
+    // Clamping should be done after combining with albedo, not here
+    return totalLighting;
 }
 
 #endif

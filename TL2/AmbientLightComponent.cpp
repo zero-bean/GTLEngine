@@ -561,7 +561,7 @@ FVector UAmbientLightComponent::CubeUVToDir(ECubeFace Face, float U, float V)
     switch (Face)
     {
     case ECubeFace::PositiveX:
-        Dir = FVector(1.0f, -S, -T);
+        Dir = FVector(1.0f, -T, -S);
         break;
     case ECubeFace::NegativeX:
         Dir = FVector(-1.0f, S, -T);

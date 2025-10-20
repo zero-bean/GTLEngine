@@ -1,20 +1,14 @@
 {
   "Version" : 2,
-  "NextUUID" : 1169,
+  "NextUUID" : 1393,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-7.764213, -72.966919, 11.644734],
+    "Location" : [24.932838, -51.020649, 5.204328],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 14.600047, 93.300041]
+    "Rotation" : [0.000000, 6.100076, 121.700050]
   },
   "Actors" : [
-    {
-      "UUID" : 661,
-      "Type" : "AActor",
-      "Name" : "Actor_0",
-      "RootComponentUUID" : 662
-    },
     {
       "UUID" : 757,
       "Type" : "AActor",
@@ -28,22 +22,10 @@
       "RootComponentUUID" : 680
     },
     {
-      "UUID" : 681,
-      "Type" : "AActor",
-      "Name" : "Sphere2_0",
-      "RootComponentUUID" : 682
-    },
-    {
       "UUID" : 753,
       "Type" : "AStaticMeshActor",
       "Name" : "Cube_0",
       "RootComponentUUID" : 754
-    },
-    {
-      "UUID" : 750,
-      "Type" : "AActor",
-      "Name" : "Actor_0",
-      "RootComponentUUID" : 751
     },
     {
       "UUID" : 755,
@@ -65,34 +47,6 @@
     }
   ],
   "Components" : [
-    {
-      "UUID" : 663,
-      "OwnerActorUUID" : 661,
-      "ParentComponentUUID" : 662,
-      "Type" : "UBillboardComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/EmptyActor.dds"
-    },
-    {
-      "UUID" : 662,
-      "OwnerActorUUID" : 661,
-      "ParentComponentUUID" : 0,
-      "Type" : "USceneComponent",
-      "RelativeLocation" : [-20.702049, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
-    {
-      "UUID" : 664,
-      "OwnerActorUUID" : 661,
-      "ParentComponentUUID" : 662,
-      "Type" : "UAmbientLightComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
     {
       "UUID" : 758,
       "OwnerActorUUID" : 757,
@@ -116,16 +70,6 @@
       "StaticMesh" : "Data/Sphere2.obj"
     },
     {
-      "UUID" : 682,
-      "OwnerActorUUID" : 681,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [-7.505937, -5.766080, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 63.080780, 52.699753],
-      "StaticMesh" : "Data/Sphere2.obj"
-    },
-    {
       "UUID" : 754,
       "OwnerActorUUID" : 753,
       "ParentComponentUUID" : 0,
@@ -136,40 +80,6 @@
       "StaticMesh" : "Data/apple_mid.obj",
       "Materials" : ["MatID_1"],
       "MaterialNormalMapOverrides" : [""]
-    },
-    {
-      "UUID" : 751,
-      "OwnerActorUUID" : 750,
-      "ParentComponentUUID" : 0,
-      "Type" : "USceneComponent",
-      "RelativeLocation" : [1.950671, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
-    {
-      "UUID" : 752,
-      "OwnerActorUUID" : 750,
-      "ParentComponentUUID" : 751,
-      "Type" : "UBillboardComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/EmptyActor.dds"
-    },
-    {
-      "UUID" : 979,
-      "OwnerActorUUID" : 750,
-      "ParentComponentUUID" : 751,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "PointLightData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.000000,
-        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
-      }
     },
     {
       "UUID" : 756,
@@ -188,7 +98,7 @@
       "OwnerActorUUID" : 867,
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [-22.879927, -8.893693, 3.175477],
+      "RelativeLocation" : [-8.643645, -8.893693, -1.400994],
       "RelativeRotation" : [0.000000, -87.662498, 0.000000],
       "RelativeScale" : [22.901215, 35.089985, 1.000000],
       "StaticMesh" : "Data/apple_mid.obj",
@@ -200,7 +110,7 @@
       "OwnerActorUUID" : 1084,
       "ParentComponentUUID" : 0,
       "Type" : "USceneComponent",
-      "RelativeLocation" : [3.671428, 0.000000, 0.000000],
+      "RelativeLocation" : [3.671428, -12.212969, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000]
     },
