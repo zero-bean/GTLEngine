@@ -1,56 +1,15 @@
 {
   "Version" : 2,
-  "NextUUID" : 652,
+  "NextUUID" : 644,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-2.927891, 9.331987, 3.272735],
+    "Location" : [-4.447360, -6.344213, 5.581123],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 12.599998, -57.899998]
+    "Rotation" : [0.000000, 5.200001, 51.000000]
   },
   "Actors" : [
-    {
-      "UUID" : 644,
-      "Type" : "AStaticMeshActor",
-      "Name" : "Sphere_0",
-      "RootComponentUUID" : 645
-    },
-    {
-      "UUID" : 646,
-      "Type" : "ASpotLightActor",
-      "Name" : "Spot Light_0",
-      "RootComponentUUID" : 647
-    }
   ],
   "Components" : [
-    {
-      "UUID" : 645,
-      "OwnerActorUUID" : 644,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Sphere.obj"
-    },
-    {
-      "UUID" : 647,
-      "OwnerActorUUID" : 646,
-      "ParentComponentUUID" : 0,
-      "Type" : "USpotLightComponent",
-      "RelativeLocation" : [-2.014595, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 89.500320, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
-    {
-      "UUID" : 648,
-      "OwnerActorUUID" : 646,
-      "ParentComponentUUID" : 647,
-      "Type" : "UBillboardComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/SpotLight_64x.dds"
-    }
   ]
 }

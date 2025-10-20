@@ -65,6 +65,15 @@ void USceneManagerWidget::RenderWidget()
         {
             Renderer->SetShadingModel(static_cast<ELightShadingModel>(current));
         }
+        
+        // BRDF controls
+        if (Renderer->GetShadingModel() == ELightShadingModel::BRDF)
+        {
+            ImGui::Separator();
+            ImGui::Text("BRDF Parameters");
+            ImGui::SliderFloat("Roughness", &Renderer->BRDFRoughness, 0.0f, 1.0f);
+            ImGui::SliderFloat("Metallic", &Renderer->BRDFMetallic, 0.0f, 1.0f);
+        }
     }
     ImGui::Spacing();
 

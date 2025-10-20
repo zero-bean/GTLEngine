@@ -209,6 +209,12 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
 
             bool bHasNormalTexture = (NormalTexture != nullptr); // 머티리얼의 노말맵 보유 여부
 
+            if (UShader* Shader = Material->GetShader())
+            {
+                Shader->SetActiveNormalMode(bHasNormalTexture ? ENormalMapMode::HasNormalMap : ENormalMapMode::NoNormalMap);
+                PrepareShader(Shader);
+            }
+
             if (LastMaterial != Material)
             {
                 StatsCollector.IncrementMaterialChanges();
@@ -242,7 +248,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NullSRV);
             }
 
-            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture }); 
+            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture });
             RHIDevice->GetDeviceContext()->DrawIndexed(MeshGroupInfos[i].IndexCount, MeshGroupInfos[i].StartIndex, 0);
             StatsCollector.IncrementDrawCalls();
         }
@@ -496,6 +502,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     FMatrix ViewMatrix = Camera->GetViewMatrix();
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
     UpdateSetCBuffer(ViewProjBufferType(ViewMatrix, ProjectionMatrix, Camera->GetActorLocation()));
+    // Upload BRDF parameters for pixel shader
+    UpdateSetCBuffer(FBRDFInfoBufferType(BRDFRoughness, BRDFMetallic));
     switch (CurrentViewMode)
     {
     case EViewModeIndex::VMI_Lit:

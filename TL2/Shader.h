@@ -11,6 +11,14 @@ enum class ELightShadingModel : uint32_t
 	Unlit = 5,
 	Count,
 };
+
+enum class ENormalMapMode : uint8_t
+{
+	NoNormalMap = 0,
+	HasNormalMap = 1,
+	ENormalMapModeCount = 2,
+};
+
 class UShader : public UResourceBase
 {
 public:
@@ -20,10 +28,15 @@ public:
 	   
 	ID3D11InputLayout* GetInputLayout() const { return InputLayout; }
 	ID3D11VertexShader* GetVertexShader() const { return VertexShaders[(size_t)ActiveModel]; }
-	ID3D11PixelShader* GetPixelShader() const { return PixelShaders[(size_t)ActiveModel]; }
+	ID3D11PixelShader* GetPixelShader() const
+	{
+		return PixelShaders[(size_t)ActiveModel][(size_t)ActiveNormalMode];
+	}
 
 	void SetActiveMode(ELightShadingModel Model) { ActiveModel = Model; }
-	ELightShadingModel GetActiveMode() const  { return ActiveModel; } 
+	ELightShadingModel GetActiveMode() const { return ActiveModel; }
+
+	void SetActiveNormalMode(ENormalMapMode InMode) { ActiveNormalMode = InMode; }
 
 	static const D3D_SHADER_MACRO* GetMacros(ELightShadingModel Model);
 
@@ -31,6 +44,7 @@ protected:
 	virtual ~UShader();
 
 	ELightShadingModel ActiveModel = ELightShadingModel::BlinnPhong;
+	ENormalMapMode ActiveNormalMode = ENormalMapMode::NoNormalMap;
 
 	// Default macro table; actual selection is decided at load time.
 	D3D_SHADER_MACRO DefinesRender[7] =
@@ -50,7 +64,9 @@ private:
 
 	ID3D11InputLayout* InputLayout = nullptr;
 	ID3D11VertexShader* VertexShaders[(size_t)ELightShadingModel::Count] = { nullptr };
-	ID3D11PixelShader* PixelShaders[(size_t)ELightShadingModel::Count] = { nullptr };
+	ID3D11PixelShader* PixelShaders
+		[(size_t)ELightShadingModel::Count]
+		[(size_t)ENormalMapMode::ENormalMapModeCount] = { nullptr };
 
 	void CreateInputLayout(ID3D11Device* Device, const FString& InShaderPath);
 	void ReleaseResources();

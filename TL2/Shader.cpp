@@ -112,49 +112,69 @@ void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
     for (int i = 0; i < (int)ELightShadingModel::Count; ++i)
     {
         ELightShadingModel currentModel = ELightShadingModel(i);
+        const D3D_SHADER_MACRO* baseMacros = GetMacros(currentModel);
 
-        // 각 라이팅 모델에 필요한 버텍스 셰이더를 생성합니다. 
-        // 고로드 모델은 버텍스 셰이더를 별개로 필요로 하기 때문에, 일관성을 위해 배열로 만들었습니다.
-        hr = D3DCompileFromFile(WFilePath.c_str(), GetMacros(currentModel), D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", Flag, 0, &VSBlobs[i], &errorBlob);
+        // ⭐ VS는 노멀맵과 무관하게 라이팅 모델당 1개만 생성
+        hr = D3DCompileFromFile(WFilePath.c_str(), baseMacros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", Flag, 0, &VSBlobs[i], &errorBlob);
+
         if (FAILED(hr))
         {
             char* msg = (char*)errorBlob->GetBufferPointer();
-            UE_LOG("shader \'%s\' VS compile error for model %d: %s", InShaderPath, i, msg);
+            UE_LOG("shader '%s' VS compile error for model %d: %s", InShaderPath.c_str(), i, msg);
             if (errorBlob) errorBlob->Release();
-            return; // Stop if any VS fails
+            return;
         }
 
         hr = InDevice->CreateVertexShader(VSBlobs[i]->GetBufferPointer(), VSBlobs[i]->GetBufferSize(), nullptr, &VertexShaders[i]);
+
         if (FAILED(hr))
         {
             UE_LOG("CreateVertexShader failed for model %d", i);
             return;
         }
 
-        // 각 라이팅 모델에 필요한 픽셀 셰이더를 생성합니다. 
-        hr = D3DCompileFromFile(WFilePath.c_str(), GetMacros(currentModel), D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &PSBlob, &errorBlob);
-        if (FAILED(hr))
+        // PS는 라이팅 모델 × 노멀맵 모드 조합으로 생성
+        for (int j = 0; j < (int)ENormalMapMode::ENormalMapModeCount; ++j)
         {
-            if (errorBlob)
+            std::vector<D3D_SHADER_MACRO> allMacros;
+
+            // 라이팅 모델 매크로 추가
+            for (int m = 0; baseMacros[m].Name != nullptr; ++m)
+            {
+                allMacros.push_back(baseMacros[m]);
+            }
+
+            // 노멀맵 매크로 추가
+            allMacros.push_back({ "HAS_NORMAL_MAP", (j == (int)ENormalMapMode::HasNormalMap) ? "1" : "0" });
+            allMacros.push_back({ nullptr, nullptr });
+
+            ID3DBlob* currentPSBlob = nullptr;
+            hr = D3DCompileFromFile(WFilePath.c_str(), allMacros.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &currentPSBlob, &errorBlob);
+
+            if (FAILED(hr))
             {
                 char* msg = (char*)errorBlob->GetBufferPointer();
-                UE_LOG("shader '%s' PS compile error for model %d: %s", InShaderPath, i, msg);
-                errorBlob->Release();
+                UE_LOG("shader '%s' PS compile error for model %d, normalMode %d: %s", InShaderPath.c_str(), i, j, msg);
+                if (errorBlob) { errorBlob->Release(); }
+                return;
             }
-            return; // Stop if any PS fails
-        }
 
-        hr = InDevice->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &PixelShaders[i]);
-        if (FAILED(hr))
-        {
-            UE_LOG("CreatePixelShader failed for model %d", i);
-            return;
+            hr = InDevice->CreatePixelShader(currentPSBlob->GetBufferPointer(), currentPSBlob->GetBufferSize(), nullptr, &PixelShaders[i][j]);
+
+            currentPSBlob->Release();
+
+            if (FAILED(hr))
+            {
+                UE_LOG("CreatePixelShader failed for model %d, normalMode %d", i, j);
+                return;
+            }
         }
     }
 
     CreateInputLayout(InDevice, InShaderPath);
-    
+
     ActiveModel = ELightShadingModel::BlinnPhong;
+    ActiveNormalMode = ENormalMapMode::NoNormalMap;
 }
 
 void UShader::CreateInputLayout(ID3D11Device* Device, const FString& InShaderPath)
@@ -183,13 +203,14 @@ void UShader::ReleaseResources()
         PSBlob->Release();
         PSBlob = nullptr;
     }
+
     if (InputLayout)
     {
         InputLayout->Release();
         InputLayout = nullptr;
     }
 
-    for (int i = 0; i < (int)ELightShadingModel::Count; i++)
+    for (int i = 0; i < (int)ELightShadingModel::Count; ++i)
     {
         if (VSBlobs[i])
         {
@@ -203,10 +224,14 @@ void UShader::ReleaseResources()
             VertexShaders[i] = nullptr;
         }
 
-        if (PixelShaders[i])
+        for (int j = 0; j < (int)ENormalMapMode::ENormalMapModeCount; ++j)
         {
-            PixelShaders[i]->Release();
-            PixelShaders[i] = nullptr;
+            if (PixelShaders[i][j])
+            {
+                PixelShaders[i][j]->Release();
+                PixelShaders[i][j] = nullptr;
+            }
         }
+
     }
 }

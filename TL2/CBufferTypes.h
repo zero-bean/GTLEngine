@@ -62,6 +62,7 @@ MACRO(FGammaBufferType)\
 MACRO(FDirectionalLightBufferType)\
 MACRO(FSHAmbientLightBufferType)             \
 MACRO(FMultiSHProbeBufferType)               \
+MACRO(FBRDFInfoBufferType)                   \
 
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
@@ -84,7 +85,8 @@ CBUFFER_INFO(FMultiSHProbeBufferType, 12, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
-CBUFFER_INFO(FDirectionalLightBufferType, 11, true, true)
+CBUFFER_INFO(FDirectionalLightBufferType, 11, true, true) 
+CBUFFER_INFO(FBRDFInfoBufferType, 6, true, true)
 
 // VS : b0
 struct ModelBufferType
@@ -125,8 +127,7 @@ struct FPixelConstBufferType
     FMaterialInPs Material;
     uint32 bHasMaterial; // 4 bytes (HLSL bool is 4 bytes)
     uint32 bHasTexture;  // 4 bytes (HLSL bool is 4 bytes)
-    uint32 bHasNormalTexture; // 4 bytes for normal texture flag
-    float pad;           // 4 bytes padding for 16-byte alignment
+    float pad[2];           // 4 bytes padding for 16-byte alignment
 };
 
 struct HighLightBufferType
@@ -308,6 +309,19 @@ struct FDirectionalLightBufferType
 //---//
 
 
+
+
+// PS : b14
+struct FBRDFInfoBufferType
+{
+    float Roughness = 0.5f;
+    float Metallic = 0.0f;
+    FVector2D _Pad; // 16-byte alignment
+
+    FBRDFInfoBufferType() = default;
+    FBRDFInfoBufferType(float InRoughness, float InMetallic)
+        : Roughness(InRoughness), Metallic(InMetallic), _Pad(0.0f, 0.0f) {}
+};
 
 
 
