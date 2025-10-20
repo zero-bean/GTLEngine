@@ -125,8 +125,7 @@ struct FPixelConstBufferType
     FMaterialInPs Material;
     uint32 bHasMaterial; // 4 bytes (HLSL bool is 4 bytes)
     uint32 bHasTexture;  // 4 bytes (HLSL bool is 4 bytes)
-    uint32 bHasNormalTexture; // 4 bytes for normal texture flag
-    float pad;           // 4 bytes padding for 16-byte alignment
+    float pad[2];           // 4 bytes padding for 16-byte alignment
 };
 
 struct HighLightBufferType
