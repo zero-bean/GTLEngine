@@ -4,6 +4,8 @@
 #define MAX_PointLight 100
 #define MAX_SpotLight 100
 
+static const float PI = 3.14159265359;
+
 //===========PointLight==============// 
 // C++ 구조체와 동일한 레이아웃
 struct FPointLightData
@@ -235,4 +237,113 @@ float3 EvaluateMultiProbeSHLighting(float3 worldPos, float3 normal)
     return max(totalLighting, 0.0);
 }
 
+// ============== BRDF ==============
+float3 Diffuse_Lambert(float3 BaseColor)
+{
+    return BaseColor / PI;
+}
+
+float GGXNormalDistributionFunction(float NdotH, float alpha)
+{
+    //specular
+    float a2 = alpha * alpha; // aplha = roughness
+    float denom = (NdotH * NdotH) * (a2 - 1.0) + 1.0;
+    return a2 / (PI * denom * denom);
+}
+
+float3 ShilkApprox(float3 F0, float VdotH)
+{
+    float m = 1.0 - saturate(VdotH);
+    float m5 = m * m * m * m * m;
+    return F0 + (1.0 - F0) * m5;
+
+}
+
+void BRDFOnly(float3 Li, float3 N, float3 V, float3 L,
+    float3 baseColor, float alpha, float3 F0, inout LightAccum acc)
+{
+    
+    float3 H = normalize(L + V);
+    float NdotV = saturate(dot(N, V));
+    float NdotL = saturate(dot(N, L));
+    float NdotH = saturate(dot(N, H));
+    float VdotH = saturate(dot(V, H));
+
+
+    float D = GGXNormalDistributionFunction(NdotH, alpha); 
+    float3 F = ShilkApprox(F0, VdotH);
+    
+    
+    //float denom = max(4.0f * NdotV, 1e-3);
+    float3 lit = Li * NdotL;
+    float3 specBRDF = D * F;  
+    float3 diffBRDF = Diffuse_Lambert(baseColor) * NdotL;
+
+    
+    acc.specular += specBRDF * lit; //  / denom;
+    acc.diffuse += diffBRDF * lit;
+
+}
+
+LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseColor, float alpha)
+{ 
+    //PointLightCount
+    
+    LightAccum acc = (LightAccum) 0;
+    
+    float3 V = normalize(cameraWorldPos - worldPos);
+    
+    //Lamber Diffuse
+    
+    [loop]
+    for (int i = 0; i < PointLightCount; ++i)
+    {
+        FPointLightData pointLight = PointLights[i];
+         
+        float3 LVector = pointLight.Position.xyz - worldPos;
+        float dist = length(LVector);
+        float3 L = dist;
+         
+        float range = max(pointLight.Position.w, 1e-3);
+        float fall = max(pointLight.FallOff, 0.001);
+        float t = saturate(dist / range);
+        float atten = pow(saturate(1.0 - t), fall);
+
+
+        float3 Li = pointLight.Color.rgb * pointLight.Color.a;
+        float3 F0 = float3(0.02, 0.02, 0.02);
+        
+        BRDFOnly(Li, N, V, L, BaseColor, 1.0, F0, acc);
+        
+        
+        //float3 H = normalize(L + V);
+        //float NdotV = saturate(dot(N, V));
+        //float NdotL = saturate(dot(N, L));
+        //float NdotH = saturate(dot(N, H));
+        //float VdotH = saturate(dot(V, H));
+        
+        // ======= Specular =======
+        // Normal Distribute Function
+        //float D = GGXNormalDistributionFunction(NdotH, 2.0f);
+       
+        //Fresnel
+        //float3 F0 = float3(0.01, 0.01, 0.01);
+        //float3 F = ShilkApprox(F0, VdotH);
+        
+        
+        //float denom = max(4.0f * NdotV, 1e-3);
+        //float3 BRDFSpecular = (D) / denom;
+        
+        //float3 BRDFSpecular = (D * F * G) / denom;
+        
+        // ======= Diffuse =======
+        // Lambert Diffuse
+        //
+        //lit = lit * atten * NdotL;
+        //acc.specular += BRDFSpecular * lit;
+        //acc.diffuse  += Diffuse_Lambert(BaseColor) * lit; 
+    }
+
+    return acc;
+}
 #endif

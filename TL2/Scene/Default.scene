@@ -4,21 +4,21 @@
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-2.927891, 9.331987, 3.272735],
+    "Location" : [-6.773294, 6.099425, 2.252972],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 12.599998, -57.899998]
+    "Rotation" : [0.000000, 15.699999, -52.299984]
   },
   "Actors" : [
     {
       "UUID" : 644,
       "Type" : "AStaticMeshActor",
-      "Name" : "Sphere_0",
+      "Name" : "Sphere2_0",
       "RootComponentUUID" : 645
     },
     {
       "UUID" : 646,
-      "Type" : "ASpotLightActor",
-      "Name" : "Spot Light_0",
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_0",
       "RootComponentUUID" : 647
     }
   ],
@@ -28,19 +28,25 @@
       "OwnerActorUUID" : 644,
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeLocation" : [2.785022, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Sphere.obj"
+      "StaticMesh" : "Data/Sphere2.obj"
     },
     {
       "UUID" : 647,
       "OwnerActorUUID" : 646,
       "ParentComponentUUID" : 0,
-      "Type" : "USpotLightComponent",
-      "RelativeLocation" : [-2.014595, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 89.500320, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
     },
     {
       "UUID" : 648,
@@ -50,7 +56,7 @@
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/SpotLight_64x.dds"
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
     }
   ]
 }
