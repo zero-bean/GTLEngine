@@ -56,9 +56,13 @@ public:
 	void SetSHIntensity(float InIntensity) { SHIntensity = InIntensity; }
 	float GetSHIntensity() const { return SHIntensity; }
 
-	// Radius and falloff for localized ambient lighting
-	void SetRadius(float InRadius) { Radius = InRadius; }
-	float GetRadius() const { return Radius; }
+	// Box extent and falloff for localized ambient lighting
+	void SetBoxExtent(const FVector& InExtent) { BoxExtent = InExtent; }
+	FVector GetBoxExtent() const { return BoxExtent; }
+
+	// Legacy radius support (uses uniform box extent)
+	void SetRadius(float InRadius) { BoxExtent = FVector(InRadius, InRadius, InRadius); }
+	float GetRadius() const { return FMath::Max3(BoxExtent.X, BoxExtent.Y, BoxExtent.Z); }
 
 	void SetFalloff(float InFalloff) { Falloff = InFalloff; }
 	float GetFalloff() const { return Falloff; }
@@ -75,6 +79,7 @@ public:
 	// Details panel
 	void RenderDetails() override;
 
+	void DrawDebugLines(class URenderer* Renderer) override;
 protected:
 	UObject* Duplicate() override;
 	void DuplicateSubObjects() override;
@@ -116,7 +121,7 @@ private:
 	float SHIntensity = 1.0f;              // Global intensity multiplier (낮은 값 = π 변환 보정)
 
 	// Localized ambient lighting
-	float Radius = 1000.0f;                 // Influence radius (0 = global, >0 = localized)
+	FVector BoxExtent = FVector(1000.0f, 1000.0f, 1000.0f);  // Box influence extent (0 = global, >0 = localized)
 	float Falloff = 1.0f;                   // Falloff exponent (higher = sharper edge)
 
 	// Update timing

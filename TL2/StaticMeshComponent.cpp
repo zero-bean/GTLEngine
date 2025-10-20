@@ -26,43 +26,55 @@ static inline FString GetBaseNameNoExt(const FString& Path)
 	return Path;
 }
 
-// Helper function to get normal map files from Data/textures/NormalMap folder
-static TArray<FString> GetNormalMapFiles()
+void FImGuiDisplayCache::BuildCache()
 {
-    TArray<FString> normalMapFiles;
-    try
+    if (bResourceCheckDone && !bCacheBuilt)
     {
-        std::filesystem::path normalMapPath = "Data/textures/NormalMap";
-        if (std::filesystem::exists(normalMapPath) && std::filesystem::is_directory(normalMapPath))
-        {
-            for (const auto& entry : std::filesystem::directory_iterator(normalMapPath))
-            {
-                if (entry.is_regular_file())
-                {
-                    auto path = entry.path();
-                    FString filename = path.filename().string();
-                    FString extension = path.extension().string();
-                    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+        bCacheBuilt = true;
+        UE_LOG("Building ImGui display cache from ResourceManager lists...");
 
-                    if (extension == ".dds" || extension == ".png" || extension == ".jpg" || extension == ".jpeg")
-                    {
-                        FString relativePath = "Data/textures/NormalMap/" + filename;
-                        normalMapFiles.push_back(relativePath);
-                    }
-                }
-            }
+        auto& ResourceManager = UResourceManager::GetInstance();
+
+        // --- 1. Static Mesh ---
+        const auto& MeshPaths = ResourceManager.GetFilteredObjPaths();
+        MeshDisplayNames.reserve(MeshPaths.size());
+        MeshItems.reserve(MeshPaths.size());
+        for (const FString& p : MeshPaths)
+        {
+            MeshDisplayNames.push_back(GetBaseNameNoExt(p));
+            MeshItems.push_back(MeshDisplayNames.back().c_str());
+        }
+
+        // --- 2. Material ---
+        const auto& MatPaths = ResourceManager.GetFilteredMaterialPaths();
+        MaterialItems.reserve(MatPaths.size());
+        for (const FString& p : MatPaths)
+        {
+            MaterialItems.push_back(p.c_str());
+        }
+
+        // --- 3. Normal Map ---
+        const auto& NormalPaths = ResourceManager.GetFilteredNormalMapPaths();
+        NormalDisplayNames.reserve(NormalPaths.size());
+        for (const FString& path : NormalPaths)
+        {
+            NormalDisplayNames.push_back(std::filesystem::path(path).stem().string());
         }
     }
-    catch (const std::exception& e)
+    else if (!bResourceCheckDone)
     {
-        UE_LOG("Failed to scan normal map directory: %s", e.what());
+        auto& RM = UResourceManager::GetInstance();
+        if (!RM.GetFilteredObjPaths().empty() && 
+            !RM.GetFilteredMaterialPaths().empty() && 
+            !RM.GetFilteredNormalMapPaths().empty())
+        {
+            bResourceCheckDone = true;
+        }
     }
-    return normalMapFiles;
 }
 
 UStaticMeshComponent::UStaticMeshComponent()
 {
-    //SetMaterial("StaticMeshShader.hlsl");
     SetMaterial("UberLit.hlsl");
 }
 
@@ -391,220 +403,242 @@ void UStaticMeshComponent::RenderDetails()
 	if (!this)
 	{
 		ImGui::TextColored(ImVec4(1, 0.6f, 0.6f, 1), "StaticMeshComponent not found.");
+		return;
+	}
+
+	GetDisplayCache().BuildCache();
+
+	RenderStaticMeshSection();
+	RenderMaterialSection();
+}
+
+FImGuiDisplayCache& UStaticMeshComponent::GetDisplayCache()
+{
+	static FImGuiDisplayCache cache;
+	return cache;
+}
+
+void UStaticMeshComponent::RenderStaticMeshSection()
+{
+	FString CurrentPath;
+	UStaticMesh* CurMesh = GetStaticMesh();
+	if (CurMesh)
+	{
+		CurrentPath = CurMesh->GetFilePath();
+		ImGui::Text("Current: %s", CurrentPath.c_str());
 	}
 	else
 	{
-		// 현재 메시 경로 표시
-		FString CurrentPath;
-		UStaticMesh* CurMesh = GetStaticMesh();
-		if (CurMesh)
+		ImGui::Text("Current: <None>");
+	}
+
+	auto& Cache = GetDisplayCache();
+	if (!Cache.bCacheBuilt)
+	{
+		ImGui::TextColored(ImVec4(1, 1, 0.5f, 1), "Resources loading...");
+	}
+	else if (Cache.MeshItems.empty())
+	{
+		ImGui::TextColored(ImVec4(1, 0.6f, 0.6f, 1), "No .obj resources found.");
+	}
+	else
+	{
+		static int SelectedMeshIdx = -1;
+		if (SelectedMeshIdx == -1)
 		{
-			CurrentPath = CurMesh->GetFilePath();
-			ImGui::Text("Current: %s", CurrentPath.c_str());
+			for (int i = 0; i < static_cast<int>(Cache.MeshDisplayNames.size()); ++i)
+			{
+				if (Cache.MeshDisplayNames[i] == "Cube")
+				{
+					SelectedMeshIdx = i;
+					break;
+				}
+			}
+		}
+
+		ImGui::SetNextItemWidth(240);
+		ImGui::Combo("StaticMesh", &SelectedMeshIdx, Cache.MeshItems.data(), static_cast<int>(Cache.MeshItems.size()));
+		ImGui::SameLine();
+		if (ImGui::Button("Apply Mesh"))
+		{
+			auto& RM = UResourceManager::GetInstance();
+			if (SelectedMeshIdx >= 0 && SelectedMeshIdx < static_cast<int>(RM.GetFilteredObjPaths().size()))
+			{
+				const FString& NewPath = RM.GetFilteredObjPaths()[SelectedMeshIdx];
+				SetStaticMesh(NewPath);
+				UE_LOG("Applied StaticMesh: %s", NewPath.c_str());
+			}
+		}
+	}
+}
+
+void UStaticMeshComponent::RenderMaterialSection()
+{
+    UStaticMesh* CurMesh = GetStaticMesh();
+    if (CurMesh)
+    {
+        auto& RM = UResourceManager::GetInstance();
+        auto& Cache = GetDisplayCache();
+        const TArray<FString>& FilteredMaterialPaths = RM.GetFilteredMaterialPaths();
+        const TArray<const char*>& MaterialPathsCharP = Cache.MaterialItems;
+
+        const uint64 MeshGroupCount = CurMesh->GetMeshGroupCount();
+        if (0 < MeshGroupCount)
+        {
+            ImGui::Separator();
+        }
+
+        static TArray<int32> SelectedMaterialIdxAt;
+        if (SelectedMaterialIdxAt.size() < MeshGroupCount)
+        {
+            SelectedMaterialIdxAt.resize(MeshGroupCount);
+        }
+
+        const TArray<FMaterialSlot>& MaterialSlots = GetMaterailSlots();
+
+        // ✅ Material 이름으로 먼저 찾고, 없으면 경로로 찾기
+        for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
+        {
+            // Material 이름으로 찾기 시도
+            UMaterial* Material = RM.Get<UMaterial>(MaterialSlots[MaterialSlotIndex].MaterialName);
+
+            // 못 찾았으면 FilteredMaterialPaths에서 매칭되는 경로 찾기
+            if (!Material)
+            {
+                for (uint32 MaterialIndex = 0; MaterialIndex < FilteredMaterialPaths.size(); ++MaterialIndex)
+                {
+                    UMaterial* PathMaterial = RM.Get<UMaterial>(FilteredMaterialPaths[MaterialIndex]);
+                    if (PathMaterial)
+                    {
+                        // 이 Material의 이름이 슬롯의 MaterialName과 일치하는지 확인
+                        // (MaterialInfo에서 MaterialName 비교)
+                        SelectedMaterialIdxAt[MaterialSlotIndex] = MaterialIndex;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // Material을 찾았으면 해당하는 경로 인덱스 찾기
+                for (uint32 MaterialIndex = 0; MaterialIndex < FilteredMaterialPaths.size(); ++MaterialIndex)
+                {
+                    if (MaterialSlots[MaterialSlotIndex].MaterialName == FilteredMaterialPaths[MaterialIndex])
+                    {
+                        SelectedMaterialIdxAt[MaterialSlotIndex] = MaterialIndex;
+                        break;
+                    }
+                }
+            }
+        }
+
+        for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
+        {
+            ImGui::PushID(static_cast<int>(MaterialSlotIndex));
+            if (ImGui::Combo("Material", &SelectedMaterialIdxAt[MaterialSlotIndex], MaterialPathsCharP.data(), static_cast<int>(MaterialPathsCharP.size())))
+            {
+                SetMaterialByUser(static_cast<uint32>(MaterialSlotIndex), FilteredMaterialPaths[SelectedMaterialIdxAt[MaterialSlotIndex]]);
+            }
+
+            RenderNormalMapSection(MaterialSlotIndex);
+
+            ImGui::PopID();
+        }
+    }
+}
+
+void UStaticMeshComponent::RenderNormalMapSection(uint64 MaterialSlotIndex)
+{
+	auto& RM = UResourceManager::GetInstance();
+	auto& Cache = GetDisplayCache();
+	const TArray<FMaterialSlot>& MaterialSlots = GetMaterailSlots();
+
+    UMaterial* Material = RM.Get<UMaterial>(MaterialSlots[MaterialSlotIndex].MaterialName);
+
+	if (Material)
+	{
+		const TArray<FString>& NormalMapTexturePaths = RM.GetFilteredNormalMapPaths();
+		const TArray<FString>& DisplayNames = Cache.NormalDisplayNames;
+
+		bool bIsOverridden = this->HasNormalTextureOverride(MaterialSlotIndex);
+		UTexture* CurrentNormalTexture = nullptr;
+
+		if (bIsOverridden)
+		{
+			CurrentNormalTexture = this->GetNormalTextureOverride(MaterialSlotIndex);
 		}
 		else
 		{
-			ImGui::Text("Current: <None>");
+			CurrentNormalTexture = Material->GetNormalTexture();
 		}
 
-		// 리소스 매니저에서 로드된 모든 StaticMesh 경로 수집
-		auto& RM = UResourceManager::GetInstance();
-		TArray<FString> Paths = RM.GetAllStaticMeshFilePaths();
-
-		if (Paths.empty())
+		const char* CurrentTextureNameOnly = "None";
+		if (CurrentNormalTexture)
 		{
-			ImGui::TextColored(ImVec4(1, 0.6f, 0.6f, 1), "No StaticMesh resources loaded.");
+			FString CurrentPath = CurrentNormalTexture->GetFilePath();
+			for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
+			{
+                if (NormalMapTexturePaths[i] == CurrentPath)
+                {
+                    if (i < DisplayNames.size())
+                    {
+                        CurrentTextureNameOnly = DisplayNames[i].c_str();
+                    }
+                    break;
+                }
+            }
+		}
+
+		FString DisplayLabel;
+		if (bIsOverridden)
+		{
+			if (CurrentNormalTexture == nullptr)
+				DisplayLabel = "None";
+			else
+				DisplayLabel = FString(CurrentTextureNameOnly);
 		}
 		else
 		{
-			// 표시용 이름(파일명 스템)
-			TArray<FString> DisplayNames;
-			DisplayNames.reserve(Paths.size());
-			for (const FString& p : Paths)
-				DisplayNames.push_back(GetBaseNameNoExt(p));
-
-			// ImGui 콤보 아이템 배열
-			TArray<const char*> Items;
-			Items.reserve(DisplayNames.size());
-			for (const FString& n : DisplayNames)
-				Items.push_back(n.c_str());
-
-			// 선택 인덱스 유지
-			static int SelectedMeshIdx = -1;
-
-			// 기본 선택: Cube가 있으면 자동 선택
-			if (SelectedMeshIdx == -1)
-			{
-				for (int i = 0; i < static_cast<int>(Paths.size()); ++i)
-				{
-					if (DisplayNames[i] == "Cube" || Paths[i] == "Data/Cube.obj")
-					{
-						SelectedMeshIdx = i;
-						break;
-					}
-				}
-			}
-
-			ImGui::SetNextItemWidth(240);
-			ImGui::Combo("StaticMesh", &SelectedMeshIdx, Items.data(), static_cast<int>(Items.size()));
-			ImGui::SameLine();
-			if (ImGui::Button("Apply Mesh"))
-			{
-				if (SelectedMeshIdx >= 0 && SelectedMeshIdx < static_cast<int>(Paths.size()))
-				{
-					const FString& NewPath = Paths[SelectedMeshIdx];
-					SetStaticMesh(NewPath);
-
-					UE_LOG("Applied StaticMesh: %s", NewPath.c_str());
-				}
-			}
-
-			// 현재 메시로 선택 동기화 버튼 (옵션)
-			ImGui::SameLine();
-			if (ImGui::Button("Select Current"))
-			{
-				SelectedMeshIdx = -1;
-				if (!CurrentPath.empty())
-				{
-					for (int i = 0; i < static_cast<int>(Paths.size()); ++i)
-					{
-						if (Paths[i] == CurrentPath ||
-							DisplayNames[i] == GetBaseNameNoExt(CurrentPath))
-						{
-							SelectedMeshIdx = i;
-							break;
-						}
-					}
-				}
-			}
+			if (CurrentNormalTexture == nullptr)
+				DisplayLabel = "Default";
+			else
+				DisplayLabel = FString("Default (") + CurrentTextureNameOnly + ")";
 		}
 
-		// Material 설정
-
-		const TArray<FString> MaterialNames = UResourceManager::GetInstance().GetAllFilePaths<UMaterial>();
-		// ImGui 콤보 아이템 배열
-		TArray<const char*> MaterialNamesCharP;
-		MaterialNamesCharP.reserve(MaterialNames.size());
-		for (const FString& n : MaterialNames)
-			MaterialNamesCharP.push_back(n.c_str());
-
-		if (CurMesh)
+		if (ImGui::BeginCombo("Normal", DisplayLabel.c_str()))
 		{
-			const uint64 MeshGroupCount = CurMesh->GetMeshGroupCount();
+			ImGui::Separator();
 
-			if (0 < MeshGroupCount)
+			for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
 			{
-				ImGui::Separator();
-			}
+				bool is_selected = (bIsOverridden && CurrentNormalTexture && CurrentNormalTexture->GetFilePath() == NormalMapTexturePaths[i]);
 
-			static TArray<int32> SelectedMaterialIdxAt; // i번 째 Material Slot이 가지고 있는 MaterialName이 MaterialNames의 몇번쩨 값인지.
-			if (SelectedMaterialIdxAt.size() < MeshGroupCount)
-			{
-				SelectedMaterialIdxAt.resize(MeshGroupCount);
-			}
-
-			// 현재 SMC의 MaterialSlots 정보를 UI에 반영
-			const TArray<FMaterialSlot>& MaterialSlots = GetMaterailSlots();
-			for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
-			{
-				for (uint32 MaterialIndex = 0; MaterialIndex < MaterialNames.size(); ++MaterialIndex)
+				if (ImGui::Selectable(DisplayNames[i].c_str(), is_selected))
 				{
-					if (MaterialSlots[MaterialSlotIndex].MaterialName == MaterialNames[MaterialIndex])
-					{
-						SelectedMaterialIdxAt[MaterialSlotIndex] = MaterialIndex;
-					}
-				}
-			}
-
-			// Material 선택
-			for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
-			{
-				ImGui::PushID(static_cast<int>(MaterialSlotIndex));
-				if (ImGui::Combo("Material", &SelectedMaterialIdxAt[MaterialSlotIndex], MaterialNamesCharP.data(), static_cast<int>(MaterialNamesCharP.size())))
-				{
-					SetMaterialByUser(static_cast<uint32>(MaterialSlotIndex), MaterialNames[SelectedMaterialIdxAt[MaterialSlotIndex]]);
+					UTexture* SelectedTexture = RM.Load<UTexture>(NormalMapTexturePaths[i]);
+					this->SetNormalTextureOverride(MaterialSlotIndex, SelectedTexture);
 				}
 
-				// Normal Map 설정
-				UMaterial* Material = UResourceManager::GetInstance().Load<UMaterial>(MaterialSlots[MaterialSlotIndex].MaterialName);
-				if (Material)
+				if (ImGui::IsItemHovered())
 				{
-					static TArray<FString> NormalMapTexturePaths = GetNormalMapFiles();
-
-					// 표시용 이름 배열 생성 (경로, 확장자 제거)
-					TArray<FString> DisplayNames;
-					DisplayNames.reserve(NormalMapTexturePaths.size());
-					for (const FString& path : NormalMapTexturePaths)
+					ImGui::BeginTooltip();
+					UTexture* HoveredTexture = RM.Load<UTexture>(NormalMapTexturePaths[i]);
+					if (HoveredTexture && HoveredTexture->GetShaderResourceView())
 					{
-						DisplayNames.push_back(std::filesystem::path(path).stem().string());
+						ImGui::Image(HoveredTexture->GetShaderResourceView(), ImVec2(128, 128));
 					}
-
-					// 현재 선택된 텍스처 찾기
-					UTexture* CurrentNormalTexture = Material->GetNormalTexture();
-					const char* CurrentTextureDisplayName = "None";
-					if (CurrentNormalTexture)
-					{
-						FString CurrentPath = CurrentNormalTexture->GetFilePath();
-						for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
-						{
-							if (NormalMapTexturePaths[i] == CurrentPath)
-							{
-								CurrentTextureDisplayName = DisplayNames[i].c_str();
-								break;
-							}
-						}
-					}
-
-					// 콤보박스 시작
-					if (ImGui::BeginCombo("Normal Map", CurrentTextureDisplayName))
-					{
-						// "None" 옵션
-						bool is_none_selected = (CurrentNormalTexture == nullptr);
-						if (ImGui::Selectable("None", is_none_selected))
-						{
-							Material->SetNormalTexture(nullptr);
-						}
-						if (is_none_selected)
-							ImGui::SetItemDefaultFocus();
-
-						// 나머지 텍스처 옵션들
-						for (size_t i = 0; i < NormalMapTexturePaths.size(); ++i)
-						{
-							bool is_selected = (CurrentNormalTexture && CurrentNormalTexture->GetFilePath() == NormalMapTexturePaths[i]);
-							if (ImGui::Selectable(DisplayNames[i].c_str(), is_selected))
-							{
-								UTexture* SelectedTexture = UResourceManager::GetInstance().Load<UTexture>(NormalMapTexturePaths[i]);
-								Material->SetNormalTexture(SelectedTexture);
-							}
-
-							// 콤보박스 항목 호버 시 미리보기
-							if (ImGui::IsItemHovered())
-							{
-								ImGui::BeginTooltip();
-								UTexture* HoveredTexture = UResourceManager::GetInstance().Load<UTexture>(NormalMapTexturePaths[i]);
-								if (HoveredTexture && HoveredTexture->GetShaderResourceView())
-								{
-									ImGui::Image(HoveredTexture->GetShaderResourceView(), ImVec2(128, 128));
-								}
-								ImGui::TextUnformatted(DisplayNames[i].c_str());
-								ImGui::EndTooltip();
-							}
-
-							if (is_selected)
-								ImGui::SetItemDefaultFocus();
-						}
-						ImGui::EndCombo();
-					}
-
-					// 현재 선택된 텍스처 미리보기
-					if (CurrentNormalTexture && CurrentNormalTexture->GetShaderResourceView())
-					{
-						ImGui::Image(CurrentNormalTexture->GetShaderResourceView(), ImVec2(128, 128));
-					}
+					ImGui::TextUnformatted(DisplayNames[i].c_str());
+					ImGui::EndTooltip();
 				}
 
-				ImGui::PopID();
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
 			}
+			ImGui::EndCombo();
+		}
+
+		if (CurrentNormalTexture && CurrentNormalTexture->GetShaderResourceView())
+		{
+			ImGui::Image(CurrentNormalTexture->GetShaderResourceView(), ImVec2(128, 128));
 		}
 	}
 }

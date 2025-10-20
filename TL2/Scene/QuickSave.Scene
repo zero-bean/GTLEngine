@@ -1,58 +1,46 @@
 {
   "Version" : 2,
-  "NextUUID" : 775,
+  "NextUUID" : 537,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [3.134971, -9.173502, 8.951962],
+    "Location" : [0.000000, 0.000000, 10.000000],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 24.199993, 99.000053]
+    "Rotation" : [0.000000, 83.399994, -13.199883]
   },
   "Actors" : [
     {
-      "UUID" : 646,
+      "UUID" : 483,
       "Type" : "AStaticMeshActor",
       "Name" : "Stone_0",
-      "RootComponentUUID" : 647
+      "RootComponentUUID" : 484
     },
     {
-      "UUID" : 690,
-      "Type" : "AActor",
-      "Name" : "Stone_0",
-      "RootComponentUUID" : 691
-    },
-    {
-      "UUID" : 693,
-      "Type" : "AActor",
-      "Name" : "Stone_0",
-      "RootComponentUUID" : 694
-    },
-    {
-      "UUID" : 696,
-      "Type" : "AActor",
-      "Name" : "Stone_0",
-      "RootComponentUUID" : 697
+      "UUID" : 492,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_0",
+      "RootComponentUUID" : 493
     }
   ],
   "Components" : [
     {
-      "UUID" : 647,
-      "OwnerActorUUID" : 646,
+      "UUID" : 484,
+      "OwnerActorUUID" : 483,
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [3.071271, 0.110701, 0.445936],
-      "RelativeRotation" : [-179.999954, -0.000005, 179.999893],
+      "RelativeLocation" : [0.000000, 0.000000, 1.000000],
+      "RelativeRotation" : [180.000000, 0.000005, 0.000022],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj",
-      "Materials" : ["ship", "Material.004"],
-      "MaterialNormalMapOverrides" : ["", ""]
+      "Materials" : ["Data/PUBGM4/PubgM4Mat.bin", "Data/ship/E-45-Aircraft/E 45 Aircraft_objMat.bin"],
+      "MaterialNormalMapOverrides" : ["Data/ship/E-45_nrm.jpg", "Data/ship/E-45_glass_nrm.jpg"]
     },
     {
-      "UUID" : 648,
-      "OwnerActorUUID" : 646,
-      "ParentComponentUUID" : 647,
+      "UUID" : 493,
+      "OwnerActorUUID" : 492,
+      "ParentComponentUUID" : 0,
       "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 4.100000, 0.000000],
+      "RelativeLocation" : [0.000000, 4.696726, 5.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "PointLightData" : {
@@ -63,85 +51,14 @@
       }
     },
     {
-      "UUID" : 691,
-      "OwnerActorUUID" : 690,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [3.655819, 0.110701, 4.790642],
-      "RelativeRotation" : [88.099365, -1.901477, 90.025688],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj",
-      "Materials" : ["ship", "Material.004"],
-      "MaterialNormalMapOverrides" : ["Data/textures/NormalMap/E-45-nor_1.jpg", ""]
-    },
-    {
-      "UUID" : 692,
-      "OwnerActorUUID" : 690,
-      "ParentComponentUUID" : 691,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 4.100000, 0.000000],
+      "UUID" : 494,
+      "OwnerActorUUID" : 492,
+      "ParentComponentUUID" : 493,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "PointLightData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.000000,
-        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
-      }
-    },
-    {
-      "UUID" : 694,
-      "OwnerActorUUID" : 693,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.110701, 0.000000],
-      "RelativeRotation" : [-179.999954, -0.000005, 179.999893],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj",
-      "Materials" : ["ship", "Material.004"],
-      "MaterialNormalMapOverrides" : ["", ""]
-    },
-    {
-      "UUID" : 695,
-      "OwnerActorUUID" : 693,
-      "ParentComponentUUID" : 694,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 4.100000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "PointLightData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.000000,
-        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
-      }
-    },
-    {
-      "UUID" : 697,
-      "OwnerActorUUID" : 696,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [-3.202050, 0.110701, 4.790642],
-      "RelativeRotation" : [96.348198, -0.000005, 179.999893],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj",
-      "Materials" : ["ship", "Material.004"],
-      "MaterialNormalMapOverrides" : ["Data/textures/NormalMap/E-45-nor_1.jpg", ""]
-    },
-    {
-      "UUID" : 698,
-      "OwnerActorUUID" : 696,
-      "ParentComponentUUID" : 697,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 4.100000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "PointLightData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.000000,
-        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
-      }
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
     }
   ]
 }

@@ -185,6 +185,12 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
         {
             const FMaterialSlot& CurrentSlot = InComponentMaterialSlots[i]; //  현재 슬롯 정보를 가져옵니다.
             UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(CurrentSlot.MaterialName);
+
+            if (Material == nullptr)
+            {
+                continue;
+            }
+
             UTexture* NormalTexture = nullptr; // 최종적으로 바인딩될 노멀 텍스처
             const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
             bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
@@ -591,51 +597,12 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
         AddLines(World->GetBVH().GetBVHBoundsWire(), FVector4(0.5f, 0.5f, 1, 1));
     }
 
-    // SpotLight cone visualization via line batch
+    // SpotLight cone visualization
+    for (ULightComponent* LightComponent : World->GetLevel()->GetComponentList<ULightComponent>())
     {
-        const FVector CameraPos = (World->GetCameraActor() ? World->GetCameraActor()->GetActorLocation() : FVector(0,0,0));
-        for (USpotLightComponent* Spot : World->GetLevel()->GetComponentList<USpotLightComponent>())
+        if (LightComponent)
         {
-            if (!Spot || !Spot->IsRender()) continue;
-
-            const FVector SpotPos = Spot->GetWorldLocation();
-            FVector dir = Spot->GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();
-            const float range = Spot->GetRadius();
-            if (range <= KINDA_SMALL_NUMBER || dir.SizeSquared() < KINDA_SMALL_NUMBER)
-            {
-                continue;
-            }
-            const float angleDeg = FMath::Clamp(Spot->GetOuterConeAngle(), 0.0f, 89.0f);
-            const float angleRad = DegreeToRadian(angleDeg);
-            const float circleRadius = std::tan(angleRad) * range;
-            const FVector center = SpotPos + dir * range;
-
-            // Build orthonormal basis (u,v) for circle plane (perpendicular to dir)
-            FVector arbitraryUp = fabsf(dir.Z) > 0.99f ? FVector(1, 0, 0) : FVector(0, 0, 1);
-            FVector u = FVector::Cross(arbitraryUp, dir).GetSafeNormal();
-            FVector v = FVector::Cross(dir, u).GetSafeNormal();
-
-            const int segments = FMath::Clamp(Spot->GetCircleSegments(), 3, 512);
-            const float step = TWO_PI / static_cast<float>(segments);
-            const FVector4 color(1.0f, 1.0f, 1.0f, 1.0f);
-
-            FVector prevPoint;
-            for (int i = 0; i <= segments; ++i)
-            {
-                float t = step * i;
-                FVector p = center + u * (cosf(t) * circleRadius) + v * (sinf(t) * circleRadius);
-
-                // Draw circle edge
-                if (i > 0)
-                {
-                    AddLine(prevPoint, p, color);
-                }
-                prevPoint = p;
-
-                // Draw camera-to-circle vertex line
-                AddLine(CameraPos, p, color);
-                AddLine(SpotPos, p, color);
-            }
+            LightComponent->DrawDebugLines(this);
         }
     }
 
@@ -951,17 +918,18 @@ void URenderer::RenderSHAmbientLightPass(UWorld* World)
         int32 idx = MultiProbeBuffer.ProbeCount;
         const FSHAmbientLightBufferType& SHBuffer = Probe->GetSHBuffer();
         FVector ProbePos = Probe->GetWorldLocation();
-        float ProbeRadius = Probe->GetRadius();
+        FVector BoxExtent = Probe->GetBoxExtent();
         float ProbeFalloff = Probe->GetFalloff();
 
         // Copy probe data
-        MultiProbeBuffer.Probes[idx].Position = FVector4(ProbePos.X, ProbePos.Y, ProbePos.Z, ProbeRadius); // w = influence radius
+        MultiProbeBuffer.Probes[idx].Position = FVector4(ProbePos.X, ProbePos.Y, ProbePos.Z, BoxExtent.Z); // w = BoxExtent.Z
         for (int32 i = 0; i < 9; ++i)
         {
             MultiProbeBuffer.Probes[idx].SHCoefficients[i] = SHBuffer.SHCoefficients[i];
         }
         MultiProbeBuffer.Probes[idx].Intensity = SHBuffer.Intensity;
         MultiProbeBuffer.Probes[idx].Falloff = ProbeFalloff;
+        MultiProbeBuffer.Probes[idx].BoxExtent = FVector2D(BoxExtent.X, BoxExtent.Y);
 
         MultiProbeBuffer.ProbeCount++;
     }
