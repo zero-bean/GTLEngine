@@ -125,7 +125,7 @@ void UPointLightComponent::RenderDetails()
 	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
 }
 
-void UPointLightComponent::RenderAttenuationRadius(URenderer* Renderer)
+void UPointLightComponent::DrawDebugLines(URenderer* Renderer)
 {
 	if (!this->IsRender() || !Renderer)
 	{
@@ -161,10 +161,6 @@ void UPointLightComponent::RenderAttenuationRadius(URenderer* Renderer)
 		PrevPointXZ = NextPointXZ;
 		PrevPointYZ = NextPointYZ;
 	}	
-}
-
-void UPointLightComponent::DrawDebugLines(URenderer* Renderer)
-{
 }
 
 

@@ -26,9 +26,7 @@ public:
 
     // Editor Details
     void RenderDetails() override;
-
-    void RenderAttenuationRadius(URenderer* Renderer);
-
+    
     void DrawDebugLines(class URenderer* Renderer) override;
 
 protected:

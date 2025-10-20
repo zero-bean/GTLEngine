@@ -24,7 +24,7 @@ public:
 	// Editor Details
 	void RenderDetails() override;
 
-	void RenderDirectionVector(URenderer* Renderer);
+	void DrawDebugLines(class URenderer* Renderer) override;
 
 protected:
 	UObject* Duplicate() override;

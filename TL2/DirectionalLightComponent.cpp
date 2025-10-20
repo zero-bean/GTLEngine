@@ -102,12 +102,12 @@ void UDirectionalLightComponent::RenderDetails()
 	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● DirectionalLight Active");
 }
 
-void UDirectionalLightComponent::RenderDirectionVector(URenderer* Renderer)
+void UDirectionalLightComponent::DrawDebugLines(class URenderer* Renderer)
 {
 	FVector Position = GetWorldLocation();
 	Direction = GetWorldRotation().GetUpVector();
 	Direction.Z *= -1.25f; 
 	FVector DirectionVector = Position + Direction;
 	FVector4 Color(1.0f, 1.0f, 0.5f,1.0f);
-	Renderer->AddLine(Position, DirectionVector, Color);	
+	Renderer->AddLine(Position, DirectionVector, Color);
 }

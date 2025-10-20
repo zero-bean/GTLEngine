@@ -509,8 +509,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_Lit:
     case EViewModeIndex::VMI_Unlit:
     case EViewModeIndex::VMI_Wireframe:
-    {
-        BeginLineBatch();
+    {        
         RenderDirectionalLightPass(World);
         RenderPointLightPass(World);
         RenderSpotLightPass(World);
@@ -524,7 +523,6 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     }
     case EViewModeIndex::VMI_SceneDepth:
     {
-        BeginLineBatch();
         RenderBasePass(World, Camera, Viewport);  // calls RenderScene, which executes the depth-only pass 
                                                   // (RenderSceneDepthPass) according to the current view mode
         RenderSceneDepthVisualizePass(Camera);    // Depth → Grayscale visualize
@@ -593,7 +591,7 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
     FFrustum ViewFrustum;
     ViewFrustum.Update(ViewMatrix * ProjectionMatrix);
 
-    //BeginLineBatch();
+    BeginLineBatch();
     SetViewModeType(CurrentViewMode);
 
     RenderPrimitives(World, ViewMatrix, ProjectionMatrix, Viewport);
@@ -843,7 +841,6 @@ void URenderer::RenderPointLightPass(UWorld* World)
             PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetIntensity()
         );
         PointLightCB.PointLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
-        PointLightComponent->RenderAttenuationRadius(this);
     }
     // 2?? 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);
@@ -866,7 +863,6 @@ void URenderer::RenderDirectionalLightPass(UWorld* World)
             DirectionalLightComponent->GetFinalColor().R,DirectionalLightComponent->GetFinalColor().G,DirectionalLightComponent->GetFinalColor().B,DirectionalLightComponent->GetIntensity()
             );
         DirectionalLightCB.DirectionalLights[idx].bEnableSpecular = DirectionalLightComponent->IsEnabledSpecular();
-        DirectionalLightComponent->RenderDirectionVector(this);
     }
     UpdateSetCBuffer(DirectionalLightCB);    
 }
