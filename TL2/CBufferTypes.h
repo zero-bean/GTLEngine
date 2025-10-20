@@ -86,7 +86,8 @@ CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
 CBUFFER_INFO(FDirectionalLightBufferType, 11, false, true)
-CBUFFER_INFO(FBRDFInfoBufferType, 14, false, true)
+// Note: D3D11 allows 14 CBs per stage (slots 0..13). Use b6 here.
+CBUFFER_INFO(FBRDFInfoBufferType, 6, false, true)
 
 // VS : b0
 struct ModelBufferType

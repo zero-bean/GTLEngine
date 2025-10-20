@@ -292,7 +292,7 @@ void ComputeBRDF(float3 Li, float3 N, float3 V, float3 L, float atten,
     // Convert artist-friendly roughness to microfacet alpha
     float alpha = max(roughness * roughness, 1e-3);
 
-    // Base reflectance via metallic workflow
+    // Compute base reflectance F0 using metallic workflow
     float3 dielectricF0 = float3(0.04, 0.04, 0.04);
     float3 F0 = lerp(dielectricF0, baseColor, saturate(metallic));
 
@@ -301,9 +301,10 @@ void ComputeBRDF(float3 Li, float3 N, float3 V, float3 L, float atten,
     float G = G_Smith(alpha, NdotV, NdotL);
     
     
-    float denom = max(4.0f * NdotV, 1e-3);
+    float denom = max(4.0f * NdotV, 1e-3); 
     float3 lit = Li * NdotL * atten;
     float3 specBRDF = D * F * G / denom;
+    // Reduce diffuse as surface becomes metallic
     float3 diffBRDF = (1.0 - saturate(metallic)) * Diffuse_Lambert(baseColor) * NdotL;
 
     
@@ -335,11 +336,9 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
         float fall = max(pointLight.FallOff, 0.001);
         float t = saturate(dist / range);
         float atten = pow(saturate(1.0 - t), fall);
-
-
-        float3 Li = pointLight.Color.rgb * pointLight.Color.a;
-        ComputeBRDF(Li, N, V, L, atten, BaseColor, roughness, metallic, acc);
          
+        float3 Li = pointLight.Color.rgb * pointLight.Color.a;
+        ComputeBRDF(Li, N, V, L, atten, BaseColor, roughness, metallic, acc); 
     } 
     
     [loop]
