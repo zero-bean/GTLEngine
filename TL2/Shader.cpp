@@ -6,6 +6,7 @@ static D3D_SHADER_MACRO MACRO_PHONG[] = {
     {"LIGHTING_MODEL_BLINN_PHONG","0"},
     {"LIGHTING_MODEL_BRDF","0"},
     {"LIGHTING_MODEL_LAMBERT","0"},
+    {"LIGHTING_MODEL_GOURAUD","0"},
     {"LIGHTING_MODEL_UNLIT","0"},
     {nullptr,nullptr}
 };
@@ -15,6 +16,7 @@ static D3D_SHADER_MACRO MACRO_BLINN[] = {
     {"LIGHTING_MODEL_BLINN_PHONG","1"},
     {"LIGHTING_MODEL_BRDF","0"},
     {"LIGHTING_MODEL_LAMBERT","0"},
+    {"LIGHTING_MODEL_GOURAUD","0"},
     {"LIGHTING_MODEL_UNLIT","0"},
     {nullptr,nullptr}
 };
@@ -24,6 +26,7 @@ static D3D_SHADER_MACRO MACRO_LAMBERT[] = {
     {"LIGHTING_MODEL_BLINN_PHONG","0"},
     {"LIGHTING_MODEL_BRDF","0"},
     {"LIGHTING_MODEL_LAMBERT","1"},
+    {"LIGHTING_MODEL_GOURAUD","0"},
     {"LIGHTING_MODEL_UNLIT","0"},
     {nullptr,nullptr}
 };
@@ -33,9 +36,20 @@ static D3D_SHADER_MACRO MACRO_BRDF[] = {
     {"LIGHTING_MODEL_BLINN_PHONG","0"},
     {"LIGHTING_MODEL_BRDF","1"},
     {"LIGHTING_MODEL_LAMBERT","0"},
+    {"LIGHTING_MODEL_GOURAUD","0"},
     {"LIGHTING_MODEL_UNLIT","0"},
     {nullptr,nullptr}
 
+};
+
+static D3D_SHADER_MACRO MACRO_GOURAUD[] = {
+    {"LIGHTING_MODEL_PHONG","0"},
+    {"LIGHTING_MODEL_BLINN_PHONG","0"},
+    {"LIGHTING_MODEL_BRDF","0"},
+    {"LIGHTING_MODEL_LAMBERT","0"},
+    {"LIGHTING_MODEL_GOURAUD","1"},
+    {"LIGHTING_MODEL_UNLIT","0"},
+    {nullptr,nullptr}
 };
 
 static D3D_SHADER_MACRO MACRO_UNLIT[] = {
@@ -43,6 +57,7 @@ static D3D_SHADER_MACRO MACRO_UNLIT[] = {
     {"LIGHTING_MODEL_BLINN_PHONG","0"},
     {"LIGHTING_MODEL_BRDF","0"},
     {"LIGHTING_MODEL_LAMBERT","0"},
+    {"LIGHTING_MODEL_GOURAUD","0"},
     {"LIGHTING_MODEL_UNLIT","1"},
     {nullptr,nullptr}
 };
@@ -62,6 +77,9 @@ const D3D_SHADER_MACRO* UShader::GetMacros(ELightShadingModel Model)
 
     case ELightShadingModel::Lambert:
         return MACRO_LAMBERT;
+
+    case ELightShadingModel::Gouraud:
+        return MACRO_GOURAUD;
 
     case ELightShadingModel::Unlit:
         return MACRO_UNLIT;
@@ -91,32 +109,47 @@ void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
     Flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif 
 
-    hr = D3DCompileFromFile(WFilePath.c_str(), DefinesRender, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", Flag, 0, &VSBlob, &errorBlob);
-    if (FAILED(hr))
-    {
-        char* msg = (char*)errorBlob->GetBufferPointer();
-        UE_LOG("shader \'%s\'compile error: %s", InShaderPath, msg);
-        if (errorBlob) errorBlob->Release();
-        return;
-    }
-
-    hr = InDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &VertexShader);
-
     for (int i = 0; i < (int)ELightShadingModel::Count; ++i)
-    { 
-        hr = D3DCompileFromFile(WFilePath.c_str(), GetMacros(ELightShadingModel(i)), D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &PSBlob, &errorBlob);
+    {
+        ELightShadingModel currentModel = ELightShadingModel(i);
+
+        // 각 라이팅 모델에 필요한 버텍스 셰이더를 생성합니다. 
+        // 고로드 모델은 버텍스 셰이더를 별개로 필요로 하기 때문에, 일관성을 위해 배열로 만들었습니다.
+        hr = D3DCompileFromFile(WFilePath.c_str(), GetMacros(currentModel), D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", Flag, 0, &VSBlobs[i], &errorBlob);
+        if (FAILED(hr))
+        {
+            char* msg = (char*)errorBlob->GetBufferPointer();
+            UE_LOG("shader \'%s\' VS compile error for model %d: %s", InShaderPath, i, msg);
+            if (errorBlob) errorBlob->Release();
+            return; // Stop if any VS fails
+        }
+
+        hr = InDevice->CreateVertexShader(VSBlobs[i]->GetBufferPointer(), VSBlobs[i]->GetBufferSize(), nullptr, &VertexShaders[i]);
+        if (FAILED(hr))
+        {
+            UE_LOG("CreateVertexShader failed for model %d", i);
+            return;
+        }
+
+        // 각 라이팅 모델에 필요한 픽셀 셰이더를 생성합니다. 
+        hr = D3DCompileFromFile(WFilePath.c_str(), GetMacros(currentModel), D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &PSBlob, &errorBlob);
         if (FAILED(hr))
         {
             if (errorBlob)
             {
                 char* msg = (char*)errorBlob->GetBufferPointer();
-                UE_LOG("shader '%s' PS compile error: %s", InShaderPath, msg);
+                UE_LOG("shader '%s' PS compile error for model %d: %s", InShaderPath, i, msg);
                 errorBlob->Release();
             }
-            return;
+            return; // Stop if any PS fails
         }
 
-        hr = InDevice->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &PixelShaders[(int)ELightShadingModel(i)]);
+        hr = InDevice->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &PixelShaders[i]);
+        if (FAILED(hr))
+        {
+            UE_LOG("CreatePixelShader failed for model %d", i);
+            return;
+        }
     }
 
     CreateInputLayout(InDevice, InShaderPath);
@@ -137,19 +170,14 @@ void UShader::CreateInputLayout(ID3D11Device* Device, const FString& InShaderPat
     HRESULT hr = Device->CreateInputLayout(
         layout,
         layoutCount,
-        VSBlob->GetBufferPointer(), 
-        VSBlob->GetBufferSize(),
+        VSBlobs[0]->GetBufferPointer(), 
+        VSBlobs[0]->GetBufferSize(),
         &InputLayout);
     assert(SUCCEEDED(hr));
 }
 
 void UShader::ReleaseResources()
 {
-    if (VSBlob)
-    {
-        VSBlob->Release();
-        VSBlob = nullptr;
-    }
     if (PSBlob)
     {
         PSBlob->Release();
@@ -160,18 +188,25 @@ void UShader::ReleaseResources()
         InputLayout->Release();
         InputLayout = nullptr;
     }
-    if (VertexShader)
+
+    for (int i = 0; i < (int)ELightShadingModel::Count; i++)
     {
-        VertexShader->Release();
-        VertexShader = nullptr;
-    }
-    if (PixelShaders)
-    {
-        for (int i = 0; i < (int)ELightShadingModel::Count ; i++)
+        if (VSBlobs[i])
+        {
+            VSBlobs[i]->Release();
+            VSBlobs[i] = nullptr;
+        }
+
+        if (VertexShaders[i])
+        {
+            VertexShaders[i]->Release();
+            VertexShaders[i] = nullptr;
+        }
+
+        if (PixelShaders[i])
         {
             PixelShaders[i]->Release();
             PixelShaders[i] = nullptr;
         }
     }
-     
 }
