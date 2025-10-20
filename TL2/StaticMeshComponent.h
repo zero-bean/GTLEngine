@@ -24,6 +24,21 @@ struct FMaterialSlot
     bool bChangedByUser = false; 
 };
 
+/* *
+* @param RenderDetails() 관련된 UI 전용 구조체입니다.
+*/
+struct FImGuiDisplayCache
+{
+	TArray<FString> MeshDisplayNames;
+	TArray<FString> NormalDisplayNames;
+	TArray<const char*> MaterialItems;
+	TArray<const char*> MeshItems;
+	bool bCacheBuilt = false;
+	bool bResourceCheckDone = false;
+
+	void BuildCache();
+};
+
 class UStaticMeshComponent : public UMeshComponent
 {
 public:
@@ -83,13 +98,22 @@ public:
 
     // Editor Details
     void RenderDetails() override;
-
-
+   
 
 protected:
     // [PIE] 주소 복사 / NOTE: 만약 복사 후에도 GPU 버퍼 내용을 다르게 갖고 싶은 경우 깊은 복사를 해서 버퍼를 2개 생성하는 방법도 고려
     UStaticMesh* StaticMesh = nullptr;
     // [PIE] 값 복사 (배열 전체 값 복사)
     TArray<FMaterialSlot> MaterailSlots;
+
+private:
+    /* *
+    * @brief RenderDetails() 함수에만 사용되는 함수입니다.
+    */
+    void RenderStaticMeshSection();
+    void RenderMaterialSection();
+    void RenderNormalMapSection(uint64 MaterialSlotIndex);
+    static FImGuiDisplayCache& GetDisplayCache();
+
 };
 

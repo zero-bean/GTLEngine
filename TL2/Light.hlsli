@@ -190,7 +190,7 @@ float3 EvaluateMultiProbeSHLighting(float3 worldPos, float3 normal)
         return float3(0, 0, 0);
 
     float3 n = normalize(normal);
-    n.x = -n.x;  // Flip X axis to match cubemap coordinate system
+    n = -n;
     float3 totalLighting = 0.0;
     float totalWeight = 0.0;
 

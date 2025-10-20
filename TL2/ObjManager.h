@@ -24,7 +24,6 @@ struct FObjInfo
 };
 
 
-
 struct FObjImporter
 {
     // TODO: 변수이름 가독성 있게 재설정
@@ -701,6 +700,19 @@ private:
 public:
 	static void Preload();
 	static void Clear();
+
+    static std::filesystem::path GetDataDir()
+    {
+        return std::filesystem::path("Data");
+    }
+
+    static std::filesystem::path GetFullDataPath(const std::string& relative = "")
+    {
+        std::filesystem::path fullPath = GetDataDir();
+        if (!relative.empty())
+            fullPath /= relative;
+        return fullPath;
+    }
 
     static FStaticMesh* LoadObjStaticMeshAsset(const FString& PathFileName);
     static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName);

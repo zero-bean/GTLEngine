@@ -428,6 +428,177 @@ void UResourceManager::InitShaderILMap()
     ShaderToInputLayoutMap["DepthVisualizeShader.hlsl"] = layout;
 }
 
+/**
+ * @brief Data/ 폴더 전체에서 노멀맵 파일(_n, _normal 등)을 스캔합니다.
+ *              BuildFilteredResourceLists() 내부에서만 사용됩니다.
+ */
+static TArray<FString> ScanForNormalMapFiles()
+{
+    TArray<FString> NormalMapFiles;
+    UE_LOG("Scanning for normal map files...");
+
+    try
+    {
+        std::filesystem::path DataPath = FObjManager::GetFullDataPath("");
+        if (std::filesystem::exists(DataPath) && std::filesystem::is_directory(DataPath))
+        {
+            for (const auto& Entry : std::filesystem::recursive_directory_iterator(DataPath))
+            {
+                // 현재 진입점이 디렉토리나 특수 파일과 같은 곳이라면 건너뜁니다.
+                if (!Entry.is_regular_file()) { continue; }
+
+                // 현재 파일의 문자열을 소문자로 변환하고 비교할 준비를 합니다.
+                const std::filesystem::path& Path = Entry.path();
+                FString Extension = Path.extension().string();
+                std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+
+                if (Extension == ".dds" || Extension == ".png" || Extension == ".jpg" || Extension == ".jpeg")
+                {
+                    // 확장자를 제외한 파일 이름만 추출을 하고, 문자열을 소문자로 변환합니다.
+                    FString CurrentFileName = Path.stem().string();
+                    std::transform(CurrentFileName.begin(), CurrentFileName.end(), CurrentFileName.begin(), ::tolower);
+
+                    // 파일이 노말맵 텍스쳐 유형에 해당된다면 아래 분기문을 실행합니다.
+                    if (bool isNormalMap = (CurrentFileName.length() >= 4 && CurrentFileName.substr(CurrentFileName.length() - 4) == "_nrm"))
+                    {
+                        // 현재 파일 경로를 Data 폴더 기준 상대 경로로 변환을 시도합니다.
+                        std::error_code Error;
+                        std::filesystem::path RelativePath = std::filesystem::relative(Path, DataPath, Error);
+
+                        // 실패한다면 원본 경로 (절대 경로)를 그대로 사용합니다.
+                        if (Error) { RelativePath = Path; }
+
+                        FString RelativePathStr = RelativePath.string();
+                        std::replace(RelativePathStr.begin(), RelativePathStr.end(), '\\', '/');
+                        NormalMapFiles.push_back("Data/" + RelativePathStr);
+                    }
+                }
+            }
+        }
+    }
+    catch (const std::exception& E)
+    {
+        UE_LOG("Failed to scan Data directory: %s", E.what());
+    }
+
+    return NormalMapFiles;
+}
+
+static TArray<FString> ScanForMaterialBinFiles()
+{
+    TArray<FString> MaterialBinFiles;
+    UE_LOG("Scanning for material files...");
+
+    try
+    {
+        std::filesystem::path DataPath = FObjManager::GetFullDataPath("");
+        if (std::filesystem::exists(DataPath) && std::filesystem::is_directory(DataPath))
+        {
+            for (const auto& Entry : std::filesystem::recursive_directory_iterator(DataPath))
+            {
+                if (!Entry.is_regular_file()) { continue; }
+
+                const std::filesystem::path& Path = Entry.path();
+                FString FileName = Path.filename().string();
+
+                if (FileName.length() >= 7 && FileName.substr(FileName.length() - 7) == "Mat.bin")
+                {
+                    std::error_code Error;
+                    std::filesystem::path RelativePath = std::filesystem::relative(Path, DataPath, Error);
+
+                    if (Error) { RelativePath = Path; }
+
+                    FString RelativePathStr = RelativePath.string();
+                    std::replace(RelativePathStr.begin(), RelativePathStr.end(), '\\', '/');
+                    MaterialBinFiles.push_back("Data/" + RelativePathStr);
+                }
+            }
+        }
+    }
+    catch (const std::exception& E)
+    {
+        UE_LOG("Failed to scan Data directory for materials: %s", E.what());
+    }
+
+    return MaterialBinFiles;
+}
+
+void UResourceManager::BuildFilteredResourceLists()
+{
+    UE_LOG("Building filtered resource lists for UI...");
+
+    auto IsGizmoPath = [](const FString& Path) -> bool
+        {
+            FString Lower = Path;
+            std::transform(Lower.begin(), Lower.end(), Lower.begin(), ::tolower);
+            return (Lower.find("data/gizmo/") != std::string::npos);
+        };
+
+    // 1. Static Mesh (.obj) 필터링
+    FilteredObjPaths.clear();
+    const TArray<FString> AllMeshPaths = GetAllStaticMeshFilePaths(); 
+    for (const FString& Path : AllMeshPaths)
+    {
+        if (Path == "None" || IsGizmoPath(Path))
+            continue;
+
+        std::filesystem::path FsPath(Path);
+        FString Extension = FsPath.extension().string();
+        std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+        if (Extension == ".obj")
+        {
+            FilteredObjPaths.push_back(Path);
+        }
+    }
+
+    // 2. Shader (.hlsl) 필터링
+    FilteredHlslPaths.clear();
+    const TArray<FString> AllShaderPaths = GetAllFilePaths<UShader>();
+    for (const FString& Path : AllShaderPaths)
+    {
+        if (Path == "None" || IsGizmoPath(Path))
+            continue;
+
+        std::filesystem::path fsPath(Path);
+        FString Extension = fsPath.extension().string();
+        std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+        if (Extension == ".hlsl")
+        {
+            FilteredHlslPaths.push_back(Path);
+        }
+    }
+
+    // 3. Material 필터링 (*Mat.bin 파일 스캔)
+    FilteredMaterialPaths.clear();
+    FilteredMaterialPaths.push_back("None"); // "None" 옵션 추가
+    const TArray<FString> AllMaterialPaths = ScanForMaterialBinFiles();
+    for (const FString& Path : AllMaterialPaths)
+    {
+        if (IsGizmoPath(Path)) // Gizmo 관련 경로 제외
+            continue;
+
+        FilteredMaterialPaths.push_back(Path);
+    }
+
+    // 4. Normal Map (파일 시스템 스캔)
+    FilteredNormalMapPaths.clear();
+    FilteredNormalMapPaths.push_back("None"); // "None" 옵션 추가
+    const TArray<FString> AllNormalMaps = ScanForNormalMapFiles();
+    for (const FString& Path : AllNormalMaps)
+    {
+        if (Path == "None" || IsGizmoPath(Path)) // "None"은 이미 추가했으므로, 여기서는 스킵
+            continue;
+
+        FilteredNormalMapPaths.push_back(Path);
+    }
+
+    UE_LOG("Filtered UI lists built. Mesh: %u, Shader: %u, Material: %u, Normal: %u",
+           static_cast<uint32>(FilteredObjPaths.size()),
+           static_cast<uint32>(FilteredHlslPaths.size()),
+           static_cast<uint32>(FilteredMaterialPaths.size()),
+           static_cast<uint32>(FilteredNormalMapPaths.size()));
+}
+
 TArray<D3D11_INPUT_ELEMENT_DESC>& UResourceManager::GetProperInputLayout(const FString& InShaderName)
 {
     auto it = ShaderToInputLayoutMap.find(InShaderName);
@@ -453,7 +624,6 @@ FString& UResourceManager::GetProperShader(const FString& InTextureName)
 
     return TextureToShaderMap[InTextureName];
 }
-
 
 
 void UResourceManager::CreateTextBillboardTexture()
