@@ -259,7 +259,7 @@ float3 ShilkApprox(float3 F0, float VdotH)
 
 }
 
-void BRDFOnly(float3 Li, float3 N, float3 V, float3 L,
+void BRDFOnly(float3 Li, float3 N, float3 V, float3 L, float atten,
     float3 baseColor, float alpha, float3 F0, inout LightAccum acc)
 {
     
@@ -275,7 +275,7 @@ void BRDFOnly(float3 Li, float3 N, float3 V, float3 L,
     
     
     //float denom = max(4.0f * NdotV, 1e-3);
-    float3 lit = Li * NdotL;
+float3 lit = Li * NdotL * atten;
     float3 specBRDF = D * F;  
     float3 diffBRDF = Diffuse_Lambert(baseColor) * NdotL;
 
@@ -313,37 +313,47 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
         float3 Li = pointLight.Color.rgb * pointLight.Color.a;
         float3 F0 = float3(0.02, 0.02, 0.02);
         
-        BRDFOnly(Li, N, V, L, BaseColor, 1.0, F0, acc);
-        
-        
-        //float3 H = normalize(L + V);
-        //float NdotV = saturate(dot(N, V));
-        //float NdotL = saturate(dot(N, L));
-        //float NdotH = saturate(dot(N, H));
-        //float VdotH = saturate(dot(V, H));
-        
-        // ======= Specular =======
-        // Normal Distribute Function
-        //float D = GGXNormalDistributionFunction(NdotH, 2.0f);
-       
-        //Fresnel
-        //float3 F0 = float3(0.01, 0.01, 0.01);
-        //float3 F = ShilkApprox(F0, VdotH);
-        
-        
-        //float denom = max(4.0f * NdotV, 1e-3);
-        //float3 BRDFSpecular = (D) / denom;
-        
-        //float3 BRDFSpecular = (D * F * G) / denom;
-        
-        // ======= Diffuse =======
-        // Lambert Diffuse
-        //
-        //lit = lit * atten * NdotL;
-        //acc.specular += BRDFSpecular * lit;
-        //acc.diffuse  += Diffuse_Lambert(BaseColor) * lit; 
-    }
+        BRDFOnly(Li, N, V, L, atten ,BaseColor, 1.0, F0, acc);
+         
+    } 
+    
+    [loop]
+    for (int i = 0; i < SpotLightCount; i++)
+    {
+        FSpotLightData light = SpotLights[i];
 
-    return acc;
+        // Direction and distance
+        float3 LvecToLight = light.Position.xyz - worldPos; // surface -> light
+        float dist = length(LvecToLight);
+        float3 L = normalize(LvecToLight);
+
+        // Distance attenuation (point light 와 동일) 
+        float range = max(light.Position.w, 1e-3);
+        float fall = max(light.FallOff, 0.001);
+        float t = saturate(dist / range);
+        float attenDist = pow(saturate(1.0 - t), fall);
+        // float attenDist = pow(saturate(1 / (light.AttFactor.x + range * light.AttFactor.y + range * range * light.AttFactor.z)), fall);
+         
+        // 선형 보간 
+        float3 lightDir = normalize(light.Direction.xyz);
+        float3 lightToWorld = normalize(-L); // light -> surface
+        float cosTheta = dot(lightDir, lightToWorld);
+         
+        float thetaInner = cos(radians(light.InnerConeAngle));
+        float thetaOuter = cos(radians(light.OuterConeAngle));
+        
+        float atten = saturate(pow((cosTheta - thetaOuter) / max((thetaInner - thetaOuter), 1e-3), light.InAndOutSmooth));
+          
+        // Diffuse
+        float3 Li = light.Color.rgb * light.Color.a;
+        float NdotL = saturate(dot(N, L));
+        
+        
+        float3 F0 = float3(0.02, 0.02, 0.02);
+        BRDFOnly(Li, N, V, L, atten, BaseColor, 1.0, F0, acc); 
+    }
+    
+
+        return acc;
 }
 #endif
