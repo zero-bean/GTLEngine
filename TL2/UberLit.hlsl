@@ -51,7 +51,6 @@ cbuffer PixelConstData : register(b4)
     FMaterial Material;
     bool HasMaterial;
     bool HasTexture;
-    bool HasNormalTexture;
     float _pad_mat;
 }
 
@@ -72,9 +71,11 @@ cbuffer BRDFInfoBufferType : register(b6)
 
 
 Texture2D g_DiffuseTexColor : register(t0);
-Texture2D g_NormalTex : register(t1); // Normal map 
 SamplerState g_Sample : register(s0);
 
+#if HAS_NORMAL_MAP
+Texture2D g_NormalTex : register(t1); 
+#endif
  
 struct VS_INPUT
 {
@@ -95,6 +96,7 @@ struct PS_INPUT
     float3 worldBitangent : TEXCOORD4;
     float4 color : COLOR;
     uint UUID : UUID;
+    float3 vertexLighting : TEXCOORD5;
 };
 
 
@@ -141,9 +143,33 @@ PS_INPUT mainVS(VS_INPUT input)
         }
     }
 
-    //TODO: 고러드 
+#if LIGHTING_MODEL_GOURAUD
+    // 고러드 셰이딩: 정점 셰이더에서 조명 계산
+    float3 N = normalize(o.worldNormal);
+    float3 V = normalize(CameraWorldPos - o.worldPosition);
+    float shininess = (HasMaterial ? Material.SpecularExponent : 32.0);
     
+    LightAccum vertexLight = (LightAccum) 0;
+    vertexLight = ComputePointLights_BlinnPhong(CameraWorldPos, o.worldPosition, N, shininess);
+    LightAccum spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, o.worldPosition, N, shininess);
+    
+    vertexLight.diffuse += spotLight.diffuse;
+    vertexLight.specular += spotLight.specular;
+    
+    // SH Ambient 계산
+    float3 shAmbient = EvaluateMultiProbeSHLighting(o.worldPosition, N);
+    float3 ambient = shAmbient;
+    if (HasMaterial)
+        ambient += 0.25 * Material.AmbientColor;
+    
+    // 최종 정점 라이팅
+    o.vertexLighting = ambient + vertexLight.diffuse + vertexLight.specular;
     o.color = c;
+    
+#else
+    o.color = c;
+
+#endif
     o.texCoord = input.texCoord;
     o.UUID = UUID;
     return o;
@@ -153,9 +179,17 @@ PS_OUTPUT mainPS(PS_INPUT input)
 {
     PS_OUTPUT Result;
 
-    float3 base = input.color.rgb;
-    base = lerp(base, LerpColor.rgb, LerpColor.a) * (1.0f - (HasMaterial ? 1.0f : 0.0f));
+    float3 base = input.color.rgb; // Start with vertex color as a default
+    if (HasMaterial)
+    {
+        // If a material exists, its diffuse color becomes the base.
+        base = Material.DiffuseColor;
+    }
 
+    // This lerp seems to be a global tint effect, apply it to the determined base color.
+    base = lerp(base, LerpColor.rgb, LerpColor.a);
+
+    // If a texture also exists, it overrides any previous color.
     if (HasMaterial && HasTexture)
     {
         float2 uv = input.texCoord + UVScrollSpeed * UVScrollTime;
@@ -169,18 +203,32 @@ PS_OUTPUT mainPS(PS_INPUT input)
         base.rgb = lerp(base.rgb, highlightColor, 0.5);
     }
 
-    // 조명 계산을 위한 노멀 벡터 준비
-    float3 N = normalize(input.worldNormal);
+    float3 finalLit;
 
-    // 노말맵 텍스쳐가 존재한다면 
-    if (HasNormalTexture)
-    {
+#if LIGHTING_MODEL_UNLIT
+    // Unlit mode
+    finalLit = base;
+    
+    Result.Color = float4(finalLit, 1.0);
+    Result.UUID = input.UUID;
+    return Result;
+#elif LIGHTING_MODEL_GOURAUD
+    finalLit = base * input.vertexLighting;
+    
+#else
+    
+    // 조명 계산을 위한 노멀 벡터 준비
+    float3 N;
+
+    // 노말맵 처리
+    #if HAS_NORMAL_MAP
+     {
         // 1. 노멀맵 텍스쳐에서 RGB 값을 Normal 값으로 변환합니다.
         // RGB 값은 XYZ와 매핑되어 있으며 범위는 0~1로 저장되어 있고, 노말 값은 -1~1로 저장되어 있습니다.
         // Sample(): UV 좌표를 읽어와 샘플러스테이트의 규칙을 참고하여, 
-        //           주변 텍셀의 색상을 조합해 해당 텍셀의 최종 색상값을 결정하는 역할을 가집니다.
+        // 주변 텍셀의 색상을 조합해 해당 텍셀의 최종 색상값을 결정하는 역할을 가집니다.
         float3 tangentNormal = g_NormalTex.Sample(g_Sample, input.texCoord).rgb * 2.0 - 1.0;
-
+        
         // 2. 보간된 벡터들로 TBN 행렬 재구성 및 직교화를 합니다.
         float3 T = normalize(input.worldTangent);
         float3 B = normalize(input.worldBitangent);
@@ -190,46 +238,36 @@ PS_OUTPUT mainPS(PS_INPUT input)
         // 따라서 그람-슈미트(Gram-Schmidt) 기법을 통해 TBN 좌표계를 다시 직교화하여 정렬합니다.
         T = normalize(T - dot(T, N_geom) * N_geom);
         B = cross(N_geom, T);
-
+        
         // 3개의 기저 벡터를 기저 행렬로 변환합니다.
         float3x3 TBN = float3x3(T, B, N_geom);
 
         // 3. 탄젠트 공간 노멀을 월드 공간으로 변환합니다.
         N = normalize(mul(tangentNormal, TBN));
     }
+    #else
+        N = normalize(input.worldNormal);
+    #endif
 
-    float3 finalLit;
-
-#if LIGHTING_MODEL_UNLIT
-    // Unlit mode: just return base color without any lighting
-    finalLit = base;
-    
-    
-    Result.Color = float4(finalLit, 1.0);
-    Result.UUID = input.UUID;
-    return Result;
-#else
-    float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
+    float shininess = (HasMaterial ? Material.SpecularExponent : 32.0);
 
     LightAccum accLight = (LightAccum) (0);
     LightAccum pointLight = (LightAccum) (0);
     LightAccum spotLight = (LightAccum) (0);
     LightAccum directionalLight = (LightAccum) (0);
 
-#if LIGHTING_MODEL_PHONG
+    #if LIGHTING_MODEL_PHONG
 
-    pointLight.diffuse = float4(1, 0, 0, 1);
-#elif  LIGHTING_MODEL_BLINN_PHONG
-    pointLight = ComputePointLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
-    spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
-    //TODO: DirectionLight
-#elif  LIGHTING_MODEL_BRDF
-    accLight = BRDF(CameraWorldPos, input.worldPosition, N, base, Roughness, Metallic);
-      
-#elif LIGHTING_MODEL_LAMBERT
-
-    pointLight.diffuse = float4(0, 0, 1, 1);
-#endif
+        pointLight.diffuse = float4(1, 0, 0, 1);
+    #elif  LIGHTING_MODEL_BLINN_PHONG
+        pointLight = ComputePointLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
+        spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
+        //TODO: DirectionLight
+    #elif  LIGHTING_MODEL_BRDF
+        accLight = BRDF(CameraWorldPos, input.worldPosition, N, base, Roughness, Metallic); 
+    #elif LIGHTING_MODEL_LAMBERT
+    
+    #endif
 
     accLight.diffuse += pointLight.diffuse + spotLight.diffuse + directionalLight.diffuse;
     accLight.specular += pointLight.specular + spotLight.specular + directionalLight.specular;

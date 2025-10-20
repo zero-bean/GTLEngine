@@ -78,16 +78,15 @@ CBUFFER_INFO(ViewportBufferType, 6, false, true)
 
 CBUFFER_INFO(DecalAlphaBufferType, 8, false, true)
 CBUFFER_INFO(FHeightFogBufferType, 8, false, true)
-CBUFFER_INFO(FPointLightBufferType, 9, false, true)
-CBUFFER_INFO(FSpotLightBufferType, 13, false, true)
+CBUFFER_INFO(FPointLightBufferType, 9, true, true)
+CBUFFER_INFO(FSpotLightBufferType, 13, true, true)
 CBUFFER_INFO(FSHAmbientLightBufferType, 10, false, true)
 CBUFFER_INFO(FMultiSHProbeBufferType, 12, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
-CBUFFER_INFO(FDirectionalLightBufferType, 11, false, true)
-// Note: D3D11 allows 14 CBs per stage (slots 0..13). Use b6 here.
-CBUFFER_INFO(FBRDFInfoBufferType, 6, false, true)
+CBUFFER_INFO(FDirectionalLightBufferType, 11, true, true) 
+CBUFFER_INFO(FBRDFInfoBufferType, 6, true, true)
 
 // VS : b0
 struct ModelBufferType
@@ -128,8 +127,7 @@ struct FPixelConstBufferType
     FMaterialInPs Material;
     uint32 bHasMaterial; // 4 bytes (HLSL bool is 4 bytes)
     uint32 bHasTexture;  // 4 bytes (HLSL bool is 4 bytes)
-    uint32 bHasNormalTexture; // 4 bytes for normal texture flag
-    float pad;           // 4 bytes padding for 16-byte alignment
+    float pad[2];           // 4 bytes padding for 16-byte alignment
 };
 
 struct HighLightBufferType
