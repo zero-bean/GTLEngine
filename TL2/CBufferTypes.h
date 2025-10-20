@@ -250,11 +250,11 @@ struct FSHAmbientLightBufferType
 // Single probe data for multi-probe system
 struct FSHProbeData
 {
-    FVector4 Position;           // xyz=프로브 위치, w=영향 반경
+    FVector4 Position;           // xyz=프로브 위치, w=BoxExtent.Z
     FVector4 SHCoefficients[9];  // 9개 SH 계수
     float Intensity;             // 강도
     float Falloff;               // 감쇠 지수
-    FVector2D Padding;           // 16바이트 정렬
+    FVector2D BoxExtent;         // xy=BoxExtent.X, BoxExtent.Y (Z는 Position.w에 저장)
 };
 
 #define MAX_SH_PROBES 8

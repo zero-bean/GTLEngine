@@ -11,6 +11,8 @@ public:
 	// Serialization for transform
 	virtual void Serialize(bool bIsLoading, FComponentData& InOut);
 
+	virtual void DrawDebugLines(class URenderer* Renderer);
+
 	// Light common properties
 	float GetIntensity() const { return Intensity; }
 	void SetIntensity(float InIntensity) { Intensity = InIntensity; }

@@ -12,7 +12,7 @@ IMPLEMENT_CLASS(UAmbientLightComponent)
 UAmbientLightComponent::UAmbientLightComponent()
 {
     bCanEverTick = true;
-    bIsRender = false;  // This component doesn't render itself, it affects ambient lighting
+    bIsRender = true;  // This component doesn't render itself, it affects ambient lighting
 
     // Initialize SH buffers to zero
     for (int32 i = 0; i < 9; ++i)
@@ -542,7 +542,10 @@ FMatrix UAmbientLightComponent::GetCubeFaceProjectionMatrix() const
     float FOV = 90.0f * (3.14159265358979323846f / 180.0f);  // Convert to radians
     float AspectRatio = 1.0f;
     float NearPlane = 0.1f;
-    float FarPlane = 1000.0f;
+
+    // Use max box extent as far plane if specified, otherwise use default
+    float maxExtent = FMath::Max3(BoxExtent.X, BoxExtent.Y, BoxExtent.Z);
+    float FarPlane = (maxExtent > KINDA_SMALL_NUMBER) ? maxExtent : 1000.0f;
 
     return FMatrix::PerspectiveFovLH(FOV, AspectRatio, NearPlane, FarPlane);
 }
@@ -558,7 +561,7 @@ FVector UAmbientLightComponent::CubeUVToDir(ECubeFace Face, float U, float V)
     switch (Face)
     {
     case ECubeFace::PositiveX:
-        Dir = FVector(1.0f, -S, -T);
+        Dir = FVector(1.0f, -T, -S);
         break;
     case ECubeFace::NegativeX:
         Dir = FVector(-1.0f, S, -T);
@@ -636,7 +639,7 @@ UObject* UAmbientLightComponent::Duplicate()
     UAmbientLightComponent* DuplicatedComponent = NewObject<UAmbientLightComponent>();
     CopyCommonProperties(DuplicatedComponent);
     DuplicatedComponent->AmbientData = this->AmbientData;
-    DuplicatedComponent->Radius = this->Radius;
+    DuplicatedComponent->BoxExtent = this->BoxExtent;
     DuplicatedComponent->Falloff = this->Falloff;
     DuplicatedComponent->CaptureResolution = this->CaptureResolution;
     DuplicatedComponent->UpdateInterval = this->UpdateInterval;
@@ -668,16 +671,23 @@ void UAmbientLightComponent::RenderDetails()
 	// Localized Ambient Light Settings
 	ImGui::Text("Localized Settings:");
 
-	// Radius
-	float radius = GetRadius();
-	if (ImGui::DragFloat("Radius", &radius, 1.0f, 0.0f, 10000.0f))
+	// Box Extent
+	FVector extent = GetBoxExtent();
+	if (ImGui::DragFloat3("Box Extent", &extent.X, 1.0f, 0.0f, 10000.0f))
 	{
-		SetRadius(radius);
+		SetBoxExtent(extent);
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Global"))
 	{
-		SetRadius(0.0f);  // 0 = global ambient light
+		SetBoxExtent(FVector(0.0f, 0.0f, 0.0f));  // 0 = global ambient light
+	}
+
+	// Uniform size slider (for convenience)
+	float uniformSize = GetRadius();
+	if (ImGui::DragFloat("Uniform Size", &uniformSize, 1.0f, 0.0f, 10000.0f))
+	{
+		SetRadius(uniformSize);
 	}
 
 	// Falloff
@@ -717,4 +727,48 @@ void UAmbientLightComponent::RenderDetails()
 	{
 		ForceCapture();
 	}
+}
+
+void UAmbientLightComponent::DrawDebugLines(class URenderer* Renderer)
+{
+	if (!Renderer || !IsRender())
+		return;
+
+	const FVector extent = GetBoxExtent();
+
+	// If extent is 0, it's a global ambient light (no visible bounds)
+	if (extent.SizeSquared() <= KINDA_SMALL_NUMBER)
+		return;
+
+	const FVector center = GetWorldLocation();
+	const FVector4 color(0.0f, 1.0f, 1.0f, 1.0f); // Cyan for ambient light
+
+	// Calculate 8 corners of the box
+	FVector corners[8];
+	corners[0] = center + FVector(-extent.X, -extent.Y, -extent.Z);
+	corners[1] = center + FVector(+extent.X, -extent.Y, -extent.Z);
+	corners[2] = center + FVector(+extent.X, +extent.Y, -extent.Z);
+	corners[3] = center + FVector(-extent.X, +extent.Y, -extent.Z);
+	corners[4] = center + FVector(-extent.X, -extent.Y, +extent.Z);
+	corners[5] = center + FVector(+extent.X, -extent.Y, +extent.Z);
+	corners[6] = center + FVector(+extent.X, +extent.Y, +extent.Z);
+	corners[7] = center + FVector(-extent.X, +extent.Y, +extent.Z);
+
+	// Draw bottom face (Z-)
+	Renderer->AddLine(corners[0], corners[1], color);
+	Renderer->AddLine(corners[1], corners[2], color);
+	Renderer->AddLine(corners[2], corners[3], color);
+	Renderer->AddLine(corners[3], corners[0], color);
+
+	// Draw top face (Z+)
+	Renderer->AddLine(corners[4], corners[5], color);
+	Renderer->AddLine(corners[5], corners[6], color);
+	Renderer->AddLine(corners[6], corners[7], color);
+	Renderer->AddLine(corners[7], corners[4], color);
+
+	// Draw vertical edges connecting top and bottom
+	Renderer->AddLine(corners[0], corners[4], color);
+	Renderer->AddLine(corners[1], corners[5], color);
+	Renderer->AddLine(corners[2], corners[6], color);
+	Renderer->AddLine(corners[3], corners[7], color);
 }
