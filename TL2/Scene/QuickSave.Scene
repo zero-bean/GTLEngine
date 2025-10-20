@@ -1,12 +1,12 @@
 {
   "Version" : 2,
-  "NextUUID" : 497,
+  "NextUUID" : 537,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-11.378876, 14.478114, 10.752130],
+    "Location" : [0.000000, 0.000000, 10.000000],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 10.799972, -81.799973]
+    "Rotation" : [0.000000, 83.399994, -13.199883]
   },
   "Actors" : [
     {
@@ -28,12 +28,27 @@
       "OwnerActorUUID" : 483,
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, -8.364007, 10.453445],
+      "RelativeLocation" : [0.000000, 0.000000, 1.000000],
+      "RelativeRotation" : [180.000000, 0.000005, 0.000022],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj",
+      "Materials" : ["Data/PUBGM4/PubgM4Mat.bin", "Data/ship/E-45-Aircraft/E 45 Aircraft_objMat.bin"],
+      "MaterialNormalMapOverrides" : ["Data/ship/E-45_nrm.jpg", "Data/ship/E-45_glass_nrm.jpg"]
+    },
+    {
+      "UUID" : 493,
+      "OwnerActorUUID" : 492,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 4.696726, 5.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Stone-Golem/Stone.obj",
-      "Materials" : ["EYES", "Data/Stone-Golem/StoneMat.bin", "Data/Stone-Golem/StoneMat.bin", "STONE"],
-      "MaterialNormalMapOverrides" : ["", "Data/Stone-Golem/golem-stone_nrm.png", "Data/Stone-Golem/golem-stone_nrm.png", ""]
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
     },
     {
       "UUID" : 494,
@@ -44,21 +59,6 @@
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "TexturePath" : "Editor/Icon/PointLight_64x.dds"
-    },
-    {
-      "UUID" : 493,
-      "OwnerActorUUID" : 492,
-      "ParentComponentUUID" : 0,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "PointLightData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.000000,
-        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
-      }
     }
   ]
 }
