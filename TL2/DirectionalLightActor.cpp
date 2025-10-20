@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "DirectionalLightActor.h"
 #include "BillboardComponent.h"
-#include "GizmoArrowComponent.h"
-#include "SceneRotationUtils.h"
 
 ADirectionalLightActor::ADirectionalLightActor()
 {
@@ -21,18 +19,6 @@ ADirectionalLightActor::ADirectionalLightActor()
             SpriteComponent->SetEditable(false);
         }        
     }
-
-    DirectionComponent = CreateDefaultSubobject<UGizmoArrowComponent>("DirectionComponent");
-    if (DirectionComponent)
-    {
-        DirectionComponent->SetupAttachment(RootComponent);
-        DirectionComponent->SetEditable(false);
-        DirectionComponent->SetColor(FVector(1.0f, 0.f, 0.f));
-        DirectionComponent->SetRelativeScale(FVector(0.15f, 0.15f, 0.7f));
-        FQuat Rotation = SceneRotUtil::QuatFromEulerZYX_Deg(DirectionComponent->GetDirection());
-        DirectionComponent->SetRelativeRotation(Rotation);
-    }
-    
 }
 
 ADirectionalLightActor::~ADirectionalLightActor()

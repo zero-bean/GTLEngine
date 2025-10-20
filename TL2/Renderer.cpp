@@ -25,6 +25,7 @@
 #include "AmbientLightComponent.h"
 #include "SpotLightComponent.h"
 #include "DirectionalLightComponent.h"
+#include "GizmoArrowComponent.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
@@ -857,6 +858,7 @@ void URenderer::RenderDirectionalLightPass(UWorld* World)
             DirectionalLightComponent->GetFinalColor().R,DirectionalLightComponent->GetFinalColor().G,DirectionalLightComponent->GetFinalColor().B,DirectionalLightComponent->GetIntensity()
             );
         DirectionalLightCB.DirectionalLights[idx].bEnableSpecular = DirectionalLightComponent->IsEnabledSpecular();
+        DirectionalLightComponent->RenderDirectionVector(this);
     }
     UpdateSetCBuffer(DirectionalLightCB);    
 }
