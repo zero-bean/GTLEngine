@@ -98,6 +98,9 @@ public:
 
     //목요일 새벽5시 어쩔수가없다.
     float Gamma = 1.0f;
+    // BRDF parameters (global; adjustable via ImGui)
+    float BRDFRoughness = 0.5f;
+    float BRDFMetallic = 0.0f;
 
 private:
     // Render Passes

@@ -495,6 +495,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     FMatrix ViewMatrix = Camera->GetViewMatrix();
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
     UpdateSetCBuffer(ViewProjBufferType(ViewMatrix, ProjectionMatrix, Camera->GetActorLocation()));
+    // Upload BRDF parameters for pixel shader
+    UpdateSetCBuffer(FBRDFInfoBufferType(BRDFRoughness, BRDFMetallic));
     switch (CurrentViewMode)
     {
     case EViewModeIndex::VMI_Lit:

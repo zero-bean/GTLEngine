@@ -279,7 +279,7 @@ float G_Smith(float a2, float NdotV, float NdotL)
 } 
 
 void ComputeBRDF(float3 Li, float3 N, float3 V, float3 L, float atten,
-    float3 baseColor, float alpha, float3 F0, inout LightAccum acc)
+    float3 baseColor, float roughness, float metallic, inout LightAccum acc)
 {
     
     float3 H = normalize(L + V);
@@ -289,15 +289,22 @@ void ComputeBRDF(float3 Li, float3 N, float3 V, float3 L, float atten,
     float VdotH = saturate(dot(V, H));
 
 
+    // Convert artist-friendly roughness to microfacet alpha
+    float alpha = max(roughness * roughness, 1e-3);
+
+    // Base reflectance via metallic workflow
+    float3 dielectricF0 = float3(0.04, 0.04, 0.04);
+    float3 F0 = lerp(dielectricF0, baseColor, saturate(metallic));
+
     float D = D_GGXNormalDistributionFunction(NdotH, alpha); 
     float3 F = F_ShilckApprox(F0, VdotH);
-    float G = G_Smith(alpha, NdotV, NdotV);
+    float G = G_Smith(alpha, NdotV, NdotL);
     
     
     float denom = max(4.0f * NdotV, 1e-3);
     float3 lit = Li * NdotL * atten;
-    float3 specBRDF = D * F * G /denom;
-    float3 diffBRDF = Diffuse_Lambert(baseColor) * NdotL;
+    float3 specBRDF = D * F * G / denom;
+    float3 diffBRDF = (1.0 - saturate(metallic)) * Diffuse_Lambert(baseColor) * NdotL;
 
     
     acc.specular += specBRDF * lit; //  / denom;
@@ -305,7 +312,7 @@ void ComputeBRDF(float3 Li, float3 N, float3 V, float3 L, float atten,
 
 }
 
-LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseColor, float alpha)
+LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseColor, float roughness, float metallic)
 { 
     //PointLightCount
     
@@ -322,7 +329,7 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
          
         float3 LVector = pointLight.Position.xyz - worldPos;
         float dist = length(LVector);
-        float3 L = dist;
+        float3 L = (dist > 1e-5) ? (LVector / max(dist, 1e-5)) : float3(0,0,1);
          
         float range = max(pointLight.Position.w, 1e-3);
         float fall = max(pointLight.FallOff, 0.001);
@@ -331,9 +338,7 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
 
 
         float3 Li = pointLight.Color.rgb * pointLight.Color.a;
-        float3 F0 = float3(0.02, 0.02, 0.02);
-        
-        ComputeBRDF(Li, N, V, L, atten, BaseColor, 1.0, F0, acc);
+        ComputeBRDF(Li, N, V, L, atten, BaseColor, roughness, metallic, acc);
          
     } 
     
@@ -369,8 +374,7 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
         float NdotL = saturate(dot(N, L));
         
         
-        float3 F0 = float3(0.02, 0.02, 0.02);
-        ComputeBRDF(Li, N, V, L, atten, BaseColor, 1.0, F0, acc);
+        ComputeBRDF(Li, N, V, L, atten, BaseColor, roughness, metallic, acc);
     }
     
     

@@ -62,9 +62,17 @@ cbuffer PSScrollCB : register(b5)
     float _pad_scrollcb;
 }
 
+// BRDF controls (roughness/metallic)
+cbuffer BRDFInfoBufferType : register(b14)
+{
+    float Roughness;
+    float Metallic;
+    float2 _pad_brdf;
+}
+
 
 Texture2D g_DiffuseTexColor : register(t0);
-Texture2D g_NormalTex : register(t1); // Normal map
+Texture2D g_NormalTex : register(t1); // Normal map 
 SamplerState g_Sample : register(s0);
 
  
@@ -216,7 +224,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
     //TODO: DirectionLight
 #elif  LIGHTING_MODEL_BRDF
-    accLight = BRDF(CameraWorldPos, input.worldPosition, N, base, 1.0f);
+    accLight = BRDF(CameraWorldPos, input.worldPosition, N, base, Roughness, Metallic);
       
 #elif LIGHTING_MODEL_LAMBERT
 

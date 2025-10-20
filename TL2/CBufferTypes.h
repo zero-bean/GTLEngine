@@ -62,6 +62,7 @@ MACRO(FGammaBufferType)\
 MACRO(FDirectionalLightBufferType)\
 MACRO(FSHAmbientLightBufferType)             \
 MACRO(FMultiSHProbeBufferType)               \
+MACRO(FBRDFInfoBufferType)                   \
 
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
@@ -85,6 +86,7 @@ CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
 CBUFFER_INFO(FDirectionalLightBufferType, 11, false, true)
+CBUFFER_INFO(FBRDFInfoBufferType, 14, false, true)
 
 // VS : b0
 struct ModelBufferType
@@ -308,6 +310,19 @@ struct FDirectionalLightBufferType
 //---//
 
 
+
+
+// PS : b14
+struct FBRDFInfoBufferType
+{
+    float Roughness = 0.5f;
+    float Metallic = 0.0f;
+    FVector2D _Pad; // 16-byte alignment
+
+    FBRDFInfoBufferType() = default;
+    FBRDFInfoBufferType(float InRoughness, float InMetallic)
+        : Roughness(InRoughness), Metallic(InMetallic), _Pad(0.0f, 0.0f) {}
+};
 
 
 
