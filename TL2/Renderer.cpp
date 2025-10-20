@@ -509,6 +509,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     }
     case EViewModeIndex::VMI_SceneDepth:
     {
+        BeginLineBatch();
         RenderBasePass(World, Camera, Viewport);  // calls RenderScene, which executes the depth-only pass 
                                                   // (RenderSceneDepthPass) according to the current view mode
         RenderSceneDepthVisualizePass(Camera);    // Depth → Grayscale visualize
@@ -518,6 +519,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     }
     case EViewModeIndex::VMI_WorldNormal:
     {
+        BeginLineBatch();
         OverrideShader =  UResourceManager::GetInstance().Load<UShader>("WorldNormalShader.hlsl");
         RenderBasePass(World, Camera, Viewport);
         OverrideShader = nullptr;
