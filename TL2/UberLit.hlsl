@@ -51,7 +51,6 @@ cbuffer PixelConstData : register(b4)
     FMaterial Material;
     bool HasMaterial;
     bool HasTexture;
-    bool HasNormalTexture;
     float _pad_mat;
 }
 
@@ -64,9 +63,11 @@ cbuffer PSScrollCB : register(b5)
 
 
 Texture2D g_DiffuseTexColor : register(t0);
-Texture2D g_NormalTex : register(t1); // Normal map
 SamplerState g_Sample : register(s0);
 
+#if HAS_NORMAL_MAP
+Texture2D g_NormalTex : register(t1); 
+#endif
  
 struct VS_INPUT
 {
@@ -207,13 +208,13 @@ PS_OUTPUT mainPS(PS_INPUT input)
     finalLit = base * input.vertexLighting;
     
 #else
+    
     // 조명 계산을 위한 노멀 벡터 준비
-
-    float3 N = normalize(input.worldNormal);
+    float3 N;
 
     // 노말맵 처리
-    if (HasNormalTexture)
-    {
+    #if HAS_NORMAL_MAP
+     {
         // 1. 노멀맵 텍스쳐에서 RGB 값을 Normal 값으로 변환합니다.
         // RGB 값은 XYZ와 매핑되어 있으며 범위는 0~1로 저장되어 있고, 노말 값은 -1~1로 저장되어 있습니다.
         // Sample(): UV 좌표를 읽어와 샘플러스테이트의 규칙을 참고하여, 
@@ -236,6 +237,9 @@ PS_OUTPUT mainPS(PS_INPUT input)
         // 3. 탄젠트 공간 노멀을 월드 공간으로 변환합니다.
         N = normalize(mul(tangentNormal, TBN));
     }
+    #else
+        N = normalize(input.worldNormal);
+    #endif
 
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0);
 

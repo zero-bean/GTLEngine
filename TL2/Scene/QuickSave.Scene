@@ -1,12 +1,12 @@
 {
   "Version" : 2,
-  "NextUUID" : 537,
+  "NextUUID" : 557,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [0.000000, 0.000000, 10.000000],
+    "Location" : [-2.321332, 5.982107, 5.109506],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 83.399994, -13.199883]
+    "Rotation" : [0.000000, 26.200020, -78.299843]
   },
   "Actors" : [
     {
@@ -20,6 +20,24 @@
       "Type" : "APointLightActor",
       "Name" : "Point Light_0",
       "RootComponentUUID" : 493
+    },
+    {
+      "UUID" : 548,
+      "Type" : "AActor",
+      "Name" : "Point Light_0",
+      "RootComponentUUID" : 549
+    },
+    {
+      "UUID" : 551,
+      "Type" : "AActor",
+      "Name" : "Point Light_0",
+      "RootComponentUUID" : 552
+    },
+    {
+      "UUID" : 554,
+      "Type" : "AActor",
+      "Name" : "Point Light_0",
+      "RootComponentUUID" : 555
     }
   ],
   "Components" : [
@@ -29,7 +47,7 @@
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
       "RelativeLocation" : [0.000000, 0.000000, 1.000000],
-      "RelativeRotation" : [180.000000, 0.000005, 0.000022],
+      "RelativeRotation" : [-179.999985, 0.000005, 0.000022],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj",
       "Materials" : ["Data/PUBGM4/PubgM4Mat.bin", "Data/ship/E-45-Aircraft/E 45 Aircraft_objMat.bin"],
@@ -40,7 +58,7 @@
       "OwnerActorUUID" : 492,
       "ParentComponentUUID" : 0,
       "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 4.696726, 5.000000],
+      "RelativeLocation" : [0.000000, -6.849391, -2.170512],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "PointLightData" : {
@@ -54,6 +72,81 @@
       "UUID" : 494,
       "OwnerActorUUID" : 492,
       "ParentComponentUUID" : 493,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 549,
+      "OwnerActorUUID" : 548,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, -6.532362, 5.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 550,
+      "OwnerActorUUID" : 548,
+      "ParentComponentUUID" : 549,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 552,
+      "OwnerActorUUID" : 551,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 4.696726, -2.170512],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 553,
+      "OwnerActorUUID" : 551,
+      "ParentComponentUUID" : 552,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 555,
+      "OwnerActorUUID" : 554,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 4.696726, 5.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 556,
+      "OwnerActorUUID" : 554,
+      "ParentComponentUUID" : 555,
       "Type" : "UBillboardComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],

@@ -112,6 +112,39 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
         ModelBuffer.NormalMatrix = NormalMatrix;
 
         Renderer->UpdateSetCBuffer(ModelBuffer);
+
+        if (UShader* shader = GetMaterial()->GetShader())
+        {
+            // 각 머티리얼 슬롯마다 다른 노멀맵 설정이 있을 수 있으므로
+            // DrawIndexedPrimitiveComponent 내부에서 처리하거나
+            // 여기서 기본값 설정
+
+            // 첫 번째 슬롯의 노멀맵 상태를 기준으로 설정
+            if (!MaterailSlots.empty())
+            {
+                bool hasNormalMap = false;
+
+                if (MaterailSlots[0].bOverrideNormalTexture)
+                {
+                    // 오버라이드가 있으면, 오버라이드 텍스처 존재 여부 확인
+                    hasNormalMap = (MaterailSlots[0].NormalTextureOverride != nullptr);
+                }
+                else
+                {
+                    // 오버라이드가 없으면, 원본 머티리얼의 노멀맵 확인
+                    if (UMaterial* Material = UResourceManager::GetInstance().Get<UMaterial>(MaterailSlots[0].MaterialName))
+                    {
+                        hasNormalMap = (Material->GetNormalTexture() != nullptr);
+                    }
+                }
+
+                shader->SetActiveNormalMode(hasNormalMap ? ENormalMapMode::HasNormalMap : ENormalMapMode::NoNormalMap);
+            }
+            else
+            {
+                shader->SetActiveNormalMode(ENormalMapMode::NoNormalMap);
+            }
+        }
         
         Renderer->PrepareShader(GetMaterial()->GetShader());
         Renderer->DrawIndexedPrimitiveComponent(GetStaticMesh(), D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterailSlots);
