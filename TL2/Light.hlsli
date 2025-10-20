@@ -267,9 +267,7 @@ float D_GGXNormalDistributionFunction(float NdotH, float alpha)
 float3 F_ShilckApprox(float3 F0, float VdotH)
 {
     float m = 1.0 - saturate(VdotH);
-    float m5 = m * m * m * m * m;
-    return F0 + (1.0 - F0) * m5;
-
+    return F0 + (1.0 - F0) * pow(m, 5);
 }
 float G_Smith(float a2, float NdotV, float NdotL)
 {
@@ -293,7 +291,7 @@ void ComputeBRDF(float3 Li, float3 N, float3 V, float3 L, float atten,
     float alpha = max(roughness * roughness, 1e-3);
 
     // Compute base reflectance F0 using metallic workflow
-    float3 dielectricF0 = float3(0.04, 0.04, 0.04);
+    float3 dielectricF0 = float3(1.0, 0.782, 0.0);
     float3 F0 = lerp(dielectricF0, baseColor, saturate(metallic));
 
     float D = D_GGXNormalDistributionFunction(NdotH, alpha); 
@@ -305,12 +303,11 @@ void ComputeBRDF(float3 Li, float3 N, float3 V, float3 L, float atten,
     float3 lit = Li * NdotL * atten;
     float3 specBRDF = D * F * G / denom;
     // Reduce diffuse as surface becomes metallic
-    float3 diffBRDF = (1.0 - saturate(metallic)) * Diffuse_Lambert(baseColor) * NdotL;
+    float3 diffBRDF = Diffuse_Lambert(baseColor) * NdotL;
 
     
     acc.specular += specBRDF * lit; //  / denom;
-    acc.diffuse += diffBRDF * lit;
-
+    acc.diffuse += diffBRDF * lit; 
 }
 
 LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseColor, float roughness, float metallic)
@@ -328,9 +325,9 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
     {
         FPointLightData pointLight = PointLights[i];
          
-        float3 LVector = pointLight.Position.xyz - worldPos;
-        float dist = length(LVector);
-        float3 L = (dist > 1e-5) ? (LVector / max(dist, 1e-5)) : float3(0,0,1);
+        float3 LvecToLight = pointLight.Position.xyz - worldPos;
+        float dist = length(LvecToLight);
+        float3 L = normalize(LvecToLight);
          
         float range = max(pointLight.Position.w, 1e-3);
         float fall = max(pointLight.FallOff, 0.001);
