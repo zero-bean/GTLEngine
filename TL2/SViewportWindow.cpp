@@ -295,6 +295,14 @@ void SViewportWindow::RenderToolbar()
 			{
 				Viewport->ToggleShowFlag(EEngineShowFlags::SF_BVH);
 			}
+
+			// Tile Culling Debug
+			bool bTileCullingDebugEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_TileCullingDebug);
+			if (ImGui::Checkbox("Tile Culling Debug", &bTileCullingDebugEnabled))
+			{
+				Viewport->ToggleShowFlag(EEngineShowFlags::SF_TileCullingDebug);
+			}
+
 			//// Wireframe
 			//bool bWireframeEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_Wireframe);
 			//if (ImGui::Checkbox("Wireframe", &bWireframeEnabled))

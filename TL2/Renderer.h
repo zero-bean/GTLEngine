@@ -175,6 +175,5 @@ private:
     // Tile-based Light Culling Manager
     ULightCullingManager* LightCullingManager = nullptr;
     bool bUseTiledCulling = true; // Toggle for tile-based culling
-    bool bDebugVisualizeTiles = true; // Debug: visualize tile light count as heat map (FORCED ON)
 };
 

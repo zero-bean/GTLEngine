@@ -621,7 +621,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
                 // Re-bind render targets for base pass (Frame + ID + Depth)
                 RHIDevice->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID);
 
-                // Set debug visualization mode
+                // Set debug visualization mode based on ShowFlag
+                bool bDebugVisualizeTiles = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_TileCullingDebug);
                 char debugMsg[256];
                 sprintf_s(debugMsg, "[Renderer] Setting debug visualization: %d\n", bDebugVisualizeTiles);
                 OutputDebugStringA(debugMsg);
@@ -646,7 +647,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
 
         // Render tile culling debug visualization (full-screen overlay)
-        if (LightCullingManager && bUseTiledCulling && bDebugVisualizeTiles)
+        if (LightCullingManager && bUseTiledCulling && Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_TileCullingDebug))
         {
             OutputDebugStringA("[Renderer] Rendering tile culling debug pass...\n");
             RenderTileCullingDebugPass();
