@@ -19,6 +19,7 @@ ASpotLightActor::ASpotLightActor()
         SpotBillboard->SetRelativeLocation(FVector(0, 0, 0));
         SpotBillboard->SetScreenSizeScaled(true);
         SpotBillboard->SetScreenSize(0.0025f);
+        SpotBillboard->SetEditable(false);
     }
 }
 

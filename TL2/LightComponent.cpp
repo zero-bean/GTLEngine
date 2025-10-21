@@ -41,9 +41,6 @@ void ULightComponent::SetColorTemperature(float InTemperature)
         Temperature = InTemperature;
         TempColor = MakeFromColorTemperature(Temperature);        
         UpdateFinalColor();
-        UE_LOG("Temp %f %f %f", TempColor.R, TempColor.G, TempColor.B);
-        UE_LOG("Tint %f %f %f", TintColor.R, TintColor.G, TintColor.B);
-        UE_LOG("Final %f %f %f", FinalColor.R, FinalColor.G, FinalColor.B);
     }
 }
 

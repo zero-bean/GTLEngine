@@ -88,10 +88,18 @@ void UDirectionalLightComponent::RenderDetails()
 		SetIntensity(intensity);
 	}
 
+	
 	bool bEnableSpecular = IsEnabledSpecular() && true;
 	if (ImGui::Checkbox("Specular Enable", &bEnableSpecular))
 	{
 		SetSpecularEnable(bEnableSpecular);
+	}
+	
+	ImGui::SameLine();
+	bool bEnableDebugLine = IsEnabledDebugLine();
+	if (ImGui::Checkbox("Debug Line", &bEnableDebugLine))
+	{
+		SetDebugLineEnable(bEnableDebugLine);
 	}
 
 	ImGui::Spacing();
@@ -104,6 +112,16 @@ void UDirectionalLightComponent::RenderDetails()
 
 void UDirectionalLightComponent::DrawDebugLines(class URenderer* Renderer)
 {
+	if (!this->IsRender() || !Renderer)
+	{
+		return;
+	}
+	
+	if (!bEnableDebugLine)
+	{
+		return;
+	}
+	
 	FVector Position = GetWorldLocation();
 	Direction = GetWorldRotation().GetUpVector();
 	Direction.Z *= -1.25f; 

@@ -26,6 +26,9 @@ public:
 
 	FLinearColor GetFinalColor() const { return FinalColor; }
 
+	bool IsEnabledDebugLine() const { return bEnableDebugLine; }
+	void SetDebugLineEnable(bool bEnable) { bEnableDebugLine = bEnable; }
+
 private:
 	void UpdateFinalColor();
 
@@ -38,4 +41,6 @@ protected:
 	FLinearColor TintColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	// 색온도에 의해 결정된 색상
 	FLinearColor TempColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+	bool bEnableDebugLine = true;
 };

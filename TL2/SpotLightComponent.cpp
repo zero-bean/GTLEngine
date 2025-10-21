@@ -25,8 +25,15 @@ void USpotLightComponent::DuplicateSubObjects()
 
 void USpotLightComponent::DrawDebugLines(URenderer* Renderer)
 {
-	if (!Renderer || !IsRender())
+	if (!this->IsRender() || !Renderer)
+	{
 		return;
+	}
+
+	if (!bEnableDebugLine)
+	{
+		return;
+	}
 
 	const FVector SpotPos = GetWorldLocation();
 	FVector dir = GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();
@@ -141,6 +148,13 @@ void USpotLightComponent::RenderDetails()
 		segs = FMath::Clamp(segs, 3, 512);
 		SetCircleSegments(segs);
 	}
+
+	bool bEnableDebugLine = IsEnabledDebugLine();
+	if (ImGui::Checkbox("Debug Line", &bEnableDebugLine))
+	{
+		SetDebugLineEnable(bEnableDebugLine);
+	}
+	
 	ImGui::Spacing();
 
 	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
