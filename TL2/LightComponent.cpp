@@ -52,12 +52,18 @@ void ULightComponent::SetTintColor(const FLinearColor& InColor)
     UpdateFinalColor();
 }
 
+void ULightComponent::UpdateSpriteColor(const FLinearColor& InSpriteColor)
+{
+    if (GetOwner() && GetOwner()->SpriteComponent)
+    {
+        GetOwner()->SpriteComponent->SetSpriteColor(InSpriteColor);
+    }
+}
+
 void ULightComponent::UpdateFinalColor()
 {
     FinalColor = TintColor * TempColor;
 }
-
-
 
 void ULightComponent::DrawDebugLines(class URenderer* Renderer)
 {

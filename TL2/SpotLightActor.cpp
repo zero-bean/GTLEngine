@@ -8,18 +8,18 @@ ASpotLightActor::ASpotLightActor()
 {
     Name = "Spot Light Actor";
     SpotLightComponent = CreateDefaultSubobject<USpotLightComponent>(FName("SpotLightComponent"));
+    RootComponent = SpotLightComponent;
 
-    // Editor billboard for spotlight visualization
-    SpotBillboard = CreateDefaultSubobject<UBillboardComponent>(FName("SpotLightBillboard"));
-    if (SpotBillboard)
+    if (!SpriteComponent)
     {
-        SpotBillboard->SetTexture("Editor/Icon/SpotLight_64x.dds");
-        SpotBillboard->SetBillboardSize(0.6f);
-        SpotBillboard->SetupAttachment(SpotLightComponent);
-        SpotBillboard->SetRelativeLocation(FVector(0, 0, 0));
-        SpotBillboard->SetScreenSizeScaled(true);
-        SpotBillboard->SetScreenSize(0.0025f);
-        SpotBillboard->SetEditable(false);
+        SpriteComponent = CreateDefaultSubobject<UBillboardComponent>("SpriteComponent");
+        if (SpriteComponent)
+        {
+            SpriteComponent->SetTexture("Editor/Icon/PointLight_64x.dds");
+            SpriteComponent->SetRelativeLocation(SpotLightComponent->GetRelativeLocation());
+            SpriteComponent->SetupAttachment(SpotLightComponent);
+            SpriteComponent->SetEditable(false);
+        }        
     }
 }
 

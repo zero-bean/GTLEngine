@@ -293,10 +293,10 @@ PS_OUTPUT mainPS(PS_INPUT input)
     //finalLit = saturate(finalLit); // 과포화 방지
     
     // 톤 매핑
-    //finalLit = finalLit / (finalLit + 1.0f);
+    finalLit = finalLit / (finalLit + 1.0f);
 
     // 노출 방식
-    finalLit = 1.0f - exp(-finalLit * 1.25f);
+    //finalLit = 1.0f - exp(-finalLit * 1.25f);
 
     // 감마 보정
     finalLit = pow(finalLit, 1.0f / 2.2f);    

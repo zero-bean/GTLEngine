@@ -29,6 +29,8 @@ public:
 	bool IsEnabledDebugLine() const { return bEnableDebugLine; }
 	void SetDebugLineEnable(bool bEnable) { bEnableDebugLine = bEnable; }
 
+	void UpdateSpriteColor(const FLinearColor& InSpriteColor);
+
 private:
 	void UpdateFinalColor();
 

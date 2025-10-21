@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "DirectionalLightComponent.h"
 #include "SceneLoader.h"
-#include "GizmoArrowComponent.h"
 #include "ImGui/imgui.h"
 
 UDirectionalLightComponent::UDirectionalLightComponent()

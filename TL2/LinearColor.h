@@ -91,3 +91,8 @@ inline FLinearColor operator*(const FLinearColor& LHS, float RHS)
 	Result.A = LHS.A * RHS;
 	return Result;
 }
+
+inline bool operator==(const FLinearColor& LHS, const FLinearColor& RHS)
+{
+	return (LHS.R == RHS.R) && (LHS.G == RHS.G) && (LHS.B == RHS.B) && (LHS.A == RHS.A);
+}
