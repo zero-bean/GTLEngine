@@ -51,6 +51,7 @@ cbuffer PixelConstData : register(b4)
     FMaterial Material;
     bool HasMaterial;
     bool HasTexture;
+    bool bHasNormal;
     float _pad_mat;
 }
 
@@ -120,7 +121,7 @@ PS_INPUT mainVS(VS_INPUT input)
     // 노멀, 탄젠트, 바이탄젠트를 월드 공간으로 변환
     o.worldNormal = normalize(mul(input.normal, (float3x3) NormalMatrix));
     o.worldTangent = normalize(mul(input.tangent, (float3x3) WorldMatrix));
-    o.worldBitangent = normalize(mul(cross(o.worldNormal, o.worldTangent), (float3x3) WorldMatrix));
+    o.worldBitangent = normalize(cross(o.worldNormal, o.worldTangent));
 
     // MVP
     float4x4 MVP = mul(mul(WorldMatrix, ViewMatrix), ProjectionMatrix);

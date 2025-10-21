@@ -25,7 +25,8 @@ public:
 	DECLARE_CLASS(UShader, UResourceBase)
 
 	void Load(const FString& ShaderPath, ID3D11Device* InDevice);
-	   
+	void LoadWorldNormalShader(const FString& InShaderPath, ID3D11Device* InDevice);
+
 	ID3D11InputLayout* GetInputLayout() const { return InputLayout; }
 	ID3D11VertexShader* GetVertexShader() const { return VertexShaders[(size_t)ActiveModel]; }
 	ID3D11PixelShader* GetPixelShader() const

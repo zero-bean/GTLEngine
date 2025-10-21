@@ -59,7 +59,7 @@ cbuffer PixelConstData : register(b4)
     FMaterial Material;
     bool HasMaterial;
     bool HasTexture;
-    bool HasNormalTexture; 
+    bool bHasNormal;
     float _pad_mat;
 }
 
@@ -74,7 +74,7 @@ PS_INPUT mainVS(VS_INPUT input)
     // 로컬 법선 벡터와 월드 역전치 행렬곱을 하여, 월드 법선 벡터를 얻습니다.
     output.worldNormal = normalize(mul(input.normal, (float3x3) NormalMatrix));
     output.worldTangent = normalize(mul(input.tangent, (float3x3) WorldMatrix));
-    output.worldBitangent = normalize(mul(cross(output.worldNormal, output.worldTangent), (float3x3) WorldMatrix));
+    output.worldBitangent = normalize(cross(output.worldNormal, output.worldTangent));
     
     // 로컬 좌표 행렬을 월드 공간 기준으로 변환합니다.
     float4x4 MVP = mul(mul(WorldMatrix, ViewMatrix), ProjectionMatrix);
@@ -95,10 +95,9 @@ PS_OUTPUT mainPS(PS_INPUT input)
     // 1. 기본 지오메트리 노멀로 시작
     float3 N = normalize(input.worldNormal);
 
-    // Case A. 노말맵 텍스쳐가 존재한다면 
-    if (HasNormalTexture)
+    if (bHasNormal)
     {
-        // A-1. 노멀맵 텍스쳐에서 RGB 값을 Normal 값으로 변환합니다.
+                // A-1. 노멀맵 텍스쳐에서 RGB 값을 Normal 값으로 변환합니다.
         // RGB 값은 XYZ와 매핑되어 있으며 범위는 0~1로 저장되어 있고, 노말 값은 -1~1로 저장되어 있습니다.
         // Sample(): UV 좌표를 읽어와 샘플러스테이트의 규칙을 참고하여, 
         //           주변 텍셀의 색상을 조합해 해당 텍셀의 최종 색상값을 결정하는 역할을 가집니다.
@@ -121,10 +120,10 @@ PS_OUTPUT mainPS(PS_INPUT input)
         N = normalize(mul(tangentNormal, TBN));
     }
 
-    // 3. 최종 노멀(N)을 0~1 범위의 색상으로 변환
+    // 2. 최종 노멀(N)을 0~1 범위의 색상으로 변환
     float3 NormalColor = (N * 0.5f) + 0.5f;
     
-    // 4. 최종 결과값을 반환합니다.
+    // 3. 최종 결과값을 반환합니다.
     Result.Color = float4(NormalColor, 1.0f); // SV_Target0
     Result.UUID = input.UUID;                 // SV_Target1
 

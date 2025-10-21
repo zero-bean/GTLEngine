@@ -240,7 +240,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 if (LastTexture != CurrentTexture)
                 {
                     StatsCollector.IncrementTextureChanges();
-                    LastTexture = CurrentTexture;
+                    LastTexture = CurrentTexture; 
                 }
 
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &(TextureData->TextureSRV));
@@ -259,7 +259,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NullSRV);
             }
 
-            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture });
+            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture });
             RHIDevice->GetDeviceContext()->DrawIndexed(MeshGroupInfos[i].IndexCount, MeshGroupInfos[i].StartIndex, 0);
             StatsCollector.IncrementDrawCalls();
         }
@@ -686,7 +686,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_WorldNormal:
     {
         BeginLineBatch();
-        OverrideShader =  UResourceManager::GetInstance().Load<UShader>("WorldNormalShader.hlsl");
+        OverrideShader = UResourceManager::GetInstance().Load<UShader>("WorldNormalShader.hlsl");
         RenderBasePass(World, Camera, Viewport);
         OverrideShader = nullptr;
         RenderEditorPass(World, Camera, Viewport);

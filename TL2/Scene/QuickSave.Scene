@@ -1,15 +1,33 @@
 {
   "Version" : 2,
-  "NextUUID" : 538,
+  "NextUUID" : 551,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [0.000000, 0.000000, 0.000000],
+    "Location" : [-11.667972, 0.555904, 10.275528],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 0.000000, 0.000000]
+    "Rotation" : [0.000000, 16.000002, -5.700000]
   },
   "Actors" : [
+    {
+      "UUID" : 539,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_0",
+      "RootComponentUUID" : 540
+    }
   ],
   "Components" : [
+    {
+      "UUID" : 540,
+      "OwnerActorUUID" : 539,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 5.320213],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj",
+      "Materials" : ["Data/ship/E-45-Aircraft/E 45 Aircraft_objMat.bin", "Data/ship/E-45-Aircraft/E 45 Aircraft_objMat.bin"],
+      "MaterialNormalMapOverrides" : ["Data/NormalMap/wall_2_nrm.JPG", "Data/NormalMap/pattern_2_nrm.JPG"]
+    }
   ]
 }
