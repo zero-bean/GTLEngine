@@ -508,7 +508,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
     // +-+-+ Render Pass Structure +-+-+
 
-    float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
+    float ViewportAspectRatio = (Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
     if (Viewport->GetSizeY() == 0) ViewportAspectRatio = 1.0f; // 0으로 나누기 방지
     FMatrix ViewMatrix = Camera->GetViewMatrix();
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
@@ -529,12 +529,12 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         // All viewports will share the same culling data
         if (!LightCullingManager->IsInitialized())
         {
-            OutputDebugStringA("[Renderer] Initializing LightCullingManager for the first time...\n");
+            OutputDebugStringA("[Renderer] Initializing LightCullingManager...\n");
             LightCullingManager->Initialize(RHIDevice->GetDevice(), screenWidth, screenHeight);
         }
         else
         {
-            OutputDebugStringA("[Renderer] LightCullingManager already initialized\n");
+            LightCullingManager->Resize(RHIDevice->GetDevice(), screenWidth, screenHeight);
         }
     }
     else

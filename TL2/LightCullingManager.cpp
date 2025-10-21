@@ -279,7 +279,8 @@ void ULightCullingManager::ExecuteLightCulling(
         data->NumTilesX = NumTilesX;
         data->NumTilesY = NumTilesY;
         data->NearFar = FVector2D(NearPlane, FarPlane);
-        data->Padding = FVector2D(0, 0);
+        data->bIsOrthographic = (ProjMatrix.M[3][3] == 1.0f) ? 1 : 0;
+        data->Padding = 0;
         Context->Unmap(CullingCB, 0);
     }
 

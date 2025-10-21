@@ -1,33 +1,170 @@
 {
   "Version" : 2,
-  "NextUUID" : 551,
+  "NextUUID" : 601,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-11.667972, 0.555904, 10.275528],
+    "Location" : [-16.070091, -0.414973, 7.051618],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 16.000002, -5.700000]
+    "Rotation" : [0.000000, 8.200006, -2.000013]
   },
   "Actors" : [
     {
-      "UUID" : 539,
-      "Type" : "AStaticMeshActor",
-      "Name" : "E 45 Aircraft_obj_0",
-      "RootComponentUUID" : 540
+      "UUID" : 578,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_1",
+      "RootComponentUUID" : 579
+    },
+    {
+      "UUID" : 538,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_0",
+      "RootComponentUUID" : 539
+    },
+    {
+      "UUID" : 544,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_1",
+      "RootComponentUUID" : 545
+    },
+    {
+      "UUID" : 547,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_2",
+      "RootComponentUUID" : 548
+    },
+    {
+      "UUID" : 575,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_0",
+      "RootComponentUUID" : 576
     }
   ],
   "Components" : [
     {
-      "UUID" : 540,
-      "OwnerActorUUID" : 539,
+      "UUID" : 579,
+      "OwnerActorUUID" : 578,
       "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 5.320213],
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj",
-      "Materials" : ["Data/ship/E-45-Aircraft/E 45 Aircraft_objMat.bin", "Data/ship/E-45-Aircraft/E 45 Aircraft_objMat.bin"],
-      "MaterialNormalMapOverrides" : ["Data/NormalMap/wall_2_nrm.JPG", "Data/NormalMap/pattern_2_nrm.JPG"]
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 580,
+      "OwnerActorUUID" : 578,
+      "ParentComponentUUID" : 579,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 539,
+      "OwnerActorUUID" : 538,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, -2.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 540,
+      "OwnerActorUUID" : 538,
+      "ParentComponentUUID" : 539,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 545,
+      "OwnerActorUUID" : 544,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 2.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 546,
+      "OwnerActorUUID" : 544,
+      "ParentComponentUUID" : 545,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 548,
+      "OwnerActorUUID" : 547,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 549,
+      "OwnerActorUUID" : 547,
+      "ParentComponentUUID" : 548,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 576,
+      "OwnerActorUUID" : 575,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 6.008442],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 577,
+      "OwnerActorUUID" : 575,
+      "ParentComponentUUID" : 576,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
     }
   ]
 }

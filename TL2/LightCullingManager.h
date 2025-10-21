@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d11.h>
 #include "Vector.h"
 
@@ -91,8 +91,9 @@ private:
         UINT ScreenHeight;
         UINT NumTilesX;
         UINT NumTilesY;
+        UINT bIsOrthographic;
         FVector2D NearFar;
-        FVector2D Padding;
+        UINT Padding;
     };
 
     struct FViewMatrixCBData
