@@ -228,6 +228,31 @@ void CS_LightCulling(
         float4 lightPosView4 = mul(float4(lightPosWorld, 1.0), ViewMatrix);
         float3 lightPosView = lightPosView4.xyz;
 
+        float lightZ = lightPosView.z;
+        float nearZ = NearFar.x;
+        float farZ = NearFar.y;
+
+//// 만약 카메라 앞이 -Z라면, 부호 뒤집기 (자동 보정)
+//        bool isNegativeForward = (nearZ > 0.0f && farZ > 0.0f && lightZ < 0.0f);
+//        if (isNegativeForward)
+//        {
+//            nearZ = -nearZ;
+//            farZ = -farZ;
+//        }
+
+// 이제 culling 적용
+        if (lightZ - lightRadius < nearZ)
+            continue;
+        if (lightZ + lightRadius > farZ)
+            continue;
+        //// ② 너무 멀리(far 뒤)
+        //if (lightZ + lightRadius < farZ)
+        //    continue;
+
+        //// ③ 타일의 Z범위와 겹치지 않음
+        //if (lightZ - lightRadius > TileMinDepth || lightZ + lightRadius < TileMaxDepth)
+        //    continue;
+        
         // Project light to screen space (NDC, then screen pixels)
         float4 lightPosClip = mul(lightPosView4, transpose(ProjInv)); // Need actual Proj matrix, not ProjInv!
         // PROBLEM: We have ProjInv, not Proj. Let's use a different approach.
