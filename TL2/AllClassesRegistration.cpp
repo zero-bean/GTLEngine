@@ -63,6 +63,7 @@
 #include "SpotLightActor.h" 
 #include "SpotLightComponent.h"
 #include "DirectionalLightComponent.h"
+#include "AmbientActor.h"
 // ... (rest of the file)
 IMPLEMENT_CLASS(UWorld)
 
@@ -90,6 +91,7 @@ IMPLEMENT_CLASS(AFXAAActor)
 IMPLEMENT_CLASS(ASpotLightActor)
 IMPLEMENT_CLASS(APointLightActor)
 IMPLEMENT_CLASS(ADirectionalLightActor)
+IMPLEMENT_CLASS(AAmbientActor)
 
 IMPLEMENT_CLASS(UGizmoArrowComponent)
 IMPLEMENT_CLASS(UGizmoScaleComponent)

@@ -164,6 +164,7 @@
     <ClCompile Include="ActorComponent.cpp" />
     <ClCompile Include="AllClassesRegistration.cpp" />
     <ClCompile Include="AABoundingBoxComponent.cpp" />
+    <ClCompile Include="AmbientActor.cpp" />
     <ClCompile Include="AmbientLightComponent.cpp" />
     <ClCompile Include="BillboardComponent.cpp" />
     <ClCompile Include="BoundingVolume.cpp" />
@@ -449,6 +450,7 @@
   <ItemGroup>
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="AABoundingBoxComponent.h" />
+    <ClInclude Include="AmbientActor.h" />
     <ClInclude Include="AmbientLightComponent.h" />
     <ClInclude Include="Archive.h" />
     <ClInclude Include="BillboardComponent.h" />

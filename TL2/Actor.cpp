@@ -401,8 +401,8 @@ UObject* AActor::Duplicate()
     // 원본(this)의 RootComponent 저장
     USceneComponent* OriginalRoot = this->RootComponent;
 
-    // 얕은 복사 수행 (생성자 실행됨)
-    AActor* DuplicateActor = NewObject<AActor>(*this);
+    // 얕은 복사 수행 (실제 클래스 타입으로 생성)
+    AActor* DuplicateActor = static_cast<AActor*>(ObjectFactory::NewObject(GetClass()));
     DuplicateActor->SetName(GetName().ToString());
 
     // 생성자가 만든 RootComponent 삭제
