@@ -587,11 +587,11 @@ LightAccum ComputePointLights_BlinnPhong_Tiled(float3 cameraWorldPos, float3 wor
         float3 L = (dist > 1e-5) ? (Lvec / dist) : float3(0, 0, 1);
 
         float range = max(PointLights[lightIndex].Position.w, 1e-3);
-        float fall = max(PointLights[lightIndex].FallOff, 0.001);
+        float fall = max(PointLights[lightIndex].Color.w, 0.001);
         float t = saturate(dist / range);
         float atten = pow(saturate(1.0 - t), fall);
 
-        float3 Li = PointLights[lightIndex].Color.rgb * PointLights[lightIndex].Color.a;
+        float3 Li = PointLights[lightIndex].Color.rgb;
 
         // Diffuse
         float NdotL = saturate(dot(N, L));
@@ -650,7 +650,7 @@ LightAccum ComputeSpotLights_BlinnPhong_Tiled(float3 cameraWorldPos, float3 worl
 
         // Distance attenuation
         float range = max(light.Position.w, 1e-3);
-        float fall = max(light.FallOff, 0.001);
+        float fall = max(light.Color.a, 0.001);
         float t = saturate(dist / range);
         float attenDist = pow(saturate(1.0 - t), fall);
 
