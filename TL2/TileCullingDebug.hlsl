@@ -28,25 +28,36 @@ PS_INPUT mainVS(VS_INPUT input)
     return output;
 }
 
-// Pixel shader: visualize tile light count as heat map
+// Pixel shader: visualize tile light count as heat map + tile grid lines
 float4 mainPS(PS_INPUT input) : SV_Target
 {
-    // DEBUG: Test if we can read tile data
-    uint2 tileID = uint2(input.position.xy) / TILE_SIZE;
+    // Calculate tile ID and position within tile
+    uint2 pixelPos = uint2(input.position.xy);
+    uint2 tileID = pixelPos / TILE_SIZE;
+    uint2 pixelInTile = pixelPos % TILE_SIZE;
     uint tileIndex = tileID.y * NumTilesX + tileID.x;
+
+    // Draw tile border lines (1 pixel thick)
+    bool isBorder = (pixelInTile.x == 0 || pixelInTile.y == 0);
 
     // Try to read the offset/count
     uint2 offsetCount = g_TileOffsetCount[tileIndex];
     uint lightCount = offsetCount.y;
 
+    // Draw tile grid lines (soft gray, semi-transparent)
+    if (isBorder)
+    {
+        return float4(0.5, 0.5, 0.5, 0.5); // Soft gray border
+    }
+
     // If no data in buffer, show test pattern based on tile position
     if (lightCount == 0 && offsetCount.x == 0)
     {
-        // Show red to indicate buffer might be empty
-        return float4(1.0, 0.0, 0.0, 0.3);
+        // Show very transparent red to indicate buffer might be empty
+        return float4(1.0, 0.0, 0.0, 0.1);
     }
 
-    // Show actual light count
+    // Show actual light count as heat map
     float3 heatColor = LightCountToHeatMap(lightCount);
-    return float4(heatColor, 0.7);
+    return float4(heatColor, 0.3); // More transparent to see scene underneath
 }

@@ -252,7 +252,7 @@ float3 EvaluateMultiProbeSHLighting(float3 worldPos, float3 normal)
 // Tile-based Light Culling Support
 // ------------------------------------------------------------------
 
-#define TILE_SIZE 16
+#define TILE_SIZE 32
 
 StructuredBuffer<uint> g_LightIndexList : register(t10);
 StructuredBuffer<uint2> g_TileOffsetCount : register(t11);

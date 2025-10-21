@@ -1,7 +1,7 @@
 // LightCulling.hlsl - Tile-based Light Culling Compute Shader
 
 // Tile configuration
-#define TILE_SIZE 16
+#define TILE_SIZE 32
 #define MAX_LIGHTS_PER_TILE 256
 #define MAX_POINT_LIGHTS 100
 #define MAX_SPOT_LIGHTS 100

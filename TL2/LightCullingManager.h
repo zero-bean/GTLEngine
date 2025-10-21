@@ -47,7 +47,7 @@ public:
     bool GetDebugVisualization() const { return bDebugVisualize; }
 
 private:
-    static constexpr UINT TILE_SIZE = 16;
+    static constexpr UINT TILE_SIZE = 32;
     static constexpr UINT MAX_LIGHTS_PER_TILE = 256;
 
     // Screen dimensions
