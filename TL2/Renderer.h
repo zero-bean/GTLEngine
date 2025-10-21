@@ -3,6 +3,7 @@
 #include "RHIDevice.h"
 #include "LineDynamicMesh.h"
 #include "Shader.h"
+#include "LightCullingManager.h"
 
 class UStaticMeshComponent;
 class UTextRenderComponent;
@@ -115,6 +116,7 @@ private:
     void RenderSpotLightPass(UWorld* World);     // 포스트: SpotLight 조명/가산
     void RenderOverlayPass(UWorld* World);      // 라인/텍스트/UI/디버그
     void RenderSceneDepthVisualizePass(ACameraActor* Camera);       // 포스트: SceneDepth 뷰 모드 (뎁스 버퍼 시각화)
+    void RenderTileCullingDebugPass();          // 포스트: Tile Culling 디버그 시각화 (풀스크린 오버레이)
 
 
     // 2) 씬 렌더링 헬퍼 메소드들
@@ -156,6 +158,9 @@ private:
     UShader* DepthOnlyShader = nullptr;
     UShader* SceneDepthVisualizeShader = nullptr;
 
+    // Shader for Tile Culling Debug Visualization
+    UShader* TileCullingDebugShader = nullptr;
+
     /**
      * @brief 불필요한 API 호출을 막기 위해 마지막으로 바인딩된 상태를 캐싱합니다.
      */
@@ -166,8 +171,12 @@ private:
 
     void InitializeLineBatch();
     void ResetRenderStateTracking();
-    
+
     // Global shading model selection used by uber shader(s)
     ELightShadingModel CurrentShadingModel = ELightShadingModel::BlinnPhong;
+
+    // Tile-based Light Culling Manager
+    ULightCullingManager* LightCullingManager = nullptr;
+    bool bUseTiledCulling = true; // Toggle for tile-based culling
 };
 

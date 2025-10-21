@@ -350,9 +350,12 @@ enum class EEngineShowFlags : uint64
     //BVH
     SF_BVH = 1ull << 8,            //Show/hide all BVH
 
+    // Tile Culling Debug
+    SF_TileCullingDebug = 1ull << 9,  // Show/hide tile-based light culling debug visualization
+
     // Default enabled flags
     SF_DefaultEnabled = SF_Primitives | SF_StaticMeshes | SF_Grid | SF_Decals | SF_BVH | SF_BoundingBoxes,
-    
+
     // All flags (for initialization/reset)
     SF_All = 0xFFFFFFFFFFFFFFFFull
 };

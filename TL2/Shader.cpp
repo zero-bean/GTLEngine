@@ -8,6 +8,7 @@ static D3D_SHADER_MACRO MACRO_PHONG[] = {
     {"LIGHTING_MODEL_LAMBERT","0"},
     {"LIGHTING_MODEL_GOURAUD","0"},
     {"LIGHTING_MODEL_UNLIT","0"},
+    {"USE_TILED_CULLING","1"},
     {nullptr,nullptr}
 };
 
@@ -18,6 +19,7 @@ static D3D_SHADER_MACRO MACRO_BLINN[] = {
     {"LIGHTING_MODEL_LAMBERT","0"},
     {"LIGHTING_MODEL_GOURAUD","0"},
     {"LIGHTING_MODEL_UNLIT","0"},
+    {"USE_TILED_CULLING","1"},
     {nullptr,nullptr}
 };
 
@@ -28,6 +30,7 @@ static D3D_SHADER_MACRO MACRO_LAMBERT[] = {
     {"LIGHTING_MODEL_LAMBERT","1"},
     {"LIGHTING_MODEL_GOURAUD","0"},
     {"LIGHTING_MODEL_UNLIT","0"},
+    {"USE_TILED_CULLING","1"},
     {nullptr,nullptr}
 };
 
@@ -38,6 +41,7 @@ static D3D_SHADER_MACRO MACRO_BRDF[] = {
     {"LIGHTING_MODEL_LAMBERT","0"},
     {"LIGHTING_MODEL_GOURAUD","0"},
     {"LIGHTING_MODEL_UNLIT","0"},
+    {"USE_TILED_CULLING","1"},
     {nullptr,nullptr}
 
 };
@@ -59,6 +63,7 @@ static D3D_SHADER_MACRO MACRO_UNLIT[] = {
     {"LIGHTING_MODEL_LAMBERT","0"},
     {"LIGHTING_MODEL_GOURAUD","0"},
     {"LIGHTING_MODEL_UNLIT","1"},
+    {"USE_TILED_CULLING","1"},
     {nullptr,nullptr}
 };
 

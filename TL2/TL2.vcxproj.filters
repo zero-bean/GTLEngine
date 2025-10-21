@@ -479,6 +479,7 @@
     <ClCompile Include="PointLightActor.cpp">
       <Filter>Actors</Filter>
     </ClCompile>
+    <ClCompile Include="LightCullingManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -890,6 +891,7 @@
     <ClInclude Include="PointLightActor.h">
       <Filter>Actors</Filter>
     </ClInclude>
+    <ClInclude Include="LightCullingManager.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Primitive.hlsl">
@@ -944,6 +946,12 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="UberLit.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TileCullingDebug.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="LightCulling.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
