@@ -1,152 +1,89 @@
 {
   "Version" : 2,
-  "NextUUID" : 557,
+  "NextUUID" : 724,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-2.321332, 5.982107, 5.109506],
+    "Location" : [-91.160042, -108.318565, 54.963978],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 26.200020, -78.299843]
+    "Rotation" : [0.000000, 30.699999, 75.700279]
   },
   "Actors" : [
     {
-      "UUID" : 483,
+      "UUID" : 609,
       "Type" : "AStaticMeshActor",
-      "Name" : "Stone_0",
-      "RootComponentUUID" : 484
+      "Name" : "Grass_Block_0",
+      "RootComponentUUID" : 610
     },
     {
-      "UUID" : 492,
-      "Type" : "APointLightActor",
-      "Name" : "Point Light_0",
-      "RootComponentUUID" : 493
+      "UUID" : 673,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Snowy_0",
+      "RootComponentUUID" : 674
     },
     {
-      "UUID" : 548,
-      "Type" : "AActor",
-      "Name" : "Point Light_0",
-      "RootComponentUUID" : 549
+      "UUID" : 638,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Mincraft-Lantern_0",
+      "RootComponentUUID" : 639
     },
     {
-      "UUID" : 551,
-      "Type" : "AActor",
-      "Name" : "Point Light_0",
-      "RootComponentUUID" : 552
-    },
-    {
-      "UUID" : 554,
-      "Type" : "AActor",
-      "Name" : "Point Light_0",
-      "RootComponentUUID" : 555
+      "UUID" : 714,
+      "Type" : "ADirectionalLightActor",
+      "Name" : "Directional Light_0",
+      "RootComponentUUID" : 715
     }
   ],
   "Components" : [
     {
-      "UUID" : 484,
-      "OwnerActorUUID" : 483,
+      "UUID" : 610,
+      "OwnerActorUUID" : 609,
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 1.000000],
+      "RelativeLocation" : [0.000000, 0.199729, 3.091783],
+      "RelativeRotation" : [-0.000022, -0.000005, 179.999939],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Minecraft/Grass/Grass_Block.obj",
+      "Materials" : ["Data/Minecraft/Grass/Grass_BlockMat.bin"],
+      "MaterialNormalMapOverrides" : ["Data/Minecraft/Grass/minecraft-glass_nrm.png"]
+    },
+    {
+      "UUID" : 674,
+      "OwnerActorUUID" : 673,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [-179.999985, 0.000005, 0.000022],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj",
-      "Materials" : ["Data/PUBGM4/PubgM4Mat.bin", "Data/ship/E-45-Aircraft/E 45 Aircraft_objMat.bin"],
-      "MaterialNormalMapOverrides" : ["Data/ship/E-45_nrm.jpg", "Data/ship/E-45_glass_nrm.jpg"]
+      "StaticMesh" : "Data/Minecraft/Snowy/Snowy.obj",
+      "Materials" : ["Data/Minecraft/Snowy/SnowyMat.bin", "Granite", "Diorite", "Andesite", "Grass_Block", "Dirt", "Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Gravel", "Iron_Ore", "Coal_Ore", "Spruce_Log", "Spruce_Leaves", "Sandstone", "Grass", "Dandelion", "Poppy", "Torch", "Chest", "Snow", "Ice", "Clay", "Sugar_Cane", "Pumpkin", "Tall_Seagrass", "Seagrass", "Copper_Ore"],
+      "MaterialNormalMapOverrides" : ["", "", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png"]
     },
     {
-      "UUID" : 493,
-      "OwnerActorUUID" : 492,
+      "UUID" : 639,
+      "OwnerActorUUID" : 638,
       "ParentComponentUUID" : 0,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, -6.849391, -2.170512],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [1.328726, -2.193814, 2.179555],
+      "RelativeRotation" : [-179.999985, -0.000005, 179.999954],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "PointLightData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.000000,
-        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
-      }
+      "StaticMesh" : "Data/Minecraft/Lantern/Mincraft-Lantern.obj",
+      "Materials" : ["Data/Minecraft/Lantern/Mincraft-LanternMat.bin", "Data/Minecraft/Lantern/Mincraft-LanternMat.bin", "Data/Minecraft/Lantern/Mincraft-LanternMat.bin"],
+      "MaterialNormalMapOverrides" : ["Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png", "Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png", "Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png"]
     },
     {
-      "UUID" : 494,
-      "OwnerActorUUID" : 492,
-      "ParentComponentUUID" : 493,
-      "Type" : "UBillboardComponent",
+      "UUID" : 715,
+      "OwnerActorUUID" : 714,
+      "ParentComponentUUID" : 0,
+      "Type" : "UDirectionalLightComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
     },
     {
-      "UUID" : 549,
-      "OwnerActorUUID" : 548,
-      "ParentComponentUUID" : 0,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, -6.532362, 5.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "PointLightData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.000000,
-        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
-      }
-    },
-    {
-      "UUID" : 550,
-      "OwnerActorUUID" : 548,
-      "ParentComponentUUID" : 549,
-      "Type" : "UBillboardComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
-    },
-    {
-      "UUID" : 552,
-      "OwnerActorUUID" : 551,
-      "ParentComponentUUID" : 0,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 4.696726, -2.170512],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "PointLightData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.000000,
-        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
-      }
-    },
-    {
-      "UUID" : 553,
-      "OwnerActorUUID" : 551,
-      "ParentComponentUUID" : 552,
-      "Type" : "UBillboardComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
-    },
-    {
-      "UUID" : 555,
-      "OwnerActorUUID" : 554,
-      "ParentComponentUUID" : 0,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 4.696726, 5.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "PointLightData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.000000,
-        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
-      }
-    },
-    {
-      "UUID" : 556,
-      "OwnerActorUUID" : 554,
-      "ParentComponentUUID" : 555,
+      "UUID" : 716,
+      "OwnerActorUUID" : 714,
+      "ParentComponentUUID" : 715,
       "Type" : "UBillboardComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
