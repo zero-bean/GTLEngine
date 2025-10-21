@@ -26,6 +26,7 @@
 #include "SpotLightComponent.h"
 #include "DirectionalLightComponent.h"
 #include "LightCullingManager.h"
+#include "GizmoArrowComponent.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
@@ -219,6 +220,12 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
 
             bool bHasNormalTexture = (NormalTexture != nullptr); // 머티리얼의 노말맵 보유 여부
 
+            if (UShader* Shader = Material->GetShader())
+            {
+                Shader->SetActiveNormalMode(bHasNormalTexture ? ENormalMapMode::HasNormalMap : ENormalMapMode::NoNormalMap);
+                PrepareShader(Shader);
+            }
+
             if (LastMaterial != Material)
             {
                 StatsCollector.IncrementMaterialChanges();
@@ -252,7 +259,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NullSRV);
             }
 
-            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture }); 
+            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture });
             RHIDevice->GetDeviceContext()->DrawIndexed(MeshGroupInfos[i].IndexCount, MeshGroupInfos[i].StartIndex, 0);
             StatsCollector.IncrementDrawCalls();
         }
@@ -535,12 +542,14 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         OutputDebugStringA("[Renderer] LightCullingManager is NULL or disabled!\n");
     }
 
+    // Upload BRDF parameters for pixel shader
+    UpdateSetCBuffer(FBRDFInfoBufferType(BRDFRoughness, BRDFMetallic));
     switch (CurrentViewMode)
     {
     case EViewModeIndex::VMI_Lit:
     case EViewModeIndex::VMI_Unlit:
     case EViewModeIndex::VMI_Wireframe:
-    {
+    {        
         RenderDirectionalLightPass(World);
         RenderPointLightPass(World);
         RenderSpotLightPass(World);
@@ -676,6 +685,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     }
     case EViewModeIndex::VMI_WorldNormal:
     {
+        BeginLineBatch();
         OverrideShader =  UResourceManager::GetInstance().Load<UShader>("WorldNormalShader.hlsl");
         RenderBasePass(World, Camera, Viewport);
         OverrideShader = nullptr;
@@ -981,7 +991,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
             PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
         );
         PointLightCB.PointLights[idx].Color = FVector4(
-            PointLightComponent->GetColor().R, PointLightComponent->GetColor().G, PointLightComponent->GetColor().B, PointLightComponent->GetIntensity()
+            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetIntensity()
         );
         PointLightCB.PointLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
     }
@@ -1003,7 +1013,7 @@ void URenderer::RenderDirectionalLightPass(UWorld* World)
 
         DirectionalLightCB.DirectionalLights[idx].Direction = DirectionalLightComponent->GetDirection();
         DirectionalLightCB.DirectionalLights[idx].Color = FLinearColor(
-            DirectionalLightComponent->GetColor().R,DirectionalLightComponent->GetColor().G,DirectionalLightComponent->GetColor().B,DirectionalLightComponent->GetIntensity()
+            DirectionalLightComponent->GetFinalColor().R,DirectionalLightComponent->GetFinalColor().G,DirectionalLightComponent->GetFinalColor().B,DirectionalLightComponent->GetIntensity()
             );
         DirectionalLightCB.DirectionalLights[idx].bEnableSpecular = DirectionalLightComponent->IsEnabledSpecular();
     }
@@ -1025,7 +1035,7 @@ void URenderer::RenderSpotLightPass(UWorld* World)
             PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
         );
         SpotLightCB.SpotLights[idx].Color = FVector4(
-            PointLightComponent->GetColor().R, PointLightComponent->GetColor().G, PointLightComponent->GetColor().B, PointLightComponent->GetIntensity()
+            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetIntensity()
         );
         SpotLightCB.SpotLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
         // If set on component, propagate cone angles

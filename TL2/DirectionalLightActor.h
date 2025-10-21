@@ -2,8 +2,6 @@
 #include "Actor.h"
 #include "DirectionalLightComponent.h"
 
-class UGizmoArrowComponent;
-
 class UDirectionalLightComponent;
 
 class ADirectionalLightActor : public AActor
@@ -13,14 +11,11 @@ public:
     ADirectionalLightActor();
     ~ADirectionalLightActor() override;
 
-    void Tick(float DeltaTime) override;
-
-    UGizmoArrowComponent* GetDirectionComponent() const { return DirectionComponent; }
+    void Tick(float DeltaTime) override;    
 
     UObject* Duplicate() override;
     void DuplicateSubObjects() override;
 
 protected:
-    UDirectionalLightComponent* DirectionalLightComponent = nullptr;
-    UGizmoArrowComponent* DirectionComponent = nullptr;
+    UDirectionalLightComponent* DirectionalLightComponent = nullptr;    
 };

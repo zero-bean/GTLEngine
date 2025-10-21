@@ -7,9 +7,18 @@ enum class ELightShadingModel : uint32_t
 	BlinnPhong = 1,
 	Lambert= 2,
 	BRDF = 3,
-	Unlit = 4,
+	Gouraud = 4,
+	Unlit = 5,
 	Count,
 };
+
+enum class ENormalMapMode : uint8_t
+{
+	NoNormalMap = 0,
+	HasNormalMap = 1,
+	ENormalMapModeCount = 2,
+};
+
 class UShader : public UResourceBase
 {
 public:
@@ -18,11 +27,16 @@ public:
 	void Load(const FString& ShaderPath, ID3D11Device* InDevice);
 	   
 	ID3D11InputLayout* GetInputLayout() const { return InputLayout; }
-	ID3D11VertexShader* GetVertexShader() const { return VertexShader; }
-	ID3D11PixelShader* GetPixelShader() const { return PixelShaders[(size_t)ActiveModel]; }
+	ID3D11VertexShader* GetVertexShader() const { return VertexShaders[(size_t)ActiveModel]; }
+	ID3D11PixelShader* GetPixelShader() const
+	{
+		return PixelShaders[(size_t)ActiveModel][(size_t)ActiveNormalMode];
+	}
 
 	void SetActiveMode(ELightShadingModel Model) { ActiveModel = Model; }
-	ELightShadingModel GetActiveMode() const  { return ActiveModel; } 
+	ELightShadingModel GetActiveMode() const { return ActiveModel; }
+
+	void SetActiveNormalMode(ENormalMapMode InMode) { ActiveNormalMode = InMode; }
 
 	static const D3D_SHADER_MACRO* GetMacros(ELightShadingModel Model);
 
@@ -30,26 +44,30 @@ protected:
 	virtual ~UShader();
 
 	ELightShadingModel ActiveModel = ELightShadingModel::BlinnPhong;
+	ENormalMapMode ActiveNormalMode = ENormalMapMode::NoNormalMap;
 
 	// Default macro table; actual selection is decided at load time.
-	D3D_SHADER_MACRO DefinesRender[7] =
+	D3D_SHADER_MACRO DefinesRender[8] =
 	{
 		{ "LIGHTING_MODEL_PHONG",  "0" },
 		{ "LIGHTING_MODEL_BLINN_PHONG",  "1" },
 		{ "LIGHTING_MODEL_BRDF",  "0" },
 		{ "LIGHTING_MODEL_LAMBERT",  "0" },
+		{ "LIGHTING_MODEL_GOURAUD",  "0" },
 		{ "LIGHTING_MODEL_UNLIT",  "0" },
 		{ "USE_TILED_CULLING",  "1" },  // Enable tile-based light culling
 		{ nullptr, nullptr }
 	};
 	 
 private:
-	ID3DBlob* VSBlob = nullptr;
+	ID3DBlob* VSBlobs[(size_t)ELightShadingModel::Count] = { nullptr };
 	ID3DBlob* PSBlob = nullptr;
 
 	ID3D11InputLayout* InputLayout = nullptr;
-	ID3D11VertexShader* VertexShader = nullptr;
-	ID3D11PixelShader* PixelShaders[(size_t)ELightShadingModel::Count] = {nullptr};
+	ID3D11VertexShader* VertexShaders[(size_t)ELightShadingModel::Count] = { nullptr };
+	ID3D11PixelShader* PixelShaders
+		[(size_t)ELightShadingModel::Count]
+		[(size_t)ENormalMapMode::ENormalMapModeCount] = { nullptr };
 
 	void CreateInputLayout(ID3D11Device* Device, const FString& InShaderPath);
 	void ReleaseResources();

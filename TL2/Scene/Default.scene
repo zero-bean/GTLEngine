@@ -1,56 +1,100 @@
 {
   "Version" : 2,
-  "NextUUID" : 652,
+  "NextUUID" : 725,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-2.927891, 9.331987, 3.272735],
+    "Location" : [69.274490, 8.259109, 13.838659],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 12.599998, -57.899998]
+    "Rotation" : [0.000000, 16.799980, -175.199677]
   },
   "Actors" : [
     {
-      "UUID" : 644,
-      "Type" : "AStaticMeshActor",
-      "Name" : "Sphere_0",
-      "RootComponentUUID" : 645
+      "UUID" : 548,
+      "Type" : "AActor",
+      "Name" : "Point Light_0",
+      "RootComponentUUID" : 549
     },
     {
-      "UUID" : 646,
-      "Type" : "ASpotLightActor",
-      "Name" : "Spot Light_0",
-      "RootComponentUUID" : 647
+      "UUID" : 609,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Grass_Block_0",
+      "RootComponentUUID" : 610
+    },
+    {
+      "UUID" : 673,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Snowy_0",
+      "RootComponentUUID" : 674
+    },
+    {
+      "UUID" : 638,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Mincraft-Lantern_0",
+      "RootComponentUUID" : 639
     }
   ],
   "Components" : [
     {
-      "UUID" : 645,
-      "OwnerActorUUID" : 644,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Sphere.obj"
-    },
-    {
-      "UUID" : 647,
-      "OwnerActorUUID" : 646,
-      "ParentComponentUUID" : 0,
-      "Type" : "USpotLightComponent",
-      "RelativeLocation" : [-2.014595, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 89.500320, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
-    {
-      "UUID" : 648,
-      "OwnerActorUUID" : 646,
-      "ParentComponentUUID" : 647,
+      "UUID" : 550,
+      "OwnerActorUUID" : 548,
+      "ParentComponentUUID" : 549,
       "Type" : "UBillboardComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/SpotLight_64x.dds"
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 549,
+      "OwnerActorUUID" : 548,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, -6.532362, 60.522339],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 610,
+      "OwnerActorUUID" : 609,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.199729, 3.091783],
+      "RelativeRotation" : [-0.000022, -0.000005, 179.999939],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Minecraft/Grass/Grass_Block.obj",
+      "Materials" : ["Data/Minecraft/Grass/Grass_BlockMat.bin"],
+      "MaterialNormalMapOverrides" : ["Data/Minecraft/Grass/minecraft-glass_nrm.png"]
+    },
+    {
+      "UUID" : 674,
+      "OwnerActorUUID" : 673,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [-0.000000, -0.000005, -179.999954],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Minecraft/Snowy/Snowy.obj",
+      "Materials" : ["Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Andesite", "Grass_Block", "Dirt", "Stationary_Water", "Sand", "Gravel", "Iron_Ore", "Coal_Ore", "Spruce_Log", "Spruce_Leaves", "Data/Minecraft/Snowy/SnowyMat.bin", "Grass", "Dandelion", "Poppy", "Torch", "Chest", "Data/Minecraft/Snowy/SnowyMat.bin", "Ice", "Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Seagrass", "Copper_Ore"],
+      "MaterialNormalMapOverrides" : ["Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png"]
+    },
+    {
+      "UUID" : 639,
+      "OwnerActorUUID" : 638,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [1.328726, -2.193814, 2.179555],
+      "RelativeRotation" : [-179.999985, -0.000005, 179.999954],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Minecraft/Lantern/Mincraft-Lantern.obj",
+      "Materials" : ["Data/Minecraft/Lantern/Mincraft-LanternMat.bin", "Data/Minecraft/Lantern/Mincraft-LanternMat.bin", "Data/Minecraft/Lantern/Mincraft-LanternMat.bin"],
+      "MaterialNormalMapOverrides" : ["Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png", "Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png", "Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png"]
     }
   ]
 }

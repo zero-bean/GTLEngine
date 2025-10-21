@@ -82,13 +82,19 @@ void UPointLightComponent::RenderDetails()
 	ImGui::Text("PointLight Component Settings");
 
 	// 🔸 색상 설정 (RGB Color Picker)
-	float color[3] = { GetColor().R, GetColor().G, GetColor().B};
+	float color[3] = { GetTintColor().R, GetTintColor().G, GetTintColor().B};
 	if (ImGui::ColorEdit3("Color", color))
 	{
-		SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+		SetTintColor(FLinearColor(color[0], color[1], color[2], 1.0f));
 	}
 
 	ImGui::Spacing();
+
+	float Temperature = GetColorTemperature();
+	if (ImGui::DragFloat("Temperature", &Temperature, 11.029f, 1000.0f, 15000.0f))
+	{
+		SetColorTemperature(Temperature);
+	}
 
 	// 🔸 밝기 (Intensity)
 	float intensity = GetIntensity();
@@ -121,6 +127,40 @@ void UPointLightComponent::RenderDetails()
 
 void UPointLightComponent::DrawDebugLines(URenderer* Renderer)
 {
+	if (!this->IsRender() || !Renderer)
+	{
+		return;
+	}
+
+	if (KINDA_SMALL_NUMBER > Radius)
+	{
+		return;
+	}
+
+	// 중심 = 현재 배치된 월드 포지션
+	FVector Center = GetWorldLocation();
+	uint32 Segments = 24;
+
+	float Step = TWO_PI / Segments;
+
+	FVector4 Color(1.0f, 1.0f, 0.5f,1.0f);
+
+	FVector PrevPointXY = Center + FVector(0.0f, Radius, 0.0f);
+	FVector PrevPointXZ = Center + FVector(Radius, 0.0f, 0.0f);
+	FVector PrevPointYZ = Center + FVector(0.0f, Radius, 0.0f);
+	for (uint32 i = 0; i< Segments; i++)
+	{		
+		float Angle = Step * (i + 1);
+		FVector NextPointXY = Center + FVector(Radius * sinf(Angle), Radius * cosf(Angle), 0.0f);
+		FVector NextPointXZ = Center + FVector(Radius * cosf(Angle), 0.0f, Radius * sinf(Angle));
+		FVector NextPointYZ = Center + FVector(0.0f, Radius * cosf(Angle), Radius * sinf(Angle));
+		Renderer->AddLine(PrevPointXY, NextPointXY, Color);
+		Renderer->AddLine(PrevPointXZ, NextPointXZ, Color);
+		Renderer->AddLine(PrevPointYZ, NextPointYZ, Color);
+		PrevPointXY = NextPointXY;
+		PrevPointXZ = NextPointXZ;
+		PrevPointYZ = NextPointYZ;
+	}	
 }
 
 

@@ -1,11 +1,14 @@
 #include "pch.h"
 #include "DirectionalLightComponent.h"
 #include "SceneLoader.h"
+#include "GizmoArrowComponent.h"
 #include "ImGui/imgui.h"
 
 UDirectionalLightComponent::UDirectionalLightComponent()
 {
-    bCanEverTick = true;    
+    bCanEverTick = true;
+	Direction = GetWorldRotation().GetUpVector();
+	Direction.Z *= -1.0f; 
 }
 
 UDirectionalLightComponent::~UDirectionalLightComponent()
@@ -20,13 +23,13 @@ void UDirectionalLightComponent::Serialize(bool bIsLoading, FComponentData& InOu
     if (bIsLoading)
     {
         Intensity = InOut.DirectionalLightProperty.Intensity;
-        Color = InOut.DirectionalLightProperty.Color;
+        FinalColor = InOut.DirectionalLightProperty.Color;
         bEnableSpecular = InOut.DirectionalLightProperty.bEnableSpecular;
     }
     else
     {
         InOut.DirectionalLightProperty.Intensity = Intensity;
-        InOut.DirectionalLightProperty.Color = Color;
+        InOut.DirectionalLightProperty.Color = FinalColor;
         InOut.DirectionalLightProperty.bEnableSpecular = bEnableSpecular;
     }
 }
@@ -47,7 +50,7 @@ UObject* UDirectionalLightComponent::Duplicate()
     UDirectionalLightComponent* DuplicatedComponent = NewObject<UDirectionalLightComponent>();
     CopyCommonProperties(DuplicatedComponent);
     DuplicatedComponent->Intensity = this->Intensity;
-    DuplicatedComponent->Color = this->Color;    
+    DuplicatedComponent->FinalColor = this->FinalColor;    
     DuplicatedComponent->bEnableSpecular = this->bEnableSpecular;
     DuplicatedComponent->DuplicateSubObjects();
     return DuplicatedComponent;
@@ -64,13 +67,19 @@ void UDirectionalLightComponent::RenderDetails()
 	ImGui::Text("PointLight Component Settings");
 
 	// 🔸 색상 설정 (RGB Color Picker)
-	float color[3] = { GetColor().R, GetColor().G, GetColor().B};
+	float color[3] = { GetTintColor().R, GetTintColor().G, GetTintColor().B};
 	if (ImGui::ColorEdit3("Color", color))
 	{
-		SetColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+		SetTintColor(FLinearColor(color[0], color[1], color[2], 1.0f));
 	}
 
 	ImGui::Spacing();
+
+	float Temperature = GetColorTemperature();
+	if (ImGui::DragFloat("Temperature", &Temperature, 11.029f, 1000.0f, 15000.0f))
+	{
+		SetColorTemperature(Temperature);
+	}
 
 	// 🔸 밝기 (Intensity)
 	float intensity = GetIntensity();
@@ -91,4 +100,14 @@ void UDirectionalLightComponent::RenderDetails()
 	ImGui::Text("Preview:");
 	ImGui::SameLine();
 	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● DirectionalLight Active");
+}
+
+void UDirectionalLightComponent::DrawDebugLines(class URenderer* Renderer)
+{
+	FVector Position = GetWorldLocation();
+	Direction = GetWorldRotation().GetUpVector();
+	Direction.Z *= -1.25f; 
+	FVector DirectionVector = Position + Direction;
+	FVector4 Color(1.0f, 1.0f, 0.5f,1.0f);
+	Renderer->AddLine(Position, DirectionVector, Color);
 }

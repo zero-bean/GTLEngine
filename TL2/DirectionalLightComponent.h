@@ -17,16 +17,20 @@ public:
 	virtual void TickComponent(float DeltaSeconds) override;
 
 	// Direction은 Scene Comp의 회전방향
-	FVector GetDirection() const { return this->GetWorldRotation().GetForwardVector(); }
+	FVector GetDirection() const { return Direction; }
 	int32 IsEnabledSpecular() const { return bEnableSpecular; }
 	void SetSpecularEnable(bool bEnable);
 
 	// Editor Details
 	void RenderDetails() override;
 
+	void DrawDebugLines(class URenderer* Renderer) override;
+
 protected:
 	UObject* Duplicate() override;
 	void DuplicateSubObjects() override;
-	
+
+private:
 	int32 bEnableSpecular = 1;
+	FVector Direction;	
 };
