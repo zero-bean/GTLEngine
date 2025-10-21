@@ -32,13 +32,14 @@ protected:
 	ELightShadingModel ActiveModel = ELightShadingModel::BlinnPhong;
 
 	// Default macro table; actual selection is decided at load time.
-	D3D_SHADER_MACRO DefinesRender[6] =
+	D3D_SHADER_MACRO DefinesRender[7] =
 	{
 		{ "LIGHTING_MODEL_PHONG",  "0" },
 		{ "LIGHTING_MODEL_BLINN_PHONG",  "1" },
 		{ "LIGHTING_MODEL_BRDF",  "0" },
 		{ "LIGHTING_MODEL_LAMBERT",  "0" },
 		{ "LIGHTING_MODEL_UNLIT",  "0" },
+		{ "USE_TILED_CULLING",  "1" },  // Enable tile-based light culling
 		{ nullptr, nullptr }
 	};
 	 

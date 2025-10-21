@@ -96,19 +96,19 @@ public:
 
 public:
     // getter
-    inline ID3D11Device* GetDevice()
+    inline ID3D11Device* GetDevice() override
     {
         return Device;
     }
-    inline ID3D11DeviceContext* GetDeviceContext()
+    inline ID3D11DeviceContext* GetDeviceContext() override
     {
         return DeviceContext;
     }
-    inline IDXGISwapChain* GetSwapChain()
+    inline IDXGISwapChain* GetSwapChain() override
     {
         return SwapChain;
     }
-    inline ID3D11ShaderResourceView* GetDepthSRV()
+    inline ID3D11ShaderResourceView* GetDepthSRV() override
     {
         return DepthSRV;
     }

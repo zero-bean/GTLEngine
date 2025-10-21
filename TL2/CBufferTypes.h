@@ -77,7 +77,7 @@ CBUFFER_INFO(ViewportBufferType, 6, false, true)
 
 CBUFFER_INFO(DecalAlphaBufferType, 8, false, true)
 CBUFFER_INFO(FHeightFogBufferType, 8, false, true)
-CBUFFER_INFO(FPointLightBufferType, 9, false, true)
+CBUFFER_INFO(FPointLightBufferType, 9, true, true)
 CBUFFER_INFO(FSpotLightBufferType, 13, false, true)
 CBUFFER_INFO(FSHAmbientLightBufferType, 10, false, true)
 CBUFFER_INFO(FMultiSHProbeBufferType, 12, false, true)

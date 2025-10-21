@@ -248,4 +248,174 @@ float3 EvaluateMultiProbeSHLighting(float3 worldPos, float3 normal)
     return totalLighting;
 }
 
-#endif
+// ------------------------------------------------------------------
+// Tile-based Light Culling Support
+// ------------------------------------------------------------------
+
+#define TILE_SIZE 16
+
+StructuredBuffer<uint> g_LightIndexList : register(t10);
+StructuredBuffer<uint2> g_TileOffsetCount : register(t11);
+
+cbuffer TileCullingInfoCB : register(b6)
+{
+    uint NumTilesX;
+    uint DebugVisualizeTiles; // 0 = off, 1 = on
+    uint2 _pad_tileinfo;
+}
+
+// Tile-based PointLights: Blinn-Phong (optimized version)
+LightAccum ComputePointLights_BlinnPhong_Tiled(float3 cameraWorldPos, float3 worldPos, float3 worldNormal, float shininess, float4 screenPos)
+{
+    LightAccum acc = (LightAccum) 0;
+
+    float3 N = normalize(worldNormal);
+    float3 V = normalize(cameraWorldPos - worldPos);
+    float exp = clamp(shininess, 1.0, 128.0);
+
+    // Calculate tile index from screen position
+    uint2 tileID = uint2(screenPos.xy) / TILE_SIZE;
+    uint tileIndex = tileID.y * NumTilesX + tileID.x;
+
+    // Get light list for this tile
+    uint2 offsetCount = g_TileOffsetCount[tileIndex];
+    uint lightListOffset = offsetCount.x;
+    uint lightCount = offsetCount.y;
+
+    // Iterate only over lights affecting this tile
+    [loop]
+    for (uint i = 0; i < lightCount; ++i)
+    {
+        uint lightIndex = g_LightIndexList[lightListOffset + i];
+
+        // Check if this is a point light (spot lights come after)
+        if (lightIndex >= (uint)PointLightCount)
+            continue;
+
+        float3 Lvec = PointLights[lightIndex].Position.xyz - worldPos;
+        float dist = length(Lvec);
+        float3 L = (dist > 1e-5) ? (Lvec / dist) : float3(0, 0, 1);
+
+        float range = max(PointLights[lightIndex].Position.w, 1e-3);
+        float fall = max(PointLights[lightIndex].FallOff, 0.001);
+        float t = saturate(dist / range);
+        float atten = pow(saturate(1.0 - t), fall);
+
+        float3 Li = PointLights[lightIndex].Color.rgb * PointLights[lightIndex].Color.a;
+
+        // Diffuse
+        float NdotL = saturate(dot(N, L));
+        float3 diffuse = Li * NdotL * atten;
+
+        // Specular (Blinn-Phong)
+        float3 H = normalize(L + V);
+        float NdotH = saturate(dot(N, H));
+        float3 specular = Li * pow(NdotH, exp) * atten;
+
+        acc.diffuse += diffuse;
+        acc.specular += specular;
+    }
+
+    return acc;
+}
+
+// Tile-based SpotLights: Blinn-Phong (optimized version)
+LightAccum ComputeSpotLights_BlinnPhong_Tiled(float3 cameraWorldPos, float3 worldPos, float3 worldNormal, float shininess, float4 screenPos)
+{
+    LightAccum acc = (LightAccum) 0;
+
+    float3 N = normalize(worldNormal);
+    float3 V = normalize(cameraWorldPos - worldPos);
+    float exp = clamp(shininess, 1.0, 128.0);
+
+    // Calculate tile index from screen position
+    uint2 tileID = uint2(screenPos.xy) / TILE_SIZE;
+    uint tileIndex = tileID.y * NumTilesX + tileID.x;
+
+    // Get light list for this tile
+    uint2 offsetCount = g_TileOffsetCount[tileIndex];
+    uint lightListOffset = offsetCount.x;
+    uint lightCount = offsetCount.y;
+
+    // Iterate only over lights affecting this tile
+    [loop]
+    for (uint i = 0; i < lightCount; ++i)
+    {
+        uint lightIndex = g_LightIndexList[lightListOffset + i];
+
+        // Check if this is a spot light
+        if (lightIndex < (uint)PointLightCount)
+            continue;
+
+        uint spotIndex = lightIndex - (uint)PointLightCount;
+        if (spotIndex >= (uint)SpotLightCount)
+            continue;
+
+        FSpotLightData light = SpotLights[spotIndex];
+
+        // Direction and distance
+        float3 LvecToLight = light.Position.xyz - worldPos;
+        float dist = length(LvecToLight);
+        float3 L = normalize(LvecToLight);
+
+        // Distance attenuation
+        float range = max(light.Position.w, 1e-3);
+        float fall = max(light.FallOff, 0.001);
+        float t = saturate(dist / range);
+        float attenDist = pow(saturate(1.0 - t), fall);
+
+        // Cone attenuation
+        float3 lightDir = normalize(light.Direction.xyz);
+        float3 lightToWorld = normalize(-L);
+        float cosTheta = dot(lightDir, lightToWorld);
+
+        float thetaInner = cos(radians(light.InnerConeAngle));
+        float thetaOuter = cos(radians(light.OuterConeAngle));
+
+        float att = saturate(pow((cosTheta - thetaOuter) / max((thetaInner - thetaOuter), 1e-3), light.InAndOutSmooth));
+
+        // Diffuse
+        float3 Li = light.Color.rgb * light.Color.a;
+        float NdotL = saturate(dot(N, L));
+        float3 diffuse = Li * NdotL * attenDist * att;
+
+        // Specular (Blinn-Phong)
+        float3 H = normalize(L + V);
+        float NdotH = saturate(dot(N, H));
+        float3 specular = Li * pow(NdotH, exp) * attenDist * att;
+
+        acc.diffuse += diffuse;
+        acc.specular += specular;
+    }
+
+    return acc;
+}
+
+// Helper function to get light count for debug visualization
+uint GetTileLightCount(float4 screenPos)
+{
+    uint2 tileID = uint2(screenPos.xy) / TILE_SIZE;
+    uint tileIndex = tileID.y * NumTilesX + tileID.x;
+    uint2 offsetCount = g_TileOffsetCount[tileIndex];
+    return offsetCount.y; // Return light count
+}
+
+// Debug visualization: Convert light count to heat map color
+float3 LightCountToHeatMap(uint lightCount)
+{
+    // 0 lights = blue, 10 lights = green, 20+ lights = red
+    float t = saturate((float)lightCount / 20.0);
+
+    if (t < 0.25)
+        return lerp(float3(0, 0, 1), float3(0, 1, 1), t * 4.0); // Blue to Cyan
+    else if (t < 0.5)
+        return lerp(float3(0, 1, 1), float3(0, 1, 0), (t - 0.25) * 4.0); // Cyan to Green
+    else if (t < 0.75)
+        return lerp(float3(0, 1, 0), float3(1, 1, 0), (t - 0.5) * 4.0); // Green to Yellow
+    else
+        return lerp(float3(1, 1, 0), float3(1, 0, 0), (t - 0.75) * 4.0); // Yellow to Red
+}
+
+#endif // USE_TILED_CULLING
+
+//#endif

@@ -25,10 +25,15 @@
 #include "AmbientLightComponent.h"
 #include "SpotLightComponent.h"
 #include "DirectionalLightComponent.h"
+#include "LightCullingManager.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
     InitializeLineBatch();
+
+    // Initialize Light Culling Manager
+    LightCullingManager = new ULightCullingManager();
+    // Will be initialized with proper screen dimensions in RenderScene
 }
 
 URenderer::~URenderer()
@@ -36,6 +41,12 @@ URenderer::~URenderer()
     if (LineBatchData)
     {
         delete LineBatchData;
+    }
+
+    if (LightCullingManager)
+    {
+        delete LightCullingManager;
+        LightCullingManager = nullptr;
     }
 }
 
@@ -495,6 +506,35 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     FMatrix ViewMatrix = Camera->GetViewMatrix();
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
     UpdateSetCBuffer(ViewProjBufferType(ViewMatrix, ProjectionMatrix, Camera->GetActorLocation()));
+
+    // Initialize Light Culling Manager if needed
+    UINT screenWidth = Viewport->GetSizeX();
+    UINT screenHeight = Viewport->GetSizeY();
+
+    char rendererMsg[512];
+    sprintf_s(rendererMsg, "[Renderer] RenderScene - Screen: %dx%d, bUseTiledCulling: %d, LightCullingManager: %p\n",
+              screenWidth, screenHeight, bUseTiledCulling, LightCullingManager);
+    OutputDebugStringA(rendererMsg);
+
+    if (LightCullingManager && bUseTiledCulling)
+    {
+        // Only initialize once on first frame with the first viewport's size
+        // All viewports will share the same culling data
+        if (!LightCullingManager->IsInitialized())
+        {
+            OutputDebugStringA("[Renderer] Initializing LightCullingManager for the first time...\n");
+            LightCullingManager->Initialize(RHIDevice->GetDevice(), screenWidth, screenHeight);
+        }
+        else
+        {
+            OutputDebugStringA("[Renderer] LightCullingManager already initialized\n");
+        }
+    }
+    else
+    {
+        OutputDebugStringA("[Renderer] LightCullingManager is NULL or disabled!\n");
+    }
+
     switch (CurrentViewMode)
     {
     case EViewModeIndex::VMI_Lit:
@@ -505,7 +545,118 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         RenderPointLightPass(World);
         RenderSpotLightPass(World);
 
+        // Debug: Log light counts
+        int pointLightCount = World->GetLevel()->GetComponentList<UPointLightComponent>().size();
+        int spotLightCount = World->GetLevel()->GetComponentList<USpotLightComponent>().size();
+        char lightMsg[256];
+        sprintf_s(lightMsg, "[Renderer] Scene has %d Point Lights, %d Spot Lights\n",
+                  pointLightCount, spotLightCount);
+        OutputDebugStringA(lightMsg);
+
+        // Execute Tile-based Light Culling BEFORE base pass
+        OutputDebugStringA("[Renderer] Before ExecuteLightCulling check\n");
+        if (LightCullingManager && bUseTiledCulling)
+        {
+            OutputDebugStringA("[Renderer] Getting depth SRV...\n");
+            // Get depth SRV from RHI
+            ID3D11ShaderResourceView* depthSRV = RHIDevice->GetDepthSRV();
+
+            char depthMsg[256];
+            sprintf_s(depthMsg, "[Renderer] DepthSRV: %p\n", depthSRV);
+            OutputDebugStringA(depthMsg);
+
+            if (depthSRV)
+            {
+                OutputDebugStringA("[Renderer] DepthSRV is valid, executing light culling...\n");
+
+                // Unbind depth buffer from output to avoid resource hazard
+                ID3D11RenderTargetView* nullRTV[1] = { nullptr };
+                RHIDevice->GetDeviceContext()->OMSetRenderTargets(1, nullRTV, nullptr);
+
+                UCameraComponent* CamComp = Camera->GetCameraComponent();
+                float nearPlane = CamComp ? CamComp->GetNearClip() : 0.1f;
+                float farPlane = CamComp ? CamComp->GetFarClip() : 1000.0f;
+
+                char camMsg[256];
+                sprintf_s(camMsg, "[Renderer] Near: %.2f, Far: %.2f\n", nearPlane, farPlane);
+                OutputDebugStringA(camMsg);
+
+                // Get light buffers from PS (they were bound by RenderPointLightPass/RenderSpotLightPass)
+                // PointLight is at b9, SpotLight is at b13
+                ID3D11Buffer* pointLightBuffer = nullptr;
+                ID3D11Buffer* spotLightBuffer = nullptr;
+                RHIDevice->GetDeviceContext()->PSGetConstantBuffers(9, 1, &pointLightBuffer);
+                RHIDevice->GetDeviceContext()->PSGetConstantBuffers(13, 1, &spotLightBuffer);
+
+                char bufferMsg[256];
+                sprintf_s(bufferMsg, "[Renderer] Got buffers - PointLight (b9): %p, SpotLight (b13): %p\n",
+                          pointLightBuffer, spotLightBuffer);
+                OutputDebugStringA(bufferMsg);
+
+                if (pointLightBuffer && spotLightBuffer)
+                {
+                    LightCullingManager->ExecuteLightCulling(
+                        RHIDevice->GetDeviceContext(),
+                        depthSRV,
+                        ViewMatrix,
+                        nearPlane,
+                        farPlane,
+                        pointLightBuffer,
+                        spotLightBuffer
+                    );
+
+                    // Release references (PSGetConstantBuffers adds ref count)
+                    pointLightBuffer->Release();
+                    spotLightBuffer->Release();
+                }
+                else
+                {
+                    char errorMsg[256];
+                    sprintf_s(errorMsg, "[Renderer] ERROR: Light buffers not bound! PointLight: %p, SpotLight: %p\n",
+                              pointLightBuffer, spotLightBuffer);
+                    OutputDebugStringA(errorMsg);
+                }
+
+                // Re-bind render targets for base pass (Frame + ID + Depth)
+                RHIDevice->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID);
+
+                // Set debug visualization mode
+                char debugMsg[256];
+                sprintf_s(debugMsg, "[Renderer] Setting debug visualization: %d\n", bDebugVisualizeTiles);
+                OutputDebugStringA(debugMsg);
+
+                LightCullingManager->SetDebugVisualization(bDebugVisualizeTiles);
+
+                // Bind results to pixel shader
+                OutputDebugStringA("[Renderer] Binding results to PS...\n");
+                LightCullingManager->BindResultsToPS(RHIDevice->GetDeviceContext());
+                OutputDebugStringA("[Renderer] Light culling complete!\n");
+            }
+            else
+            {
+                OutputDebugStringA("[Renderer] ERROR: DepthSRV is NULL!\n");
+            }
+        }
+        else
+        {
+            OutputDebugStringA("[Renderer] Skipping light culling (manager NULL or disabled)\n");
+        }
+
         RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
+
+        // Render tile culling debug visualization (full-screen overlay)
+        if (LightCullingManager && bUseTiledCulling && bDebugVisualizeTiles)
+        {
+            OutputDebugStringA("[Renderer] Rendering tile culling debug pass...\n");
+            RenderTileCullingDebugPass();
+        }
+
+        // Unbind light culling resources after base pass
+        if (LightCullingManager && bUseTiledCulling)
+        {
+            LightCullingManager->UnbindFromPS(RHIDevice->GetDeviceContext());
+        }
+
         RenderFogPass(World,Camera,Viewport);
         RenderFXAAPaxx(World, Camera, Viewport);
         RenderEditorPass(World, Camera, Viewport);
@@ -1234,4 +1385,34 @@ void URenderer::SetShadingModel(ELightShadingModel Model)
 ELightShadingModel URenderer::GetShadingModel() const
 {
     return CurrentShadingModel;
+}
+
+void URenderer::RenderTileCullingDebugPass()
+{
+    // Set render state for full-screen overlay
+    RHIDevice->OMSetBlendState(true); // Enable alpha blending
+    RHIDevice->OmSetDepthStencilState(EComparisonFunc::Disable); // Disable depth test
+
+    // Load and prepare debug shader
+    TileCullingDebugShader = UResourceManager::GetInstance().Load<UShader>("TileCullingDebug.hlsl");
+    if (!TileCullingDebugShader)
+    {
+        OutputDebugStringA("[Renderer] ERROR: Failed to load TileCullingDebug.hlsl\n");
+        return;
+    }
+
+    PrepareShader(TileCullingDebugShader);
+
+    // Set primitive topology for full-screen triangle
+    RHIDevice->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // Clear input layout (using SV_VertexID in shader)
+    RHIDevice->GetDeviceContext()->IASetInputLayout(nullptr);
+    RHIDevice->GetDeviceContext()->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    RHIDevice->GetDeviceContext()->IASetIndexBuffer(nullptr, DXGI_FORMAT_R32_UINT, 0);
+
+    // Draw full-screen triangle (3 vertices, no index buffer)
+    RHIDevice->GetDeviceContext()->Draw(3, 0);
+
+    OutputDebugStringA("[Renderer] Tile culling debug pass complete\n");
 }

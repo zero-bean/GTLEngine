@@ -212,8 +212,15 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     pointLight.diffuse = float4(1, 0, 0, 1);
 #elif  LIGHTING_MODEL_BLINN_PHONG
-    pointLight = ComputePointLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
-    spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
+    #ifdef USE_TILED_CULLING
+        // Use tiled light culling (optimized)
+        pointLight = ComputePointLights_BlinnPhong_Tiled(CameraWorldPos, input.worldPosition, N, shininess, input.position);
+        spotLight = ComputeSpotLights_BlinnPhong_Tiled(CameraWorldPos, input.worldPosition, N, shininess, input.position);
+    #else
+        // Use traditional approach (iterate all lights)
+        pointLight = ComputePointLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
+        spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
+    #endif
     //TODO: DirectionLight
 #elif  LIGHTING_MODEL_BRDF
 
