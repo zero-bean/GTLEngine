@@ -150,12 +150,9 @@ PS_INPUT mainVS(VS_INPUT input)
     float3 V = normalize(CameraWorldPos - o.worldPosition);
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0);
     
-    LightAccum vertexLight = (LightAccum) 0;
-    vertexLight = ComputePointLights_BlinnPhong(CameraWorldPos, o.worldPosition, N, shininess);
-    LightAccum spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, o.worldPosition, N, shininess);
-    
-    vertexLight.diffuse += spotLight.diffuse;
-    vertexLight.specular += spotLight.specular;
+    LightAccum VertexPointLight = ComputePointLights_BlinnPhong(CameraWorldPos, o.worldPosition, N, shininess);;   
+    LightAccum VertexSpotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, o.worldPosition, N, shininess);
+    LightAccum VertexDirectionalLight = ComputeDirectionalLights_BlinnPhong(CameraWorldPos, o.worldPosition, N, shininess);
     
     // SH Ambient 계산
     float3 shAmbient = EvaluateMultiProbeSHLighting(o.worldPosition, N);
@@ -164,7 +161,9 @@ PS_INPUT mainVS(VS_INPUT input)
         ambient += 0.25 * Material.AmbientColor;
     
     // 최종 정점 라이팅
-    o.vertexLighting = ambient + vertexLight.diffuse + vertexLight.specular;
+    o.vertexLighting = ambient + VertexPointLight.diffuse + VertexPointLight.specular +
+            VertexSpotLight.diffuse + VertexSpotLight.specular +
+            VertexDirectionalLight.diffuse + VertexDirectionalLight.specular;
     o.color = c;
     
 #else
@@ -258,26 +257,20 @@ PS_OUTPUT mainPS(PS_INPUT input)
     LightAccum directionalLight = (LightAccum) (0);
 
     #if LIGHTING_MODEL_PHONG
-
-    pointLight.diffuse = float4(1, 0, 0, 1);
-#elif  LIGHTING_MODEL_BLINN_PHONG
-    #ifdef USE_TILED_CULLING
-        // Use tiled light culling (optimized)
-        pointLight = ComputePointLights_BlinnPhong_Tiled(CameraWorldPos, input.worldPosition, N, shininess, input.position);
-        spotLight = ComputeSpotLights_BlinnPhong_Tiled(CameraWorldPos, input.worldPosition, N, shininess, input.position);
-    #else
-        // Use traditional approach (iterate all lights)
+        pointLight = ComputePointLights_Phong(CameraWorldPos, input.worldPosition, N, shininess);
+        spotLight = ComputeSpotLights_Phong(CameraWorldPos, input.worldPosition, N, shininess);
+        directionalLight = ComputeDirectionalLights_Phong(CameraWorldPos, input.worldPosition, N, shininess);        
+    #elif  LIGHTING_MODEL_BLINN_PHONG
         pointLight = ComputePointLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
         spotLight = ComputeSpotLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
+        directionalLight = ComputeDirectionalLights_BlinnPhong(CameraWorldPos, input.worldPosition, N, shininess);
+    #elif  LIGHTING_MODEL_BRDF
+        accLight = BRDF(CameraWorldPos, input.worldPosition, N, base, Roughness, Metallic); 
+    #elif LIGHTING_MODEL_LAMBERT
+        pointLight = ComputePointLights_Lambert(input.worldPosition, N);
+        spotLight = ComputeSpotLights_Lambert(input.worldPosition, N);
+        directionalLight = ComputeDirectionalLights_Lambert(N);
     #endif
-    //TODO: DirectionLight
-#elif  LIGHTING_MODEL_BRDF
-
-    accLight = BRDF(CameraWorldPos, input.worldPosition, N, base, Roughness, Metallic);
-#elif LIGHTING_MODEL_LAMBERT
-
-    pointLight.diffuse = float4(0, 0, 1, 1);
-#endif
 
     accLight.diffuse += pointLight.diffuse + spotLight.diffuse + directionalLight.diffuse;
     accLight.specular += pointLight.specular + spotLight.specular + directionalLight.specular;
@@ -301,10 +294,10 @@ PS_OUTPUT mainPS(PS_INPUT input)
     //finalLit = saturate(finalLit); // 과포화 방지
     
     // 톤 매핑
-    //finalLit = finalLit / (finalLit + 1.0f);
+    finalLit = finalLit / (finalLit + 1.0f);
 
     // 노출 방식
-    finalLit = 1.0f - exp(-finalLit * 1.25f);
+    //finalLit = 1.0f - exp(-finalLit * 1.25f);
 
     // 감마 보정
     finalLit = pow(finalLit, 1.0f / 2.2f);    

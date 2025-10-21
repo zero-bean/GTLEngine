@@ -176,9 +176,7 @@ struct ViewportBufferType
 struct FPointLightData
 {
     FVector4 Position;   // xyz=위치, w=반경
-    FVector4 Color;      // rgb=색상, a=Intensity
-    float FallOff;       // 감쇠 지수
-    FVector Padding;     // 16바이트 정렬 맞춤
+    FVector4 Color;      // rgb=색상, a=fallof
 };
 
 #define MAX_POINT_LIGHTS 100
@@ -194,16 +192,13 @@ struct FPointLightBufferType
 struct FSpotLightData
 {
     FVector4 Position;   // xyz=위치, w=반경
-    FVector4 Color;      // rgb=색상, a=Intensity
+    FVector4 Color;      // rgb=색상, a=falloff
     FVector4 Direction;
 
     float InnerConeAngle;       
     float OuterConeAngle;       
-    float FallOff;              // 감쇠 지수
     float InAndOutSmooth;              // 16바이트 정렬 맞춤
-        
-    FVector AttFactor;
-    float radius; 
+    float _pad;
 };
 
 struct FSpotLightBufferType

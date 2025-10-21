@@ -9,13 +9,16 @@ APointLightActor::APointLightActor()
     PointLightComponent = CreateDefaultSubobject<UPointLightComponent>("PointLightComponent");
     RootComponent = PointLightComponent;
 
-    UBillboardComponent* BillboardComponent = CreateDefaultSubobject<UBillboardComponent>("BillboardComponent");
-    if (BillboardComponent)
+    if (!SpriteComponent)
     {
-        BillboardComponent->SetTexture("Editor/Icon/PointLight_64x.dds");
-        BillboardComponent->SetRelativeLocation(RootComponent->GetRelativeLocation());
-        BillboardComponent->SetupAttachment(PointLightComponent);
-        BillboardComponent->SetEditable(false);
+        SpriteComponent = CreateDefaultSubobject<UBillboardComponent>("SpriteComponent");
+        if (SpriteComponent)
+        {
+            SpriteComponent->SetTexture("Editor/Icon/PointLight_64x.dds");
+            SpriteComponent->SetRelativeLocation(PointLightComponent->GetRelativeLocation());
+            SpriteComponent->SetupAttachment(PointLightComponent);
+            SpriteComponent->SetEditable(false);
+        }        
     }
 }
 

@@ -19,7 +19,7 @@ public:
 	// Direction은 Scene Comp의 회전방향
 	FVector GetDirection() const { return Direction; }
 	int32 IsEnabledSpecular() const { return bEnableSpecular; }
-	void SetSpecularEnable(bool bEnable);
+	void SetSpecularEnable(bool bEnable);	
 
 	// Editor Details
 	void RenderDetails() override;

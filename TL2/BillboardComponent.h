@@ -37,6 +37,10 @@ public:
 
     UTextQuad* GetStaticMesh() const { return BillboardQuad; }
 
+    // 조명 색상
+    FLinearColor GetSpriteColor() const { return SpriteColor; }
+    void SetSpriteColor(const FLinearColor& InColor);
+
     UObject* Duplicate() override;
     void DuplicateSubObjects() override;
 
@@ -72,4 +76,8 @@ private:
     // [PIE] 값 복사
     bool bIsScreenSizeScaled = false;
     float ScreenSize = 0.0025f;
+
+    // 조명용 색상 함수
+    FLinearColor SpriteColor = {0.0f, 0.0f, 0.0f, 0.0f};
+    bool bIsChangedColor = false;
 };

@@ -4,6 +4,8 @@
 
 ULightComponent::ULightComponent()
 {
+    TempColor = MakeFromColorTemperature(Temperature);
+    UpdateFinalColor();
 }
 
 ULightComponent::~ULightComponent()
@@ -41,9 +43,6 @@ void ULightComponent::SetColorTemperature(float InTemperature)
         Temperature = InTemperature;
         TempColor = MakeFromColorTemperature(Temperature);        
         UpdateFinalColor();
-        UE_LOG("Temp %f %f %f", TempColor.R, TempColor.G, TempColor.B);
-        UE_LOG("Tint %f %f %f", TintColor.R, TintColor.G, TintColor.B);
-        UE_LOG("Final %f %f %f", FinalColor.R, FinalColor.G, FinalColor.B);
     }
 }
 
@@ -53,12 +52,18 @@ void ULightComponent::SetTintColor(const FLinearColor& InColor)
     UpdateFinalColor();
 }
 
+void ULightComponent::UpdateSpriteColor(const FLinearColor& InSpriteColor)
+{
+    if (GetOwner() && GetOwner()->SpriteComponent)
+    {
+        GetOwner()->SpriteComponent->SetSpriteColor(InSpriteColor);
+    }
+}
+
 void ULightComponent::UpdateFinalColor()
 {
     FinalColor = TintColor * TempColor;
 }
-
-
 
 void ULightComponent::DrawDebugLines(class URenderer* Renderer)
 {

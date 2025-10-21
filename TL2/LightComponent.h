@@ -24,18 +24,25 @@ public:
 	FLinearColor GetTintColor() const { return TintColor; }
 	void SetTintColor(const FLinearColor& InColor);
 
-	FLinearColor GetFinalColor() const { return FinalColor; }
+	FLinearColor GetFinalColor() const { return FinalColor * Intensity; }
+
+	bool IsEnabledDebugLine() const { return bEnableDebugLine; }
+	void SetDebugLineEnable(bool bEnable) { bEnableDebugLine = bEnable; }
+
+	void UpdateSpriteColor(const FLinearColor& InSpriteColor);
 
 private:
 	void UpdateFinalColor();
 
 protected:
 	float Intensity = 1.0f;
-	float Temperature = 1000.0f;
+	float Temperature = 6500.0f;
 	// 최종 색상 = Light Color * Temperature Color
 	FLinearColor FinalColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	// 원래 쓰던 색상 - Light Color
 	FLinearColor TintColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	// 색온도에 의해 결정된 색상
 	FLinearColor TempColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+	bool bEnableDebugLine = true;
 };
