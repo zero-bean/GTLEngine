@@ -599,6 +599,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
                         RHIDevice->GetDeviceContext(),
                         depthSRV,
                         ViewMatrix,
+                        ProjectionMatrix,
                         nearPlane,
                         farPlane,
                         pointLightBuffer,

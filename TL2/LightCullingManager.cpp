@@ -236,6 +236,7 @@ void ULightCullingManager::ExecuteLightCulling(
     ID3D11DeviceContext* Context,
     ID3D11ShaderResourceView* DepthSRV,
     const FMatrix& ViewMatrix,
+    const FMatrix& ProjMatrix,
     float NearPlane,
     float FarPlane,
     ID3D11Buffer* PointLightBuffer,
@@ -258,7 +259,9 @@ void ULightCullingManager::ExecuteLightCulling(
         return;
     }
 
-    OutputDebugStringA("[LightCulling] Executing light culling...\n");
+    char execMsg[256];
+    sprintf_s(execMsg, "[LightCulling] Executing light culling... Near=%.2f, Far=%.2f\n", NearPlane, FarPlane);
+    OutputDebugStringA(execMsg);
 
     // Clear the light index counter (first element of LightIndexListBuffer)
     UINT clearValue[4] = { 0, 0, 0, 0 };
@@ -280,11 +283,16 @@ void ULightCullingManager::ExecuteLightCulling(
         Context->Unmap(CullingCB, 0);
     }
 
-    // Update ViewMatrixCB
+    // Update ViewMatrixCB with ProjInv
     {
         Context->Map(ViewMatrixCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
         FViewMatrixCBData* data = (FViewMatrixCBData*)mapped.pData;
         data->ViewMatrix = ViewMatrix;
+
+        // Calculate Projection Inverse matrix
+        FMatrix ProjInv = ProjMatrix.Inverse();
+        data->ProjInv = ProjInv;
+
         Context->Unmap(ViewMatrixCB, 0);
     }
 
@@ -350,7 +358,24 @@ void ULightCullingManager::ExecuteLightCulling(
             {
                 UINT* data = (UINT*)mapped.pData;
 
+                // Count how many tiles have lights
+                int tilesWithLights = 0;
+                int maxLightsInTile = 0;
+                for (UINT i = 0; i < FMath::Min(TotalTiles, 100u); ++i)
+                {
+                    UINT lightCount = data[i * 2 + 1]; // Second element is count
+                    if (lightCount > 0)
+                    {
+                        tilesWithLights++;
+                        maxLightsInTile = FMath::Max((int)lightCount, maxLightsInTile);
+                    }
+                }
+
                 char debugMsg[512];
+                sprintf_s(debugMsg, "[LightCulling] Tiles with lights: %d/%d, Max lights in a tile: %d\n",
+                          tilesWithLights, FMath::Min(TotalTiles, 100u), maxLightsInTile);
+                OutputDebugStringA(debugMsg);
+
                 sprintf_s(debugMsg, "[LightCulling] First 5 tiles: [0]=(%u,%u) [1]=(%u,%u) [2]=(%u,%u) [3]=(%u,%u) [4]=(%u,%u)\n",
                           data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9]);
                 OutputDebugStringA(debugMsg);

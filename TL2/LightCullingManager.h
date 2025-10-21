@@ -18,6 +18,7 @@ public:
         ID3D11DeviceContext* Context,
         ID3D11ShaderResourceView* DepthSRV,
         const FMatrix& ViewMatrix,
+        const FMatrix& ProjMatrix,
         float NearPlane,
         float FarPlane,
         ID3D11Buffer* PointLightBuffer,
@@ -97,6 +98,7 @@ private:
     struct FViewMatrixCBData
     {
         FMatrix ViewMatrix;
+        FMatrix ProjInv;
     };
 
     struct FTileCullingInfoCBData
