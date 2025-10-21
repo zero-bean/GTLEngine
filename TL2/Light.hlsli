@@ -664,7 +664,7 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
         float NdotL = saturate(dot(N, L));
         
         
-        ComputeBRDF(Li, N, V, L, atten, BaseColor, roughness, metallic, acc);
+        ComputeBRDF(Li, N, V, L, (atten * attenDist), BaseColor, roughness, metallic, acc);
     }
     
     
