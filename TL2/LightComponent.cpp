@@ -4,6 +4,8 @@
 
 ULightComponent::ULightComponent()
 {
+    TempColor = MakeFromColorTemperature(Temperature);
+    UpdateFinalColor();
 }
 
 ULightComponent::~ULightComponent()
