@@ -2,10 +2,8 @@
 #include "SpotLightComponent.h"
 #include "ImGui/imgui.h"
 #include "Renderer.h"
-#include "World.h"
-#include "CameraActor.h"
 
-USpotLightComponent::USpotLightComponent() : Direction(1.0, 0.0f, 0.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), AttFactor( 0, 0, 1), InAntOutSmooth(1)
+USpotLightComponent::USpotLightComponent() : Direction(1.0, 0.0f, 0.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), InAntOutSmooth(1)
 {
 
 }
@@ -127,12 +125,7 @@ void USpotLightComponent::RenderDetails()
 	if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
 	{
 		SetRadiusFallOff(falloff);
-	}
-	FVector attFactor = GetAttFactor();
-	if (ImGui::DragFloat3("Attenuation Factor", &attFactor.X, 1.0f, 0.0f, 10.0f))
-	{
-		SetAttFactor(attFactor);
-	}
+	}	
 
 	// 🔸 inner 원과 outter 원과 smooth하게 섞임
 	float smooth = GetInAndOutSmooth();

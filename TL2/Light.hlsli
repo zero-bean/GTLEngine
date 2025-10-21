@@ -11,9 +11,7 @@ static const float PI = 3.14159265359;
 struct FPointLightData
 {
     float4 Position; // xyz=위치(월드), w=반경
-    float4 Color; // rgb=색상, a=Intensity
-    float FallOff; // 감쇠 지수
-    float3 _pad; // 패딩
+    float4 Color; // rgb=색상, a=falloff
 };
 
 cbuffer PointLightBuffer : register(b9)
@@ -28,16 +26,13 @@ cbuffer PointLightBuffer : register(b9)
 struct FSpotLightData
 {
     float4 Position; // xyz=위치(월드), w=반경
-    float4 Color; // rgb=색상, a=Intensity
+    float4 Color; // rgb=색상, a=falloff
     float4 Direction;
  
     float InnerConeAngle; // 감쇠 지수
     float OuterConeAngle; // 감쇠 지수
-    float FallOff;
     float InAndOutSmooth;
-    
-    float3 AttFactor;
-    float SpotPadding;
+    float _pad;
 };
 
 cbuffer SpotLightBuffer : register(b13)
@@ -105,7 +100,7 @@ LightAccum ComputeDirectionalLights_BlinnPhong(float3 CameraWorldPos, float3 Wor
     [loop]
     for (int i = 0; i < DirectionalLightCount; ++i)
     {
-        float3 LightColor = DirectionalLights[i].Color.rgb * DirectionalLights[i].Color.a;
+        float3 LightColor = DirectionalLights[i].Color.rgb;
         
         // 광원에서 물체를 향하는 방향 벡터에 부호를 바꿔서 물체에서 광원을 향하도록 함
         float3 LightVector = normalize(-DirectionalLights[i].Direction);
@@ -146,11 +141,11 @@ LightAccum ComputePointLights_BlinnPhong(float3 cameraWorldPos, float3 worldPos,
         float3 L = (dist > 1e-5) ? (Lvec / dist) : float3(0, 0, 1);
 
         float range = max(PointLights[i].Position.w, 1e-3);
-        float fall = max(PointLights[i].FallOff, 0.001);
+        float fall = max(PointLights[i].Color.w, 0.001);
         float t = saturate(dist / range);
         float atten = pow(saturate(1.0 - t), fall);
 
-        float3 Li = PointLights[i].Color.rgb * PointLights[i].Color.a;
+        float3 Li = PointLights[i].Color.rgb;
 
         // Diffuse
         float NdotL = saturate(dot(N, L));
@@ -191,10 +186,9 @@ LightAccum ComputeSpotLights_BlinnPhong(float3 cameraWorldPos, float3 worldPos, 
 
         // Distance attenuation (point light 와 동일) 
         float range = max(light.Position.w, 1e-3);
-        float fall = max(light.FallOff, 0.001);
+        float fall = max(light.Color.w, 0.001);
         float t = saturate(dist / range);
         float attenDist = pow(saturate(1.0 - t), fall); 
-        // float attenDist = pow(saturate(1 / (light.AttFactor.x + range * light.AttFactor.y + range * range * light.AttFactor.z)), fall);
          
         // 선형 보간 
         float3 lightDir = normalize(light.Direction.xyz);
@@ -207,7 +201,7 @@ LightAccum ComputeSpotLights_BlinnPhong(float3 cameraWorldPos, float3 worldPos, 
         float att = saturate(pow((cosTheta - thetaOuter) / max((thetaInner - thetaOuter), 1e-3), light.InAndOutSmooth));
           
         // Diffuse
-        float3 Li = light.Color.rgb * light.Color.a;
+        float3 Li = light.Color.rgb;
         float NdotL = saturate(dot(N, L));
         float3 diffuse = Li * NdotL * attenDist * att;
          
@@ -239,7 +233,7 @@ LightAccum ComputeDirectionalLights_Phong(float3 CameraWorldPos, float3 WorldPos
     [loop]
     for (int i = 0; i < DirectionalLightCount; ++i)
     {
-        float3 LightColor = DirectionalLights[i].Color.rgb * DirectionalLights[i].Color.a;
+        float3 LightColor = DirectionalLights[i].Color.rgb;
 
         // Diffuse
         // 광원에서 물체를 향하는 방향 벡터에 부호를 바꿔서 물체에서 광원을 향하도록 함
@@ -281,11 +275,11 @@ LightAccum ComputePointLights_Phong(float3 cameraWorldPos, float3 worldPos, floa
         float3 L = (dist > 1e-5) ? (Lvec / dist) : float3(0, 0, 1);
 
         float range = max(PointLights[i].Position.w, 1e-3);
-        float fall = max(PointLights[i].FallOff, 0.001);
+        float fall = max(PointLights[i].Color.w, 0.001);
         float t = saturate(dist / range);
         float atten = pow(saturate(1.0 - t), fall);
 
-        float3 Li = PointLights[i].Color.rgb * PointLights[i].Color.a;
+        float3 Li = PointLights[i].Color.rgb;
 
         // Diffuse
         float NdotL = saturate(dot(N, L));
@@ -327,7 +321,7 @@ LightAccum ComputeSpotLights_Phong(float3 cameraWorldPos, float3 worldPos, float
 
         // Distance attenuation (point light 와 동일) 
         float range = max(light.Position.w, 1e-3);
-        float fall = max(light.FallOff, 0.001);
+        float fall = max(light.Color.w, 0.001);
         float t = saturate(dist / range);
         float attenDist = pow(saturate(1.0 - t), fall); 
         // float attenDist = pow(saturate(1 / (light.AttFactor.x + range * light.AttFactor.y + range * range * light.AttFactor.z)), fall);
@@ -343,7 +337,7 @@ LightAccum ComputeSpotLights_Phong(float3 cameraWorldPos, float3 worldPos, float
         float att = saturate(pow((cosTheta - thetaOuter) / max((thetaInner - thetaOuter), 1e-3), light.InAndOutSmooth));
           
         // Diffuse
-        float3 Li = light.Color.rgb * light.Color.a;
+        float3 Li = light.Color.rgb;
         float NdotL = saturate(dot(N, L));
         float3 diffuse = Li * NdotL * attenDist * att;
          
@@ -371,7 +365,7 @@ LightAccum ComputeDirectionalLights_Lambert(float3 WorldNormal)
     [loop]
     for (int i = 0; i < DirectionalLightCount; ++i)
     {
-        float3 LightColor = DirectionalLights[i].Color.rgb * DirectionalLights[i].Color.a;
+        float3 LightColor = DirectionalLights[i].Color.rgb;
 
         // Diffuse
         // 광원에서 물체를 향하는 방향 벡터에 부호를 바꿔서 물체에서 광원을 향하도록 함
@@ -401,11 +395,11 @@ LightAccum ComputePointLights_Lambert(float3 worldPos, float3 worldNormal)
         float3 L = (dist > 1e-5) ? (Lvec / dist) : float3(0, 0, 1);
 
         float range = max(PointLights[i].Position.w, 1e-3);
-        float fall = max(PointLights[i].FallOff, 0.001);
+        float fall = max(PointLights[i].Color.w, 0.001);
         float t = saturate(dist / range);
         float atten = pow(saturate(1.0 - t), fall);
 
-        float3 Li = PointLights[i].Color.rgb * PointLights[i].Color.a;
+        float3 Li = PointLights[i].Color.rgb;
 
         // Diffuse
         float NdotL = saturate(dot(N, L));
@@ -438,7 +432,7 @@ LightAccum ComputeSpotLights_Lambert(float3 worldPos, float3 worldNormal)
 
         // Distance attenuation (point light 와 동일) 
         float range = max(light.Position.w, 1e-3);
-        float fall = max(light.FallOff, 0.001);
+        float fall = max(light.Color.w, 0.001);
         float t = saturate(dist / range);
         float attenDist = pow(saturate(1.0 - t), fall); 
         // float attenDist = pow(saturate(1 / (light.AttFactor.x + range * light.AttFactor.y + range * range * light.AttFactor.z)), fall);
@@ -454,7 +448,7 @@ LightAccum ComputeSpotLights_Lambert(float3 worldPos, float3 worldNormal)
         float att = saturate(pow((cosTheta - thetaOuter) / max((thetaInner - thetaOuter), 1e-3), light.InAndOutSmooth));
           
         // Diffuse
-        float3 Li = light.Color.rgb * light.Color.a;
+        float3 Li = light.Color.rgb;
         float NdotL = saturate(dot(N, L));
         float3 diffuse = Li * NdotL * attenDist * att;
          
@@ -624,11 +618,11 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
         float3 L = normalize(LvecToLight);
          
         float range = max(pointLight.Position.w, 1e-3);
-        float fall = max(pointLight.FallOff, 0.001);
+        float fall = max(pointLight.Color.w, 0.001);
         float t = saturate(dist / range);
         float atten = pow(saturate(1.0 - t), fall);
          
-        float3 Li = pointLight.Color.rgb * pointLight.Color.a;
+        float3 Li = pointLight.Color.rgb;
         ComputeBRDF(Li, N, V, L, atten, BaseColor, roughness, metallic, acc); 
     } 
     
@@ -644,7 +638,7 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
 
         // Distance attenuation (point light 와 동일) 
         float range = max(light.Position.w, 1e-3);
-        float fall = max(light.FallOff, 0.001);
+        float fall = max(light.Color.w, 0.001);
         float t = saturate(dist / range);
         float attenDist = pow(saturate(1.0 - t), fall);
         // float attenDist = pow(saturate(1 / (light.AttFactor.x + range * light.AttFactor.y + range * range * light.AttFactor.z)), fall);
@@ -660,7 +654,7 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
         float atten = saturate(pow((cosTheta - thetaOuter) / max((thetaInner - thetaOuter), 1e-3), light.InAndOutSmooth));
           
         // Diffuse
-        float3 Li = light.Color.rgb * light.Color.a;
+        float3 Li = light.Color.rgb;
         float NdotL = saturate(dot(N, L));
         
         
@@ -674,7 +668,7 @@ LightAccum BRDF(float3 cameraWorldPos, float3 worldPos, float3 N, float3 BaseCol
         FDirectionalLightData light = DirectionalLights[i];
         float3 LightVector = normalize(-light.Direction);
 
-        float3 Li = light.Color.rgb * light.Color.a;
+        float3 Li = light.Color.rgb;
         ComputeBRDF(Li, N, V, LightVector, 1.0f, BaseColor, roughness, metallic, acc);
     }
     

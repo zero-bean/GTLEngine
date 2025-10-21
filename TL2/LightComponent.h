@@ -24,7 +24,7 @@ public:
 	FLinearColor GetTintColor() const { return TintColor; }
 	void SetTintColor(const FLinearColor& InColor);
 
-	FLinearColor GetFinalColor() const { return FinalColor; }
+	FLinearColor GetFinalColor() const { return FinalColor * Intensity; }
 
 	bool IsEnabledDebugLine() const { return bEnableDebugLine; }
 	void SetDebugLineEnable(bool bEnable) { bEnableDebugLine = bEnable; }

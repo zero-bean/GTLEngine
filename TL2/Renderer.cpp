@@ -838,9 +838,8 @@ void URenderer::RenderPointLightPass(UWorld* World)
             PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
         );
         PointLightCB.PointLights[idx].Color = FVector4(
-            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetIntensity()
-        );
-        PointLightCB.PointLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
+            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetRadiusFallOff()
+        );        
     }
     // 2?? 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);
@@ -882,16 +881,13 @@ void URenderer::RenderSpotLightPass(UWorld* World)
             PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
         );
         SpotLightCB.SpotLights[idx].Color = FVector4(
-            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetIntensity()
+            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetRadiusFallOff()
         );
-        SpotLightCB.SpotLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
         // If set on component, propagate cone angles
         SpotLightCB.SpotLights[idx].InnerConeAngle = PointLightComponent->GetInnerConeAngle();
         SpotLightCB.SpotLights[idx].OuterConeAngle = PointLightComponent->GetOuterConeAngle();
         SpotLightCB.SpotLights[idx].Direction = PointLightComponent->GetDirection();   
         SpotLightCB.SpotLights[idx].InAndOutSmooth = PointLightComponent->GetInAndOutSmooth();
-        SpotLightCB.SpotLights[idx].AttFactor = PointLightComponent->GetAttFactor();
-
     }
     // 2?? 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(SpotLightCB); 
