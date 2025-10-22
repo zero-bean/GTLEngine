@@ -37,9 +37,12 @@ void ASpotLightActor::Tick(float DeltaTime)
 
 UObject* ASpotLightActor::Duplicate()
 {
-    return nullptr;
+    return Super_t::Duplicate();
 }
 
 void ASpotLightActor::DuplicateSubObjects()
 {
+    Super_t::DuplicateSubObjects();
+
+    SpotLightComponent = Cast<USpotLightComponent>(RootComponent);    
 }

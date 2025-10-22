@@ -8,14 +8,14 @@ class UGizmoArrowComponent;
 class UDirectionalLightComponent : public ULightComponent
 {
 public:
-	DECLARE_SPAWNABLE_CLASS(UDirectionalLightComponent, ULightComponent, "Directional Light Component")
+	DECLARE_SPAWNABLE_CLASS(UDirectionalLightComponent, ULightComponent, "DirectionalLightComponent")
 	UDirectionalLightComponent();
 	~UDirectionalLightComponent() override;
 
 	// Serialization for transform and properties
-	virtual void Serialize(bool bIsLoading, FComponentData& InOut) override;
+	void Serialize(bool bIsLoading, FComponentData& InOut) override;
 
-	virtual void TickComponent(float DeltaSeconds) override;
+	void TickComponent(float DeltaSeconds) override;
 
 	// Direction은 Scene Comp의 회전방향
 	FVector GetDirection();

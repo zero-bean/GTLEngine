@@ -28,14 +28,18 @@ APointLightActor::~APointLightActor()
 
 void APointLightActor::Tick(float DeltaTime)
 {
+    PointLightComponent->SetRelativeRotation(GetActorRotation());
 }
 
 UObject* APointLightActor::Duplicate()
 {
-    return AActor::Duplicate();
+    return Super_t::Duplicate();
 }
 
 void APointLightActor::DuplicateSubObjects()
 {
-    AActor::DuplicateSubObjects();
+    Super_t::DuplicateSubObjects();
+
+    PointLightComponent = Cast<UPointLightComponent>(RootComponent);
+    PointLightComponent->GetOwner()->SpriteComponent->SetShowflag(false);
 }

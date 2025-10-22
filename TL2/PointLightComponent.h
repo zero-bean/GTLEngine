@@ -9,7 +9,7 @@ struct FPointLightProperty;
 class UPointLightComponent : public ULightComponent
 {
 public:
-	DECLARE_SPAWNABLE_CLASS(UPointLightComponent, ULightComponent, "Point Light Component")
+	DECLARE_SPAWNABLE_CLASS(UPointLightComponent, ULightComponent, "PointLightComponent")
 	UPointLightComponent();
     ~UPointLightComponent() override;
     // 🔹 PointLight의 물리적/시각적 속성

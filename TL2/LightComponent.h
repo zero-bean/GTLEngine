@@ -5,12 +5,14 @@
 class ULightComponent : public USceneComponent
 {
 public:
-	DECLARE_SPAWNABLE_CLASS(ULightComponent, USceneComponent, "Light Component")
+	DECLARE_SPAWNABLE_CLASS(ULightComponent, USceneComponent, "LightComponent")
 	ULightComponent();
 	~ULightComponent() override;
 
 	// Serialization for transform
 	virtual void Serialize(bool bIsLoading, FComponentData& InOut);
+	UObject* Duplicate() override;
+	void DuplicateSubObjects() override;
 
 	virtual void DrawDebugLines(class URenderer* Renderer, const FMatrix& View, const FMatrix& Proj);
 
@@ -31,8 +33,12 @@ public:
 
 	void UpdateSpriteColor(const FLinearColor& InSpriteColor);
 
+protected:
+	void CopyLightProperties(ULightComponent* Source);
+
 private:
 	void UpdateFinalColor();
+	
 
 protected:
 	float Intensity = 1.0f;

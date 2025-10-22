@@ -20,6 +20,12 @@ void ULightComponent::Serialize(bool bIsLoading, FComponentData& InOut)
         SetRelativeLocation(InOut.RelativeLocation);
         SetRelativeRotation(FQuat::MakeFromEuler(InOut.RelativeRotation));
         SetRelativeScale(InOut.RelativeScale);
+        SetIntensity(InOut.LightProperty.Intensity);
+        SetColorTemperature(InOut.LightProperty.Temperature);
+        this->FinalColor = InOut.LightProperty.FinalColor;
+        SetTintColor(InOut.LightProperty.TintColor);
+        this->TempColor = InOut.LightProperty.TempColor;
+        SetDebugLineEnable(InOut.LightProperty.bEnableDebugLine);
     }
     else
     {
@@ -27,8 +33,31 @@ void ULightComponent::Serialize(bool bIsLoading, FComponentData& InOut)
         InOut.RelativeLocation = GetRelativeLocation();
         InOut.RelativeRotation = GetRelativeRotation().ToEuler();
         InOut.RelativeScale = GetRelativeScale();
+        InOut.LightProperty.Intensity = GetIntensity();
+        InOut.LightProperty.Temperature = GetColorTemperature();
+        InOut.LightProperty.FinalColor = GetFinalColor();
+        InOut.LightProperty.TintColor = GetTintColor();
+        InOut.LightProperty.TempColor = TempColor;
+        InOut.LightProperty.bEnableDebugLine = bEnableDebugLine;
     }
     
+}
+
+UObject* ULightComponent::Duplicate()
+{
+    ULightComponent* DuplicatedComponent = NewObject<ULightComponent>();
+
+    CopyCommonProperties(DuplicatedComponent);
+
+    CopyLightProperties(DuplicatedComponent);    
+    
+    DuplicatedComponent->DuplicateSubObjects();
+    return DuplicatedComponent;
+}
+
+void ULightComponent::DuplicateSubObjects()
+{
+    USceneComponent::DuplicateSubObjects();
 }
 
 float ULightComponent::GetColorTemperature() const
@@ -58,6 +87,15 @@ void ULightComponent::UpdateSpriteColor(const FLinearColor& InSpriteColor)
     {
         GetOwner()->SpriteComponent->SetSpriteColor(InSpriteColor);
     }
+}
+
+void ULightComponent::CopyLightProperties(ULightComponent* Source)
+{
+    Source->SetIntensity(Intensity);
+    // tintcolor랑 temperature만 있으면 finalcolor 계산 가능
+    Source->SetColorTemperature(Temperature);    
+    Source->SetTintColor(TintColor);    
+    Source->SetDebugLineEnable(false);
 }
 
 void ULightComponent::UpdateFinalColor()

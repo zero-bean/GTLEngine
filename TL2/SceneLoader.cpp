@@ -326,13 +326,60 @@ void FSceneLoader::SaveV2(const FSceneData& SceneData, const FString& SceneName)
             if (!bHasTypeSpecificData) { oss << ",\n"; bHasTypeSpecificData = true; }
             else { oss << ",\n"; }
 
+            const FLightComponentProperty& LP = Comp.LightProperty;
             const FPointLightProperty& FB = Comp.PointLightProperty; // FComponentData 내부에 있다고 가정
 
             oss << "      \"PointLightData\" : {\n";
-            oss << "        \"Intensity\" : " << FB.Intensity << ",\n";
+            oss << "        \"Intensity\" : " << LP.Intensity << ",\n";
+            oss << "        \"Temperature\" : " << LP.Temperature << ",\n";            
             oss << "        \"Radius\" : " << FB.Radius << ",\n";
             oss << "        \"RadiusFallOff\" : " << FB.RadiusFallOff << ",\n";
-            oss << "        \"Color\" : [" << FB.Color.R << ", " << FB.Color.G << ", " << FB.Color.B << ", " << FB.Color.A << "]\n";
+            oss << "        \"Segments\" : " << FB.Segments << ",\n";
+            oss << "        \"FinalColor\" : [" << LP.FinalColor.R << ", " << LP.FinalColor.G << ", " << LP.FinalColor.B << ", " << LP.FinalColor.A << "],\n";
+            oss << "        \"TintColor\" : [" << LP.TintColor.R << ", " << LP.TintColor.G << ", " << LP.TintColor.B << ", " << LP.TintColor.A << "],\n";
+            oss << "        \"TempColor\" : [" << LP.TempColor.R << ", " << LP.TempColor.G << ", " << LP.TempColor.B << ", " << LP.TempColor.A << "],\n";
+            oss << "        \"EnableDebugLine\" : " << (LP.bEnableDebugLine ? "true" : "false") << "\n";
+            oss << "      }";
+        }
+        if (Comp.Type.find("SpotLightComponent") != std::string::npos)
+        {
+            if (!bHasTypeSpecificData) { oss << ",\n"; bHasTypeSpecificData = true; }
+            else { oss << ",\n"; }
+
+            const FLightComponentProperty& LP = Comp.LightProperty;
+            const FSpotLightProperty& FB = Comp.SpotLightProperty; // FComponentData 내부에 있다고 가정
+
+            oss << "      \"SpotLightData\" : {\n";
+            oss << "        \"Intensity\" : " << LP.Intensity << ",\n";
+            oss << "        \"Temperature\" : " << LP.Temperature << ",\n";            
+            oss << "        \"InnnerConeAngle\" : " << FB.InnnerConeAngle << ",\n";
+            oss << "        \"OuterConeAngle\" : " << FB.OuterConeAngle << ",\n";
+            oss << "        \"InAndOutSmooth\" : " << FB.InAndOutSmooth << ",\n";
+            oss << "        \"Segments\" : " << FB.CircleSegments << ",\n";
+            oss << "        \"Direction\" : [" << FB.Direction.X << ", " << FB.Direction.Y << ", " << FB.Direction.Z << ", "<< FB.Direction.W << "],\n";
+            oss << "        \"FinalColor\" : [" << LP.FinalColor.R << ", " << LP.FinalColor.G << ", " << LP.FinalColor.B << ", " << LP.FinalColor.A << "],\n";
+            oss << "        \"TintColor\" : [" << LP.TintColor.R << ", " << LP.TintColor.G << ", " << LP.TintColor.B << ", " << LP.TintColor.A << "],\n";
+            oss << "        \"TempColor\" : [" << LP.TempColor.R << ", " << LP.TempColor.G << ", " << LP.TempColor.B << ", " << LP.TempColor.A << "],\n";
+            oss << "        \"EnableDebugLine\" : " << (LP.bEnableDebugLine ? "true" : "false") << "\n";
+            oss << "      }";
+        }
+        if (Comp.Type.find("DirectionalLightComponent") != std::string::npos)
+        {
+            if (!bHasTypeSpecificData) { oss << ",\n"; bHasTypeSpecificData = true; }
+            else { oss << ",\n"; }
+
+            const FLightComponentProperty& LP = Comp.LightProperty;
+            const FDirectionalLightProperty& FB = Comp.DirectionalLightProperty; // FComponentData 내부에 있다고 가정
+
+            oss << "      \"DirectionalLightData\" : {\n";
+            oss << "        \"Intensity\" : " << LP.Intensity << ",\n";
+            oss << "        \"Temperature\" : " << LP.Temperature << ",\n";
+            oss << "        \"Direction\" : [" << FB.Direction.X << ", " << FB.Direction.Y << ", " << FB.Direction.Z << "],\n";
+            oss << "        \"EnableSpecular\" : " << FB.bEnableSpecular << ",\n";
+            oss << "        \"FinalColor\" : [" << LP.FinalColor.R << ", " << LP.FinalColor.G << ", " << LP.FinalColor.B << ", " << LP.FinalColor.A << "],\n";
+            oss << "        \"TintColor\" : [" << LP.TintColor.R << ", " << LP.TintColor.G << ", " << LP.TintColor.B << ", " << LP.TintColor.A << "],\n";
+            oss << "        \"TempColor\" : [" << LP.TempColor.R << ", " << LP.TempColor.G << ", " << LP.TempColor.B << ", " << LP.TempColor.A << "],\n";
+            oss << "        \"EnableDebugLine\" : " << (LP.bEnableDebugLine ? "true" : "false") << "\n";
             oss << "      }";
         }
         if (Comp.Type.find("ProjectileMovementComponent") != std::string::npos)
@@ -531,7 +578,55 @@ FSceneData FSceneLoader::ParseV2(const JSON& Json)
                 const JSON& PointDataJson = CompJson.at("PointLightData");
 
                 if (PointDataJson.hasKey("Intensity"))
-                    Comp.PointLightProperty.Intensity = (float)PointDataJson.at("Intensity").ToFloat();
+                    Comp.LightProperty.Intensity = (float)PointDataJson.at("Intensity").ToFloat();
+
+                if (PointDataJson.hasKey("Temperature"))
+                    Comp.LightProperty.Temperature = (float)PointDataJson.at("Temperature").ToFloat();
+
+                if (PointDataJson.hasKey("EnableDebugLine"))
+                    Comp.LightProperty.bEnableDebugLine = PointDataJson.at("EnableDebugLine").ToBool();
+
+                if (PointDataJson.hasKey("FinalColor"))
+                {
+                    auto FinalColorJson = PointDataJson.at("FinalColor");
+                    if (FinalColorJson.size() >= 4)
+                    {
+                        Comp.LightProperty.FinalColor = FLinearColor(
+                            (float)FinalColorJson[0].ToFloat(),
+                            (float)FinalColorJson[1].ToFloat(),
+                            (float)FinalColorJson[2].ToFloat(),
+                            (float)FinalColorJson[3].ToFloat()
+                        );
+                    }
+                }
+
+                if (PointDataJson.hasKey("TintColor"))
+                {
+                    auto TintColorJson = PointDataJson.at("TintColor");
+                    if (TintColorJson.size() >= 4)
+                    {
+                        Comp.LightProperty.TintColor = FLinearColor(
+                            (float)TintColorJson[0].ToFloat(),
+                            (float)TintColorJson[1].ToFloat(),
+                            (float)TintColorJson[2].ToFloat(),
+                            (float)TintColorJson[3].ToFloat()
+                        );
+                    }
+                }
+
+                if (PointDataJson.hasKey("TempColor"))
+                {
+                    auto TempColorJson = PointDataJson.at("TempColor");
+                    if (TempColorJson.size() >= 4)
+                    {
+                        Comp.LightProperty.FinalColor = FLinearColor(
+                            (float)TempColorJson[0].ToFloat(),
+                            (float)TempColorJson[1].ToFloat(),
+                            (float)TempColorJson[2].ToFloat(),
+                            (float)TempColorJson[3].ToFloat()
+                        );
+                    }
+                }
 
                 if (PointDataJson.hasKey("Radius"))
                     Comp.PointLightProperty.Radius = (float)PointDataJson.at("Radius").ToFloat();
@@ -539,20 +634,147 @@ FSceneData FSceneLoader::ParseV2(const JSON& Json)
                 if (PointDataJson.hasKey("RadiusFallOff"))
                     Comp.PointLightProperty.RadiusFallOff = (float)PointDataJson.at("RadiusFallOff").ToFloat();
 
-                if (PointDataJson.hasKey("Color"))
+                if (PointDataJson.hasKey("RadiusFallOff"))
+                    Comp.PointLightProperty.RadiusFallOff = (float)PointDataJson.at("RadiusFallOff").ToFloat();
+
+                if (PointDataJson.hasKey("Segments"))
+                    Comp.PointLightProperty.Segments = (int)PointDataJson.at("Segments").ToInt();
+            }
+
+            // 🔥 PointLightComponent (FPointLightProperty)
+            if (Comp.Type.find("DirectionalLightComponent") != std::string::npos &&
+                CompJson.hasKey("DirectionalLightData"))
+            {
+                const JSON& DataJson = CompJson.at("DirectionalLightData");
+
+                if (DataJson.hasKey("Intensity"))
+                    Comp.LightProperty.Intensity = (float)DataJson.at("Intensity").ToFloat();
+
+                if (DataJson.hasKey("Temperature"))
+                    Comp.LightProperty.Temperature = (float)DataJson.at("Temperature").ToFloat();
+
+                if (DataJson.hasKey("EnableDebugLine"))
+                    Comp.LightProperty.bEnableDebugLine = DataJson.at("EnableDebugLine").ToBool();
+
+                if (DataJson.hasKey("FinalColor"))
                 {
-                    auto ColorJson = PointDataJson.at("Color");
+                    auto ColorJson = DataJson.at("FinalColor");
                     if (ColorJson.size() >= 4)
                     {
-                        Comp.PointLightProperty.Color = FLinearColor(
-                            (float)ColorJson[0].ToFloat(),
-                            (float)ColorJson[1].ToFloat(),
-                            (float)ColorJson[2].ToFloat(),
-                            (float)ColorJson[3].ToFloat()
+                        Comp.LightProperty.FinalColor = FLinearColor(
+                            (float)ColorJson[0].ToFloat(), (float)ColorJson[1].ToFloat(),
+                            (float)ColorJson[2].ToFloat(), (float)ColorJson[3].ToFloat());
+                    }
+                }
+
+                if (DataJson.hasKey("TintColor"))
+                {
+                    auto ColorJson = DataJson.at("TintColor");
+                    if (ColorJson.size() >= 4)
+                    {
+                        Comp.LightProperty.TintColor = FLinearColor(
+                            (float)ColorJson[0].ToFloat(), (float)ColorJson[1].ToFloat(),
+                            (float)ColorJson[2].ToFloat(), (float)ColorJson[3].ToFloat());
+                    }
+                }
+
+                if (DataJson.hasKey("TempColor"))
+                {
+                    auto ColorJson = DataJson.at("TempColor");
+                    if (ColorJson.size() >= 4)
+                    {
+                        Comp.LightProperty.TempColor = FLinearColor(
+                            (float)ColorJson[0].ToFloat(), (float)ColorJson[1].ToFloat(),
+                            (float)ColorJson[2].ToFloat(), (float)ColorJson[3].ToFloat());
+                    }
+                }
+
+                if (DataJson.hasKey("EnableSpecular"))
+                    Comp.DirectionalLightProperty.bEnableSpecular = DataJson.at("EnableSpecular").ToInt();
+
+                if (DataJson.hasKey("Direction"))
+                {
+                    auto DirectionJson = DataJson.at("Direction");
+                    if (DirectionJson.size() >= 3)
+                    {
+                        Comp.DirectionalLightProperty.Direction = FVector(
+                            (float)DirectionJson[0].ToFloat(),
+                            (float)DirectionJson[1].ToFloat(),
+                            (float)DirectionJson[2].ToFloat()
+                        );
+                    }
+                }                
+            }
+
+            if (Comp.Type.find("SpotLightComponent") != std::string::npos &&
+                CompJson.hasKey("SpotLightData"))
+            {
+                const JSON& PointDataJson = CompJson.at("SpotLightData");
+
+                if (PointDataJson.hasKey("Intensity"))
+                    Comp.LightProperty.Intensity = (float)PointDataJson.at("Intensity").ToFloat();
+
+                if (PointDataJson.hasKey("Temperature"))
+                    Comp.LightProperty.Temperature = (float)PointDataJson.at("Temperature").ToFloat();
+
+                if (PointDataJson.hasKey("EnableDebugLine"))
+                    Comp.LightProperty.bEnableDebugLine = PointDataJson.at("EnableDebugLine").ToBool();
+
+                if (PointDataJson.hasKey("FinalColor"))
+                {
+                    auto FinalColorJson = PointDataJson.at("FinalColor");
+                    if (FinalColorJson.size() >= 4)
+                    {
+                        Comp.LightProperty.FinalColor = FLinearColor(
+                            (float)FinalColorJson[0].ToFloat(),
+                            (float)FinalColorJson[1].ToFloat(),
+                            (float)FinalColorJson[2].ToFloat(),
+                            (float)FinalColorJson[3].ToFloat()
                         );
                     }
                 }
+
+                if (PointDataJson.hasKey("TintColor"))
+                {
+                    auto TintColorJson = PointDataJson.at("TintColor");
+                    if (TintColorJson.size() >= 4)
+                    {
+                        Comp.LightProperty.TintColor = FLinearColor(
+                            (float)TintColorJson[0].ToFloat(),
+                            (float)TintColorJson[1].ToFloat(),
+                            (float)TintColorJson[2].ToFloat(),
+                            (float)TintColorJson[3].ToFloat()
+                        );
+                    }
+                }
+
+                if (PointDataJson.hasKey("TempColor"))
+                {
+                    auto TempColorJson = PointDataJson.at("TempColor");
+                    if (TempColorJson.size() >= 4)
+                    {
+                        Comp.LightProperty.FinalColor = FLinearColor(
+                            (float)TempColorJson[0].ToFloat(),
+                            (float)TempColorJson[1].ToFloat(),
+                            (float)TempColorJson[2].ToFloat(),
+                            (float)TempColorJson[3].ToFloat()
+                        );
+                    }
+                }
+
+                if (PointDataJson.hasKey("InnnerConeAngle"))
+                    Comp.SpotLightProperty.InnnerConeAngle = (float)PointDataJson.at("InnnerConeAngle").ToFloat();
+
+                if (PointDataJson.hasKey("OuterConeAngle"))
+                    Comp.SpotLightProperty.OuterConeAngle = (float)PointDataJson.at("OuterConeAngle").ToFloat();
+
+                if (PointDataJson.hasKey("InAndOutSmooth"))
+                    Comp.SpotLightProperty.InAndOutSmooth = (float)PointDataJson.at("InAndOutSmooth").ToFloat();
+
+                if (PointDataJson.hasKey("Segments"))
+                    Comp.SpotLightProperty.CircleSegments = (int)PointDataJson.at("Segments").ToInt();
             }
+            
             if (Comp.Type.find("ProjectileMovementComponent") != std::string::npos &&
                 CompJson.hasKey("ProjectileMovementData"))
             {

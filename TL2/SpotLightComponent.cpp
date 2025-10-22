@@ -3,7 +3,7 @@
 #include "ImGui/imgui.h"
 #include "Renderer.h"
 
-USpotLightComponent::USpotLightComponent() : Direction(0.0, 0.0f, 1.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), InAntOutSmooth(1)
+USpotLightComponent::USpotLightComponent() : Direction(0.0, 0.0f, 1.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), InAnnOutSmooth(1)
 {
 
 }
@@ -12,13 +12,52 @@ USpotLightComponent::~USpotLightComponent()
 {
 }
 
+void USpotLightComponent::Serialize(bool bIsLoading, FComponentData& InOut)
+{
+	ULightComponent::Serialize(bIsLoading, InOut);
+
+	if (bIsLoading)
+	{
+		InnerConeAngle = InOut.SpotLightProperty.InnnerConeAngle;
+		OuterConeAngle = InOut.SpotLightProperty.OuterConeAngle;
+		InAnnOutSmooth = InOut.SpotLightProperty.InAndOutSmooth;
+		Direction = InOut.SpotLightProperty.Direction;
+		CircleSegments = InOut.SpotLightProperty.CircleSegments;
+	}
+	else
+	{
+		InOut.SpotLightProperty.InnnerConeAngle = InnerConeAngle;
+		InOut.SpotLightProperty.OuterConeAngle = OuterConeAngle;
+		InOut.SpotLightProperty.InAndOutSmooth = InAnnOutSmooth;
+		InOut.SpotLightProperty.Direction = Direction;
+		InOut.SpotLightProperty.CircleSegments = CircleSegments;
+	}
+}
+
+void USpotLightComponent::TickComponent(float DeltaSeconds)
+{
+	static int Time;
+	Time += DeltaSeconds;
+}
+
 UObject* USpotLightComponent::Duplicate()
 {
-	return nullptr;
+	USpotLightComponent* DuplicatedComponent = NewObject<USpotLightComponent>();
+	CopyCommonProperties(DuplicatedComponent);
+	CopyLightProperties(DuplicatedComponent);
+	DuplicatedComponent->InnerConeAngle = InnerConeAngle;
+	DuplicatedComponent->OuterConeAngle = OuterConeAngle;
+	DuplicatedComponent->InAnnOutSmooth = InAnnOutSmooth;
+	DuplicatedComponent->Direction = Direction;
+	DuplicatedComponent->SetDebugLineEnable(false);
+	DuplicatedComponent->DuplicateSubObjects();
+	
+	return DuplicatedComponent;
 }
 
 void USpotLightComponent::DuplicateSubObjects()
 {
+	Super_t::DuplicateSubObjects();
 }
 
 void USpotLightComponent::DrawDebugLines(class URenderer* Renderer, const FMatrix& View, const FMatrix& Proj)

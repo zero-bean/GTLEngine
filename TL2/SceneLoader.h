@@ -51,33 +51,45 @@ struct FSceneData
     FPerspectiveCameraData Camera;
 };
 
-struct FPointLightProperty
+struct FLightComponentProperty
 {
-    float Intensity = 5.0f;           // 밝기 (빛 세기)
+    float Intensity = 1.0f;
+    float Temperature = 6500.0f;
+    FLinearColor FinalColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    FLinearColor TintColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    FLinearColor TempColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    bool bEnableDebugLine = true;
+};
+
+struct FPointLightProperty
+{    
     float Radius = 15.0f;             // 영향 반경
     float RadiusFallOff = 2.0f;       // 감쇠 정도 (클수록 급격히 사라짐)
-    FLinearColor Color = FLinearColor(1.f, 0.0f, 0.0f, 1.f); // 오렌지빛
+    int Segments = 24;
 };
 
 struct FAmbientLightProperty
-{
-    float Intensity = 0.3f;           // 밝기
-    FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f); // 흰색
+{    
+    int32 CaptureResolution = 100;
+    float UpdateInterval = 0.1f;
+    float SmoothingFactor = 0.1f;
+    float SHIntensity = 1.0f;
 };
 
 struct FDirectionalLightProperty
-{
-    float Intensity = 3.0f;           // 밝기
-    FLinearColor Color = FLinearColor(1.0f, 0.95f, 0.8f, 1.0f); // 따뜻한 햇빛색
-    FVector Direction = FVector(0.0f, 0.0f, -1.0f); // 아래 방향
-    uint32 bEnableSpecular = 1;
+{    
+    int32 bEnableSpecular = 1;
+    FVector Direction;
 };
 
 
-struct FSpotLightInfo
+struct FSpotLightProperty
 {
     float InnnerConeAngle;
     float OuterConeAngle;
+    float InAndOutSmooth;
+    FVector4 Direction;
+    int CircleSegments = 32;
 };
 
 struct FProjectileMovementProperty
@@ -112,7 +124,9 @@ struct FComponentData
     TArray<FString> Materials;  // StaticMeshComponent: Materials
     TArray<FString> MaterialNormalMapOverrides;
     FString TexturePath;  // DecalComponent, BillboardComponent: Texture path
+    FLightComponentProperty LightProperty;
     FPointLightProperty PointLightProperty; // PointLightComponent
+    FSpotLightProperty SpotLightProperty;
     FAmbientLightProperty AmbientLightProperty; // AmbientLightComponent
     FDirectionalLightProperty DirectionalLightProperty; // DirectionalLightComponent
     // 신규

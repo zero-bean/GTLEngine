@@ -44,10 +44,13 @@ void ADirectionalLightActor::Tick(float DeltaTime)
 
 UObject* ADirectionalLightActor::Duplicate()
 {
-    return AActor::Duplicate();
+    return Super_t::Duplicate();
 }
 
 void ADirectionalLightActor::DuplicateSubObjects()
 {
     AActor::DuplicateSubObjects();
+
+    DirectionalLightComponent = Cast<UDirectionalLightComponent>(RootComponent);
+    
 }

@@ -23,6 +23,7 @@
 #include"DecalActor.h"
 #include "TimeProfile.h"
 #include "DecalSpotLightComponent.h"
+#include "LightComponent.h"
 #include "ProjectileMovementComponent.h"
 #include "RotationMovementComponent.h"
 
@@ -785,6 +786,10 @@ void UWorld::SaveSceneV2(const FString& SceneName)
             {
                 Prim->Serialize(false, CompData);
             }
+            else if (ULightComponent * Light = Cast<ULightComponent>(Comp))
+            {
+                Light->Serialize(false, CompData);
+            }
             else
             {
                 // PrimitiveComponent가 아닌 경우 Transform만 저장
@@ -967,6 +972,10 @@ void UWorld::LoadSceneV2(const FString& SceneName)
         if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(TargetComp))
         {
             Prim->Serialize(true, CompData);
+        }
+        else if (ULightComponent* Light = Cast<ULightComponent>(TargetComp))
+        {
+            Light->Serialize(true, CompData);
         }
         else
         {

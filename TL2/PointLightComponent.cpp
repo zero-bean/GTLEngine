@@ -30,11 +30,13 @@ void UPointLightComponent::Serialize(bool bIsLoading, FComponentData& InOut)
     {
         Radius = InOut.PointLightProperty.Radius;
         RadiusFallOff = InOut.PointLightProperty.RadiusFallOff;
+    	Segments = InOut.PointLightProperty.Segments;
     }
     else
     {
         InOut.PointLightProperty.Radius = Radius;
         InOut.PointLightProperty.RadiusFallOff = RadiusFallOff;
+    	InOut.PointLightProperty.Segments = Segments;
     }
 }
 
@@ -65,8 +67,14 @@ UObject* UPointLightComponent::Duplicate()
 {
     UPointLightComponent* DuplicatedComponent = NewObject<UPointLightComponent>();
     CopyCommonProperties(DuplicatedComponent);
-     DuplicatedComponent->Radius =this->Radius; // 복제 (단, UObject 포인터 복사는 주의)
+	DuplicatedComponent->SetIntensity(Intensity);
+	// tintcolor랑 temperature만 있으면 finalcolor 계산 가능
+	DuplicatedComponent->SetColorTemperature(Temperature);    
+	DuplicatedComponent->SetTintColor(TintColor);    
+	DuplicatedComponent->SetDebugLineEnable(false);
+	DuplicatedComponent->Radius =this->Radius; // 복제 (단, UObject 포인터 복사는 주의)
     DuplicatedComponent->RadiusFallOff = this->RadiusFallOff; // 복제 (단, UObject 포인터 복사는 주의)
+	DuplicatedComponent->SetDebugLineEnable(false);
     DuplicatedComponent->DuplicateSubObjects();
     return DuplicatedComponent;
 }

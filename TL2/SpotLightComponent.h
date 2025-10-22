@@ -2,26 +2,29 @@
 #include "PointLightComponent.h"
 
 struct FComponentData;
-struct FSpotLightInfo;
+struct FSpotLightProperty;
 
 
 class USpotLightComponent : public UPointLightComponent
 {
 public:
-    DECLARE_CLASS(USpotLightComponent, ULightComponent)
+    DECLARE_SPAWNABLE_CLASS(USpotLightComponent, ULightComponent, "SpotLightComponent")
 
     USpotLightComponent();
     ~USpotLightComponent() override;
 
+	void Serialize(bool bIsLoading, FComponentData& InOut) override;
+	void TickComponent(float DeltaSeconds) override;
+
 	float GetInnerConeAngle() { return InnerConeAngle;  }
 	float GetOuterConeAngle() { return OuterConeAngle;  }
 	FVector4 GetDirection() { return Direction;  }
-    float GetInAndOutSmooth() { return InAntOutSmooth;  }
+    float GetInAndOutSmooth() { return InAnnOutSmooth;  }
 
 	void SetInnerConeAngle(float Angle) { InnerConeAngle = Angle; }
 	void SetOuterConeAngle(float Angle) { OuterConeAngle = Angle; }
 	void SetDirection(FVector Dir) { Direction = Dir; }
-    void SetInAndOutSmooth(float Smooth) { InAntOutSmooth = Smooth; }
+    void SetInAndOutSmooth(float Smooth) { InAnnOutSmooth = Smooth; }
 
     // Debug/Visualization settings
     void SetCircleSegments(int InSegments) { CircleSegments = InSegments; }
@@ -41,7 +44,7 @@ protected:
 
     float InnerConeAngle;
     float OuterConeAngle;
-    float InAntOutSmooth;
+    float InAnnOutSmooth;
 
     FVector4 Direction;
 
