@@ -65,7 +65,7 @@ cbuffer PSScrollCB : register(b5)
 }
 
 // BRDF controls (roughness/metallic)
-cbuffer BRDFInfoBufferType : register(b6)
+cbuffer BRDFInfoBufferType : register(b8)
 {
     float Roughness;
     float Metallic;
