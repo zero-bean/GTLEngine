@@ -172,21 +172,26 @@ struct ViewportBufferType
     FVector4 ViewportRect; // x=StartX, y=StartY, z=SizeX, w=SizeY
 };
 
-// PS : b6
-struct FPointLightData
-{
-    FVector4 Position;   // xyz=위치, w=반경
-    FVector4 Color;      // rgb=색상, a=fallof
-};
-
 #define MAX_POINT_LIGHTS 100
-// 전체 버퍼 (cbuffer b9 대응)
-struct FPointLightBufferType
+
+// PS : b6
+struct alignas(16) FPointLightData
 {
-    int PointLightCount;                    // 활성 포인트 라이트 개수
-    FVector _Padding;                       // 16바이트 정렬 (HLSL float3 pad)
-    FPointLightData PointLights[MAX_POINT_LIGHTS]; // 배열 (최대 100)
+    FVector4 Position; // (x, y, z, radius)
+    FVector4 Color;    // (r, g, b, falloff)
+    float Radius;               // (안 써도 되지만 HLSL과 크기 맞춤용)
+    float pad[3];               // 16바이트 맞춤 패딩
 };
+static_assert(sizeof(FPointLightData) == 48, "FPointLightData must be 48 bytes");
+
+// 전체 버퍼 (cbuffer b9 대응)
+struct alignas(16) FPointLightBufferType
+{
+    int PointLightCount;   // 4
+    float _Padding[3];     // 12 → 총 16바이트
+    FPointLightData PointLights[MAX_POINT_LIGHTS];
+};
+static_assert(sizeof(FPointLightBufferType) == 16 + 48 * MAX_POINT_LIGHTS, "PointLightBuffer size mismatch with HLSL");
 
 // PS : b6
 struct FSpotLightData

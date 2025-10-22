@@ -279,7 +279,8 @@ void ULightCullingManager::ExecuteLightCulling(
         data->NumTilesX = NumTilesX;
         data->NumTilesY = NumTilesY;
         data->NearFar = FVector2D(NearPlane, FarPlane);
-        data->Padding = FVector2D(0, 0);
+        data->bIsOrthographic = (ProjMatrix.M[3][3] == 1.0f) ? 1 : 0;
+        data->Padding = 0;
         Context->Unmap(CullingCB, 0);
     }
 
@@ -406,7 +407,7 @@ void ULightCullingManager::ExecuteLightCulling(
 
 }
 
-void ULightCullingManager::BindResultsToPS(ID3D11DeviceContext* Context)
+void ULightCullingManager::BindResultsToPS(ID3D11DeviceContext* Context, float ViewportX, float ViewportY)
 {
     if (!bInitialized)
         return;
@@ -426,7 +427,7 @@ void ULightCullingManager::BindResultsToPS(ID3D11DeviceContext* Context)
     FTileCullingInfoCBData* data = (FTileCullingInfoCBData*)mapped.pData;
     data->NumTilesX = NumTilesX;
     data->DebugVisualizeTiles = bDebugVisualize ? 1 : 0;
-    data->Padding[0] = data->Padding[1] = 0;
+    data->ViewportOffset = FVector2D(ViewportX, ViewportY);
     Context->Unmap(TileCullingInfoCB, 0);
 
     Context->PSSetConstantBuffers(6, 1, &TileCullingInfoCB);
