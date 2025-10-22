@@ -137,7 +137,7 @@ void UDirectionalLightComponent::DrawDebugLines(class URenderer* Renderer, const
 	DirectionComponent->SetWorldLocation(GetWorldLocation());
 	DirectionComponent->SetColor(FVector(0.5f, 0.5f, 0.5f));
 	DirectionComponent->SetMaterial("Primitive.hlsl");
-	Renderer->UpdateSetCBuffer(ColorBufferType{FVector4(1.0f, 1.0f, 0.8f, 1.0f)});
+	Renderer->UpdateSetCBuffer(ColorBufferType{FVector4(0.8f, 0.8f, 0.8f, 1.0f)});
 	DirectionComponent->Render(Renderer, View, Proj, EEngineShowFlags::SF_StaticMeshes);
 	DirectionComponent->SetMaterial("UberLit.hlsl");
 }
