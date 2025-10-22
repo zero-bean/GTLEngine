@@ -49,20 +49,7 @@ protected:
 
 	ELightShadingModel ActiveModel = ELightShadingModel::BlinnPhong;
 	ENormalMapMode ActiveNormalMode = ENormalMapMode::NoNormalMap;
-
-	// Default macro table; actual selection is decided at load time.
-	//D3D_SHADER_MACRO DefinesRender[8] =
-	//{
-	//	{ "LIGHTING_MODEL_PHONG",  "0" },
-	//	{ "LIGHTING_MODEL_BLINN_PHONG",  "1" },
-	//	{ "LIGHTING_MODEL_BRDF",  "0" },
-	//	{ "LIGHTING_MODEL_LAMBERT",  "0" },
-	//	{ "LIGHTING_MODEL_GOURAUD",  "0" },
-	//	{ "LIGHTING_MODEL_UNLIT",  "0" },
-	//	{ "USE_TILED_CULLING",  "1" },  // Enable tile-based light culling
-	//	{ nullptr, nullptr }
-	//};
-	 
+ 
 private:
 	ID3DBlob* VSBlobs = nullptr; //  [(size_t)ELightShadingModel::Count] = { nullptr };
 	ID3DBlob* PSBlob = nullptr;
