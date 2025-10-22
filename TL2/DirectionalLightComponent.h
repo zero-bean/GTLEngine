@@ -3,6 +3,7 @@
 
 struct FComponentData;
 struct FDirectionalLightProperty;
+class UGizmoArrowComponent;
 
 class UDirectionalLightComponent : public ULightComponent
 {
@@ -17,14 +18,16 @@ public:
 	virtual void TickComponent(float DeltaSeconds) override;
 
 	// Direction은 Scene Comp의 회전방향
-	FVector GetDirection() const { return Direction; }
+	FVector GetDirection();
 	int32 IsEnabledSpecular() const { return bEnableSpecular; }
-	void SetSpecularEnable(bool bEnable);	
+	void SetSpecularEnable(bool bEnable);
+
+	UGizmoArrowComponent** GetDirectionComponent() { return &DirectionComponent; }
 
 	// Editor Details
 	void RenderDetails() override;
 
-	void DrawDebugLines(class URenderer* Renderer) override;
+	void DrawDebugLines(class URenderer* Renderer, const FMatrix& View, const FMatrix& Proj) override;
 
 protected:
 	UObject* Duplicate() override;
@@ -32,5 +35,6 @@ protected:
 
 private:
 	int32 bEnableSpecular = 1;
-	FVector Direction;	
+	UGizmoArrowComponent* DirectionComponent = nullptr;
+	FVector Direction;
 };

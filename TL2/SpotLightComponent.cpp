@@ -21,7 +21,7 @@ void USpotLightComponent::DuplicateSubObjects()
 {
 }
 
-void USpotLightComponent::DrawDebugLines(URenderer* Renderer)
+void USpotLightComponent::DrawDebugLines(class URenderer* Renderer, const FMatrix& View, const FMatrix& Proj)
 {
 	if (!this->IsRender() || !Renderer)
 	{

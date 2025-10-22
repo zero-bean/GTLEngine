@@ -65,7 +65,7 @@ void ULightComponent::UpdateFinalColor()
     FinalColor = TintColor * TempColor;
 }
 
-void ULightComponent::DrawDebugLines(class URenderer* Renderer)
+void ULightComponent::DrawDebugLines(class URenderer* Renderer, const FMatrix& View, const FMatrix& Proj)
 {
     // Base implementation - derived classes can override
 }

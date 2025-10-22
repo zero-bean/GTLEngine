@@ -1,12 +1,24 @@
 #include "pch.h"
 #include "DirectionalLightActor.h"
 #include "BillboardComponent.h"
+#include "GizmoArrowComponent.h"
 
 ADirectionalLightActor::ADirectionalLightActor()
 {
     Name = "Directional Light";
     DirectionalLightComponent = CreateDefaultSubobject<UDirectionalLightComponent>("DirectionalLightComponent");
     RootComponent = DirectionalLightComponent;
+
+    UGizmoArrowComponent** DirectionComponent = DirectionalLightComponent->GetDirectionComponent();
+    (*DirectionComponent) = CreateDefaultSubobject<UGizmoArrowComponent>("DirectionComponent");
+
+    if (DirectionComponent)
+    {
+        (*DirectionComponent)->SetupAttachment(RootComponent);
+        (*DirectionComponent)->SetActive(false);
+        (*DirectionComponent)->SetWorldScale(FVector(0.25f, 0.25f, 1.0f));
+        (*DirectionComponent)->SetEditable(false);
+    }
     
     if (!SpriteComponent)
     {

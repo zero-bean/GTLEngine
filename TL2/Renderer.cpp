@@ -765,8 +765,8 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
     {
         if (LightComponent)
         {
-            LightComponent->DrawDebugLines(this);
-            LightComponent->UpdateSpriteColor(LightComponent->GetFinalColor());
+            LightComponent->DrawDebugLines(this, ViewMatrix, ProjectionMatrix);
+            LightComponent->UpdateSpriteColor(LightComponent->GetTintColor());
         }        
     }
 
@@ -994,7 +994,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
         PointLightCB.PointLights[idx].Color = FVector4(
             PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetRadiusFallOff()
         );
-        
+                
     }
     // 2?? 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);

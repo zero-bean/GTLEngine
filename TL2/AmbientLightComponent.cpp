@@ -729,7 +729,7 @@ void UAmbientLightComponent::RenderDetails()
 	}
 }
 
-void UAmbientLightComponent::DrawDebugLines(class URenderer* Renderer)
+void UAmbientLightComponent::DrawDebugLines(class URenderer* Renderer, const FMatrix& View, const FMatrix& Proj)
 {
 	if (!Renderer || !IsRender())
 		return;

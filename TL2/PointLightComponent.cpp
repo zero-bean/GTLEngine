@@ -138,7 +138,7 @@ void UPointLightComponent::RenderDetails()
 	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
 }
 
-void UPointLightComponent::DrawDebugLines(URenderer* Renderer)
+void UPointLightComponent::DrawDebugLines(class URenderer* Renderer, const FMatrix& View, const FMatrix& Proj)
 {
 	if (!this->IsRender() || !Renderer)
 	{

@@ -82,9 +82,6 @@ PS_OUTPUT mainPS(PS_INPUT input)
     if (SpriteColor.a > 0.0f)
     {
         color.rgb = color.rgb * SpriteColor.rgb;
-        //color = color / (color + 1.0f);
-        color = 1.0f - exp(-color * 1.25f);
-        color = pow(color, 1.0f / 2.2f);
     }
     Result.Color = color;
     Result.UUID = input.UUID;

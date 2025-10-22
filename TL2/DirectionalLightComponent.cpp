@@ -2,12 +2,13 @@
 #include "DirectionalLightComponent.h"
 #include "SceneLoader.h"
 #include "ImGui/imgui.h"
+#include "GizmoArrowComponent.h"
 
 UDirectionalLightComponent::UDirectionalLightComponent()
 {
     bCanEverTick = true;
 	Direction = GetWorldRotation().GetUpVector();
-	Direction.Z *= -1.0f; 
+	Direction.Z *= -1.0f;
 }
 
 UDirectionalLightComponent::~UDirectionalLightComponent()
@@ -37,6 +38,13 @@ void UDirectionalLightComponent::TickComponent(float DeltaSeconds)
 {
     // Directional light는 보통 고정되어 있지만, 필요시 동적 변화 구현 가능
     // 예: 해의 이동에 따른 방향 변화 등
+}
+
+FVector UDirectionalLightComponent::GetDirection()
+{
+	FVector CurrentDirection = GetWorldRotation().GetUpVector();
+	CurrentDirection *= -1.0f;
+	return CurrentDirection;
 }
 
 void UDirectionalLightComponent::SetSpecularEnable(bool bEnable)
@@ -109,7 +117,7 @@ void UDirectionalLightComponent::RenderDetails()
 	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● DirectionalLight Active");
 }
 
-void UDirectionalLightComponent::DrawDebugLines(class URenderer* Renderer)
+void UDirectionalLightComponent::DrawDebugLines(class URenderer* Renderer, const FMatrix& View, const FMatrix& Proj)
 {
 	if (!this->IsRender() || !Renderer)
 	{
@@ -120,11 +128,16 @@ void UDirectionalLightComponent::DrawDebugLines(class URenderer* Renderer)
 	{
 		return;
 	}
+
+	if (!DirectionComponent)
+	{
+		return;
+	}
 	
-	FVector Position = GetWorldLocation();
-	Direction = GetWorldRotation().GetUpVector();
-	Direction.Z *= -1.25f; 
-	FVector DirectionVector = Position + Direction;
-	FVector4 Color(1.0f, 1.0f, 0.5f,1.0f);
-	Renderer->AddLine(Position, DirectionVector, Color);
+	DirectionComponent->SetWorldLocation(GetWorldLocation());
+	DirectionComponent->SetColor(FVector(0.5f, 0.5f, 0.5f));
+	DirectionComponent->SetMaterial("Primitive.hlsl");
+	Renderer->UpdateSetCBuffer(ColorBufferType{FVector4(1.0f, 1.0f, 0.8f, 1.0f)});
+	DirectionComponent->Render(Renderer, View, Proj, EEngineShowFlags::SF_StaticMeshes);
+	DirectionComponent->SetMaterial("UberLit.hlsl");
 }

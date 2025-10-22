@@ -30,7 +30,7 @@ public:
     // Editor Details
     void RenderDetails() override;
     
-    void DrawDebugLines(class URenderer* Renderer) override;
+    void DrawDebugLines(class URenderer* Renderer, const FMatrix& View, const FMatrix& Proj) override;
 
 protected:
     UObject* Duplicate() override;
