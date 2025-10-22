@@ -380,6 +380,48 @@ public:
                 }
                 OutMaterialInfos[MatCount - 1].SpecularTextureFileName = TextureFileName;
             }
+            // Normal map (map_Bump / map_bump / bump)
+            else if (line.rfind("map_Bump ", 0) == 0 || line.rfind("map_bump ", 0) == 0 || line.rfind("bump ", 0) == 0)
+            {
+                size_t prefixLen = 0;
+                if (line.rfind("map_Bump ", 0) == 0) prefixLen = 9; // length of "map_Bump "
+                else if (line.rfind("map_bump ", 0) == 0) prefixLen = 9; // length of "map_bump "
+                else if (line.rfind("bump ", 0) == 0) prefixLen = 5; // length of "bump "
+
+                FString rest = line.substr(prefixLen);
+                // Tokenize and skip options starting with '-'
+                std::stringstream optss(rest);
+                FString token;
+                FString fileToken;
+                while (optss >> token)
+                {
+                    if (!token.empty() && token[0] == '-')
+                    {
+                        // skip option and (option value) if present
+                        // e.g., -bm 1.0
+                        FString maybeValue;
+                        if (optss.peek() == ' ') optss >> maybeValue; // best-effort skip
+                        continue;
+                    }
+                    fileToken = token;
+                    break;
+                }
+
+                if (!fileToken.empty())
+                {
+                    FString TextureFileName;
+                    if (fileToken.rfind(objDir) != 0)
+                    {
+                        TextureFileName = objDir + fileToken;
+                    }
+                    else
+                    {
+                        TextureFileName = fileToken;
+                    }
+                    std::replace(TextureFileName.begin(), TextureFileName.end(), '\\', '/');
+                    OutMaterialInfos[MatCount - 1].NormalTextureFileName = FName(TextureFileName);
+                }
+            }
             else if (line.rfind("map_Ns ", 0) == 0)
             {
                 FString TextureFileName;

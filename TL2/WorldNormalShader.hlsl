@@ -73,7 +73,8 @@ PS_INPUT mainVS(VS_INPUT input)
     // 노멀, 탄젠트, 바이탄젠트를 월드 공간으로 변환
     // 로컬 법선 벡터와 월드 역전치 행렬곱을 하여, 월드 법선 벡터를 얻습니다.
     output.worldNormal = normalize(mul(input.normal, (float3x3) NormalMatrix));
-    output.worldTangent = normalize(mul(input.tangent, (float3x3) WorldMatrix));
+    // Use NormalMatrix for tangent for consistent TBN under non-uniform scale
+    output.worldTangent = normalize(mul(input.tangent, (float3x3) NormalMatrix));
     output.worldBitangent = normalize(cross(output.worldNormal, output.worldTangent));
     
     // 로컬 좌표 행렬을 월드 공간 기준으로 변환합니다.

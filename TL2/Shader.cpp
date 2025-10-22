@@ -75,7 +75,7 @@ void UShader::SetActiveNormalMode(ENormalMapMode InMode)
         if (Device != nullptr && !FilePath.empty()) // 리컴파일에 필요한 정보 확인
         {
             // 현재 라이팅 모델(ActiveModel)과 새 노멀 맵 모드로 리컴파일
-            ReloadForShadingModel(ActiveModel, Device);
+           // ReloadForShadingModel(ActiveModel, Device);
         }
     }
 }

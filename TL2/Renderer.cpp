@@ -221,10 +221,19 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
 
             bool bHasNormalTexture = (NormalTexture != nullptr); // 머티리얼의 노말맵 보유 여부
 
-            if (UShader* Shader = Material->GetShader())
+            // Ensure the active shader variant matches per-section normal map availability
             {
-                Shader->SetActiveNormalMode(bHasNormalTexture ? ENormalMapMode::HasNormalMap : ENormalMapMode::NoNormalMap);
-                PrepareShader(Shader);
+                UShader* ActiveShader = Material->GetShader();
+                if (!ActiveShader)
+                {
+                    // Fall back to the currently bound shader (set by component earlier), if any
+                    ActiveShader = LastShader;
+                }
+                if (ActiveShader)
+                {
+                    ActiveShader->SetActiveNormalMode(bHasNormalTexture ? ENormalMapMode::HasNormalMap : ENormalMapMode::NoNormalMap);
+                    PrepareShader(ActiveShader);
+                }
             }
 
             if (LastMaterial != Material)
