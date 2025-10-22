@@ -67,6 +67,19 @@ static D3D_SHADER_MACRO MACRO_UNLIT[] = {
     {nullptr,nullptr}
 };
 
+void UShader::SetActiveNormalMode(ENormalMapMode InMode)
+{
+    if (ActiveNormalMode != InMode) // 더티 플래그 체크
+    {
+        ActiveNormalMode = InMode;
+        if (Device != nullptr && !FilePath.empty()) // 리컴파일에 필요한 정보 확인
+        {
+            // 현재 라이팅 모델(ActiveModel)과 새 노멀 맵 모드로 리컴파일
+            ReloadForShadingModel(ActiveModel, Device);
+        }
+    }
+}
+
 const D3D_SHADER_MACRO* UShader::GetMacros(ELightShadingModel Model)
 {
     switch (Model)
@@ -103,7 +116,9 @@ UShader::~UShader()
 void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
 {
     assert(InDevice);
-      
+    this->Device = InDevice;
+    this->FilePath = InShaderPath;
+
     std::wstring WFilePath;  
     WFilePath = std::wstring(InShaderPath.begin(), InShaderPath.end());
        
@@ -156,17 +171,7 @@ void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
         return;
     }
 
-    // Store the same PS across all shading-model and normal-map slots (AddRef for duplicates)
-    //for (int i = 0; i < (int)ELightShadingModel::Count; ++i)
-    {
-        for (int j = 0; j < (int)ENormalMapMode::ENormalMapModeCount; ++j)
-        {
-            PixelShaders[j] = basePS;
-            // For the very first assignment we keep the original ref; others AddRef
-            if (!(j == 0) && PixelShaders[j]) { PixelShaders[j]->AddRef(); }
-        }
-    }
-   
+    this->PixelShaders = basePS;
 
     CreateInputLayout(InDevice, InShaderPath);
 
@@ -177,6 +182,7 @@ void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
 void UShader::ReloadForShadingModel(ELightShadingModel Model, ID3D11Device* InDevice)
 {
     assert(InDevice);
+    this->Device = InDevice;
 
     // Release existing GPU resources before recompiling
     ReleaseResources();
@@ -191,10 +197,30 @@ void UShader::ReloadForShadingModel(ELightShadingModel Model, ID3D11Device* InDe
     Flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 
-    const D3D_SHADER_MACRO* macros = GetMacros(Model);
+    const D3D_SHADER_MACRO* baseMacros = GetMacros(Model);
+
+    TArray<D3D_SHADER_MACRO> combinedMacros;
+    if (baseMacros)
+    {
+        for (int i = 0; baseMacros[i].Name != nullptr; ++i)
+        {
+            combinedMacros.push_back(baseMacros[i]);
+        }
+    }
+
+    if (this->ActiveNormalMode == ENormalMapMode::HasNormalMap)
+    {
+        combinedMacros.push_back({ "HAS_NORMAL_MAP", "1" });
+    }
+    else
+    {
+        combinedMacros.push_back({ "HAS_NORMAL_MAP", "0" });
+    }
+
+    combinedMacros.push_back({ nullptr, nullptr });
 
     // Compile VS/PS with the selected shading model macros
-    hr = D3DCompileFromFile(WFilePath.c_str(), macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", Flag, 0, &VSBlobs, &errorBlob);
+    hr = D3DCompileFromFile(WFilePath.c_str(), combinedMacros.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", Flag, 0, &VSBlobs, &errorBlob);
     if (FAILED(hr))
     {
         char* msg = errorBlob ? (char*)errorBlob->GetBufferPointer() : (char*)"Unknown VS compile error";
@@ -211,7 +237,7 @@ void UShader::ReloadForShadingModel(ELightShadingModel Model, ID3D11Device* InDe
     }
 
     ID3DBlob* localPSBlob = nullptr;
-    hr = D3DCompileFromFile(WFilePath.c_str(), macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &localPSBlob, &errorBlob);
+    hr = D3DCompileFromFile(WFilePath.c_str(), combinedMacros.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &localPSBlob, &errorBlob);
     if (FAILED(hr))
     {
         char* msg = errorBlob ? (char*)errorBlob->GetBufferPointer() : (char*)"Unknown PS compile error";
@@ -229,11 +255,7 @@ void UShader::ReloadForShadingModel(ELightShadingModel Model, ID3D11Device* InDe
         return;
     }
      
-    for (int j = 0; j < (int)ENormalMapMode::ENormalMapModeCount; ++j)
-    {
-        PixelShaders[j] = recompiledPS;
-        if (j != 0 && PixelShaders[j]) { PixelShaders[j]->AddRef(); }
-    } 
+    this->PixelShaders = recompiledPS; 
 
     CreateInputLayout(InDevice, FilePath);
 
@@ -279,23 +301,15 @@ void UShader::ReleaseResources()
         VSBlobs = nullptr;
     }
 
-
-    //for (int i = 0; i < (int)ELightShadingModel::Count; ++i)
+    if (VertexShaders)
     {
-        if (VertexShaders)
-        {
-            VertexShaders->Release();
-            VertexShaders = nullptr;
-        }
+        VertexShaders->Release();
+        VertexShaders = nullptr;
+    }
 
-        for (int j = 0; j < (int)ENormalMapMode::ENormalMapModeCount; ++j)
-        {
-            if (PixelShaders[j])
-            {
-                PixelShaders[j]->Release();
-                PixelShaders[j] = nullptr;
-            }
-        }
-
+    if (PixelShaders)
+    {
+        PixelShaders->Release();
+        PixelShaders = nullptr;
     }
 }
