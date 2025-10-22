@@ -407,7 +407,7 @@ void ULightCullingManager::ExecuteLightCulling(
 
 }
 
-void ULightCullingManager::BindResultsToPS(ID3D11DeviceContext* Context)
+void ULightCullingManager::BindResultsToPS(ID3D11DeviceContext* Context, float ViewportX, float ViewportY)
 {
     if (!bInitialized)
         return;
@@ -427,7 +427,7 @@ void ULightCullingManager::BindResultsToPS(ID3D11DeviceContext* Context)
     FTileCullingInfoCBData* data = (FTileCullingInfoCBData*)mapped.pData;
     data->NumTilesX = NumTilesX;
     data->DebugVisualizeTiles = bDebugVisualize ? 1 : 0;
-    data->Padding[0] = data->Padding[1] = 0;
+    data->ViewportOffset = FVector2D(ViewportX, ViewportY);
     Context->Unmap(TileCullingInfoCB, 0);
 
     Context->PSSetConstantBuffers(6, 1, &TileCullingInfoCB);

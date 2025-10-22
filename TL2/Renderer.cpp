@@ -27,6 +27,7 @@
 #include "DirectionalLightComponent.h"
 #include "LightCullingManager.h"
 #include "GizmoArrowComponent.h"
+#include "AmbientActor.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
@@ -638,9 +639,17 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
                 LightCullingManager->SetDebugVisualization(bDebugVisualizeTiles);
 
-                // Bind results to pixel shader
+                // 뷰포트 오프셋 가져오기
+                D3D11_VIEWPORT d3d_vp;
+                UINT num_vp = 1;
+                RHIDevice->GetDeviceContext()->RSGetViewports(&num_vp, &d3d_vp);
+
                 OutputDebugStringA("[Renderer] Binding results to PS...\n");
-                LightCullingManager->BindResultsToPS(RHIDevice->GetDeviceContext());
+                LightCullingManager->BindResultsToPS(
+                    RHIDevice->GetDeviceContext(),
+                    d3d_vp.TopLeftX,  // 뷰포트 X 오프셋 전달
+                    d3d_vp.TopLeftY   // 뷰포트 Y 오프셋 전달
+                );
                 OutputDebugStringA("[Renderer] Light culling complete!\n");
             }
             else
@@ -923,29 +932,39 @@ void URenderer::RenderSceneToCubemapFace(UWorld* World, const FMatrix& ViewMatri
     RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual);
     RHIDevice->IASetPrimitiveTopology();
 
-    // 3. 씬의 모든 프리미티브 렌더링 (RenderPrimitives 로직 재사용)
+    // 3. 월드의 AAmbientActor만 렌더링
     USelectionManager& SelectionManager = USelectionManager::GetInstance();
     AActor* SelectedActor = SelectionManager.GetSelectedActor();
 
-    for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
+    for (AActor* Actor : World->GetLevel()->GetActors())
     {
-        // 안전성 체크: nullptr 또는 비활성 컴포넌트 스킵
-        if (!PrimitiveComponent || !PrimitiveComponent->IsActive())
+        // AAmbientActor만 렌더링
+        AAmbientActor* AmbientActor = Cast<AAmbientActor>(Actor);
+        if (!AmbientActor)
             continue;
 
-        // 빌보드나 에디터 전용 컴포넌트는 큐브맵에서 제외
-        if (Cast<UBillboardComponent>(PrimitiveComponent))
-            continue;
-
-        bool bIsSelected = false;
-        if (PrimitiveComponent->GetOwner() == SelectedActor)
+        // 액터의 모든 프리미티브 컴포넌트 렌더링
+        for (UActorComponent* ActorComponent : AmbientActor->GetComponents())
         {
-            bIsSelected = true;
-        }
+            UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(ActorComponent);
+            // 안전성 체크: nullptr 또는 비활성 컴포넌트 스킵
+            if (!PrimitiveComponent || !PrimitiveComponent->IsActive())
+                continue;
 
-        FVector rgb(1.0f, 1.0f, 1.0f);
-        UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
-        PrimitiveComponent->Render(this, ViewMatrix, ProjMatrix, Viewport->GetShowFlags());
+            // 빌보드나 에디터 전용 컴포넌트는 큐브맵에서 제외
+            if (Cast<UBillboardComponent>(PrimitiveComponent))
+                continue;
+
+            bool bIsSelected = false;
+            if (AmbientActor == SelectedActor)
+            {
+                bIsSelected = true;
+            }
+
+            FVector rgb(1.0f, 1.0f, 1.0f);
+            UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
+            PrimitiveComponent->Render(this, ViewMatrix, ProjMatrix, Viewport->GetShowFlags());
+        }
     }
 }
 
