@@ -205,19 +205,7 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
                 Material->SetShader(SMShader);
             }
 
-            // Auto-load normal map for this material if specified in material info
-            if (!(InMaterialInfo.NormalTextureFileName == FName::None()))
-            {
-                const FString NormalTexPath = InMaterialInfo.NormalTextureFileName.ToString();
-                if (!NormalTexPath.empty())
-                {
-                    UTexture* NormalTex = UResourceManager::GetInstance().Load<UTexture>(NormalTexPath);
-                    if (NormalTex)
-                    {
-                        Material->SetNormalTexture(NormalTex);
-                    }
-                }
-            }
+            // Defer normal map loading to first use (lazy) via UMaterial::GetNormalTexture.
 
             UResourceManager::GetInstance().Add<UMaterial>(InMaterialInfo.MaterialName, Material);
         }

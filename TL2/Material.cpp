@@ -54,5 +54,18 @@ void UMaterial::SetNormalTexture(UTexture* TextureResource)
 
 UTexture* UMaterial::GetNormalTexture()
 {
+    // Lazy-load normal texture on first access to avoid upfront memory usage
+    if (NormalTexture == nullptr)
+    {
+        const FObjMaterialInfo& Info = GetMaterialInfo();
+        if (!(Info.NormalTextureFileName == FName::None()))
+        {
+            const FString Path = Info.NormalTextureFileName.ToString();
+            if (!Path.empty())
+            {
+                NormalTexture = UResourceManager::GetInstance().Load<UTexture>(Path);
+            }
+        }
+    }
     return NormalTexture;
 }
