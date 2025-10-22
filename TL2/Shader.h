@@ -28,6 +28,8 @@ public:
     // Recompile this shader with macros for a specific shading model (hot-reload)
     void ReloadForShadingModel(ELightShadingModel Model, ID3D11Device* InDevice);
 	   
+	void LoadWorldNormalShader(const FString& InShaderPath, ID3D11Device* InDevice);
+
 	ID3D11InputLayout* GetInputLayout() const { return InputLayout; }
 	ID3D11VertexShader* GetVertexShader() const { return VertexShaders; }
 	ID3D11PixelShader* GetPixelShader() const

@@ -71,3 +71,28 @@ inline FLinearColor operator*(const FLinearColor& LHS, const FLinearColor& RHS)
 	Result.A = LHS.A * RHS.A;
 	return Result;
 }
+
+inline FLinearColor operator*(float LHS, const FLinearColor& RHS)
+{
+	FLinearColor Result{};
+	Result.R = LHS * RHS.R;
+	Result.G = LHS * RHS.G;
+	Result.B = LHS * RHS.B;
+	Result.A = LHS * RHS.A;
+	return Result;
+}
+
+inline FLinearColor operator*(const FLinearColor& LHS, float RHS)
+{
+	FLinearColor Result{};
+	Result.R = LHS.R * RHS;
+	Result.G = LHS.G * RHS;
+	Result.B = LHS.B * RHS;
+	Result.A = LHS.A * RHS;
+	return Result;
+}
+
+inline bool operator==(const FLinearColor& LHS, const FLinearColor& RHS)
+{
+	return (LHS.R == RHS.R) && (LHS.G == RHS.G) && (LHS.B == RHS.B) && (LHS.A == RHS.A);
+}

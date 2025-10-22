@@ -98,6 +98,16 @@ void UBillboardComponent::SetUVCoords(float U, float V, float UL, float VL)
     VLength = VL;
 }
 
+void UBillboardComponent::SetSpriteColor(const FLinearColor& InColor)
+{
+	// 다르면 업데이트
+	if (InColor != SpriteColor)
+	{
+		SpriteColor = InColor;
+		bIsChangedColor = true;
+	}
+}
+
 UObject* UBillboardComponent::Duplicate()
 {
   
@@ -210,7 +220,18 @@ void UBillboardComponent::Render(URenderer* Renderer, const FMatrix& View, const
     Renderer->UpdateSetCBuffer(ModelBufferType(FMatrix(), this->InternalIndex));
     //Renderer->UpdateSetCBuffer(ViewProjBufferType( FMatrix(), FMatrix()));
     Renderer->UpdateSetCBuffer(BillboardBufferType(BillboardPos,0, View.InverseAffine()));
-
+	
+	if (bIsChangedColor)
+	{
+		// TODO 색상용 상수버퍼 추가 및 업데이트
+		// 셰이더 내부에서 조명용 빌보드인지 검사하는데 사용
+		SpriteColor.A = SpriteColor.A + 1.0f;
+		Renderer->UpdateSetCBuffer(ColorBufferType{FVector4
+			{SpriteColor.R, SpriteColor.G, SpriteColor.B, SpriteColor.A}});				
+		bIsChangedColor = false;
+	}
+	
+	
     Renderer->OMSetDepthStencilState(EComparisonFunc::Disable);
     
     Renderer->OMSetBlendState(false);

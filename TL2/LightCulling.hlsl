@@ -55,8 +55,9 @@ cbuffer CullingCB : register(b0)
     uint ScreenHeight;
     uint NumTilesX;
     uint NumTilesY;
+    uint bIsOrthographic;
     float2 NearFar; // LH(+Z forward)
-    float2 _pad_culling;
+    float _pad_culling;
 }
 
 cbuffer ViewMatrixCB : register(b1)
@@ -103,22 +104,50 @@ bool IsPointLightAffectingTile(
     float projScaleY = 1.0 / ProjInv[1][1];
     float2 lightNDC;
 
-    // LH(+Z forward): X 정상, Y는 D3D 좌표 보정 (-)
-    lightNDC.x = (lightPosView.x * projScaleX / lightPosView.z);
-    lightNDC.y = (lightPosView.y * projScaleY / lightPosView.z);
+    if (bIsOrthographic == 1)
+    {
+        lightNDC.x = lightPosView.x * projScaleX;
+        lightNDC.y = lightPosView.y * projScaleY;
+    }
+    else
+    {
+        lightNDC.x = (lightPosView.x * projScaleX / lightPosView.z);
+        lightNDC.y = (lightPosView.y * projScaleY / lightPosView.z);
+    }
 
-    // 반경 근사 (NDC 스페이스에서) - with margin
-    float radiusNDC = effectiveRadius * projScaleX / abs(lightPosView.z);
+    // Calculate ellipse radii in NDC
+    float2 radiusNDC;
+    if (bIsOrthographic == 1)
+    {
+        radiusNDC.x = effectiveRadius * projScaleX;
+        radiusNDC.y = effectiveRadius * projScaleY;
+    }
+    else
+    {
+        radiusNDC.x = effectiveRadius * projScaleX / abs(lightPosView.z);
+        radiusNDC.y = effectiveRadius * projScaleY / abs(lightPosView.z);
+    }
 
-    // --- Circle vs Rect test ---
+    // Avoid division by zero
+    if (radiusNDC.x < 1e-6f || radiusNDC.y < 1e-6f)
+        return false;
+
+    // --- Ellipse vs Rect test ---
+    // Scale the coordinate system so the ellipse becomes a unit circle.
+    float2 scaledLightNDC = lightNDC / radiusNDC;
+    float2 scaledNdcMin = ndcMin / radiusNDC;
+    float2 scaledNdcMax = ndcMax / radiusNDC;
+
+    // Find the closest point on the scaled AABB to the scaled light center.
     float2 closest;
-    closest.x = clamp(lightNDC.x, ndcMin.x, ndcMax.x);
-    closest.y = clamp(lightNDC.y, ndcMin.y, ndcMax.y);
+    closest.x = clamp(scaledLightNDC.x, scaledNdcMin.x, scaledNdcMax.x);
+    closest.y = clamp(scaledLightNDC.y, scaledNdcMin.y, scaledNdcMax.y);
 
-    float2 diff = lightNDC - closest;
+    // Check if the distance from the scaled center to the closest point is within the unit circle.
+    float2 diff = scaledLightNDC - closest;
     float distSq = dot(diff, diff);
 
-    return (distSq <= radiusNDC * radiusNDC);
+    return (distSq <= 1.0);
 }
 
 // ============================================================================
@@ -298,13 +327,20 @@ void CS_LightCulling(
     // Convert to NDC bounds
     float2 tileScreenMin = float2(tileMin.x, tileMin.y);
     float2 tileScreenMax = float2(tileMax.x, tileMax.y);
-    float2 tileNDCMin = (tileScreenMin / float2(ScreenWidth, ScreenHeight)) * 2.0 - 1.0;
-    float2 tileNDCMax = (tileScreenMax / float2(ScreenWidth, ScreenHeight)) * 2.0 - 1.0;
-    tileNDCMin.y = -tileNDCMin.y;
-    tileNDCMax.y = -tileNDCMax.y;
 
-    float2 ndcMin = float2(min(tileNDCMin.x, tileNDCMax.x), min(tileNDCMin.y, tileNDCMax.y));
-    float2 ndcMax = float2(max(tileNDCMin.x, tileNDCMax.x), max(tileNDCMin.y, tileNDCMax.y));
+    // Convert to NDC range [-1, 1]
+    float2 tileNDCMinRaw = (tileScreenMin / float2(ScreenWidth, ScreenHeight)) * 2.0 - 1.0;
+    float2 tileNDCMaxRaw = (tileScreenMax / float2(ScreenWidth, ScreenHeight)) * 2.0 - 1.0;
+
+    // Build final NDC bounds, flipping Y and ensuring min < max
+    float2 ndcMin, ndcMax;
+    ndcMin.x = tileNDCMinRaw.x;
+    ndcMax.x = tileNDCMaxRaw.x;
+
+    // Screen Y is 0 at top, NDC Y is 1 at top.
+    // So, use tileNDCMaxRaw for ndcMin.y and tileNDCMinRaw for ndcMax.y after flipping.
+    ndcMin.y = -tileNDCMaxRaw.y;
+    ndcMax.y = -tileNDCMinRaw.y;
 
     // -------------------------
     // Step 3. Light test

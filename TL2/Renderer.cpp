@@ -240,7 +240,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 if (LastTexture != CurrentTexture)
                 {
                     StatsCollector.IncrementTextureChanges();
-                    LastTexture = CurrentTexture;
+                    LastTexture = CurrentTexture; 
                 }
 
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &(TextureData->TextureSRV));
@@ -259,7 +259,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NullSRV);
             }
 
-            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture });
+            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture });
             RHIDevice->GetDeviceContext()->DrawIndexed(MeshGroupInfos[i].IndexCount, MeshGroupInfos[i].StartIndex, 0);
             StatsCollector.IncrementDrawCalls();
         }
@@ -508,7 +508,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
     // +-+-+ Render Pass Structure +-+-+
 
-    float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
+    float ViewportAspectRatio = (Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
     if (Viewport->GetSizeY() == 0) ViewportAspectRatio = 1.0f; // 0으로 나누기 방지
     FMatrix ViewMatrix = Camera->GetViewMatrix();
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
@@ -529,12 +529,12 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         // All viewports will share the same culling data
         if (!LightCullingManager->IsInitialized())
         {
-            OutputDebugStringA("[Renderer] Initializing LightCullingManager for the first time...\n");
+            OutputDebugStringA("[Renderer] Initializing LightCullingManager...\n");
             LightCullingManager->Initialize(RHIDevice->GetDevice(), screenWidth, screenHeight);
         }
         else
         {
-            OutputDebugStringA("[Renderer] LightCullingManager already initialized\n");
+            LightCullingManager->Resize(RHIDevice->GetDevice(), screenWidth, screenHeight);
         }
     }
     else
@@ -686,7 +686,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_WorldNormal:
     {
         BeginLineBatch();
-        OverrideShader =  UResourceManager::GetInstance().Load<UShader>("WorldNormalShader.hlsl");
+        OverrideShader = UResourceManager::GetInstance().Load<UShader>("WorldNormalShader.hlsl");
         RenderBasePass(World, Camera, Viewport);
         OverrideShader = nullptr;
         RenderEditorPass(World, Camera, Viewport);
@@ -766,7 +766,8 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
         if (LightComponent)
         {
             LightComponent->DrawDebugLines(this);
-        }
+            LightComponent->UpdateSpriteColor(LightComponent->GetFinalColor());
+        }        
     }
 
     EndLineBatch(FMatrix::Identity(), ViewMatrix, ProjectionMatrix);
@@ -991,9 +992,9 @@ void URenderer::RenderPointLightPass(UWorld* World)
             PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
         );
         PointLightCB.PointLights[idx].Color = FVector4(
-            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetIntensity()
+            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetRadiusFallOff()
         );
-        PointLightCB.PointLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
+        
     }
     // 2?? 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(PointLightCB);
@@ -1035,16 +1036,13 @@ void URenderer::RenderSpotLightPass(UWorld* World)
             PointLightComponent->GetWorldLocation(), PointLightComponent->GetRadius()
         );
         SpotLightCB.SpotLights[idx].Color = FVector4(
-            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetIntensity()
+            PointLightComponent->GetFinalColor().R, PointLightComponent->GetFinalColor().G, PointLightComponent->GetFinalColor().B, PointLightComponent->GetRadiusFallOff()
         );
-        SpotLightCB.SpotLights[idx].FallOff = PointLightComponent->GetRadiusFallOff();
         // If set on component, propagate cone angles
         SpotLightCB.SpotLights[idx].InnerConeAngle = PointLightComponent->GetInnerConeAngle();
         SpotLightCB.SpotLights[idx].OuterConeAngle = PointLightComponent->GetOuterConeAngle();
         SpotLightCB.SpotLights[idx].Direction = PointLightComponent->GetDirection();   
         SpotLightCB.SpotLights[idx].InAndOutSmooth = PointLightComponent->GetInAndOutSmooth();
-        SpotLightCB.SpotLights[idx].AttFactor = PointLightComponent->GetAttFactor();
-
     }
     // 2?? 상수 버퍼 GPU로 업데이트
     UpdateSetCBuffer(SpotLightCB); 

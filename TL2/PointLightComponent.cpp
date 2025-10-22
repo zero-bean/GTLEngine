@@ -117,6 +117,19 @@ void UPointLightComponent::RenderDetails()
 		SetRadiusFallOff(falloff);
 	}
 
+	int segs = GetSegments();
+	if (ImGui::DragInt("Circle Segments", &segs, 1.0f, 3, 512))
+	{
+		segs = FMath::Clamp(segs, 3, 512);
+		SetSegments(segs);
+	}
+
+	bool bEnableDebugLine = IsEnabledDebugLine();
+	if (ImGui::Checkbox("Debug Line", &bEnableDebugLine))
+	{
+		SetDebugLineEnable(bEnableDebugLine);
+	}
+	
 	ImGui::Spacing();
 
 	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
@@ -137,9 +150,13 @@ void UPointLightComponent::DrawDebugLines(URenderer* Renderer)
 		return;
 	}
 
+	if (!bEnableDebugLine)
+	{
+		return;
+	}
+
 	// 중심 = 현재 배치된 월드 포지션
-	FVector Center = GetWorldLocation();
-	uint32 Segments = 24;
+	FVector Center = GetWorldLocation();	
 
 	float Step = TWO_PI / Segments;
 
@@ -148,7 +165,7 @@ void UPointLightComponent::DrawDebugLines(URenderer* Renderer)
 	FVector PrevPointXY = Center + FVector(0.0f, Radius, 0.0f);
 	FVector PrevPointXZ = Center + FVector(Radius, 0.0f, 0.0f);
 	FVector PrevPointYZ = Center + FVector(0.0f, Radius, 0.0f);
-	for (uint32 i = 0; i< Segments; i++)
+	for (uint32 i = 0; i < Segments; i++)
 	{		
 		float Angle = Step * (i + 1);
 		FVector NextPointXY = Center + FVector(Radius * sinf(Angle), Radius * cosf(Angle), 0.0f);

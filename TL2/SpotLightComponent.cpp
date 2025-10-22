@@ -2,10 +2,8 @@
 #include "SpotLightComponent.h"
 #include "ImGui/imgui.h"
 #include "Renderer.h"
-#include "World.h"
-#include "CameraActor.h"
 
-USpotLightComponent::USpotLightComponent() : Direction(1.0, 0.0f, 0.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), AttFactor( 0, 0, 1), InAntOutSmooth(1)
+USpotLightComponent::USpotLightComponent() : Direction(1.0, 0.0f, 0.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), InAntOutSmooth(1)
 {
 
 }
@@ -25,12 +23,18 @@ void USpotLightComponent::DuplicateSubObjects()
 
 void USpotLightComponent::DrawDebugLines(URenderer* Renderer)
 {
-	if (!Renderer || !IsRender())
+	if (!this->IsRender() || !Renderer)
+	{
 		return;
+	}
+
+	if (!bEnableDebugLine)
+	{
+		return;
+	}
 
 	const FVector SpotPos = GetWorldLocation();
-	FVector dir = GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();
-	const float range = GetRadius();
+	    FVector dir = GetWorldRotation().RotateVector(FVector(1, 0, 0)).GetSafeNormal();	const float range = GetRadius();
 
 	if (range <= KINDA_SMALL_NUMBER || dir.SizeSquared() < KINDA_SMALL_NUMBER)
 		return;
@@ -120,12 +124,7 @@ void USpotLightComponent::RenderDetails()
 	if (ImGui::DragFloat("FallOff", &falloff, 0.05f, 0.1f, 10.0f))
 	{
 		SetRadiusFallOff(falloff);
-	}
-	FVector attFactor = GetAttFactor();
-	if (ImGui::DragFloat3("Attenuation Factor", &attFactor.X, 1.0f, 0.0f, 10.0f))
-	{
-		SetAttFactor(attFactor);
-	}
+	}	
 
 	// 🔸 inner 원과 outter 원과 smooth하게 섞임
 	float smooth = GetInAndOutSmooth();
@@ -141,6 +140,13 @@ void USpotLightComponent::RenderDetails()
 		segs = FMath::Clamp(segs, 3, 512);
 		SetCircleSegments(segs);
 	}
+
+	bool bEnableDebugLine = IsEnabledDebugLine();
+	if (ImGui::Checkbox("Debug Line", &bEnableDebugLine))
+	{
+		SetDebugLineEnable(bEnableDebugLine);
+	}
+	
 	ImGui::Spacing();
 
 	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)

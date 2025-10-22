@@ -18,6 +18,11 @@ cbuffer BillboardBuffer : register(b2)
     row_major matrix viewInverse;
 }
 
+cbuffer ColorBufferType : register(b3)
+{
+    float4 SpriteColor;
+}
+
 // C++의 BillboardCharInfo와 레이아웃이 동일해야 하는 입력 구조체
 struct VS_INPUT
 {
@@ -74,6 +79,13 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     clip(color.a - 0.5f); // alpha - 0.5f < 0 이면 해당픽셀 렌더링 중단
 
+    if (SpriteColor.a > 0.0f)
+    {
+        color.rgb = color.rgb * SpriteColor.rgb;
+        //color = color / (color + 1.0f);
+        color = 1.0f - exp(-color * 1.25f);
+        color = pow(color, 1.0f / 2.2f);
+    }
     Result.Color = color;
     Result.UUID = input.UUID;
     return Result;

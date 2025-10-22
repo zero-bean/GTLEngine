@@ -24,6 +24,9 @@ public:
     float GetRadiusFallOff() { return RadiusFallOff; }
     void SetRadiusFallOff(float FallOff) { RadiusFallOff = FallOff; }
 
+    int GetSegments() const { return Segments; }
+    void SetSegments(int InSegments) { Segments = InSegments; }
+
     // Editor Details
     void RenderDetails() override;
     
@@ -35,6 +38,7 @@ protected:
     
 protected: 
     float Radius = 3.0f;             // 영향 반경
-    float RadiusFallOff = 2.0f;       // 감쇠 정도 (클수록 급격히 사라짐) 
+    float RadiusFallOff = 2.0f;       // 감쇠 정도 (클수록 급격히 사라짐)
+    int Segments = 24;
  
 };
