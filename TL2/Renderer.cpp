@@ -638,9 +638,17 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
                 LightCullingManager->SetDebugVisualization(bDebugVisualizeTiles);
 
-                // Bind results to pixel shader
+                // 뷰포트 오프셋 가져오기
+                D3D11_VIEWPORT d3d_vp;
+                UINT num_vp = 1;
+                RHIDevice->GetDeviceContext()->RSGetViewports(&num_vp, &d3d_vp);
+
                 OutputDebugStringA("[Renderer] Binding results to PS...\n");
-                LightCullingManager->BindResultsToPS(RHIDevice->GetDeviceContext());
+                LightCullingManager->BindResultsToPS(
+                    RHIDevice->GetDeviceContext(),
+                    d3d_vp.TopLeftX,  // 뷰포트 X 오프셋 전달
+                    d3d_vp.TopLeftY   // 뷰포트 Y 오프셋 전달
+                );
                 OutputDebugStringA("[Renderer] Light culling complete!\n");
             }
             else

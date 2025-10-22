@@ -26,7 +26,7 @@ public:
     );
 
     // Bind results to pixel shader
-    void BindResultsToPS(ID3D11DeviceContext* Context);
+    void BindResultsToPS(ID3D11DeviceContext* Context, float ViewportX, float ViewportY);
 
     // Unbind from pixel shader
     void UnbindFromPS(ID3D11DeviceContext* Context);
@@ -106,6 +106,6 @@ private:
     {
         UINT NumTilesX;
         UINT DebugVisualizeTiles;
-        UINT Padding[2];
+        FVector2D ViewportOffset; 
     };
 };

@@ -551,7 +551,7 @@ cbuffer TileCullingInfoCB : register(b6)
 {
     uint NumTilesX;
     uint DebugVisualizeTiles; // 0 = off, 1 = on
-    uint2 _pad_tileinfo;
+    float2 ViewportOffset;
 }
 
 // Tile-based PointLights: Blinn-Phong (optimized version)

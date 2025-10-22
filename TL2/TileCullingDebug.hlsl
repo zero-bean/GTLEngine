@@ -31,10 +31,28 @@ PS_INPUT mainVS(VS_INPUT input)
 // Pixel shader: visualize tile light count as heat map + tile grid lines
 float4 mainPS(PS_INPUT input) : SV_Target
 {
-    // Calculate tile ID and position within tile
-    uint2 pixelPos = uint2(input.position.xy);
+// ★★★ 1. 화면 절대 좌표에서 뷰포트 오프셋을 빼서 "뷰포트 상대 좌표"를 구함 ★★★
+    // (input.position.xy는 SV_POSITION에 의해 픽셀의 화면 절대 좌표가 됨)
+    float2 viewportPixelPos = input.position.xy - ViewportOffset; // ViewportOffset은 Light.hlsli에서 옴
+
+    // ★★★ 2. 뷰포트 영역 밖의 픽셀은 그리지 않음 (discard) ★★★
+    if (viewportPixelPos.x < 0 || viewportPixelPos.y < 0)
+    {
+        discard;
+    }
+
+    // ★★★ 3. "뷰포트 상대 좌표"를 기준으로 모든 계산 수행 ★★★
+    uint2 pixelPos = (uint2) viewportPixelPos;
     uint2 tileID = pixelPos / TILE_SIZE;
     uint2 pixelInTile = pixelPos % TILE_SIZE;
+
+    // (선택 사항) 뷰포트 크기 밖의 타일 ID가 계산될 경우(예: 뷰포트 크기가 32배수가 아닐 때)
+    if (tileID.x >= NumTilesX) // NumTilesX는 Light.hlsli에서 옴
+    {
+        discard;
+    }
+    
+    // ★★★ 4. 올바른 타일 인덱스 계산 ★★★
     uint tileIndex = tileID.y * NumTilesX + tileID.x;
 
     // Draw tile border lines (1 pixel thick)
@@ -54,10 +72,11 @@ float4 mainPS(PS_INPUT input) : SV_Target
     if (lightCount == 0 && offsetCount.x == 0)
     {
         // Show very transparent red to indicate buffer might be empty
-        return float4(1.0, 0.0, 0.0, 0.1);
+        // return float4(1.0, 0.0, 0.0, 0.1);
     }
 
     // Show actual light count as heat map
-    float3 heatColor = LightCountToHeatMap(lightCount);
+    float3 heatColor = LightCountToHeatMap(lightCount) * 1.5;
+
     return float4(heatColor, 0.3); // More transparent to see scene underneath
 }
