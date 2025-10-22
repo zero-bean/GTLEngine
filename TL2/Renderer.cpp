@@ -223,9 +223,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
 
             if (UShader* Shader = Material->GetShader())
             {
-                ENormalMapMode DesiredMode = bHasNormalTexture ? ENormalMapMode::HasNormalMap : ENormalMapMode::NoNormalMap;
-                if (Shader->GetActiveNormalMode() != DesiredMode)
-                    Shader->SetActiveNormalMode(DesiredMode);
+                Shader->SetActiveNormalMode(bHasNormalTexture ? ENormalMapMode::HasNormalMap : ENormalMapMode::NoNormalMap);
                 PrepareShader(Shader);
             }
 

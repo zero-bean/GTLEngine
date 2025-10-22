@@ -487,7 +487,7 @@ void UStaticMeshComponent::RenderStaticMeshSection()
 			}
 		}
          
-        if (CachedRenderer && CachedRenderer->GetShadingModel() == ELightShadingModel::BRDF)
+        if (CachedRenderer->GetShadingModel() == ELightShadingModel::BRDF)
         {
             bool bBRDFChanged = false;
             ImGui::Separator();

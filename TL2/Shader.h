@@ -30,19 +30,17 @@ public:
 	   
 	ID3D11InputLayout* GetInputLayout() const { return InputLayout; }
 	ID3D11VertexShader* GetVertexShader() const { return VertexShaders; }
-	ID3D11PixelShader* GetPixelShader() const { return PixelShaders; }
+	ID3D11PixelShader* GetPixelShader() const
+	{
+		return PixelShaders[(size_t)ActiveNormalMode];
+	}
 
 	void SetActiveMode(ELightShadingModel Model) { ActiveModel = Model; }
 	ELightShadingModel GetActiveMode() const { return ActiveModel; }
 
-	void SetActiveNormalMode(ENormalMapMode InMode);
-	ENormalMapMode GetActiveNormalMode() { return ActiveNormalMode; }
+	void SetActiveNormalMode(ENormalMapMode InMode) { ActiveNormalMode = InMode; }
 
     static const D3D_SHADER_MACRO* GetMacros(ELightShadingModel Model);
-
-
-	std::map<TPair<ELightShadingModel, ENormalMapMode>, ID3D11PixelShader*> CachedPS;
-	std::map<TPair<ELightShadingModel, ENormalMapMode>, ID3D11VertexShader*> CachedVS;
 
 protected:
 	virtual ~UShader();
@@ -58,7 +56,7 @@ private:
 
 	ID3D11InputLayout* InputLayout = nullptr;
 	ID3D11VertexShader* VertexShaders = nullptr;
-	ID3D11PixelShader* PixelShaders  = nullptr;
+	ID3D11PixelShader* PixelShaders[(size_t)ENormalMapMode::ENormalMapModeCount] = { nullptr };
 
 
 	void CreateInputLayout(ID3D11Device* Device, const FString& InShaderPath);
