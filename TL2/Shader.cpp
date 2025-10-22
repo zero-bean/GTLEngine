@@ -69,14 +69,23 @@ static D3D_SHADER_MACRO MACRO_UNLIT[] = {
 
 void UShader::SetActiveNormalMode(ENormalMapMode InMode)
 {
-    if (ActiveNormalMode != InMode) // 더티 플래그 체크
+    if (ActiveNormalMode == InMode)
+        return;
+
+    ActiveNormalMode = InMode;
+
+    auto key = std::make_pair(ActiveModel, InMode);
+    if (CachedPS.count(key) == 0 || CachedVS.count(key) == 0)
     {
-        ActiveNormalMode = InMode;
-        if (Device != nullptr && !FilePath.empty()) // 리컴파일에 필요한 정보 확인
-        {
-            // 현재 라이팅 모델(ActiveModel)과 새 노멀 맵 모드로 리컴파일
-            ReloadForShadingModel(ActiveModel, Device);
-        }
+        ReloadForShadingModel(ActiveModel, Device);
+        CachedPS[key] = PixelShaders;
+        CachedVS[key] = VertexShaders;
+    }
+    else
+    {
+        // 캐시된 셰이더를 사용
+        PixelShaders = CachedPS[key];
+        VertexShaders = CachedVS[key];
     }
 }
 
@@ -311,5 +320,17 @@ void UShader::ReleaseResources()
     {
         PixelShaders->Release();
         PixelShaders = nullptr;
+    }
+
+    for (auto Ps : CachedPS)
+    {
+        Ps.second->Release();
+        Ps.second = nullptr;
+    }
+
+    for (auto Vs : CachedVS)
+    {
+        Vs.second->Release();
+        Vs.second = nullptr;
     }
 }

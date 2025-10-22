@@ -36,8 +36,13 @@ public:
 	ELightShadingModel GetActiveMode() const { return ActiveModel; }
 
 	void SetActiveNormalMode(ENormalMapMode InMode);
+	ENormalMapMode GetActiveNormalMode() { return ActiveNormalMode; }
 
     static const D3D_SHADER_MACRO* GetMacros(ELightShadingModel Model);
+
+
+	std::map<TPair<ELightShadingModel, ENormalMapMode>, ID3D11PixelShader*> CachedPS;
+	std::map<TPair<ELightShadingModel, ENormalMapMode>, ID3D11VertexShader*> CachedVS;
 
 protected:
 	virtual ~UShader();
