@@ -12,6 +12,7 @@ struct FPointLightData
 {
     float4 Position; // xyz=위치(월드), w=반경
     float4 Color; // rgb=색상, a=falloff
+    float Radius;
 };
 
 cbuffer PointLightBuffer : register(b9)
