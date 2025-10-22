@@ -28,24 +28,21 @@ public:
     // Recompile this shader with macros for a specific shading model (hot-reload)
     void ReloadForShadingModel(ELightShadingModel Model, ID3D11Device* InDevice);
 	   
-	void LoadWorldNormalShader(const FString& InShaderPath, ID3D11Device* InDevice);
-
 	ID3D11InputLayout* GetInputLayout() const { return InputLayout; }
 	ID3D11VertexShader* GetVertexShader() const { return VertexShaders; }
-	ID3D11PixelShader* GetPixelShader() const
-	{
-		return PixelShaders[(size_t)ActiveNormalMode];
-	}
+	ID3D11PixelShader* GetPixelShader() const { return PixelShaders; }
 
 	void SetActiveMode(ELightShadingModel Model) { ActiveModel = Model; }
 	ELightShadingModel GetActiveMode() const { return ActiveModel; }
 
-	void SetActiveNormalMode(ENormalMapMode InMode) { ActiveNormalMode = InMode; }
+	void SetActiveNormalMode(ENormalMapMode InMode);
 
     static const D3D_SHADER_MACRO* GetMacros(ELightShadingModel Model);
 
 protected:
 	virtual ~UShader();
+
+	ID3D11Device* Device = nullptr;
 
 	ELightShadingModel ActiveModel = ELightShadingModel::BlinnPhong;
 	ENormalMapMode ActiveNormalMode = ENormalMapMode::NoNormalMap;
@@ -55,9 +52,8 @@ private:
 	ID3DBlob* PSBlob = nullptr;
 
 	ID3D11InputLayout* InputLayout = nullptr;
-	ID3D11VertexShader* VertexShaders = { nullptr };
-	ID3D11PixelShader* PixelShaders 
-		[(size_t)ENormalMapMode::ENormalMapModeCount] = { nullptr };
+	ID3D11VertexShader* VertexShaders = nullptr;
+	ID3D11PixelShader* PixelShaders  = nullptr;
 
 
 	void CreateInputLayout(ID3D11Device* Device, const FString& InShaderPath);

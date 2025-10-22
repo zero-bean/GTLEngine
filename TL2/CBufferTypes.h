@@ -86,7 +86,7 @@ CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
 CBUFFER_INFO(FDirectionalLightBufferType, 11, true, true) 
-CBUFFER_INFO(FBRDFInfoBufferType, 6, true, true)
+CBUFFER_INFO(FBRDFInfoBufferType, 8, true, true)
 
 // VS : b0
 struct ModelBufferType

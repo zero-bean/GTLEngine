@@ -118,11 +118,6 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
 
         if (UShader* shader = GetMaterial()->GetShader())
         {
-            // 각 머티리얼 슬롯마다 다른 노멀맵 설정이 있을 수 있으므로
-            // DrawIndexedPrimitiveComponent 내부에서 처리하거나
-            // 여기서 기본값 설정
-
-            // 첫 번째 슬롯의 노멀맵 상태를 기준으로 설정
             if (!MaterailSlots.empty())
             {
                 bool hasNormalMap = false;
