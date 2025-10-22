@@ -145,6 +145,12 @@ void UPointLightComponent::DrawDebugLines(class URenderer* Renderer, const FMatr
 		return;
 	}
 
+    // Respect global show flag for light debug lines
+    if (!ULightComponent::IsGlobalShowLightDebugLines())
+    {
+        return;
+    }
+
 	if (KINDA_SMALL_NUMBER > Radius)
 	{
 		return;

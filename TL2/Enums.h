@@ -353,6 +353,9 @@ enum class EEngineShowFlags : uint64
     // Tile Culling Debug
     SF_TileCullingDebug = 1ull << 9,  // Show/hide tile-based light culling debug visualization
 
+    // Light debug lines (Spot/Point)
+    SF_LightDebugLines = 1ull << 10,   // Show/hide debug line visualization for point/spot lights
+
     // Default enabled flags
     SF_DefaultEnabled = SF_Primitives | SF_StaticMeshes | SF_Grid | SF_Decals | SF_BVH | SF_BoundingBoxes,
 

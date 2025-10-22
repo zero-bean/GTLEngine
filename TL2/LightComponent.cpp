@@ -2,6 +2,9 @@
 #include "LightComponent.h"
 #include "SceneLoader.h"
 
+// Static global default
+bool ULightComponent::GShowLightDebugLines = false;
+
 ULightComponent::ULightComponent()
 {
     TempColor = MakeFromColorTemperature(Temperature);

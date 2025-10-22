@@ -28,6 +28,12 @@ void USpotLightComponent::DrawDebugLines(class URenderer* Renderer, const FMatri
 		return;
 	}
 
+    // Respect global show flag for light debug lines
+    if (!ULightComponent::IsGlobalShowLightDebugLines())
+    {
+        return;
+    }
+
 	if (!bEnableDebugLine)
 	{
 		return;
