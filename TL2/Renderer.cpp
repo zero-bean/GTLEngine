@@ -27,6 +27,7 @@
 #include "DirectionalLightComponent.h"
 #include "LightCullingManager.h"
 #include "GizmoArrowComponent.h"
+#include "AmbientActor.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
@@ -240,7 +241,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 if (LastTexture != CurrentTexture)
                 {
                     StatsCollector.IncrementTextureChanges();
-                    LastTexture = CurrentTexture;
+                    LastTexture = CurrentTexture; 
                 }
 
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &(TextureData->TextureSRV));
@@ -259,7 +260,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NullSRV);
             }
 
-            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture });
+            RHIDevice->UpdateSetCBuffer({ FMaterialInPs(MaterialInfo), (uint32)true, (uint32)bHasTexture, (uint32)bHasNormalTexture });
             RHIDevice->GetDeviceContext()->DrawIndexed(MeshGroupInfos[i].IndexCount, MeshGroupInfos[i].StartIndex, 0);
             StatsCollector.IncrementDrawCalls();
         }
@@ -508,7 +509,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
     // +-+-+ Render Pass Structure +-+-+
 
-    float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
+    float ViewportAspectRatio = (Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
     if (Viewport->GetSizeY() == 0) ViewportAspectRatio = 1.0f; // 0으로 나누기 방지
     FMatrix ViewMatrix = Camera->GetViewMatrix();
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
@@ -529,12 +530,12 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         // All viewports will share the same culling data
         if (!LightCullingManager->IsInitialized())
         {
-            OutputDebugStringA("[Renderer] Initializing LightCullingManager for the first time...\n");
+            OutputDebugStringA("[Renderer] Initializing LightCullingManager...\n");
             LightCullingManager->Initialize(RHIDevice->GetDevice(), screenWidth, screenHeight);
         }
         else
         {
-            OutputDebugStringA("[Renderer] LightCullingManager already initialized\n");
+            LightCullingManager->Resize(RHIDevice->GetDevice(), screenWidth, screenHeight);
         }
     }
     else
@@ -543,7 +544,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     }
 
     // Upload BRDF parameters for pixel shader
-    UpdateSetCBuffer(FBRDFInfoBufferType(BRDFRoughness, BRDFMetallic));
+    //UpdateSetCBuffer(FBRDFInfoBufferType(BRDFRoughness, BRDFMetallic));
     switch (CurrentViewMode)
     {
     case EViewModeIndex::VMI_Lit:
@@ -638,9 +639,17 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
                 LightCullingManager->SetDebugVisualization(bDebugVisualizeTiles);
 
-                // Bind results to pixel shader
+                // 뷰포트 오프셋 가져오기
+                D3D11_VIEWPORT d3d_vp;
+                UINT num_vp = 1;
+                RHIDevice->GetDeviceContext()->RSGetViewports(&num_vp, &d3d_vp);
+
                 OutputDebugStringA("[Renderer] Binding results to PS...\n");
-                LightCullingManager->BindResultsToPS(RHIDevice->GetDeviceContext());
+                LightCullingManager->BindResultsToPS(
+                    RHIDevice->GetDeviceContext(),
+                    d3d_vp.TopLeftX,  // 뷰포트 X 오프셋 전달
+                    d3d_vp.TopLeftY   // 뷰포트 Y 오프셋 전달
+                );
                 OutputDebugStringA("[Renderer] Light culling complete!\n");
             }
             else
@@ -686,7 +695,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_WorldNormal:
     {
         BeginLineBatch();
-        OverrideShader =  UResourceManager::GetInstance().Load<UShader>("WorldNormalShader.hlsl");
+        OverrideShader = UResourceManager::GetInstance().Load<UShader>("WorldNormalShader.hlsl");
         RenderBasePass(World, Camera, Viewport);
         OverrideShader = nullptr;
         RenderEditorPass(World, Camera, Viewport);
@@ -923,29 +932,39 @@ void URenderer::RenderSceneToCubemapFace(UWorld* World, const FMatrix& ViewMatri
     RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual);
     RHIDevice->IASetPrimitiveTopology();
 
-    // 3. 씬의 모든 프리미티브 렌더링 (RenderPrimitives 로직 재사용)
+    // 3. 월드의 AAmbientActor만 렌더링
     USelectionManager& SelectionManager = USelectionManager::GetInstance();
     AActor* SelectedActor = SelectionManager.GetSelectedActor();
 
-    for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
+    for (AActor* Actor : World->GetLevel()->GetActors())
     {
-        // 안전성 체크: nullptr 또는 비활성 컴포넌트 스킵
-        if (!PrimitiveComponent || !PrimitiveComponent->IsActive())
+        // AAmbientActor만 렌더링
+        AAmbientActor* AmbientActor = Cast<AAmbientActor>(Actor);
+        if (!AmbientActor)
             continue;
 
-        // 빌보드나 에디터 전용 컴포넌트는 큐브맵에서 제외
-        if (Cast<UBillboardComponent>(PrimitiveComponent))
-            continue;
-
-        bool bIsSelected = false;
-        if (PrimitiveComponent->GetOwner() == SelectedActor)
+        // 액터의 모든 프리미티브 컴포넌트 렌더링
+        for (UActorComponent* ActorComponent : AmbientActor->GetComponents())
         {
-            bIsSelected = true;
-        }
+            UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(ActorComponent);
+            // 안전성 체크: nullptr 또는 비활성 컴포넌트 스킵
+            if (!PrimitiveComponent || !PrimitiveComponent->IsActive())
+                continue;
 
-        FVector rgb(1.0f, 1.0f, 1.0f);
-        UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
-        PrimitiveComponent->Render(this, ViewMatrix, ProjMatrix, Viewport->GetShowFlags());
+            // 빌보드나 에디터 전용 컴포넌트는 큐브맵에서 제외
+            if (Cast<UBillboardComponent>(PrimitiveComponent))
+                continue;
+
+            bool bIsSelected = false;
+            if (AmbientActor == SelectedActor)
+            {
+                bIsSelected = true;
+            }
+
+            FVector rgb(1.0f, 1.0f, 1.0f);
+            UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
+            PrimitiveComponent->Render(this, ViewMatrix, ProjMatrix, Viewport->GetShowFlags());
+        }
     }
 }
 
@@ -1389,7 +1408,27 @@ void URenderer::ClearLineBatch()
 // Shading model accessors (used by UI)
 void URenderer::SetShadingModel(ELightShadingModel Model)
 {
+    if (CurrentShadingModel == Model)
+        return;
+
     CurrentShadingModel = Model;
+
+    // Hot-reload affected shaders when shading model changes
+    //TODO: 우버 쉐이더 리스틀르 만들어서, shader 전체순회가 아닌 우버쉐이더 순회로 변경하는 게 좋을 듯
+    TArray<UShader*> AllShaders = UResourceManager::GetInstance().GetAll<UShader>();
+    for (UShader* Shader : AllShaders)
+    {
+        if (!Shader) continue;
+        const FString& Path = Shader->GetFilePath();
+        // Reload only Uber shader variants for now
+        if (Path.find("UberLit.hlsl") != std::string::npos)
+        {
+            Shader->ReloadForShadingModel(Model, RHIDevice->GetDevice());
+        }
+    }
+
+    // Force a rebind so the next draw uses the refreshed shaders
+    LastShader = nullptr;
 }
 
 ELightShadingModel URenderer::GetShadingModel() const

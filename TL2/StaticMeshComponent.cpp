@@ -91,6 +91,8 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
     }
     if (StaticMesh)
     {
+        CachedRenderer = Renderer;
+
         if (Cast<AGizmoActor>(this->GetOwner()))
         {
             Renderer->OMSetDepthStencilState(EComparisonFunc::Always);
@@ -111,7 +113,8 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
         ModelBuffer.UUID = this->InternalIndex;
         ModelBuffer.NormalMatrix = NormalMatrix;
 
-        Renderer->UpdateSetCBuffer(ModelBuffer);
+        Renderer->UpdateSetCBuffer(ModelBuffer); 
+        Renderer->UpdateSetCBuffer(FBRDFInfoBufferType(BRDFRoughness, BRDFMetalic));
 
         if (UShader* shader = GetMaterial()->GetShader())
         {
@@ -488,6 +491,23 @@ void UStaticMeshComponent::RenderStaticMeshSection()
 				}
 			}
 		}
+         
+        if (CachedRenderer->GetShadingModel() == ELightShadingModel::BRDF)
+        {
+            bool bBRDFChanged = false;
+            ImGui::Separator();
+            ImGui::Text("BRDF Parameters");
+            if (ImGui::SliderFloat("Roughness", &BRDFRoughness, 0.0f, 1.0f))
+            {
+                bBRDFChanged = true;
+            }
+            if (ImGui::SliderFloat("Metalic", &BRDFMetalic, 0.0f, 1.0f))
+            {
+                bBRDFChanged = true;
+            } 
+        }
+
+
 
 		ImGui::SetNextItemWidth(240);
 		ImGui::Combo("StaticMesh", &SelectedMeshIdx, Cache.MeshItems.data(), static_cast<int>(Cache.MeshItems.size()));

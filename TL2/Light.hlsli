@@ -480,7 +480,6 @@ float3 EvaluateMultiProbeSHLighting(float3 worldPos, float3 normal)
         return float3(0, 0, 0);
 
     float3 n = normalize(normal);
-    n = -n;
     float3 totalLighting = 0.0;
     float totalWeight = 0.0;
 
@@ -551,7 +550,7 @@ cbuffer TileCullingInfoCB : register(b6)
 {
     uint NumTilesX;
     uint DebugVisualizeTiles; // 0 = off, 1 = on
-    uint2 _pad_tileinfo;
+    float2 ViewportOffset;
 }
 
 // Tile-based PointLights: Blinn-Phong (optimized version)

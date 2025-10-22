@@ -215,7 +215,7 @@ void UTargetActorTransformWidget::RenderWidget()
 		bComponentTypesInitialized = true;
 	}
 	// 추가 가능한 컴포넌트 타입 목록 (임시 하드코딩)
-	
+
 	static const TArray<TPair<FString, UClass*>> AddableActorComponentTypes = {
 		{ "Rotation Movement Component", URotationMovementComponent::StaticClass() },
 		{ "Projectile Movement Component", UProjectileMovementComponent::StaticClass() }
@@ -262,7 +262,7 @@ void UTargetActorTransformWidget::RenderWidget()
 			else	// For non-SceneComponents
 			{
 				USelectionManager::GetInstance().ClearSelection();
-				
+
 				if (SelectedActor->DeleteComponent(SelectedComponent))
 				{
 					USceneComponent* Root = SelectedActor->GetRootComponent();
@@ -420,7 +420,7 @@ void UTargetActorTransformWidget::RenderWidget()
 	{
 		DuplicateTarget(SelectedActor);
 	}
-
+	  
 	ImGui::Spacing();
 	ImGui::Separator();
 
@@ -580,6 +580,7 @@ void UTargetActorTransformWidget::ApplyTransformToComponent(USceneComponent* Sel
 		UE_LOG("Transform: Applied scale (%.2f, %.2f, %.2f)",
 			EditScale.X, EditScale.Y, EditScale.Z);
 	}
+	 
 }
 
 
@@ -587,5 +588,5 @@ void UTargetActorTransformWidget::ResetChangeFlags()
 {
 	bPositionChanged = false;
 	bRotationChanged = false;
-	bScaleChanged = false;
+	bScaleChanged = false; 
 }

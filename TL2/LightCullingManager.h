@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d11.h>
 #include "Vector.h"
 
@@ -26,7 +26,7 @@ public:
     );
 
     // Bind results to pixel shader
-    void BindResultsToPS(ID3D11DeviceContext* Context);
+    void BindResultsToPS(ID3D11DeviceContext* Context, float ViewportX, float ViewportY);
 
     // Unbind from pixel shader
     void UnbindFromPS(ID3D11DeviceContext* Context);
@@ -91,8 +91,9 @@ private:
         UINT ScreenHeight;
         UINT NumTilesX;
         UINT NumTilesY;
+        UINT bIsOrthographic;
         FVector2D NearFar;
-        FVector2D Padding;
+        UINT Padding;
     };
 
     struct FViewMatrixCBData
@@ -105,6 +106,6 @@ private:
     {
         UINT NumTilesX;
         UINT DebugVisualizeTiles;
-        UINT Padding[2];
+        FVector2D ViewportOffset; 
     };
 };

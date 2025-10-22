@@ -3,7 +3,7 @@
 #include "ImGui/imgui.h"
 #include "Renderer.h"
 
-USpotLightComponent::USpotLightComponent() : Direction(1.0, 0.0f, 0.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), InAntOutSmooth(1)
+USpotLightComponent::USpotLightComponent() : Direction(0.0, 0.0f, 1.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), InAntOutSmooth(1)
 {
 
 }
@@ -34,8 +34,7 @@ void USpotLightComponent::DrawDebugLines(class URenderer* Renderer, const FMatri
 	}
 
 	const FVector SpotPos = GetWorldLocation();
-	FVector dir = GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();
-	const float range = GetRadius();
+	    FVector dir = GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();	const float range = GetRadius();
 
 	if (range <= KINDA_SMALL_NUMBER || dir.SizeSquared() < KINDA_SMALL_NUMBER)
 		return;
