@@ -115,5 +115,9 @@ private:
     void RenderNormalMapSection(uint64 MaterialSlotIndex);
     static FImGuiDisplayCache& GetDisplayCache();
 
+    URenderer* CachedRenderer;
+
+    float BRDFRoughness = 0.5f;
+    float BRDFMetalic = 0.5f;
 };
 

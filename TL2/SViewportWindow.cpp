@@ -235,7 +235,7 @@ void SViewportWindow::RenderToolbar()
                 if (ImGui::Combo("##ShadingModel", &currentShading, shadingModels, IM_ARRAYSIZE(shadingModels)))
                 {
                     Renderer->SetShadingModel(static_cast<ELightShadingModel>(currentShading));
-                }
+                } 
             }
         }
 

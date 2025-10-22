@@ -420,26 +420,7 @@ void UTargetActorTransformWidget::RenderWidget()
 	{
 		DuplicateTarget(SelectedActor);
 	}
-
-	if (true)
-	{
-		ImGui::Separator();
-		ImGui::Text("BRDF Parameters");
-		if (ImGui::SliderFloat("Roughness", &BRDFRoughness, 0.0f, 1.0f))
-		{
-			bBRDFChanged = true;
-		}
-		if (ImGui::SliderFloat("Metalic", &BRDFMetalic, 0.0f, 1.0f))
-		{
-			bBRDFChanged = true;
-		}
-	}
-
-	if (bBRDFChanged /*&& Renderer.GetShadingModel() == BRDF*/)
-	{
-		//TODO CBUFFER UPDATE
-	}
-
+	  
 	ImGui::Spacing();
 	ImGui::Separator();
 
@@ -607,6 +588,5 @@ void UTargetActorTransformWidget::ResetChangeFlags()
 {
 	bPositionChanged = false;
 	bRotationChanged = false;
-	bScaleChanged = false;
-	bBRDFChanged = false;
+	bScaleChanged = false; 
 }

@@ -311,7 +311,7 @@ struct FDirectionalLightBufferType
 
 
 
-// PS : b14
+// PS : b6
 struct FBRDFInfoBufferType
 {
     float Roughness = 0.5f;

@@ -103,26 +103,10 @@ UShader::~UShader()
 void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
 {
     assert(InDevice);
-
-    bool bIsUberShader = false;
-    std::ifstream shaderFile(InShaderPath);
-    if (shaderFile.is_open())
-    {
-        std::string firstLine;
-        std::getline(shaderFile, firstLine);
-
-        if (firstLine.find("UBERSHADER") != std::string::npos)
-        {
-            bIsUberShader = true;
-        }
-
-        shaderFile.close();
-    }
-
+      
     std::wstring WFilePath;  
     WFilePath = std::wstring(InShaderPath.begin(), InShaderPath.end());
-     
-
+       
     HRESULT hr;
     ID3DBlob* errorBlob = nullptr;
     UINT Flag = 0;
@@ -138,7 +122,7 @@ void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
         char* msg = errorBlob ? (char*)errorBlob->GetBufferPointer() : (char*)"Unknown VS compile error";
         UE_LOG("shader '%s' VS compile error: %s", InShaderPath.c_str(), msg);
         if (errorBlob) { errorBlob->Release(); }
-        return;
+        return; 
     }
 
     ID3D11VertexShader* baseVS = nullptr;

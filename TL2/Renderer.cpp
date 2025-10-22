@@ -543,7 +543,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     }
 
     // Upload BRDF parameters for pixel shader
-    UpdateSetCBuffer(FBRDFInfoBufferType(BRDFRoughness, BRDFMetallic));
+    //UpdateSetCBuffer(FBRDFInfoBufferType(BRDFRoughness, BRDFMetallic));
     switch (CurrentViewMode)
     {
     case EViewModeIndex::VMI_Lit:
