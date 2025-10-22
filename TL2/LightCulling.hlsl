@@ -387,15 +387,24 @@ void CS_LightCulling(
             float4 lightDirView4 = mul(float4(lightDirWorld, 0.0f), ViewMatrix);
             float3 lightDirView = normalize(lightDirView4.xyz);
 
-            intersects = IsSpotLightAffectingTile(
+            
+            intersects = IsPointLightAffectingTile(
                 lightPosView,
-                lightDirView,
                 lightRadius,
-                outerConeAngle,
                 TileMinDepth, TileMaxDepth,
                 ProjInv,
                 ndcMin, ndcMax
             );
+            
+            //intersects = IsSpotLightAffectingTile(
+            //    lightPosView,
+            //    lightDirView,
+            //    lightRadius,
+            //    outerConeAngle,
+            //    TileMinDepth, TileMaxDepth,
+            //    ProjInv,
+            //    ndcMin, ndcMax
+            //);
         }
 
         // --- 타일에 영향 있는 라이트만 추가 ---

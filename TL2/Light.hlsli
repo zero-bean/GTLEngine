@@ -750,7 +750,7 @@ void ComputeBRDF(float3 Li, float3 N, float3 V, float3 L, float atten,
     float alpha = max(roughness * roughness, 1e-3);
 
     // Compute base reflectance F0 using metallic workflow
-    float3 dielectricF0 = float3(1.0, 0.782, 0.0);
+    float3 dielectricF0 = float3(0.02, 0.02, 0.02);
     float3 F0 = lerp(dielectricF0, baseColor, saturate(metallic));
 
     float D = D_GGXNormalDistributionFunction(NdotH, alpha); 
