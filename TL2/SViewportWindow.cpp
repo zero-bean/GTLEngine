@@ -3,6 +3,7 @@
 #include "World.h"
 #include "ImGui/imgui.h"
 #include "SMultiViewportWindow.h"
+#include "Renderer.h"
 #include "EditorEngine.h"
 extern float CLIENTWIDTH;
 extern float CLIENTHEIGHT;
@@ -221,7 +222,24 @@ void SViewportWindow::RenderToolbar()
 
 		if (ImGui::Button("Reset")) { /* TODO: 카메라 Reset */ }
 
-		const char* viewModes[] = { "Lit", "Unlit", "Wireframe", "SceneDepth", "WorldNormal"};
+        // Shading model (Uber shader)
+        if (ViewportClient && ViewportClient->GetWorld())
+        {
+            URenderer* Renderer = ViewportClient->GetWorld()->GetRenderer();
+            if (Renderer)
+            {
+                const char* shadingModels[] = { "Phong", "Blinn-Phong", "Lambert", "BRDF", "Gouraud", "UNLIT" };
+                int currentShading = static_cast<int>(Renderer->GetShadingModel());
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(110.0f);
+                if (ImGui::Combo("##ShadingModel", &currentShading, shadingModels, IM_ARRAYSIZE(shadingModels)))
+                {
+                    Renderer->SetShadingModel(static_cast<ELightShadingModel>(currentShading));
+                }
+            }
+        }
+
+        const char* viewModes[] = { "Lit", "Unlit", "Wireframe", "SceneDepth", "WorldNormal"};
 		int currentViewMode = static_cast<int>(ViewportClient-> GetViewModeIndex())-1; // 0=Lit, 1=Unlit, 2=Wireframe -1이유 1부터 시작이여서 
 
 		ImGui::SameLine();

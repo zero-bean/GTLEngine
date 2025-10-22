@@ -215,7 +215,7 @@ void UTargetActorTransformWidget::RenderWidget()
 		bComponentTypesInitialized = true;
 	}
 	// 추가 가능한 컴포넌트 타입 목록 (임시 하드코딩)
-	
+
 	static const TArray<TPair<FString, UClass*>> AddableActorComponentTypes = {
 		{ "Rotation Movement Component", URotationMovementComponent::StaticClass() },
 		{ "Projectile Movement Component", UProjectileMovementComponent::StaticClass() }
@@ -262,7 +262,7 @@ void UTargetActorTransformWidget::RenderWidget()
 			else	// For non-SceneComponents
 			{
 				USelectionManager::GetInstance().ClearSelection();
-				
+
 				if (SelectedActor->DeleteComponent(SelectedComponent))
 				{
 					USceneComponent* Root = SelectedActor->GetRootComponent();
@@ -419,6 +419,25 @@ void UTargetActorTransformWidget::RenderWidget()
 	if (ImGui::Button("Duplicate Test Button"))
 	{
 		DuplicateTarget(SelectedActor);
+	}
+
+	if (true)
+	{
+		ImGui::Separator();
+		ImGui::Text("BRDF Parameters");
+		if (ImGui::SliderFloat("Roughness", &BRDFRoughness, 0.0f, 1.0f))
+		{
+			bBRDFChanged = true;
+		}
+		if (ImGui::SliderFloat("Metalic", &BRDFMetalic, 0.0f, 1.0f))
+		{
+			bBRDFChanged = true;
+		}
+	}
+
+	if (bBRDFChanged /*&& Renderer.GetShadingModel() == BRDF*/)
+	{
+		//TODO CBUFFER UPDATE
 	}
 
 	ImGui::Spacing();
@@ -580,6 +599,7 @@ void UTargetActorTransformWidget::ApplyTransformToComponent(USceneComponent* Sel
 		UE_LOG("Transform: Applied scale (%.2f, %.2f, %.2f)",
 			EditScale.X, EditScale.Y, EditScale.Z);
 	}
+	 
 }
 
 
@@ -588,4 +608,5 @@ void UTargetActorTransformWidget::ResetChangeFlags()
 	bPositionChanged = false;
 	bRotationChanged = false;
 	bScaleChanged = false;
+	bBRDFChanged = false;
 }

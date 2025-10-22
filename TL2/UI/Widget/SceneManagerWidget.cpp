@@ -44,38 +44,7 @@ void USceneManagerWidget::RenderWidget()
     ImGui::Text("Scene Manager");
     ImGui::DragFloat("Gamma", &GEngine->GetActiveWorld()->GetRenderer()->Gamma, 0.1f, 1.0f, 2.2f);
 
-    // Shading model selector (Uber shader)
-    if (URenderer* Renderer = GEngine->GetActiveWorld()->GetRenderer())
-    {
-        int current = static_cast<int>(Renderer->GetShadingModel());
-        ImGui::Text("Shading Model");
-        // Layout radios in two rows
-        ImGui::RadioButton("Gouraud", &current, static_cast<int>(ELightShadingModel::Gouraud));
-        ImGui::SameLine();
-        ImGui::RadioButton("Phong", &current, static_cast<int>(ELightShadingModel::Phong));
-        ImGui::SameLine();
-        ImGui::RadioButton("Blinn-Phong", &current, static_cast<int>(ELightShadingModel::BlinnPhong));
-        ImGui::SameLine();
-        ImGui::RadioButton("Lambert", &current, static_cast<int>(ELightShadingModel::Lambert));
-        ImGui::SameLine();
-        ImGui::RadioButton("BRDF", &current, static_cast<int>(ELightShadingModel::BRDF));
-        ImGui::SameLine();
-        ImGui::RadioButton("UNLIT", &current, static_cast<int>(ELightShadingModel::Unlit)); 
-
-        if (current != static_cast<int>(Renderer->GetShadingModel()))
-        {
-            Renderer->SetShadingModel(static_cast<ELightShadingModel>(current));
-        }
-        
-        // BRDF controls
-        if (Renderer->GetShadingModel() == ELightShadingModel::BRDF)
-        {
-            ImGui::Separator();
-            ImGui::Text("BRDF Parameters");
-            ImGui::SliderFloat("Roughness", &Renderer->BRDFRoughness, 0.0f, 1.0f);
-            ImGui::SliderFloat("Metallic", &Renderer->BRDFMetallic, 0.0f, 1.0f);
-        }
-    }
+    // (moved) Shading model controls are now in the viewport toolbar
     ImGui::Spacing();
 
     // Toolbar

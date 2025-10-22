@@ -50,11 +50,19 @@ private:
 	// 마지막으로 읽어온 컴포넌트 (선택이 바뀔 때만 Quat에서 Euler 읽기)
 	USceneComponent* LastReadComponent = nullptr;
 
+	
+	// BRDF Param
+	float BRDFRoughness = 0.5f;
+	float BRDFMetalic = 0.5f;
+
+	
 	// UI 변경 플래그
 	bool bScaleChanged = false;
 	bool bRotationChanged = false;
 	bool bPositionChanged = false;
 	bool bUniformScale = false;
+	bool bBRDFChanged = false;
+
 	
 	// 헬퍼 메서드
 	void ResetChangeFlags();
