@@ -122,7 +122,8 @@ PS_INPUT mainVS(VS_INPUT input)
 
     // 노멀, 탄젠트, 바이탄젠트를 월드 공간으로 변환
     o.worldNormal = normalize(mul(input.normal, (float3x3) NormalMatrix));
-    o.worldTangent = normalize(mul(input.tangent, (float3x3) WorldMatrix));
+    // Use NormalMatrix for tangent too to preserve orthogonality under non-uniform scale
+    o.worldTangent = normalize(mul(input.tangent, (float3x3) NormalMatrix));
     o.worldBitangent = normalize(cross(o.worldNormal, o.worldTangent));
 
     // MVP
@@ -286,7 +287,15 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     // Multi-Probe SH-based Ambient Lighting
     float3 shAmbient = EvaluateMultiProbeSHLighting(input.worldPosition, N) * base;
-
+    if (!HasTexture)
+    {
+        
+        Result.Color = float4(shAmbient, 1.0);
+        Result.UUID = input.UUID;
+        return Result;
+    }
+    
+    
     // Ambient + Diffuse + Specular
     float3 ambient = shAmbient;
     if (HasMaterial)
@@ -302,14 +311,14 @@ PS_OUTPUT mainPS(PS_INPUT input)
     
     //finalLit = saturate(finalLit); // 과포화 방지
     
-    // 톤 매핑
-    finalLit = finalLit / (finalLit + 1.0f);
+    //// 톤 매핑
+    //finalLit = finalLit / (finalLit + 1.0f);
 
-    // 노출 방식
-    //finalLit = 1.0f - exp(-finalLit * 1.25f);
+    //// 노출 방식
+    ////finalLit = 1.0f - exp(-finalLit * 1.25f);
 
-    // 감마 보정
-    finalLit = pow(finalLit, 1.0f / 2.2f);    
+    //// 감마 보정
+    //finalLit = pow(finalLit, 1.0f / 2.2f);    
     
     Result.Color = float4(finalLit, 1.0);
     Result.UUID = input.UUID;

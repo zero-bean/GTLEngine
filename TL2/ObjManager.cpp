@@ -137,6 +137,39 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
             FWindowsBinReader MatReader(MatBinPathFileName);
             Serialization::ReadArray<FObjMaterialInfo>(MatReader, MaterialInfos);
             MatReader.Close();
+
+            // If NormalTextureFileName was not previously captured in older Mat.bin versions,
+            // re-parse the OBJ/MTL to augment with normal map info and persist.
+            bool bMissingAnyNormalMap = false;
+            for (const auto& Info : MaterialInfos)
+            {
+                if (Info.NormalTextureFileName == FName::None()) { bMissingAnyNormalMap = true; break; }
+            }
+            if (bMissingAnyNormalMap)
+            {
+                FObjInfo DummyObjInfo;
+                TArray<FObjMaterialInfo> ParsedInfos;
+                if (FObjImporter::LoadObjModel(NormalizedPathStr, &DummyObjInfo, ParsedInfos, true, true))
+                {
+                    // Merge normal map filenames by material name
+                    for (auto& Info : MaterialInfos)
+                    {
+                        if (!(Info.NormalTextureFileName == FName::None())) continue;
+                        for (const auto& P : ParsedInfos)
+                        {
+                            if (P.MaterialName == Info.MaterialName && !(P.NormalTextureFileName == FName::None()))
+                            {
+                                Info.NormalTextureFileName = P.NormalTextureFileName;
+                                break;
+                            }
+                        }
+                    }
+                    // Persist updated Mat.bin
+                    FWindowsBinWriter MatWriter(MatBinPathFileName);
+                    Serialization::WriteArray<FObjMaterialInfo>(MatWriter, MaterialInfos);
+                    MatWriter.Close();
+                }
+            }
         }
     }
     else
@@ -166,6 +199,14 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FString& PathFileName)
         {
             UMaterial* Material = NewObject<UMaterial>();
             Material->SetMaterialInfo(InMaterialInfo);
+            // Ensure a default shader for static meshes
+            if (UShader* SMShader = UResourceManager::GetInstance().Load<UShader>("UberLit.hlsl"))
+            {
+                Material->SetShader(SMShader);
+            }
+
+            // Defer normal map loading to first use (lazy) via UMaterial::GetNormalTexture.
+
             UResourceManager::GetInstance().Add<UMaterial>(InMaterialInfo.MaterialName, Material);
         }
     }

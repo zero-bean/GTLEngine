@@ -1,4 +1,4 @@
-ï»¿#include "pch.h"
+#include "pch.h"
 
 #include "BillboardComponent.h"
 #include "TextRenderComponent.h"
@@ -59,15 +59,15 @@ void URenderer::Update(float DeltaSeconds)
 
 void URenderer::BeginFrame()
 {
-    // ë Œë”ë§ í†µê³„ ìˆ˜ì§‘ ì‹œì‘
+    // ·»´õ¸µ Åë°è ¼öÁı ½ÃÀÛ
     URenderingStatsCollector::GetInstance().BeginFrame();
     
-    // ìƒíƒœ ì¶”ì  ë¦¬ì…‹
+    // »óÅÂ ÃßÀû ¸®¼Â
     ResetRenderStateTracking();
     
-    // ë°±ë²„í¼/ê¹Šì´ë²„í¼ë¥¼ í´ë¦¬ì–´
-    RHIDevice->ClearBackBuffer();  // ë°°ê²½ìƒ‰
-    RHIDevice->ClearDepthBuffer(1.0f, 0);                 // ê¹Šì´ê°’ ì´ˆê¸°í™”
+    // ¹é¹öÆÛ/±íÀÌ¹öÆÛ¸¦ Å¬¸®¾î
+    RHIDevice->ClearBackBuffer();  // ¹è°æ»ö
+    RHIDevice->ClearDepthBuffer(1.0f, 0);                 // ±íÀÌ°ª ÃÊ±âÈ­
     //RHIDevice->CreateBlendState();
     RHIDevice->IASetPrimitiveTopology();
     // RS
@@ -82,7 +82,7 @@ void URenderer::PrepareShader(UShader* InShader)
 {
     UShader* ShaderToUse = OverrideShader ? OverrideShader : InShader;
 
-    // ì…°ì´ë” ë³€ê²½ ì¶”ì 
+    // ¼ÎÀÌ´õ º¯°æ ÃßÀû
     if (LastShader != ShaderToUse)
     {
         URenderingStatsCollector::GetInstance().IncrementShaderChanges();
@@ -133,8 +133,8 @@ void URenderer::RenderFrame(UWorld* World)
     BeginFrame();
     UUIManager::GetInstance().Render();
 
-    // ì»´í¬ë„ŒíŠ¸ëŠ” OnRegister ì‹œì ì— ìë™ìœ¼ë¡œ ë ˆë²¨ì— ë“±ë¡ë¨
-    // InitializeActorsForPlayì—ì„œ RegisterComponent í˜¸ì¶œ
+    // ÄÄÆ÷³ÍÆ®´Â OnRegister ½ÃÁ¡¿¡ ÀÚµ¿À¸·Î ·¹º§¿¡ µî·ÏµÊ
+    // InitializeActorsForPlay¿¡¼­ RegisterComponent È£Ãâ
 
     RenderViewPorts(World);
 
@@ -146,7 +146,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
 {
     URenderingStatsCollector& StatsCollector = URenderingStatsCollector::GetInstance();
     
-    // ë””ë²„ê·¸: StaticMesh ë Œë”ë§ í†µê³„
+    // µğ¹ö±×: StaticMesh ·»´õ¸µ Åë°è
     
     UINT stride = 0;
     switch (InMesh->GetVertexType())
@@ -196,7 +196,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
 
         for (uint32 i = 0; i < NumMeshGroupInfos; ++i)
         {
-            const FMaterialSlot& CurrentSlot = InComponentMaterialSlots[i]; //  í˜„ì¬ ìŠ¬ë¡¯ ì •ë³´ë¥¼ ê°€ì ¸ì˜µë‹ˆë‹¤.
+            const FMaterialSlot& CurrentSlot = InComponentMaterialSlots[i]; //  ÇöÀç ½½·Ô Á¤º¸¸¦ °¡Á®¿É´Ï´Ù.
             UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(CurrentSlot.MaterialName);
 
             if (Material == nullptr)
@@ -204,27 +204,37 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 continue;
             }
 
-            UTexture* NormalTexture = nullptr; // ìµœì¢…ì ìœ¼ë¡œ ë°”ì¸ë”©ë  ë…¸ë©€ í…ìŠ¤ì²˜
+            UTexture* NormalTexture = nullptr; // ÃÖÁ¾ÀûÀ¸·Î ¹ÙÀÎµùµÉ ³ë¸Ö ÅØ½ºÃ³
             const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
             bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
 
-            // ì˜¤ë²„ë¼ì´ë“œê°€ ì¼œì ¸ìˆìœ¼ë©´, ì»´í¬ë„ŒíŠ¸ì˜ ì˜¤ë²„ë¼ì´ë“œ í…ìŠ¤ì²˜ë¥¼ ì‚¬ìš©í•©ë‹ˆë‹¤.
+            // ¿À¹ö¶óÀÌµå°¡ ÄÑÁ®ÀÖÀ¸¸é, ÄÄÆ÷³ÍÆ®ÀÇ ¿À¹ö¶óÀÌµå ÅØ½ºÃ³¸¦ »ç¿ëÇÕ´Ï´Ù.
             if (CurrentSlot.bOverrideNormalTexture)
             {
                 NormalTexture = CurrentSlot.NormalTextureOverride;
             }
-            // ì˜¤ë²„ë¼ì´ë“œê°€ êº¼ì ¸ìˆìœ¼ë©´, ì›ë³¸ ë¨¸í‹°ë¦¬ì–¼ì˜ í…ìŠ¤ì²˜ë¥¼ ì‚¬ìš©í•©ë‹ˆë‹¤.
+            // ¿À¹ö¶óÀÌµå°¡ ²¨Á®ÀÖÀ¸¸é, ¿øº» ¸ÓÆ¼¸®¾óÀÇ ÅØ½ºÃ³¸¦ »ç¿ëÇÕ´Ï´Ù.
             else
             {
-                NormalTexture = Material->GetNormalTexture();
+                /* lazy: defer loading actual normal texture until binding */
+                NormalTexture = nullptr;
             }
 
-            bool bHasNormalTexture = (NormalTexture != nullptr); // ë¨¸í‹°ë¦¬ì–¼ì˜ ë…¸ë§ë§µ ë³´ìœ  ì—¬ë¶€
+            bool bHasNormalTexture = CurrentSlot.bOverrideNormalTexture ? (CurrentSlot.NormalTextureOverride != nullptr) : !(MaterialInfo.NormalTextureFileName == FName::None()); // ¸ÓÆ¼¸®¾óÀÇ ³ë¸»¸Ê º¸À¯ ¿©ºÎ
 
-            if (UShader* Shader = Material->GetShader())
+            // Ensure the active shader variant matches per-section normal map availability
             {
-                Shader->SetActiveNormalMode(bHasNormalTexture ? ENormalMapMode::HasNormalMap : ENormalMapMode::NoNormalMap);
-                PrepareShader(Shader);
+                UShader* ActiveShader = Material->GetShader();
+                if (!ActiveShader)
+                {
+                    // Fall back to the currently bound shader (set by component earlier), if any
+                    ActiveShader = LastShader;
+                }
+                if (ActiveShader)
+                {
+                    ActiveShader->SetActiveNormalMode(bHasNormalTexture ? ENormalMapMode::HasNormalMap : ENormalMapMode::NoNormalMap);
+                    PrepareShader(ActiveShader);
+                }
             }
 
             if (LastMaterial != Material)
@@ -247,13 +257,13 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &(TextureData->TextureSRV));
             }
 
-            // ë…¸ë©€ ë§µì´ ì¡´ì¬í•œë‹¤ë©´, ìµœì¢…ì ìœ¼ë¡œ ê²°ì •ëœ NormalTextureì˜ SRVë¥¼ ë°”ì¸ë”©í•©ë‹ˆë‹¤.
+            // ³ë¸Ö ¸ÊÀÌ Á¸ÀçÇÑ´Ù¸é, ÃÖÁ¾ÀûÀ¸·Î °áÁ¤µÈ NormalTextureÀÇ SRV¸¦ ¹ÙÀÎµùÇÕ´Ï´Ù.
             if (bHasNormalTexture)
             {
-                ID3D11ShaderResourceView* NormalSRV = NormalTexture->GetShaderResourceView();
+                if (NormalTexture == nullptr) { if (CurrentSlot.bOverrideNormalTexture) NormalTexture = CurrentSlot.NormalTextureOverride; else NormalTexture = Material->GetNormalTexture(); } ID3D11ShaderResourceView* NormalSRV = NormalTexture ? NormalTexture->GetShaderResourceView() : nullptr;
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &NormalSRV);
             }
-            // í…ìŠ¤ì²˜ê°€ ì—†ëŠ” ê²½ìš°, ìŠ¬ë¡¯ì„ ëª…ì‹œì ìœ¼ë¡œ ë¹„ì›ë‹ˆë‹¤.
+            // ÅØ½ºÃ³°¡ ¾ø´Â °æ¿ì, ½½·ÔÀ» ¸í½ÃÀûÀ¸·Î ºñ¿ó´Ï´Ù.
             else
             {
                 ID3D11ShaderResourceView* NullSRV = nullptr;
@@ -278,13 +288,13 @@ void URenderer::DrawIndexedPrimitiveComponent(UTextRenderComponent* Comp, D3D11_
 {
     URenderingStatsCollector& StatsCollector = URenderingStatsCollector::GetInstance();
     
-    // ë””ë²„ê·¸: TextRenderComponent ë Œë”ë§ í†µê³„
+    // µğ¹ö±×: TextRenderComponent ·»´õ¸µ Åë°è
     
     UINT Stride = sizeof(FBillboardVertexInfo_GPU);
     ID3D11Buffer* VertexBuff = Comp->GetStaticMesh()->GetVertexBuffer();
     ID3D11Buffer* IndexBuff = Comp->GetStaticMesh()->GetIndexBuffer();
 
-    // ë§¤í…Œë¦¬ì–¼ ë³€ê²½ ì¶”ì 
+    // ¸ÅÅ×¸®¾ó º¯°æ ÃßÀû
     UMaterial* CompMaterial = Comp->GetMaterial();
     if (LastMaterial != CompMaterial)
     {
@@ -293,7 +303,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UTextRenderComponent* Comp, D3D11_
     }
     
     UShader* CompShader = CompMaterial->GetShader();
-    // ì…°ì´ë” ë³€ê²½ ì¶”ì 
+    // ¼ÎÀÌ´õ º¯°æ ÃßÀû
     if (LastShader != CompShader)
     {
         StatsCollector.IncrementShaderChanges();
@@ -311,7 +321,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UTextRenderComponent* Comp, D3D11_
         IndexBuff, DXGI_FORMAT_R32_UINT, 0
     );
 
-    // í…ìŠ¤ì²˜ ë³€ê²½ ì¶”ì  (í…ìŠ¤ì²˜ ë¹„êµ)
+    // ÅØ½ºÃ³ º¯°æ ÃßÀû (ÅØ½ºÃ³ ºñ±³)
     UTexture* CompTexture = CompMaterial->GetTexture();
     if (LastTexture != CompTexture)
     {
@@ -332,13 +342,13 @@ void URenderer::DrawIndexedPrimitiveComponent(UBillboardComponent* Comp, D3D11_P
 {
     URenderingStatsCollector& StatsCollector = URenderingStatsCollector::GetInstance();
     
-    // ë””ë²„ê·¸: TextRenderComponent ë Œë”ë§ í†µê³„
+    // µğ¹ö±×: TextRenderComponent ·»´õ¸µ Åë°è
     
     UINT Stride = sizeof(FBillboardVertexInfo_GPU);
     ID3D11Buffer* VertexBuff = Comp->GetStaticMesh()->GetVertexBuffer();
     ID3D11Buffer* IndexBuff = Comp->GetStaticMesh()->GetIndexBuffer();
 
-    // ë§¤í…Œë¦¬ì–¼ ë³€ê²½ ì¶”ì 
+    // ¸ÅÅ×¸®¾ó º¯°æ ÃßÀû
     UMaterial* CompMaterial = Comp->GetMaterial();
     if (LastMaterial != CompMaterial)
     {
@@ -347,7 +357,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UBillboardComponent* Comp, D3D11_P
     }
     
     UShader* CompShader = CompMaterial->GetShader();
-    // ì…°ì´ë” ë³€ê²½ ì¶”ì 
+    // ¼ÎÀÌ´õ º¯°æ ÃßÀû
     if (LastShader != CompShader)
     {
         StatsCollector.IncrementShaderChanges();
@@ -365,7 +375,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UBillboardComponent* Comp, D3D11_P
         IndexBuff, DXGI_FORMAT_R32_UINT, 0
     );
 
-    // í…ìŠ¤ì²˜ ë³€ê²½ ì¶”ì  (í…ìŠ¤ì²˜ ë¹„êµ)
+    // ÅØ½ºÃ³ º¯°æ ÃßÀû (ÅØ½ºÃ³ ºñ±³)
     UTexture* CompTexture = CompMaterial->GetTexture();
     if (LastTexture != CompTexture)
     {
@@ -392,15 +402,15 @@ void URenderer::SetViewModeType(EViewModeIndex ViewModeIndex)
 
 void URenderer::EndFrame()
 {
-    // ë Œë”ë§ í†µê³„ ìˆ˜ì§‘ ì¢…ë£Œ
+    // ·»´õ¸µ Åë°è ¼öÁı Á¾·á
     URenderingStatsCollector& StatsCollector = URenderingStatsCollector::GetInstance();
     StatsCollector.EndFrame();
     
-    // í˜„ì¬ í”„ë ˆì„ í†µê³„ë¥¼ ì—…ë°ì´íŠ¸
+    // ÇöÀç ÇÁ·¹ÀÓ Åë°è¸¦ ¾÷µ¥ÀÌÆ®
     const FRenderingStats& CurrentStats = StatsCollector.GetCurrentFrameStats();
     StatsCollector.UpdateFrameStats(CurrentStats);
     
-    // í‰ê·  í†µê³„ë¥¼ ì–»ì–´ì„œ ì˜¤ë²„ë ˆì´ì— ì—…ë°ì´íŠ¸
+    // Æò±Õ Åë°è¸¦ ¾ò¾î¼­ ¿À¹ö·¹ÀÌ¿¡ ¾÷µ¥ÀÌÆ®
     const FRenderingStats& AvgStats = StatsCollector.GetAverageStats();
     UStatsOverlayD2D::Get().UpdateRenderingStats(
         AvgStats.TotalDrawCalls,
@@ -421,7 +431,7 @@ void URenderer::OMSetDepthStencilState(EComparisonFunc Func)
 
 void URenderer::RenderViewPorts(UWorld* World) 
 {
-    // ë©€í‹° ë·°í¬íŠ¸ ì‹œìŠ¤í…œì„ í†µí•´ ê° ë·°í¬íŠ¸ë³„ë¡œ ë Œë”ë§
+    // ¸ÖÆ¼ ºäÆ÷Æ® ½Ã½ºÅÛÀ» ÅëÇØ °¢ ºäÆ÷Æ®º°·Î ·»´õ¸µ
     if (SMultiViewportWindow* MultiViewport = World->GetMultiViewportWindow())
     {
         MultiViewport->OnRender();
@@ -507,7 +517,7 @@ void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, c
 
 void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
-    // ë·°í¬íŠ¸ì˜ ì‹¤ì œ í¬ê¸°ë¡œ aspect ratio ê³„ì‚°
+    // ºäÆ÷Æ®ÀÇ ½ÇÁ¦ Å©±â·Î aspect ratio °è»ê
     float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
     if (Viewport->GetSizeY() == 0)
     {
@@ -517,7 +527,7 @@ void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* V
     FMatrix ViewMatrix = Camera->GetViewMatrix();
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
    
-    // ì”¬ì˜ ì•¡í„°ë“¤ì„ ë Œë”ë§
+    // ¾ÀÀÇ ¾×ÅÍµéÀ» ·»´õ¸µ
     // General Rendering (color + depth)
     RenderActorsInViewport(World, ViewMatrix, ProjectionMatrix, Viewport);
 }
@@ -531,7 +541,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     // +-+-+ Render Pass Structure +-+-+
 
     float ViewportAspectRatio = (Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
-    if (Viewport->GetSizeY() == 0) ViewportAspectRatio = 1.0f; // 0ìœ¼ë¡œ ë‚˜ëˆ„ê¸° ë°©ì§€
+    if (Viewport->GetSizeY() == 0) ViewportAspectRatio = 1.0f; // 0À¸·Î ³ª´©±â ¹æÁö
     FMatrix ViewMatrix = Camera->GetViewMatrix();
     FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
     UpdateSetCBuffer(ViewProjBufferType(ViewMatrix, ProjectionMatrix, Camera->GetActorLocation()));
@@ -572,14 +582,14 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_Unlit:
     case EViewModeIndex::VMI_Wireframe:
     {        
-        // âœ… Step 1: Depth Prepass - ë¨¼ì € ê¹Šì´ ë²„í¼ë§Œ ì±„ìš°ê¸°
+        // ? Step 1: Depth Prepass - ¸ÕÀú ±íÀÌ ¹öÆÛ¸¸ Ã¤¿ì±â
         OutputDebugStringA("[Renderer] Executing depth prepass...\n");
         RenderSceneDepthPass(World, ViewMatrix, ProjectionMatrix);
 
-        // ğŸ” DEBUG: ê¹Šì´ í”„ë¦¬íŒ¨ìŠ¤ ê²°ê³¼ ì‹œê°í™” (ì˜µì…˜)
-        // ì£¼ì„ í•´ì œí•˜ë©´ ê¹Šì´ í”„ë¦¬íŒ¨ìŠ¤ ì§í›„ ê¹Šì´ë¥¼ ê·¸ë ˆì´ìŠ¤ì¼€ì¼ë¡œ ë³¼ ìˆ˜ ìˆìŒ
+        // ?? DEBUG: ±íÀÌ ÇÁ¸®ÆĞ½º °á°ú ½Ã°¢È­ (¿É¼Ç)
+        // ÁÖ¼® ÇØÁ¦ÇÏ¸é ±íÀÌ ÇÁ¸®ÆĞ½º Á÷ÈÄ ±íÀÌ¸¦ ±×·¹ÀÌ½ºÄÉÀÏ·Î º¼ ¼ö ÀÖÀ½
         //RenderSceneDepthVisualizePass(Camera);
-        // return; // ì´í›„ ë Œë”ë§ ìŠ¤í‚µí•˜ê³  ê¹Šì´ë§Œ í™•ì¸
+        // return; // ÀÌÈÄ ·»´õ¸µ ½ºÅµÇÏ°í ±íÀÌ¸¸ È®ÀÎ
 
         RenderDirectionalLightPass(World);
         RenderPointLightPass(World);
@@ -593,7 +603,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
                   pointLightCount, spotLightCount);
         OutputDebugStringA(lightMsg);
 
-        // âœ… Step 2: Execute Tile-based Light Culling (ì´ì œ ê¹Šì´ ë²„í¼ê°€ ì±„ì›Œì§„ ìƒíƒœ)
+        // ? Step 2: Execute Tile-based Light Culling (ÀÌÁ¦ ±íÀÌ ¹öÆÛ°¡ Ã¤¿öÁø »óÅÂ)
         OutputDebugStringA("[Renderer] Before ExecuteLightCulling check\n");
         if (LightCullingManager && bUseTiledCulling)
         {
@@ -669,7 +679,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
                 LightCullingManager->SetDebugVisualization(bDebugVisualizeTiles);
 
-                // ë·°í¬íŠ¸ ì˜¤í”„ì…‹ ê°€ì ¸ì˜¤ê¸°
+                // ºäÆ÷Æ® ¿ÀÇÁ¼Â °¡Á®¿À±â
                 D3D11_VIEWPORT d3d_vp;
                 UINT num_vp = 1;
                 RHIDevice->GetDeviceContext()->RSGetViewports(&num_vp, &d3d_vp);
@@ -677,8 +687,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
                 OutputDebugStringA("[Renderer] Binding results to PS...\n");
                 LightCullingManager->BindResultsToPS(
                     RHIDevice->GetDeviceContext(),
-                    d3d_vp.TopLeftX,  // ë·°í¬íŠ¸ X ì˜¤í”„ì…‹ ì „ë‹¬
-                    d3d_vp.TopLeftY   // ë·°í¬íŠ¸ Y ì˜¤í”„ì…‹ ì „ë‹¬
+                    d3d_vp.TopLeftX,  // ºäÆ÷Æ® X ¿ÀÇÁ¼Â Àü´Ş
+                    d3d_vp.TopLeftY   // ºäÆ÷Æ® Y ¿ÀÇÁ¼Â Àü´Ş
                 );
                 OutputDebugStringA("[Renderer] Light culling complete!\n");
             }
@@ -717,7 +727,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     {
         RenderBasePass(World, Camera, Viewport);  // calls RenderScene, which executes the depth-only pass 
                                                   // (RenderSceneDepthPass) according to the current view mode
-        RenderSceneDepthVisualizePass(Camera);    // Depth â†’ Grayscale visualize
+        RenderSceneDepthVisualizePass(Camera);    // Depth ¡æ Grayscale visualize
 
         RenderEditorPass(World, Camera, Viewport);
         break;
@@ -741,7 +751,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
 void URenderer::RenderEditorPass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
-    // ë·°í¬íŠ¸ì˜ ì‹¤ì œ í¬ê¸°ë¡œ aspect ratio ê³„ì‚°
+    // ºäÆ÷Æ®ÀÇ ½ÇÁ¦ Å©±â·Î aspect ratio °è»ê
     float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
     if (Viewport->GetSizeY() == 0)
     {
@@ -793,7 +803,7 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
 
     RenderDecals(World, ViewMatrix, ProjectionMatrix, Viewport);
     
-    // BVH ë°”ìš´ë“œ ì‹œê°í™”
+    // BVH ¹Ù¿îµå ½Ã°¢È­
     if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BVH))
     {
         AddLines(World->GetBVH().GetBVHBoundsWire(), FVector4(0.5f, 0.5f, 1, 1));
@@ -820,7 +830,7 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 
     for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
     {
-        // ì•ˆì „ì„± ì²´í¬: nullptr ë˜ëŠ” ë¹„í™œì„± ì»´í¬ë„ŒíŠ¸ ìŠ¤í‚µ
+        // ¾ÈÀü¼º Ã¼Å©: nullptr ¶Ç´Â ºñÈ°¼º ÄÄÆ÷³ÍÆ® ½ºÅµ
         if (!PrimitiveComponent || !PrimitiveComponent->IsActive())
             continue;
 
@@ -953,35 +963,35 @@ void URenderer::RenderSceneToCubemapFace(UWorld* World, const FMatrix& ViewMatri
     if (!World || !Viewport)
         return;
 
-    // 1. View/Projection ìƒìˆ˜ ë²„í¼ ì—…ë°ì´íŠ¸ (ProbePositionì„ ì¹´ë©”ë¼ ìœ„ì¹˜ë¡œ ì‚¬ìš©)
+    // 1. View/Projection »ó¼ö ¹öÆÛ ¾÷µ¥ÀÌÆ® (ProbePositionÀ» Ä«¸Ş¶ó À§Ä¡·Î »ç¿ë)
     UpdateSetCBuffer(ViewProjBufferType(ViewMatrix, ProjMatrix, ProbePosition));
 
-    // 2. ë Œë” ìŠ¤í…Œì´íŠ¸ ì„¤ì •
+    // 2. ·»´õ ½ºÅ×ÀÌÆ® ¼³Á¤
     RHIDevice->OMSetBlendState(false);
-    RHIDevice->RSSetNoCullState();  // íë¸Œë§µ ë Œë”ë§ ì‹œ winding order ë¬¸ì œ ë°©ì§€
+    RHIDevice->RSSetNoCullState();  // Å¥ºê¸Ê ·»´õ¸µ ½Ã winding order ¹®Á¦ ¹æÁö
     RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual);
     RHIDevice->IASetPrimitiveTopology();
 
-    // 3. ì›”ë“œì˜ AAmbientActorë§Œ ë Œë”ë§
+    // 3. ¿ùµåÀÇ AAmbientActor¸¸ ·»´õ¸µ
     USelectionManager& SelectionManager = USelectionManager::GetInstance();
     AActor* SelectedActor = SelectionManager.GetSelectedActor();
 
     for (AActor* Actor : World->GetLevel()->GetActors())
     {
-        // AAmbientActorë§Œ ë Œë”ë§
+        // AAmbientActor¸¸ ·»´õ¸µ
         AAmbientActor* AmbientActor = Cast<AAmbientActor>(Actor);
         if (!AmbientActor)
             continue;
 
-        // ì•¡í„°ì˜ ëª¨ë“  í”„ë¦¬ë¯¸í‹°ë¸Œ ì»´í¬ë„ŒíŠ¸ ë Œë”ë§
+        // ¾×ÅÍÀÇ ¸ğµç ÇÁ¸®¹ÌÆ¼ºê ÄÄÆ÷³ÍÆ® ·»´õ¸µ
         for (UActorComponent* ActorComponent : AmbientActor->GetComponents())
         {
             UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(ActorComponent);
-            // ì•ˆì „ì„± ì²´í¬: nullptr ë˜ëŠ” ë¹„í™œì„± ì»´í¬ë„ŒíŠ¸ ìŠ¤í‚µ
+            // ¾ÈÀü¼º Ã¼Å©: nullptr ¶Ç´Â ºñÈ°¼º ÄÄÆ÷³ÍÆ® ½ºÅµ
             if (!PrimitiveComponent || !PrimitiveComponent->IsActive())
                 continue;
 
-            // ë¹Œë³´ë“œë‚˜ ì—ë””í„° ì „ìš© ì»´í¬ë„ŒíŠ¸ëŠ” íë¸Œë§µì—ì„œ ì œì™¸
+            // ºôº¸µå³ª ¿¡µğÅÍ Àü¿ë ÄÄÆ÷³ÍÆ®´Â Å¥ºê¸Ê¿¡¼­ Á¦¿Ü
             if (Cast<UBillboardComponent>(PrimitiveComponent))
                 continue;
 
@@ -1006,7 +1016,7 @@ void URenderer::RenderFogPass(UWorld* World, ACameraActor* Camera, FViewport* Vi
         if (FogComponent->IsRender())
         {
             FogComponent->Render(this, Camera->GetActorLocation(), Camera->GetViewMatrix(), Camera->GetProjectionMatrix(), Viewport);
-            //ì²«ë²ˆì§¸ ê²ƒë§Œ ê·¸ë¦¼
+            //Ã¹¹øÂ° °Í¸¸ ±×¸²
             break;
         }
    }
@@ -1020,7 +1030,7 @@ void URenderer::RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* V
     for (UFXAAComponent* FXAAComponent : World->GetLevel()->GetComponentList<UFXAAComponent>())
     {
         FXAAComponent->Render(this);
-        //ì²«ë²ˆì§¸ ê²ƒë§Œ ê·¸ë¦¼
+        //Ã¹¹øÂ° °Í¸¸ ±×¸²
         break;
     }
 }
@@ -1029,7 +1039,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
 {
     if (!World) return;
 
-    // 1?? ë¼ì´íŠ¸ ì»´í¬ë„ŒíŠ¸ ìˆ˜ì§‘ (PointLight, PointLight ë“±)
+    // 1?? ¶óÀÌÆ® ÄÄÆ÷³ÍÆ® ¼öÁı (PointLight, PointLight µî)
     FPointLightBufferType PointLightCB{};
     PointLightCB.PointLightCount=0;
     for (UPointLightComponent* PointLightComponent : World->GetLevel()->GetComponentList<UPointLightComponent>())
@@ -1045,7 +1055,7 @@ void URenderer::RenderPointLightPass(UWorld* World)
         );
                 
     }
-    // 2?? ìƒìˆ˜ ë²„í¼ GPUë¡œ ì—…ë°ì´íŠ¸
+    // 2?? »ó¼ö ¹öÆÛ GPU·Î ¾÷µ¥ÀÌÆ®
     UpdateSetCBuffer(PointLightCB);
     
 }
@@ -1093,7 +1103,7 @@ void URenderer::RenderSpotLightPass(UWorld* World)
         SpotLightCB.SpotLights[idx].Direction = PointLightComponent->GetDirection();   
         SpotLightCB.SpotLights[idx].InAndOutSmooth = PointLightComponent->GetInAndOutSmooth();
     }
-    // 2?? ìƒìˆ˜ ë²„í¼ GPUë¡œ ì—…ë°ì´íŠ¸
+    // 2?? »ó¼ö ¹öÆÛ GPU·Î ¾÷µ¥ÀÌÆ®
     UpdateSetCBuffer(SpotLightCB); 
 }
 
@@ -1150,31 +1160,31 @@ void URenderer::RenderSHAmbientLightPass(UWorld* World)
 
 void URenderer::RenderOverlayPass(UWorld* World)
 {
-    // TODO: ì˜¤ë²„ë ˆì´(UI, ë””ë²„ê·¸ í…ìŠ¤íŠ¸ ë“±) êµ¬í˜„
+    // TODO: ¿À¹ö·¹ÀÌ(UI, µğ¹ö±× ÅØ½ºÆ® µî) ±¸Çö
 }
 
 void URenderer::RenderSceneDepthVisualizePass(ACameraActor* Camera)
 {
     // +-+ 1. Save Original Viewport State +-+
-    // ì´ íŒ¨ìŠ¤ëŠ” ë Œë” íƒ€ê²Ÿ ì „ì²´ì— ê·¸ë¦¬ê¸° ìœ„í•´ ë·°í¬íŠ¸ë¥¼ ë³€ê²½í•©ë‹ˆë‹¤.
-    // ì´í›„ì— ë Œë”ë§ë  EditorPass (ê¸°ì¦ˆëª¨ ë“±)ê°€ ì˜¬ë°”ë¥¸ ë·°í¬íŠ¸ ì˜ì—­ì— ê·¸ë ¤ì§€ë„ë¡
-    // í˜„ì¬ ë·°í¬íŠ¸ ìƒíƒœë¥¼ ë¯¸ë¦¬ ì €ì¥í•©ë‹ˆë‹¤.
+    // ÀÌ ÆĞ½º´Â ·»´õ Å¸°Ù ÀüÃ¼¿¡ ±×¸®±â À§ÇØ ºäÆ÷Æ®¸¦ º¯°æÇÕ´Ï´Ù.
+    // ÀÌÈÄ¿¡ ·»´õ¸µµÉ EditorPass (±âÁî¸ğ µî)°¡ ¿Ã¹Ù¸¥ ºäÆ÷Æ® ¿µ¿ª¿¡ ±×·ÁÁöµµ·Ï
+    // ÇöÀç ºäÆ÷Æ® »óÅÂ¸¦ ¹Ì¸® ÀúÀåÇÕ´Ï´Ù.
     D3D11_VIEWPORT OriginalViewport;
     UINT NumViewports = 1;
     RHIDevice->GetDeviceContext()->RSGetViewports(&NumViewports, &OriginalViewport);
 
     // +-+ 2. Set Render State for Full-Screen Pass +-+
-    // RTV(ì»¬ëŸ¬)ë§Œ ë°”ì¸ë”©í•˜ê³  DSV(ëìŠ¤)ëŠ” ë°”ì¸ë”© í•´ì œ(nullptr)í•©ë‹ˆë‹¤.
-    // ëìŠ¤ í…ìŠ¤ì²˜ë¥¼ ì…°ì´ë”ì—ì„œ ì½ê¸°(SRV) ìœ„í•´ DSVì—ì„œ ë°”ì¸ë”© í•´ì œí•´ì•¼ í•©ë‹ˆë‹¤.
+    // RTV(ÄÃ·¯)¸¸ ¹ÙÀÎµùÇÏ°í DSV(µª½º)´Â ¹ÙÀÎµù ÇØÁ¦(nullptr)ÇÕ´Ï´Ù.
+    // µª½º ÅØ½ºÃ³¸¦ ¼ÎÀÌ´õ¿¡¼­ ÀĞ±â(SRV) À§ÇØ DSV¿¡¼­ ¹ÙÀÎµù ÇØÁ¦ÇØ¾ß ÇÕ´Ï´Ù.
     ID3D11RenderTargetView* FrameRTV = static_cast<D3D11RHI*>(RHIDevice)->GetFrameRTV();
     RHIDevice->GetDeviceContext()->OMSetRenderTargets(1, &FrameRTV, nullptr);
 
-    // ëìŠ¤ í…ŒìŠ¤íŠ¸ì™€ ì“°ê¸°ë¥¼ ëª¨ë‘ ë¹„í™œì„±í™”í•©ë‹ˆë‹¤.
+    // µª½º Å×½ºÆ®¿Í ¾²±â¸¦ ¸ğµÎ ºñÈ°¼ºÈ­ÇÕ´Ï´Ù.
     RHIDevice->OmSetDepthStencilState(EComparisonFunc::Disable);
 
     // +-+ 3. Set Full-Screen Viewport +-+
-    // DSVë¥¼ nullptrë¡œ ì„¤ì •í•˜ë©´ D3D11 íŒŒì´í”„ë¼ì¸ì´ ë·°í¬íŠ¸ ì„¤ì •ì„ ë¬´íš¨í™”í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.
-    // ë”°ë¼ì„œ ë Œë” íƒ€ê²Ÿ(í”„ë ˆì„ ë²„í¼) í¬ê¸°ì— ë§ëŠ” "ì „ì²´ í™”ë©´" ë·°í¬íŠ¸ë¥¼ ëª…ì‹œì ìœ¼ë¡œ ë‹¤ì‹œ ì„¤ì •í•©ë‹ˆë‹¤.
+    // DSV¸¦ nullptr·Î ¼³Á¤ÇÏ¸é D3D11 ÆÄÀÌÇÁ¶óÀÎÀÌ ºäÆ÷Æ® ¼³Á¤À» ¹«È¿È­ÇÒ ¼ö ÀÖ½À´Ï´Ù.
+    // µû¶ó¼­ ·»´õ Å¸°Ù(ÇÁ·¹ÀÓ ¹öÆÛ) Å©±â¿¡ ¸Â´Â "ÀüÃ¼ È­¸é" ºäÆ÷Æ®¸¦ ¸í½ÃÀûÀ¸·Î ´Ù½Ã ¼³Á¤ÇÕ´Ï´Ù.
     D3D11_TEXTURE2D_DESC BackDesc{};
     ID3D11Texture2D* FrameBuffer = static_cast<D3D11RHI*>(RHIDevice)->GetFrameBuffer();
     if (FrameBuffer)
@@ -1188,7 +1198,7 @@ void URenderer::RenderSceneDepthVisualizePass(ACameraActor* Camera)
             .MinDepth = 0.0f,
             .MaxDepth = 1.0f
         };
-        // ë·°í¬íŠ¸ë¥¼ ì „ì²´ í™”ë©´ìœ¼ë¡œ ë¦¬ì…‹í•©ë‹ˆë‹¤.
+        // ºäÆ÷Æ®¸¦ ÀüÃ¼ È­¸éÀ¸·Î ¸®¼ÂÇÕ´Ï´Ù.
         RHIDevice->GetDeviceContext()->RSSetViewports(1, &FullScreenVP);
     }
 
@@ -1203,7 +1213,7 @@ void URenderer::RenderSceneDepthVisualizePass(ACameraActor* Camera)
         UpdateSetCBuffer(CameraInfoBufferType(CameraInfo));
     }
 
-    // ëìŠ¤ í…ìŠ¤ì²˜ë¥¼ í”½ì…€ ì…°ì´ë”ì˜ ë¦¬ì†ŒìŠ¤(SRV)ë¡œ ë°”ì¸ë”©í•©ë‹ˆë‹¤.
+    // µª½º ÅØ½ºÃ³¸¦ ÇÈ¼¿ ¼ÎÀÌ´õÀÇ ¸®¼Ò½º(SRV)·Î ¹ÙÀÎµùÇÕ´Ï´Ù.
     ID3D11ShaderResourceView* DepthSRV = static_cast<D3D11RHI*>(RHIDevice)->GetDepthSRV();
     RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &DepthSRV); // SET
 
@@ -1211,19 +1221,19 @@ void URenderer::RenderSceneDepthVisualizePass(ACameraActor* Camera)
     RHIDevice->IASetPrimitiveTopology();
 
     // +-+ 5. Draw Full-Screen Triangle +-+
-    // ì •ì  3ê°œë¡œ êµ¬ì„±ëœ ì „ì²´ í™”ë©´ ì‚¼ê°í˜•ì„ ê·¸ë¦½ë‹ˆë‹¤.
+    // Á¤Á¡ 3°³·Î ±¸¼ºµÈ ÀüÃ¼ È­¸é »ï°¢ÇüÀ» ±×¸³´Ï´Ù.
     RHIDevice->GetDeviceContext()->Draw(3, 0);
 
     // +-+ 6. Restore Original State +-+
-    // ëìŠ¤ í…ìŠ¤ì²˜ë¥¼ SRVì—ì„œ ë°”ì¸ë”© í•´ì œí•©ë‹ˆë‹¤ (ì´í›„ DSVë¡œ ë‹¤ì‹œ ë°”ì¸ë”©í•  ìˆ˜ ìˆë„ë¡).
+    // µª½º ÅØ½ºÃ³¸¦ SRV¿¡¼­ ¹ÙÀÎµù ÇØÁ¦ÇÕ´Ï´Ù (ÀÌÈÄ DSV·Î ´Ù½Ã ¹ÙÀÎµùÇÒ ¼ö ÀÖµµ·Ï).
     ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
     RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
 
-    // íŒ¨ìŠ¤ ì‹œì‘ ì‹œ ì €ì¥í•´ë‘ì—ˆë˜ ì›ë˜ ë·°í¬íŠ¸ë¡œ ë³µì›í•©ë‹ˆë‹¤.
-    // (ì´ê²ƒì´ ê¸°ì¦ˆëª¨ ìœ„ì¹˜ë¥¼ ì˜¬ë°”ë¥´ê²Œ ìˆ˜ì •í•˜ëŠ” í•µì‹¬ì…ë‹ˆë‹¤.)
+    // ÆĞ½º ½ÃÀÛ ½Ã ÀúÀåÇØµÎ¾ú´ø ¿ø·¡ ºäÆ÷Æ®·Î º¹¿øÇÕ´Ï´Ù.
+    // (ÀÌ°ÍÀÌ ±âÁî¸ğ À§Ä¡¸¦ ¿Ã¹Ù¸£°Ô ¼öÁ¤ÇÏ´Â ÇÙ½ÉÀÔ´Ï´Ù.)
     RHIDevice->GetDeviceContext()->RSSetViewports(1, &OriginalViewport);
 
-    // ëìŠ¤ ìƒíƒœë¥¼ ê¸°ë³¸ê°’(í…ŒìŠ¤íŠ¸ ë° ì“°ê¸° í™œì„±í™”)ìœ¼ë¡œ ë³µì›í•©ë‹ˆë‹¤.
+    // µª½º »óÅÂ¸¦ ±âº»°ª(Å×½ºÆ® ¹× ¾²±â È°¼ºÈ­)À¸·Î º¹¿øÇÕ´Ï´Ù.
     RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual);
 }
 
@@ -1373,7 +1383,7 @@ void URenderer::EndLineBatch(const FMatrix& ModelMatrix, const FMatrix& ViewMatr
         RHIDevice->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
         RHIDevice->GetDeviceContext()->DrawIndexed(DynamicLineMesh->GetCurrentIndexCount(), 0, 0);
         
-        // ë¼ì¸ ë Œë”ë§ì— ëŒ€í•œ DrawCall í†µê³„ ì¶”ê°€
+        // ¶óÀÎ ·»´õ¸µ¿¡ ´ëÇÑ DrawCall Åë°è Ãß°¡
         URenderingStatsCollector::GetInstance().IncrementDrawCalls();
     }
     
@@ -1382,12 +1392,12 @@ void URenderer::EndLineBatch(const FMatrix& ModelMatrix, const FMatrix& ViewMatr
 
 UPrimitiveComponent* URenderer::GetCollidedPrimitive(int MouseX, int MouseY) const
 {
-    //GPUì™€ ë™ê¸°í™” ë¬¸ì œ ë•Œë¬¸ì— Mapì´ í˜¸ì¶œë ë•Œê¹Œì§€ ê¸°ë‹¤ë ¤ì•¼í•´ì„œ í”¼í‚¹ í•˜ëŠ” í”„ë ˆì„ì— ì—„ì²­ë‚œ í”„ë ˆì„ ë“œëì´ ì¼ì–´ë‚¨.
-    //******ë¹„ë™ê¸° ë°©ì‹ìœ¼ë¡œ ë¬´ì¡°ê±´ ë°”ê¿”ì•¼í•¨****************
+    //GPU¿Í µ¿±âÈ­ ¹®Á¦ ¶§¹®¿¡ MapÀÌ È£ÃâµÉ¶§±îÁö ±â´Ù·Á¾ßÇØ¼­ ÇÇÅ· ÇÏ´Â ÇÁ·¹ÀÓ¿¡ ¾öÃ»³­ ÇÁ·¹ÀÓ µå¶øÀÌ ÀÏ¾î³².
+    //******ºñµ¿±â ¹æ½ÄÀ¸·Î ¹«Á¶°Ç ¹Ù²ã¾ßÇÔ****************
     uint32 PickedId = 0;
 
     ID3D11DeviceContext* DeviceContext = RHIDevice->GetDeviceContext();
-    //ìŠ¤í…Œì´ì§• ë²„í¼ë¥¼ ê°€ì ¸ì™€ì•¼ í•˜ëŠ”ë° ì´ê±¸ Device ì¶”ìƒ í´ë˜ìŠ¤ê°€ Getterë¡œ ê°€ì§€ê³  ìˆëŠ”ê²Œ ì¢‹ì€ ì„¤ê³„ê°€ ì•„ë‹Œ ê²ƒ ê°™ì•„ì„œ ì¼ë‹¨ ìºìŠ¤íŒ…í•¨
+    //½ºÅ×ÀÌÂ¡ ¹öÆÛ¸¦ °¡Á®¿Í¾ß ÇÏ´Âµ¥ ÀÌ°É Device Ãß»ó Å¬·¡½º°¡ Getter·Î °¡Áö°í ÀÖ´Â°Ô ÁÁÀº ¼³°è°¡ ¾Æ´Ñ °Í °°¾Æ¼­ ÀÏ´Ü Ä³½ºÆÃÇÔ
     D3D11RHI* RHI = static_cast<D3D11RHI*>(RHIDevice);
 
     D3D11_BOX Box{};
@@ -1444,7 +1454,7 @@ void URenderer::SetShadingModel(ELightShadingModel Model)
     CurrentShadingModel = Model;
 
     // Hot-reload affected shaders when shading model changes
-    //TODO: ìš°ë²„ ì‰ì´ë” ë¦¬ìŠ¤í‹€ë¥´ ë§Œë“¤ì–´ì„œ, shader ì „ì²´ìˆœíšŒê°€ ì•„ë‹Œ ìš°ë²„ì‰ì´ë” ìˆœíšŒë¡œ ë³€ê²½í•˜ëŠ” ê²Œ ì¢‹ì„ ë“¯
+    //TODO: ¿ì¹ö ½¦ÀÌ´õ ¸®½ºÆ²¸£ ¸¸µé¾î¼­, shader ÀüÃ¼¼øÈ¸°¡ ¾Æ´Ñ ¿ì¹ö½¦ÀÌ´õ ¼øÈ¸·Î º¯°æÇÏ´Â °Ô ÁÁÀ» µí
     TArray<UShader*> AllShaders = UResourceManager::GetInstance().GetAll<UShader>();
     for (UShader* Shader : AllShaders)
     {

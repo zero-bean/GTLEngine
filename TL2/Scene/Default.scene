@@ -1,56 +1,64 @@
 {
   "Version" : 2,
-  "NextUUID" : 725,
+  "NextUUID" : 587,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [69.274490, 8.259109, 13.838659],
+    "Location" : [11.472772, 42.433197, 38.615330],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 16.799980, -175.199677]
+    "Rotation" : [0.000000, -1.400035, -98.500214]
   },
   "Actors" : [
     {
-      "UUID" : 548,
-      "Type" : "AActor",
+      "UUID" : 562,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Valley_0",
+      "RootComponentUUID" : 563
+    },
+    {
+      "UUID" : 574,
+      "Type" : "APointLightActor",
       "Name" : "Point Light_0",
-      "RootComponentUUID" : 549
+      "RootComponentUUID" : 575
     },
     {
-      "UUID" : 609,
-      "Type" : "AStaticMeshActor",
-      "Name" : "Grass_Block_0",
-      "RootComponentUUID" : 610
+      "UUID" : 577,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_1",
+      "RootComponentUUID" : 578
     },
     {
-      "UUID" : 673,
-      "Type" : "AStaticMeshActor",
-      "Name" : "Snowy_0",
-      "RootComponentUUID" : 674
+      "UUID" : 580,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_2",
+      "RootComponentUUID" : 581
     },
     {
-      "UUID" : 638,
+      "UUID" : 585,
       "Type" : "AStaticMeshActor",
-      "Name" : "Mincraft-Lantern_0",
-      "RootComponentUUID" : 639
+      "Name" : "Sphere_0",
+      "RootComponentUUID" : 586
     }
   ],
   "Components" : [
     {
-      "UUID" : 550,
-      "OwnerActorUUID" : 548,
-      "ParentComponentUUID" : 549,
-      "Type" : "UBillboardComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "UUID" : 563,
+      "OwnerActorUUID" : 562,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 2.643854, 5.522030],
+      "RelativeRotation" : [90.000008, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+      "StaticMesh" : "Data/Valley/Valley.obj",
+      "Materials" : ["udoli_kohoutovice_01", "water", "rostlinka08", "rostlinka08", "rostlinka08", "rostlinka08", "rostlinka_09", "rostlinka_09", "rostlinka19", "rostlinka_09", "rostlinka_09", "rostlinka_09", "rostlinka19", "rostlinka19", "rostlinka19"],
+      "MaterialNormalMapOverrides" : ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
     },
     {
-      "UUID" : 549,
-      "OwnerActorUUID" : 548,
+      "UUID" : 575,
+      "OwnerActorUUID" : 574,
       "ParentComponentUUID" : 0,
       "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, -6.532362, 60.522339],
+      "RelativeLocation" : [0.000000, 0.000000, 30.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "PointLightData" : {
@@ -61,40 +69,76 @@
       }
     },
     {
-      "UUID" : 610,
-      "OwnerActorUUID" : 609,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.199729, 3.091783],
-      "RelativeRotation" : [-0.000022, -0.000005, 179.999939],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Minecraft/Grass/Grass_Block.obj",
-      "Materials" : ["Data/Minecraft/Grass/Grass_BlockMat.bin"],
-      "MaterialNormalMapOverrides" : ["Data/Minecraft/Grass/minecraft-glass_nrm.png"]
-    },
-    {
-      "UUID" : 674,
-      "OwnerActorUUID" : 673,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
+      "UUID" : 576,
+      "OwnerActorUUID" : 574,
+      "ParentComponentUUID" : 575,
+      "Type" : "UBillboardComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [-0.000000, -0.000005, -179.999954],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Minecraft/Snowy/Snowy.obj",
-      "Materials" : ["Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Andesite", "Grass_Block", "Dirt", "Stationary_Water", "Sand", "Gravel", "Iron_Ore", "Coal_Ore", "Spruce_Log", "Spruce_Leaves", "Data/Minecraft/Snowy/SnowyMat.bin", "Grass", "Dandelion", "Poppy", "Torch", "Chest", "Data/Minecraft/Snowy/SnowyMat.bin", "Ice", "Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Data/Minecraft/Snowy/SnowyMat.bin", "Seagrass", "Copper_Ore"],
-      "MaterialNormalMapOverrides" : ["Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png", "Data/Minecraft/Snowy/Snowy-terrian_nrm.png"]
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
     },
     {
-      "UUID" : 639,
-      "OwnerActorUUID" : 638,
+      "UUID" : 578,
+      "OwnerActorUUID" : 577,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [-43.881828, -0.073603, 26.022240],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 579,
+      "OwnerActorUUID" : 577,
+      "ParentComponentUUID" : 578,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 581,
+      "OwnerActorUUID" : 580,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [61.181164, 0.000000, 25.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 582,
+      "OwnerActorUUID" : 580,
+      "ParentComponentUUID" : 581,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 586,
+      "OwnerActorUUID" : 585,
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [1.328726, -2.193814, 2.179555],
-      "RelativeRotation" : [-179.999985, -0.000005, 179.999954],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Minecraft/Lantern/Mincraft-Lantern.obj",
-      "Materials" : ["Data/Minecraft/Lantern/Mincraft-LanternMat.bin", "Data/Minecraft/Lantern/Mincraft-LanternMat.bin", "Data/Minecraft/Lantern/Mincraft-LanternMat.bin"],
-      "MaterialNormalMapOverrides" : ["Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png", "Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png", "Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png"]
+      "RelativeLocation" : [14.032701, 3.303029, 30.000000],
+      "RelativeRotation" : [79.354660, 0.000000, 0.000000],
+      "RelativeScale" : [9.890000, 9.890000, 9.890000],
+      "StaticMesh" : "Data/Helmet/Helmet.obj",
+      "Materials" : ["TT_checker_2048x2048_UV_GRID", "TT_checker_2048x2048_UV_GRID", "TT_checker_2048x2048_UV_GRID"],
+      "MaterialNormalMapOverrides" : ["", "", ""]
     }
   ]
 }

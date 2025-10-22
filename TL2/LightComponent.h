@@ -31,14 +31,17 @@ public:
 	bool IsEnabledDebugLine() const { return bEnableDebugLine; }
 	void SetDebugLineEnable(bool bEnable) { bEnableDebugLine = bEnable; }
 
-	void UpdateSpriteColor(const FLinearColor& InSpriteColor);
+    void UpdateSpriteColor(const FLinearColor& InSpriteColor);
+
+    // Global toggle for light debug line rendering
+    static void SetGlobalShowLightDebugLines(bool bEnable) { GShowLightDebugLines = bEnable; }
+    static bool IsGlobalShowLightDebugLines() { return GShowLightDebugLines; }
 
 protected:
 	void CopyLightProperties(ULightComponent* Source);
 
 private:
-	void UpdateFinalColor();
-	
+    void UpdateFinalColor();
 
 protected:
 	float Intensity = 1.0f;
@@ -48,7 +51,10 @@ protected:
 	// 원래 쓰던 색상 - Light Color
 	FLinearColor TintColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	// 색온도에 의해 결정된 색상
-	FLinearColor TempColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    FLinearColor TempColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-	bool bEnableDebugLine = true;
+    bool bEnableDebugLine = true;
+
+    // Global show flag mirror (toggled via viewport UI)
+    static bool GShowLightDebugLines;
 };

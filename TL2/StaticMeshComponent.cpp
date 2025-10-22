@@ -417,6 +417,8 @@ UObject* UStaticMeshComponent::Duplicate()
     DuplicatedComponent->Material = this->Material;
     DuplicatedComponent->StaticMesh = this->StaticMesh;
     DuplicatedComponent->MaterailSlots = this->MaterailSlots;
+    DuplicatedComponent->BRDFRoughness = this->BRDFRoughness;
+    DuplicatedComponent->BRDFMetalic = this->BRDFMetalic;
 
     DuplicatedComponent->DuplicateSubObjects();
     return DuplicatedComponent;

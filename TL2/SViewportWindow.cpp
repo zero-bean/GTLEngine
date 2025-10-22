@@ -5,6 +5,7 @@
 #include "SMultiViewportWindow.h"
 #include "Renderer.h"
 #include "EditorEngine.h"
+#include "LightComponent.h"
 extern float CLIENTWIDTH;
 extern float CLIENTHEIGHT;
 SViewportWindow::SViewportWindow()
@@ -319,6 +320,15 @@ void SViewportWindow::RenderToolbar()
 			if (ImGui::Checkbox("Tile Culling Debug", &bTileCullingDebugEnabled))
 			{
 				Viewport->ToggleShowFlag(EEngineShowFlags::SF_TileCullingDebug);
+			}
+
+			// Light Debug Lines (Point/Spot)
+			bool bLightLinesEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_LightDebugLines);
+			if (ImGui::Checkbox("Light Debug Lines", &bLightLinesEnabled))
+			{
+				Viewport->ToggleShowFlag(EEngineShowFlags::SF_LightDebugLines);
+				// Mirror to global for component-level draw functions
+				ULightComponent::SetGlobalShowLightDebugLines(Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_LightDebugLines));
 			}
 
 			//// Wireframe
