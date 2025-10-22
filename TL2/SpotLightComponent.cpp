@@ -34,7 +34,7 @@ void USpotLightComponent::DrawDebugLines(URenderer* Renderer)
 	}
 
 	const FVector SpotPos = GetWorldLocation();
-	    FVector dir = GetWorldRotation().RotateVector(FVector(1, 0, 0)).GetSafeNormal();	const float range = GetRadius();
+	    FVector dir = GetWorldRotation().RotateVector(FVector(0, 0, 1)).GetSafeNormal();	const float range = GetRadius();
 
 	if (range <= KINDA_SMALL_NUMBER || dir.SizeSquared() < KINDA_SMALL_NUMBER)
 		return;
