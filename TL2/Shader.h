@@ -22,15 +22,17 @@ enum class ENormalMapMode : uint8_t
 class UShader : public UResourceBase
 {
 public:
-	DECLARE_CLASS(UShader, UResourceBase)
+    DECLARE_CLASS(UShader, UResourceBase)
 
-	void Load(const FString& ShaderPath, ID3D11Device* InDevice);
+    void Load(const FString& ShaderPath, ID3D11Device* InDevice);
+    // Recompile this shader with macros for a specific shading model (hot-reload)
+    void ReloadForShadingModel(ELightShadingModel Model, ID3D11Device* InDevice);
 	   
 	ID3D11InputLayout* GetInputLayout() const { return InputLayout; }
-	ID3D11VertexShader* GetVertexShader() const { return VertexShaders[(size_t)ActiveModel]; }
+	ID3D11VertexShader* GetVertexShader() const { return VertexShaders; }
 	ID3D11PixelShader* GetPixelShader() const
 	{
-		return PixelShaders[(size_t)ActiveModel][(size_t)ActiveNormalMode];
+		return PixelShaders[(size_t)ActiveNormalMode];
 	}
 
 	void SetActiveMode(ELightShadingModel Model) { ActiveModel = Model; }
@@ -38,7 +40,7 @@ public:
 
 	void SetActiveNormalMode(ENormalMapMode InMode) { ActiveNormalMode = InMode; }
 
-	static const D3D_SHADER_MACRO* GetMacros(ELightShadingModel Model);
+    static const D3D_SHADER_MACRO* GetMacros(ELightShadingModel Model);
 
 protected:
 	virtual ~UShader();
@@ -47,27 +49,27 @@ protected:
 	ENormalMapMode ActiveNormalMode = ENormalMapMode::NoNormalMap;
 
 	// Default macro table; actual selection is decided at load time.
-	D3D_SHADER_MACRO DefinesRender[8] =
-	{
-		{ "LIGHTING_MODEL_PHONG",  "0" },
-		{ "LIGHTING_MODEL_BLINN_PHONG",  "1" },
-		{ "LIGHTING_MODEL_BRDF",  "0" },
-		{ "LIGHTING_MODEL_LAMBERT",  "0" },
-		{ "LIGHTING_MODEL_GOURAUD",  "0" },
-		{ "LIGHTING_MODEL_UNLIT",  "0" },
-		{ "USE_TILED_CULLING",  "1" },  // Enable tile-based light culling
-		{ nullptr, nullptr }
-	};
+	//D3D_SHADER_MACRO DefinesRender[8] =
+	//{
+	//	{ "LIGHTING_MODEL_PHONG",  "0" },
+	//	{ "LIGHTING_MODEL_BLINN_PHONG",  "1" },
+	//	{ "LIGHTING_MODEL_BRDF",  "0" },
+	//	{ "LIGHTING_MODEL_LAMBERT",  "0" },
+	//	{ "LIGHTING_MODEL_GOURAUD",  "0" },
+	//	{ "LIGHTING_MODEL_UNLIT",  "0" },
+	//	{ "USE_TILED_CULLING",  "1" },  // Enable tile-based light culling
+	//	{ nullptr, nullptr }
+	//};
 	 
 private:
-	ID3DBlob* VSBlobs[(size_t)ELightShadingModel::Count] = { nullptr };
+	ID3DBlob* VSBlobs = nullptr; //  [(size_t)ELightShadingModel::Count] = { nullptr };
 	ID3DBlob* PSBlob = nullptr;
 
 	ID3D11InputLayout* InputLayout = nullptr;
-	ID3D11VertexShader* VertexShaders[(size_t)ELightShadingModel::Count] = { nullptr };
-	ID3D11PixelShader* PixelShaders
-		[(size_t)ELightShadingModel::Count]
+	ID3D11VertexShader* VertexShaders = { nullptr };
+	ID3D11PixelShader* PixelShaders 
 		[(size_t)ENormalMapMode::ENormalMapModeCount] = { nullptr };
+
 
 	void CreateInputLayout(ID3D11Device* Device, const FString& InShaderPath);
 	void ReleaseResources();

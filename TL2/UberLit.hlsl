@@ -1,3 +1,5 @@
+#pragma UBERSHADER
+
 #include "Light.hlsli"
 
 cbuffer ModelBuffer : register(b0)

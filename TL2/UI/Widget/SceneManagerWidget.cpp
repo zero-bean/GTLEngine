@@ -60,7 +60,8 @@ void USceneManagerWidget::RenderWidget()
         ImGui::SameLine();
         ImGui::RadioButton("BRDF", &current, static_cast<int>(ELightShadingModel::BRDF));
         ImGui::SameLine();
-        ImGui::RadioButton("UNLIT", &current, static_cast<int>(ELightShadingModel::Unlit));
+        ImGui::RadioButton("UNLIT", &current, static_cast<int>(ELightShadingModel::Unlit)); 
+
         if (current != static_cast<int>(Renderer->GetShadingModel()))
         {
             Renderer->SetShadingModel(static_cast<ELightShadingModel>(current));

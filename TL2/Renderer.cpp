@@ -1391,7 +1391,27 @@ void URenderer::ClearLineBatch()
 // Shading model accessors (used by UI)
 void URenderer::SetShadingModel(ELightShadingModel Model)
 {
+    if (CurrentShadingModel == Model)
+        return;
+
     CurrentShadingModel = Model;
+
+    // Hot-reload affected shaders when shading model changes
+    //TODO: 우버 쉐이더 리스틀르 만들어서, shader 전체순회가 아닌 우버쉐이더 순회로 변경하는 게 좋을 듯
+    TArray<UShader*> AllShaders = UResourceManager::GetInstance().GetAll<UShader>();
+    for (UShader* Shader : AllShaders)
+    {
+        if (!Shader) continue;
+        const FString& Path = Shader->GetFilePath();
+        // Reload only Uber shader variants for now
+        if (Path.find("UberLit.hlsl") != std::string::npos)
+        {
+            Shader->ReloadForShadingModel(Model, RHIDevice->GetDevice());
+        }
+    }
+
+    // Force a rebind so the next draw uses the refreshed shaders
+    LastShader = nullptr;
 }
 
 ELightShadingModel URenderer::GetShadingModel() const

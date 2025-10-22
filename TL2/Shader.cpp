@@ -104,82 +104,156 @@ void UShader::Load(const FString& InShaderPath, ID3D11Device* InDevice)
 {
     assert(InDevice);
 
-    std::wstring WFilePath;
+    bool bIsUberShader = false;
+    std::ifstream shaderFile(InShaderPath);
+    if (shaderFile.is_open())
+    {
+        std::string firstLine;
+        std::getline(shaderFile, firstLine);
+
+        if (firstLine.find("UBERSHADER") != std::string::npos)
+        {
+            bIsUberShader = true;
+        }
+
+        shaderFile.close();
+    }
+
+    std::wstring WFilePath;  
     WFilePath = std::wstring(InShaderPath.begin(), InShaderPath.end());
+     
 
     HRESULT hr;
     ID3DBlob* errorBlob = nullptr;
     UINT Flag = 0;
 #ifdef _DEBUG
     Flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif 
-
-    for (int i = 0; i < (int)ELightShadingModel::Count; ++i)
+#endif   
+     
+    // Non-uber shader: compile a single VS/PS without lighting-model permutations
+    // Compile VS once
+    hr = D3DCompileFromFile(WFilePath.c_str(), MACRO_BRDF, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", Flag, 0, &VSBlobs, &errorBlob);
+    if (FAILED(hr))
     {
-        ELightShadingModel currentModel = ELightShadingModel(i);
-        const D3D_SHADER_MACRO* baseMacros = GetMacros(currentModel);
+        char* msg = errorBlob ? (char*)errorBlob->GetBufferPointer() : (char*)"Unknown VS compile error";
+        UE_LOG("shader '%s' VS compile error: %s", InShaderPath.c_str(), msg);
+        if (errorBlob) { errorBlob->Release(); }
+        return;
+    }
 
-        // ⭐ VS는 노멀맵과 무관하게 라이팅 모델당 1개만 생성
-        hr = D3DCompileFromFile(WFilePath.c_str(), baseMacros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", Flag, 0, &VSBlobs[i], &errorBlob);
+    ID3D11VertexShader* baseVS = nullptr;
+    hr = InDevice->CreateVertexShader(VSBlobs->GetBufferPointer(), VSBlobs->GetBufferSize(), nullptr, &baseVS);
+    if (FAILED(hr))
+    {
+        UE_LOG("CreateVertexShader failed (non-uber)");
+        return;
+    }
 
-        if (FAILED(hr))
-        {
-            char* msg = (char*)errorBlob->GetBufferPointer();
-            UE_LOG("shader '%s' VS compile error for model %d: %s", InShaderPath.c_str(), i, msg);
-            if (errorBlob) errorBlob->Release();
-            return;
-        }
+    // Assign compiled VS to the member (single variant path)
+    VertexShaders = baseVS;
 
-        hr = InDevice->CreateVertexShader(VSBlobs[i]->GetBufferPointer(), VSBlobs[i]->GetBufferSize(), nullptr, &VertexShaders[i]);
+    // Compile PS once
+    ID3DBlob* localPSBlob = nullptr;
+    hr = D3DCompileFromFile(WFilePath.c_str(), MACRO_BRDF, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &localPSBlob, &errorBlob);
+    if (FAILED(hr))
+    {
+        char* msg = errorBlob ? (char*)errorBlob->GetBufferPointer() : (char*)"Unknown PS compile error";
+        UE_LOG("shader '%s' PS compile error: %s", InShaderPath.c_str(), msg);
+        if (errorBlob) { errorBlob->Release(); }
+        return;
+    }
 
-        if (FAILED(hr))
-        {
-            UE_LOG("CreateVertexShader failed for model %d", i);
-            return;
-        }
+    ID3D11PixelShader* basePS = nullptr;
+    hr = InDevice->CreatePixelShader(localPSBlob->GetBufferPointer(), localPSBlob->GetBufferSize(), nullptr, &basePS);
+    if (localPSBlob) { localPSBlob->Release(); localPSBlob = nullptr; }
+    if (FAILED(hr))
+    {
+        UE_LOG("CreatePixelShader failed (non-uber)");
+        return;
+    }
 
-        // PS는 라이팅 모델 × 노멀맵 모드 조합으로 생성
+    // Store the same PS across all shading-model and normal-map slots (AddRef for duplicates)
+    //for (int i = 0; i < (int)ELightShadingModel::Count; ++i)
+    {
         for (int j = 0; j < (int)ENormalMapMode::ENormalMapModeCount; ++j)
         {
-            std::vector<D3D_SHADER_MACRO> allMacros;
-
-            // 라이팅 모델 매크로 추가
-            for (int m = 0; baseMacros[m].Name != nullptr; ++m)
-            {
-                allMacros.push_back(baseMacros[m]);
-            }
-
-            // 노멀맵 매크로 추가
-            allMacros.push_back({ "HAS_NORMAL_MAP", (j == (int)ENormalMapMode::HasNormalMap) ? "1" : "0" });
-            allMacros.push_back({ nullptr, nullptr });
-
-            ID3DBlob* currentPSBlob = nullptr;
-            hr = D3DCompileFromFile(WFilePath.c_str(), allMacros.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &currentPSBlob, &errorBlob);
-
-            if (FAILED(hr))
-            {
-                char* msg = (char*)errorBlob->GetBufferPointer();
-                UE_LOG("shader '%s' PS compile error for model %d, normalMode %d: %s", InShaderPath.c_str(), i, j, msg);
-                if (errorBlob) { errorBlob->Release(); }
-                return;
-            }
-
-            hr = InDevice->CreatePixelShader(currentPSBlob->GetBufferPointer(), currentPSBlob->GetBufferSize(), nullptr, &PixelShaders[i][j]);
-
-            currentPSBlob->Release();
-
-            if (FAILED(hr))
-            {
-                UE_LOG("CreatePixelShader failed for model %d, normalMode %d", i, j);
-                return;
-            }
+            PixelShaders[j] = basePS;
+            // For the very first assignment we keep the original ref; others AddRef
+            if (!(j == 0) && PixelShaders[j]) { PixelShaders[j]->AddRef(); }
         }
     }
+   
 
     CreateInputLayout(InDevice, InShaderPath);
 
     ActiveModel = ELightShadingModel::BlinnPhong;
     ActiveNormalMode = ENormalMapMode::NoNormalMap;
+}
+
+void UShader::ReloadForShadingModel(ELightShadingModel Model, ID3D11Device* InDevice)
+{
+    assert(InDevice);
+
+    // Release existing GPU resources before recompiling
+    ReleaseResources();
+
+    // Load Light UberShader
+    std::wstring WFilePath = std::wstring(FilePath.begin(), FilePath.end());
+
+    HRESULT hr;
+    ID3DBlob* errorBlob = nullptr;
+    UINT Flag = 0;
+#ifdef _DEBUG
+    Flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+    const D3D_SHADER_MACRO* macros = GetMacros(Model);
+
+    // Compile VS/PS with the selected shading model macros
+    hr = D3DCompileFromFile(WFilePath.c_str(), macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", Flag, 0, &VSBlobs, &errorBlob);
+    if (FAILED(hr))
+    {
+        char* msg = errorBlob ? (char*)errorBlob->GetBufferPointer() : (char*)"Unknown VS compile error";
+        UE_LOG("[Shader Reload] VS compile error for '%s': %s", FilePath.c_str(), msg);
+        if (errorBlob) { errorBlob->Release(); }
+        return;
+    }
+
+    hr = InDevice->CreateVertexShader(VSBlobs->GetBufferPointer(), VSBlobs->GetBufferSize(), nullptr, &VertexShaders);
+    if (FAILED(hr))
+    {
+        UE_LOG("[Shader Reload] CreateVertexShader failed for '%s'", FilePath.c_str());
+        return;
+    }
+
+    ID3DBlob* localPSBlob = nullptr;
+    hr = D3DCompileFromFile(WFilePath.c_str(), macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &localPSBlob, &errorBlob);
+    if (FAILED(hr))
+    {
+        char* msg = errorBlob ? (char*)errorBlob->GetBufferPointer() : (char*)"Unknown PS compile error";
+        UE_LOG("[Shader Reload] PS compile error for '%s': %s", FilePath.c_str(), msg);
+        if (errorBlob) { errorBlob->Release(); }
+        return;
+    }
+
+    ID3D11PixelShader* recompiledPS = nullptr;
+    hr = InDevice->CreatePixelShader(localPSBlob->GetBufferPointer(), localPSBlob->GetBufferSize(), nullptr, &recompiledPS);
+    if (localPSBlob) { localPSBlob->Release(); localPSBlob = nullptr; }
+    if (FAILED(hr))
+    {
+        UE_LOG("[Shader Reload] CreatePixelShader failed for '%s'", FilePath.c_str());
+        return;
+    }
+     
+    for (int j = 0; j < (int)ENormalMapMode::ENormalMapModeCount; ++j)
+    {
+        PixelShaders[j] = recompiledPS;
+        if (j != 0 && PixelShaders[j]) { PixelShaders[j]->AddRef(); }
+    } 
+
+    CreateInputLayout(InDevice, FilePath);
+
+    ActiveModel = Model;
 }
 
 void UShader::CreateInputLayout(ID3D11Device* Device, const FString& InShaderPath)
@@ -195,8 +269,8 @@ void UShader::CreateInputLayout(ID3D11Device* Device, const FString& InShaderPat
     HRESULT hr = Device->CreateInputLayout(
         layout,
         layoutCount,
-        VSBlobs[0]->GetBufferPointer(), 
-        VSBlobs[0]->GetBufferSize(),
+        VSBlobs->GetBufferPointer(), 
+        VSBlobs->GetBufferSize(),
         &InputLayout);
     assert(SUCCEEDED(hr));
 }
@@ -215,26 +289,27 @@ void UShader::ReleaseResources()
         InputLayout = nullptr;
     }
 
-    for (int i = 0; i < (int)ELightShadingModel::Count; ++i)
+    if (VSBlobs)
     {
-        if (VSBlobs[i])
-        {
-            VSBlobs[i]->Release();
-            VSBlobs[i] = nullptr;
-        }
+        VSBlobs->Release();
+        VSBlobs = nullptr;
+    }
 
-        if (VertexShaders[i])
+
+    //for (int i = 0; i < (int)ELightShadingModel::Count; ++i)
+    {
+        if (VertexShaders)
         {
-            VertexShaders[i]->Release();
-            VertexShaders[i] = nullptr;
+            VertexShaders->Release();
+            VertexShaders = nullptr;
         }
 
         for (int j = 0; j < (int)ENormalMapMode::ENormalMapModeCount; ++j)
         {
-            if (PixelShaders[i][j])
+            if (PixelShaders[j])
             {
-                PixelShaders[i][j]->Release();
-                PixelShaders[i][j] = nullptr;
+                PixelShaders[j]->Release();
+                PixelShaders[j] = nullptr;
             }
         }
 

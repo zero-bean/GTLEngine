@@ -239,6 +239,8 @@ void UAmbientLightComponent::CaptureEnvironment(UWorld* World, URenderer* Render
 
     // Save current view mode and switch to Unlit for capturing base colors
     EViewModeIndex OldViewMode = Renderer->GetCurrentViewMode();
+    ELightShadingModel OldShadingModel=  Renderer->GetShadingModel();
+
     Renderer->SetShadingModel(ELightShadingModel::Unlit);
 
     // Setup cubemap viewport
@@ -285,11 +287,11 @@ void UAmbientLightComponent::CaptureEnvironment(UWorld* World, URenderer* Render
     }
 
     // Restore view mode
-    Renderer->SetShadingModel(ELightShadingModel::BlinnPhong);
 
     // Restore render targets and viewport
     Context->OMSetRenderTargets(1, &OldRTV, OldDSV);
     Context->RSSetViewports(1, &OldViewport);
+    Renderer->SetShadingModel(OldShadingModel);
 
     if (OldRTV) OldRTV->Release();
     if (OldDSV) OldDSV->Release();
