@@ -3,7 +3,7 @@
 #include "ImGui/imgui.h"
 #include "Renderer.h"
 
-USpotLightComponent::USpotLightComponent() : Direction(1.0, 0.0f, 0.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), InAntOutSmooth(1)
+USpotLightComponent::USpotLightComponent() : Direction(0.0, 0.0f, 1.0f, 0.0f), InnerConeAngle(10.0), OuterConeAngle(30.0), InAntOutSmooth(1)
 {
 
 }
