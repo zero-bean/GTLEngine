@@ -430,14 +430,33 @@ void URenderer::RenderViewPorts(UWorld* World)
 
 void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix)
 {
+    OutputDebugStringA("[Renderer] RenderSceneDepthPass - Start\n");
+
+    // +-+ Clear Depth Buffer +-+
+    RHIDevice->ClearDepthBuffer(1.0f, 0);
+
     // +-+ Set Render State +-+
-    RHIDevice->OMSetDepthOnlyTarget();     // DSV binding
-    RHIDevice->OMSetBlendState(false);     // color write mask = 0
+    RHIDevice->OMSetDepthOnlyTarget();     // DSV binding (no color target)
+    RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual); // Enable depth write
+    RHIDevice->OMSetBlendState(false);     // color write disabled
     RHIDevice->RSSetDefaultState();        // solid fill, back-face culling
     RHIDevice->IASetPrimitiveTopology();
 
     // +-+ Set Shader & Buffer +-+
     DepthOnlyShader = UResourceManager::GetInstance().Load<UShader>("DepthPrepassShader.hlsl");
+    if (!DepthOnlyShader)
+    {
+        OutputDebugStringA("[Renderer] ERROR: Failed to load DepthPrepassShader.hlsl\n");
+        return;
+    }
+
+    char shaderMsg[256];
+    sprintf_s(shaderMsg, "[Renderer] DepthOnlyShader loaded: %p, VS: %p, PS: %p\n",
+              DepthOnlyShader,
+              DepthOnlyShader->GetVertexShader(),
+              DepthOnlyShader->GetPixelShader());
+    OutputDebugStringA(shaderMsg);
+
     PrepareShader(DepthOnlyShader);
     UpdateSetCBuffer(ViewProjBufferType(ViewMatrix, ProjectionMatrix));
 
@@ -479,9 +498,11 @@ void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, c
     }
 
     // +-+ Restore Render State +-+
-    // DSV un-binding
+    // Unbind DSV to allow it to be used as SRV
     ID3D11RenderTargetView* nullRTV[1] = { nullptr };
-    RHIDevice->GetDeviceContext()->OMSetRenderTargets(1, nullRTV, nullptr);
+    RHIDevice->GetDeviceContext()->OMSetRenderTargets(0, nullRTV, nullptr);
+
+    OutputDebugStringA("[Renderer] RenderSceneDepthPass - Complete\n");
 }
 
 void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
@@ -551,6 +572,15 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
     case EViewModeIndex::VMI_Unlit:
     case EViewModeIndex::VMI_Wireframe:
     {        
+        // ✅ Step 1: Depth Prepass - 먼저 깊이 버퍼만 채우기
+        OutputDebugStringA("[Renderer] Executing depth prepass...\n");
+        RenderSceneDepthPass(World, ViewMatrix, ProjectionMatrix);
+
+        // 🔍 DEBUG: 깊이 프리패스 결과 시각화 (옵션)
+        // 주석 해제하면 깊이 프리패스 직후 깊이를 그레이스케일로 볼 수 있음
+        //RenderSceneDepthVisualizePass(Camera);
+        // return; // 이후 렌더링 스킵하고 깊이만 확인
+
         RenderDirectionalLightPass(World);
         RenderPointLightPass(World);
         RenderSpotLightPass(World);
@@ -563,7 +593,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
                   pointLightCount, spotLightCount);
         OutputDebugStringA(lightMsg);
 
-        // Execute Tile-based Light Culling BEFORE base pass
+        // ✅ Step 2: Execute Tile-based Light Culling (이제 깊이 버퍼가 채워진 상태)
         OutputDebugStringA("[Renderer] Before ExecuteLightCulling check\n");
         if (LightCullingManager && bUseTiledCulling)
         {
@@ -668,7 +698,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         if (LightCullingManager && bUseTiledCulling && Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_TileCullingDebug))
         {
             OutputDebugStringA("[Renderer] Rendering tile culling debug pass...\n");
-            RenderTileCullingDebugPass();
+            RenderTileCullingDebugPass(Camera);
         }
 
         // Unbind light culling resources after base pass
@@ -1436,7 +1466,7 @@ ELightShadingModel URenderer::GetShadingModel() const
     return CurrentShadingModel;
 }
 
-void URenderer::RenderTileCullingDebugPass()
+void URenderer::RenderTileCullingDebugPass(ACameraActor* Camera)
 {
     // Set render state for full-screen overlay
     RHIDevice->OMSetBlendState(true); // Enable alpha blending
@@ -1452,6 +1482,22 @@ void URenderer::RenderTileCullingDebugPass()
 
     PrepareShader(TileCullingDebugShader);
 
+    // Upload camera info (Near/Far clip planes) for depth linearization
+    if (Camera)
+    {
+        CameraInfoBufferType CameraInfo;
+        CameraInfo.NearClip = Camera->GetCameraComponent()->GetNearClip();
+        CameraInfo.FarClip = Camera->GetCameraComponent()->GetFarClip();
+        UpdateSetCBuffer(CameraInfoBufferType(CameraInfo));
+    }
+
+    // Bind depth texture to pixel shader (t12)
+    ID3D11ShaderResourceView* DepthSRV = static_cast<D3D11RHI*>(RHIDevice)->GetDepthSRV();
+    RHIDevice->GetDeviceContext()->PSSetShaderResources(12, 1, &DepthSRV);
+
+    // Set sampler state
+    RHIDevice->PSSetDefaultSampler(0);
+
     // Set primitive topology for full-screen triangle
     RHIDevice->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1462,6 +1508,10 @@ void URenderer::RenderTileCullingDebugPass()
 
     // Draw full-screen triangle (3 vertices, no index buffer)
     RHIDevice->GetDeviceContext()->Draw(3, 0);
+
+    // Unbind depth SRV
+    ID3D11ShaderResourceView* nullSRV = nullptr;
+    RHIDevice->GetDeviceContext()->PSSetShaderResources(12, 1, &nullSRV);
 
     OutputDebugStringA("[Renderer] Tile culling debug pass complete\n");
 }

@@ -114,7 +114,7 @@ private:
     void RenderSpotLightPass(UWorld* World);     // 포스트: SpotLight 조명/가산
     void RenderOverlayPass(UWorld* World);      // 라인/텍스트/UI/디버그
     void RenderSceneDepthVisualizePass(ACameraActor* Camera);       // 포스트: SceneDepth 뷰 모드 (뎁스 버퍼 시각화)
-    void RenderTileCullingDebugPass();          // 포스트: Tile Culling 디버그 시각화 (풀스크린 오버레이)
+    void RenderTileCullingDebugPass(ACameraActor* Camera);          // 포스트: Tile Culling 디버그 시각화 (풀스크린 오버레이)
 
 
     // 2) 씬 렌더링 헬퍼 메소드들

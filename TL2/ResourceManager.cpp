@@ -422,7 +422,12 @@ void UResourceManager::InitShaderILMap()
     ShaderToInputLayoutMap["TextShader.hlsl"] = layout;
     layout.clear();
 
+    // DepthPrepassShader uses same layout as UberLit.hlsl (POSITION, NORMAL, COLOR, TEXCOORD, TANGENT)
     layout.Add({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+    layout.Add({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+    layout.Add({ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+    layout.Add({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+    layout.Add({ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 });
     ShaderToInputLayoutMap["DepthPrepassShader.hlsl"] = layout;
     layout.clear();
     ShaderToInputLayoutMap["DepthVisualizeShader.hlsl"] = layout;
