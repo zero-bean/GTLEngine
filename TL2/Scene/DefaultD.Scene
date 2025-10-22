@@ -1,0 +1,67 @@
+{
+  "Version" : 2,
+  "NextUUID" : 548,
+  "PerspectiveCamera" : {
+    "FOV" : [60.000000],
+    "FarClip" : [4000.000000],
+    "Location" : [-69.885582, 7.938577, 73.477982],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 43.299969, 18.900002]
+  },
+  "Actors" : [
+    {
+      "UUID" : 539,
+      "Type" : "AAmbientActor",
+      "Name" : "Snowy_0",
+      "RootComponentUUID" : 540
+    },
+    {
+      "UUID" : 541,
+      "Type" : "ADirectionalLightActor",
+      "Name" : "Directional Light_0",
+      "RootComponentUUID" : 542
+    }
+  ],
+  "Components" : [
+    {
+      "UUID" : 540,
+      "OwnerActorUUID" : 539,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [-0.000000, -0.000005, -180.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Minecraft/Snowy/Snowy.obj",
+      "Materials" : ["Stone", "Granite", "Diorite", "Andesite", "Grass_Block", "Dirt", "Stationary_Water", "Sand", "Gravel", "Iron_Ore", "Coal_Ore", "Spruce_Log", "Spruce_Leaves", "Sandstone", "Grass", "Dandelion", "Poppy", "Torch", "Chest", "Snow", "Ice", "Clay", "Sugar_Cane", "Pumpkin", "Tall_Seagrass", "Seagrass", "Copper_Ore"],
+      "MaterialNormalMapOverrides" : ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+    },
+    {
+      "UUID" : 542,
+      "OwnerActorUUID" : 541,
+      "ParentComponentUUID" : 0,
+      "Type" : "UDirectionalLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 543,
+      "OwnerActorUUID" : 541,
+      "ParentComponentUUID" : 542,
+      "Type" : "UGizmoArrowComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [0.250000, 0.250000, 1.000000]
+    },
+    {
+      "UUID" : 544,
+      "OwnerActorUUID" : 541,
+      "ParentComponentUUID" : 542,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    }
+  ]
+}
