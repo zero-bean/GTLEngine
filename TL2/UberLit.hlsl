@@ -260,7 +260,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     LightAccum directionalLight = (LightAccum) (0);
 
     #if LIGHTING_MODEL_PHONG
-        pointLight = ComputePointLights_Phong(CameraWorldPos, input.worldPosition, N, shininess);
+        //pointLight = ComputePointLights_Phong(CameraWorldPos, input.worldPosition, N, shininess);
         spotLight = ComputeSpotLights_Phong(CameraWorldPos, input.worldPosition, N, shininess);
         directionalLight = ComputeDirectionalLights_Phong(CameraWorldPos, input.worldPosition, N, shininess);        
     #elif  LIGHTING_MODEL_BLINN_PHONG

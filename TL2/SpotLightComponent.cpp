@@ -197,5 +197,6 @@ void USpotLightComponent::RenderDetails()
 	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
 	ImGui::Text("Preview:");
 	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● PointLight Active");
+	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "SpotLight Active");
 }
+
