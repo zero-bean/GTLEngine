@@ -11,6 +11,8 @@
 #include "RenderSettings.h"
 #include "EditorEngine.h"
 #include "PrimitiveComponent.h"
+#include "Clipboard/ClipboardManager.h"
+#include "InputManager.h"
 
 FVector FViewportClient::CameraAddPosition{};
 
@@ -33,6 +35,68 @@ void FViewportClient::Tick(float DeltaTime)
 		Camera->ProcessEditorCameraInput(DeltaTime);
 	}
 	MouseWheel(DeltaTime);
+	static UClipboardManager* ClipboardManager = NewObject<UClipboardManager>();
+
+	// 키보드 입력 처리 (Ctrl+C/V)
+	if (World)
+	{
+		UInputManager& InputManager = UInputManager::GetInstance();
+		USelectionManager* SelectionManager = World->GetSelectionManager();
+
+		// Ctrl 키가 눌려있는지 확인
+		bool bIsCtrlDown = InputManager.IsKeyDown(VK_CONTROL);
+
+		// Ctrl + C: 복사
+		if (bIsCtrlDown && InputManager.IsKeyPressed('C'))
+		{
+			if (SelectionManager)
+			{
+				// 선택된 Actor가 있으면 Actor 복사
+				if (SelectionManager->IsActorMode() && SelectionManager->GetSelectedActor())
+				{
+					ClipboardManager->CopyActor(SelectionManager->GetSelectedActor());
+				}
+				// Component가 선택되어 있으면 Component 복사
+				else if (!SelectionManager->IsActorMode() && SelectionManager->GetSelectedActorComponent())
+				{
+					UActorComponent* SelectedComp = SelectionManager->GetSelectedActorComponent();
+					AActor* OwnerActor = Cast<AActor>(SelectedComp->GetOwner());
+					if (OwnerActor)
+					{
+						ClipboardManager->CopyComponent(SelectedComp, OwnerActor);
+					}
+				}
+			}
+		}
+		// Ctrl + V: 붙여넣기
+		else if (bIsCtrlDown && InputManager.IsKeyPressed('V'))
+		{
+			// Actor 붙여넣기
+			if (ClipboardManager->HasCopiedActor())
+			{
+				// 오프셋 적용 (1미터씩 이동)
+				FVector Offset(1.0f, 1.0f, 1.0f);
+				AActor* NewActor = ClipboardManager->PasteActorToWorld(World, Offset);
+
+				if (NewActor && SelectionManager)
+				{
+					// 새로 생성된 Actor 선택
+					SelectionManager->ClearSelection();
+					SelectionManager->SelectActor(NewActor);
+				}
+			}
+			// Component 붙여넣기
+			else if (ClipboardManager->HasCopiedComponent() && SelectionManager)
+			{
+				// 현재 선택된 Actor에 Component 추가
+				AActor* SelectedActor = SelectionManager->GetSelectedActor();
+				if (SelectedActor)
+				{
+					ClipboardManager->PasteComponentToActor(SelectedActor);
+				}
+			}
+		}
+	}
 }
 
 void FViewportClient::Draw(FViewport* Viewport)
@@ -206,7 +270,8 @@ void FViewportClient::MouseButtonDown(FViewport* Viewport, int32 X, int32 Y, int
 		}
 	}
 	else if (Button == 1)
-	{//우클릭시 
+	{
+		//우클릭시 
 		bIsMouseRightButtonDown = true;
 		MouseLastX = X;
 		MouseLastY = Y;
