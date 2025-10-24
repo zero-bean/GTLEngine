@@ -7,21 +7,27 @@
 IMPLEMENT_CLASS(UProjectileMovementComponent)
 
 BEGIN_PROPERTIES(UProjectileMovementComponent)
-    MARK_AS_COMPONENT("ProjectileComponent", "발사체 컴포넌트를 추가합니다")
+    MARK_AS_COMPONENT("발사체 무브먼트 컴포넌트", "발사체 무브먼트 컴포넌트를 추가합니다")
+    // 물리 속성
     ADD_PROPERTY(float, Gravity, "발사체", true, "발사체 중력 가속도입니다")
-    ADD_PROPERTY(FVector, Velocity, "속도", true, "초기 속도입니다")
     ADD_PROPERTY(float, InitialSpeed, "발사체", true, "발사체 초기 속도입니다")
     ADD_PROPERTY(float, MaxSpeed, "발사체", true, "발사체 최대 속도입니다")
+    // 생명주기 속성
     ADD_PROPERTY(bool, bAutoDestroyWhenLifespanExceeded, "발사체", true, "생명 시간 초과시 발사체를 파괴합니다")
     ADD_PROPERTY(float, ProjectileLifespan, "발사체", true, "발사체 생명 시간입니다")
+    ADD_PROPERTY(float, CurrentLifetime, "발사체", false, "현재 생존 시간입니다 (읽기 전용)")
+    // 호밍 속성
     ADD_PROPERTY(bool, bIsHomingProjectile, "호밍", true, "호밍 기능을 활성화합니다")
     ADD_PROPERTY(float, HomingAccelerationMagnitude, "호밍", true, "호밍 가속도 크기입니다")
-    
+    // 회전 속성
+    ADD_PROPERTY(bool, bRotationFollowsVelocity, "발사체", true, "속도 방향으로 회전합니다")
+    // 상태
+    ADD_PROPERTY(bool, bIsActive, "발사체", true, "발사체가 활성화 상태입니다")
 END_PROPERTIES()
 
 UProjectileMovementComponent::UProjectileMovementComponent()
-    : Gravity(-9.80f)  // Z-Up 좌표계에서 중력은 Z방향으로 -980 cm/s^2
-    , InitialSpeed(30.0f)
+    : Gravity(-9.8f)
+    , InitialSpeed(3.0f)  // 초기 속도
     , MaxSpeed(0.0f)  // 0 = 제한 없음
     , HomingTargetActor(nullptr)
     , HomingTargetComponent(nullptr)
@@ -80,7 +86,7 @@ void UProjectileMovementComponent::TickComponent(float DeltaSeconds)
     }
 
     // 3. 중력 적용
-    Velocity += Gravity * DeltaSeconds;
+    Velocity.Z += Gravity * DeltaSeconds;
 
     // 4. 가속도 적용
     Velocity += Acceleration * DeltaSeconds;
@@ -197,13 +203,26 @@ void UProjectileMovementComponent::UpdateRotationFromVelocity()
     if (Velocity.IsZero())
         return;
 
-    // 속도 방향으로 회전 계산
-    FVector Direction = Velocity;
-    Direction.Normalize();
+    // TODO: 속도 방향으로 회전 기능 구현 필요
+    // FQuat::FromDirectionVector() 또는 유사한 유틸리티 함수가 필요합니다
+    // 현재는 수학 라이브러리 구현 대기 중으로 비활성화되어 있습니다
+}
 
-    // DirectX Z-Up 좌표계에서 방향 벡터로부터 회전 생성
-    // Forward = 속도 방향
-    //FQuat NewRotation = FQuat::FromDirectionVector(Direction);
+void UProjectileMovementComponent::DuplicateSubObjects()
+{
+    Super::DuplicateSubObjects();
 
-   // UpdatedComponent->SetWorldRotation(NewRotation);
+    // 호밍 타겟은 일시적인 런타임 참조이므로
+    // 게임 로직에서 필요시 다시 설정하도록 nullptr로 리셋
+    HomingTargetActor = nullptr;
+    HomingTargetComponent = nullptr;
+
+    // 런타임 상태 초기화
+    CurrentLifetime = 0.0f;
+    bIsActive = true;
+}
+
+void UProjectileMovementComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+    Super::Serialize(bInIsLoading, InOutHandle);
 }

@@ -13,8 +13,7 @@ class UMovementComponent : public UActorComponent
 {
 public:
     DECLARE_CLASS(UMovementComponent, UActorComponent)
-    DECLARE_DUPLICATE(UMovementComponent)
-    
+    GENERATED_REFLECTION_BODY()
     UMovementComponent();
 
 protected:
@@ -42,7 +41,10 @@ public:
     void SetUpdateOnlyIfRendered(bool bNewUpdateOnlyIfRendered) { bUpdateOnlyIfRendered = bNewUpdateOnlyIfRendered; }
     bool GetUpdateOnlyIfRendered() const { return bUpdateOnlyIfRendered; }
 
+    DECLARE_DUPLICATE(UMovementComponent)
     void DuplicateSubObjects() override;
+
+    virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
 protected:
     // [PIE] Duplicate 복사 대상

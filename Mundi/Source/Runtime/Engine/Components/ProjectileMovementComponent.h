@@ -15,7 +15,6 @@ class UProjectileMovementComponent : public UMovementComponent
 public:
     DECLARE_CLASS(UProjectileMovementComponent, UMovementComponent)
     GENERATED_REFLECTION_BODY()
-    DECLARE_DUPLICATE(UProjectileMovementComponent)
     UProjectileMovementComponent();
 
 protected:
@@ -69,6 +68,11 @@ public:
     void ResetLifetime() { CurrentLifetime = 0.0f; }
     float GetCurrentLifetime() const { return CurrentLifetime; }
 
+    DECLARE_DUPLICATE(UProjectileMovementComponent)
+    void DuplicateSubObjects() override;
+
+    virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+
 protected:
     // 내부 헬퍼 함수
     void LimitVelocity();
@@ -79,7 +83,6 @@ protected:
     // [PIE] 값 복사
 
     // === 물리 속성 ===
-    // 중력 가속도 (cm/s^2), Z-Up 좌표계에서 Z가 음수면 아래로 떨어짐
     float Gravity;
 
     // 발사 시 초기 속도 (cm/s)

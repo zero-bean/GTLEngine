@@ -32,7 +32,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     }
     //float zView = (2.0 * Near * Far) / (Far + Near - depth * (Far - Near));
     float NormalizedDepth = saturate((zView - Near) / (Far - Near));
-    float FinalColor = float4(NormalizedDepth, NormalizedDepth, NormalizedDepth, 1.0f);
+    float4 FinalColor = float4(NormalizedDepth, NormalizedDepth, NormalizedDepth, 1.0f);
 
     return FinalColor;
 }

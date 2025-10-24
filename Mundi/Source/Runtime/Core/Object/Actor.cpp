@@ -173,7 +173,6 @@ void AActor::RegisterAllComponents(UWorld* InWorld)
 	{
 		RootComponent = CreateDefaultSubobject<USceneComponent>("DefaultSceneComponent");
 		RootComponent->RegisterComponent(InWorld);
-
 	}
 }
 

@@ -6,7 +6,7 @@
 IMPLEMENT_CLASS(URotatingMovementComponent)
 
 BEGIN_PROPERTIES(URotatingMovementComponent)
-    MARK_AS_COMPONENT("RotatingMovement", "게임에서 액터를 회전하는 컴포넌트를 추가합니다")
+    MARK_AS_COMPONENT("회전 무브먼트 컴포넌트", "게임에서 액터를 회전하는 컴포넌트를 추가합니다")
     ADD_PROPERTY(FVector, RotationRate, "회전 컴포넌트", true, "회전 속도입니다")
     ADD_PROPERTY(FVector, PivotTranslation, "회전 컴포넌트", true, "피벗 오프셋입니다")
     ADD_PROPERTY(bool, bRotationInLocalSpace, "회전 컴포넌트", true, "로컬에서 회전합니다")
@@ -111,4 +111,17 @@ void URotatingMovementComponent::SetPivotTranslation(const FVector& NewPivotTran
 void URotatingMovementComponent::SetRotationInLocalSpace(bool bNewRotationInLocalSpace)
 {
     bRotationInLocalSpace = bNewRotationInLocalSpace;
+}
+
+void URotatingMovementComponent::DuplicateSubObjects()
+{
+    Super::DuplicateSubObjects();
+
+    // 모든 멤버가 값 타입이므로 추가적인 깊은 복사 불필요
+    // UpdatedComponent는 부모 클래스에서 처리됨
+}
+
+void URotatingMovementComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+    Super::Serialize(bInIsLoading, InOutHandle);
 }

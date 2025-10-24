@@ -12,7 +12,6 @@ class URotatingMovementComponent : public UMovementComponent
 public:
     DECLARE_CLASS(URotatingMovementComponent, UMovementComponent)
     GENERATED_REFLECTION_BODY()
-    DECLARE_DUPLICATE(URotatingMovementComponent)
     URotatingMovementComponent();
 
 protected:
@@ -32,7 +31,10 @@ public:
     void SetRotationInLocalSpace(bool bNewRotationInLocalSpace);
     bool IsRotationInLocalSpace() const { return bRotationInLocalSpace; }
 
-    
+    DECLARE_DUPLICATE(URotatingMovementComponent)
+    void DuplicateSubObjects() override;
+
+    virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
 protected:
     // [PIE] 값 복사
