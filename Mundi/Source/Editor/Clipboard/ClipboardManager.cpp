@@ -33,6 +33,8 @@ void UClipboardManager::CopyActor(AActor* Actor)
 
 void UClipboardManager::CopyComponent(UActorComponent* Component, AActor* OwnerActor)
 {
+    // 컴포넌트 복붙 실패했음.. 도전 하고 싶으면 하세요
+
     if (!Component || !OwnerActor)
     {
         return;
@@ -79,6 +81,8 @@ AActor* UClipboardManager::PasteActorToWorld(UWorld* World, const FVector& Offse
 
 bool UClipboardManager::PasteComponentToActor(AActor* TargetActor)
 {
+    // 컴포넌트 복붙 실패했음.. 도전 하고 싶으면 하세요
+
     if (!TargetActor || !CopiedComponent)
     {
         return false;

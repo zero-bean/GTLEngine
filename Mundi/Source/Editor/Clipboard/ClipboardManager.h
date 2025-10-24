@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Object.h"
 #include "UEContainer.h"
 
@@ -7,25 +7,17 @@ class AActor;
 class UActorComponent;
 class UWorld;
 
-/**
- * ClipboardManager
- * - Actor 및 Component 복사/붙여넣기를 관리하는 싱글톤 클래스
- * - Ctrl + C/V 기능 지원
- */
 class UClipboardManager : public UObject
 {
 public:
     DECLARE_CLASS(UClipboardManager, UObject)
 
-    /** === 복사 기능 === */
     void CopyActor(AActor* Actor);
     void CopyComponent(UActorComponent* Component, AActor* OwnerActor);
 
-    /** === 붙여넣기 기능 === */
     AActor* PasteActorToWorld(UWorld* World, const FVector& OffsetFromOriginal);
     bool PasteComponentToActor(AActor* TargetActor);
 
-    /** === 클립보드 상태 === */
     bool HasCopiedActor() const { return CopiedActor != nullptr; }
     bool HasCopiedComponent() const { return CopiedComponent != nullptr; }
     void ClearClipboard();

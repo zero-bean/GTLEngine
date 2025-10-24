@@ -56,16 +56,6 @@ void FViewportClient::Tick(float DeltaTime)
 				{
 					ClipboardManager->CopyActor(SelectionManager->GetSelectedActor());
 				}
-				// Component가 선택되어 있으면 Component 복사
-				else if (!SelectionManager->IsActorMode() && SelectionManager->GetSelectedActorComponent())
-				{
-					UActorComponent* SelectedComp = SelectionManager->GetSelectedActorComponent();
-					AActor* OwnerActor = Cast<AActor>(SelectedComp->GetOwner());
-					if (OwnerActor)
-					{
-						ClipboardManager->CopyComponent(SelectedComp, OwnerActor);
-					}
-				}
 			}
 		}
 		// Ctrl + V: 붙여넣기
@@ -83,16 +73,6 @@ void FViewportClient::Tick(float DeltaTime)
 					// 새로 생성된 Actor 선택
 					SelectionManager->ClearSelection();
 					SelectionManager->SelectActor(NewActor);
-				}
-			}
-			// Component 붙여넣기
-			else if (ClipboardManager->HasCopiedComponent() && SelectionManager)
-			{
-				// 현재 선택된 Actor에 Component 추가
-				AActor* SelectedActor = SelectionManager->GetSelectedActor();
-				if (SelectedActor)
-				{
-					ClipboardManager->PasteComponentToActor(SelectedActor);
 				}
 			}
 		}
