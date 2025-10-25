@@ -27,6 +27,7 @@ public:
 	UINT GetWidth() const { return Width; }
 	UINT GetHeight() const { return Height; }
 	UINT GetArraySize() const { return ArraySize; }
+	const D3D11_VIEWPORT& GetViewport() const { return ShadowViewport; }
 
 private:
 	// Shadow map dimensions

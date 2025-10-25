@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "SpotLightComponent.h"
+#include "ShadowViewProjection.h"
 #include "BillboardComponent.h"
 #include "Gizmo/GizmoArrowComponent.h"
 
@@ -107,25 +108,14 @@ FSpotLightInfo USpotLightComponent::GetLightInfo() const
 	// Calculate Light View-Projection matrix for shadow mapping
 	if (Info.bCastShadow && Info.ShadowMapIndex != 0xFFFFFFFF)
 	{
-		// Light View matrix
-		FVector LightPos = GetWorldLocation();
-		FVector LightDir = GetDirection();
-		FVector LightUp = FVector(0, 1, 0);
-		if (FMath::Abs(FVector::Dot(LightDir, LightUp)) > 0.99f)
-		{
-			LightUp = FVector(1, 0, 0);
-		}
-		FMatrix LightView = FMatrix::LookAtLH(LightPos, LightPos + LightDir, LightUp);
+		// FShadowViewProjection 헬퍼 사용하여 중복 제거
+		FShadowViewProjection ShadowVP = FShadowViewProjection::CreateForSpotLight(
+			GetWorldLocation(),
+			GetDirection(),
+			GetOuterConeAngle() * 2.0f,  // 전체 FOV
+			GetAttenuationRadius());
 
-		// Light Projection matrix
-		float FOV = GetOuterConeAngle() * 2.0f;
-		float AspectRatio = 1.0f; // Shadow map is square
-		float NearPlane = 0.1f;
-		float FarPlane = GetAttenuationRadius();
-		FMatrix LightProj = FMatrix::PerspectiveFovLH(DegreesToRadians(FOV), AspectRatio, NearPlane, FarPlane);
-
-		// Combined Light View-Projection matrix
-		Info.LightViewProjection = LightView * LightProj;
+		Info.LightViewProjection = ShadowVP.ViewProjection;
 	}
 	else
 	{

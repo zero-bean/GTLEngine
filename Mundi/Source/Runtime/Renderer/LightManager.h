@@ -148,8 +148,11 @@ private:
     uint32 SpotLightNum = 0;
 
     // Shadow mapping resources
-    FShadowMap* ShadowMapArray; // Single shadow map array for all shadow-casting spotlights
+    FShadowMap* ShadowMapArray = nullptr; // Single shadow map array for all shadow-casting spotlights
     TMap<USpotLightComponent*, int32> LightToShadowMapIndex; // Map light to shadow map index
+
+    // Shadow 설정
+    FShadowConfiguration ShadowConfig;
 };
 
 template<> void FLightManager::RegisterLight<UAmbientLightComponent>(UAmbientLightComponent* LightComponent);

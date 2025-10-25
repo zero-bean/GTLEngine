@@ -486,20 +486,10 @@ void FSceneRenderer::RenderShadowPass()
 		// 4-2. LightManager에게 섀도우 맵 렌더 시작 요청
 		//      -> DSV 바인딩, LightView/LightProj 행렬 계산 및 반환
 		FMatrix LightView, LightProj;
-		int32 ShadowMapIndex = GWorld->GetLightManager()->BeginShadowMapRender(
-			RHIDevice, SpotLight, LightView, LightProj);
+		int32 ShadowMapIndex = GWorld->GetLightManager()->BeginShadowMapRender(RHIDevice, SpotLight, LightView, LightProj);
 
 		if (ShadowMapIndex < 0)
 			continue;
-
-		D3D11_VIEWPORT ShadowViewport = {};
-		ShadowViewport.TopLeftX = 0.0f;
-		ShadowViewport.TopLeftY = 0.0f;
-		ShadowViewport.Width = 1024.0f;   // FShadowMap::Initialize의 width와 일치
-		ShadowViewport.Height = 1024.0f;  // FShadowMap::Initialize의 height와 일치
-		ShadowViewport.MinDepth = 0.0f;
-		ShadowViewport.MaxDepth = 1.0f;
-		RHIDevice->GetDeviceContext()->RSSetViewports(1, &ShadowViewport);
 
 		// 4-3. ViewProj 버퍼 업데이트 (라이트 공간 행렬)
 		ViewProjBufferType ViewProjBuffer;

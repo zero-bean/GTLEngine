@@ -7,17 +7,20 @@
 #include "D3D11RHI.h"
 #include "ShadowMap.h"
 #include "SceneComponent.h"
+#include "ShadowViewProjection.h"
 
 #define NUM_POINT_LIGHT_MAX 256
 #define NUM_SPOT_LIGHT_MAX 256
-#define MAX_SHADOW_CASTING_LIGHTS 10
 
 FLightManager::~FLightManager()
 {
 	Release();
 }
-void FLightManager::Initialize(D3D11RHI* RHIDevice)
+void FLightManager::Initialize(D3D11RHI* RHIDevice, const FShadowConfiguration& InShadowConfig)
 {
+	// Shadow 설정 저장
+	ShadowConfig = InShadowConfig;
+
 	if (!PointLightBuffer)
 	{
 		RHIDevice->CreateStructuredBuffer(sizeof(FPointLightInfo), NUM_POINT_LIGHT_MAX, nullptr, &PointLightBuffer);
@@ -29,11 +32,11 @@ void FLightManager::Initialize(D3D11RHI* RHIDevice)
 		RHIDevice->CreateStructuredBufferSRV(SpotLightBuffer, &SpotLightBufferSRV);
 	}
 
-	// Initialize shadow map array
+	// Shadow map array 초기화 (ShadowConfig 사용)
 	if (!ShadowMapArray)
 	{
 		ShadowMapArray = new FShadowMap();
-		ShadowMapArray->Initialize(RHIDevice, 1024, 1024, MAX_SHADOW_CASTING_LIGHTS);
+		ShadowMapArray->Initialize(RHIDevice, ShadowConfig.ShadowMapResolution, ShadowConfig.ShadowMapResolution, ShadowConfig.MaxShadowCastingLights);
 	}
 }
 void FLightManager::Release()
@@ -76,7 +79,8 @@ void FLightManager::UpdateLightBuffer(D3D11RHI* RHIDevice)
 	{
 		if (!PointLightBuffer)
 		{
-			Initialize(RHIDevice);
+			// Lazy initialization with default shadow configuration
+			Initialize(RHIDevice, FShadowConfiguration::GetPlatformDefault());
 		}
 
 		FLightBufferType LightBuffer{};
@@ -164,15 +168,15 @@ void FLightManager::AssignShadowMapIndices(D3D11RHI* RHIDevice, const TArray<USp
 	int32 CurrentIndex = 0;
 	for (USpotLightComponent* Light : VisibleSpotLights)
 	{
-		// Case A. 비활성화 혹은 존재하지 않는다면 쉐도우 렌더링에 제외합니다.
+		// 비활성화 혹은 존재하지 않는다면 쉐도우 렌더링에 제외합니다.
 		if (!Light || !Light->GetIsCastShadows())
 		{
 			Light->SetShadowMapIndex(-1);
 			continue;
 		}
 
-		// Case B. 쉐도우 렌더 수 상한선에 도달하면 쉐도우 렌더링에 제외합니다.
-		if (CurrentIndex >= MAX_SHADOW_CASTING_LIGHTS)
+		// 쉐도우 렌더 수 상한선에 도달하면 쉐도우 렌더링에 제외합니다.
+		if (CurrentIndex >= static_cast<int32>(ShadowConfig.MaxShadowCastingLights))
 		{
 			Light->SetShadowMapIndex(-1);
 			continue;
@@ -194,22 +198,15 @@ int32 FLightManager::BeginShadowMapRender(D3D11RHI* RHI, USpotLightComponent* Li
 
 	int32 Index = LightToShadowMapIndex[Light];
 
-	// 라이트 공간 View 행렬 계산 (월드 좌표 사용!)
-	FVector LightPos = Light->GetWorldLocation();  // ✓ 월드 좌표로 수정
-	FVector LightDir = Light->GetDirection();
-	FVector LightUp = FVector(0, 1, 0);
-	if (FMath::Abs(FVector::Dot(LightDir, LightUp)) > 0.99f)
-	{
-		LightUp = FVector(1, 0, 0);
-	}
-	OutLightView = FMatrix::LookAtLH(LightPos, LightPos + LightDir, LightUp);
+	// FShadowViewProjection 헬퍼 사용하여 중복 제거
+	FShadowViewProjection ShadowVP = FShadowViewProjection::CreateForSpotLight(
+		Light->GetWorldLocation(),
+		Light->GetDirection(),
+		Light->GetOuterConeAngle() * 2.0f,  // 전체 FOV
+		Light->GetAttenuationRadius());
 
-	// 라이트 공간 Projection 행렬 계산
-	float FOV = Light->GetOuterConeAngle() * 2.0f;
-	float AspectRatio = 1.0f; // 섀도우 맵은 정사각형
-	float NearPlane = 0.1f;
-	float FarPlane = Light->GetAttenuationRadius();
-	OutLightProj = FMatrix::PerspectiveFovLH(DegreesToRadians(FOV), AspectRatio, NearPlane, FarPlane);
+	OutLightView = ShadowVP.View;
+	OutLightProj = ShadowVP.Projection;
 
 	// 실제 섀도우 맵 리소스(DSV) 바인딩
 	ShadowMapArray->BeginRender(RHI, Index);
@@ -390,7 +387,7 @@ int32 FLightManager::CreateShadowMapForLight(D3D11RHI* RHIDevice, USpotLightComp
 
 	// Check if we have reached the maximum number of shadow-casting lights
 	int32 Index = LightToShadowMapIndex.Num();
-	if (Index >= MAX_SHADOW_CASTING_LIGHTS)
+	if (Index >= static_cast<int32>(ShadowConfig.MaxShadowCastingLights))
 	{
 		// Cannot create more shadow maps
 		return -1;
