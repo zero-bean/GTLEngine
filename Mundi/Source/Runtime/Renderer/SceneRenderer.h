@@ -95,10 +95,13 @@ private:
 	/** @brief 타일 기반 라이트 컬링을 수행하고 Structured Buffer를 업데이트합니다. */
 	void PerformTileLightCulling();
 
+	/** @brief 섀도우 맵을 렌더링하는 패스입니다. */
+	void RenderShadowPass();
+
 	/** @brief 불투명(Opaque) 객체들을 렌더링하는 패스입니다. */
 	void RenderOpaquePass(EViewModeIndex InRenderViewMode);
 
-	void DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, bool bClearListAfterDraw);
+	void DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, bool bClearListAfterDraw, bool bIsShadowPass = false);
 
 	/** @brief 데칼(Decal)을 렌더링하는 패스입니다. */
 	void RenderDecalPass();

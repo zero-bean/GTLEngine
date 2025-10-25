@@ -250,6 +250,22 @@ void D3D11RHI::CreateSamplerState()
 	PointClampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	HR = Device->CreateSamplerState(&PointClampDesc, &PointClampSamplerState);
+
+	// Shadow Comparison Sampler (for shadow mapping with PCF)
+	D3D11_SAMPLER_DESC ShadowComparisonDesc = {};
+	ShadowComparisonDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT; // PCF filtering
+	ShadowComparisonDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	ShadowComparisonDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	ShadowComparisonDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	ShadowComparisonDesc.BorderColor[0] = 1.0f; // Outside shadow map = lit
+	ShadowComparisonDesc.BorderColor[1] = 1.0f;
+	ShadowComparisonDesc.BorderColor[2] = 1.0f;
+	ShadowComparisonDesc.BorderColor[3] = 1.0f;
+	ShadowComparisonDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL; // Pass if occluder depth <= sample depth
+	ShadowComparisonDesc.MinLOD = 0;
+	ShadowComparisonDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	HR = Device->CreateSamplerState(&ShadowComparisonDesc, &ShadowComparisonSamplerState);
 }
 
 HRESULT D3D11RHI::CreateIndexBuffer(ID3D11Device* device, const FMeshData* meshData, ID3D11Buffer** outBuffer)
@@ -322,6 +338,10 @@ void D3D11RHI::RSSetState(ERasterizerMode ViewModeIndex)
 
 	case ERasterizerMode::Decal:
 		DeviceContext->RSSetState(DecalRasterizerState);
+        break;
+
+	case ERasterizerMode::Shadow:
+		DeviceContext->RSSetState(ShadowRasterizerState);
         break;
 
 	default:
@@ -631,6 +651,19 @@ void D3D11RHI::CreateRasterizerState()
     DecalRasterizerDesc.DepthBiasClamp = 0.0f; // 바이어스 최댓값 (0.0f는 제한 없음)
 
     Device->CreateRasterizerState(&DecalRasterizerDesc, &DecalRasterizerState);
+
+    // Shadow acne 방지를 위한 쉐도우 전용 래스터라이저 상태 생성
+    D3D11_RASTERIZER_DESC ShadowRasterizerDesc = {};
+    ShadowRasterizerDesc.FillMode = D3D11_FILL_SOLID;
+    ShadowRasterizerDesc.CullMode = D3D11_CULL_BACK;
+    ShadowRasterizerDesc.DepthClipEnable = TRUE;
+
+    // Shadow acne 방지를 위한 DepthBias 설정
+    ShadowRasterizerDesc.DepthBias = 10;              // 양수 = 라이트에서 멀어지는 방향
+    ShadowRasterizerDesc.SlopeScaledDepthBias = 1.0f;   // 경사에 비례한 바이어스
+    ShadowRasterizerDesc.DepthBiasClamp = 0.0f;         // 바이어스 제한 없음
+
+    Device->CreateRasterizerState(&ShadowRasterizerDesc, &ShadowRasterizerState);
 }
 
 void D3D11RHI::CreateConstantBuffer(ID3D11Buffer** ConstantBuffer, uint32 Size)
@@ -675,6 +708,11 @@ void D3D11RHI::ReleaseSamplerState()
         PointClampSamplerState->Release();
         PointClampSamplerState = nullptr;
 	}
+    if (ShadowComparisonSamplerState)
+    {
+        ShadowComparisonSamplerState->Release();
+        ShadowComparisonSamplerState = nullptr;
+    }
 }
 
 void D3D11RHI::ReleaseBlendState()
@@ -712,6 +750,11 @@ void D3D11RHI::ReleaseRasterizerState()
     {
         NoCullRasterizerState->Release();
         NoCullRasterizerState = nullptr;
+    }
+    if (ShadowRasterizerState)
+    {
+        ShadowRasterizerState->Release();
+        ShadowRasterizerState = nullptr;
     }
     DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 }

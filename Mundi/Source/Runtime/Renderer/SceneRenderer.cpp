@@ -80,8 +80,16 @@ void FSceneRenderer::Render()
 		View->ViewMode == EViewModeIndex::VMI_Lit_Lambert ||
 		View->ViewMode == EViewModeIndex::VMI_Lit_Phong)
 	{
+		// 1. 섀도우 패스: 라이트 관점에서 depth 렌더링
+		RenderShadowPass();
+
+		// 2. 라이트 버퍼 업데이트 및 섀도우 맵 바인딩
+		GWorld->GetLightManager()->SetDirtyFlag();
 		GWorld->GetLightManager()->UpdateLightBuffer(RHIDevice);	//라이트 구조체 버퍼 업데이트, 바인딩
+		GWorld->GetLightManager()->BindShadowMaps(RHIDevice);		//섀도우 맵 텍스처 바인딩 (t5)
 		PerformTileLightCulling();	// 타일 기반 라이트 컬링 수행
+
+		// 3. 메인 렌더링
 		RenderLitPath();
 		RenderPostProcessingPasses();	// 후처리 체인 실행
 		RenderTileCullingDebug();	// 타일 컬링 디버그 시각화 draw
@@ -433,6 +441,122 @@ void FSceneRenderer::PerformTileLightCulling()
 		}
 	}
 }
+
+void FSceneRenderer::RenderShadowPass()
+{
+	// Step 1: 섀도우 캐스팅 라이트에 인덱스 할당 (LightManager에게 위임)
+	GWorld->GetLightManager()->AssignShadowMapIndices(RHIDevice, SceneLocals.SpotLights);
+
+	// Step 2: Shadow Depth 셰이더 로드
+	UShader* ShadowDepthShader = UResourceManager::GetInstance().Load<UShader>("Shaders/Materials/ShadowDepth.hlsl");
+	if (!ShadowDepthShader)
+	{
+		UE_LOG("RenderShadowPass: Failed to load ShadowDepth shader");
+		return;
+	}
+
+	// 셰이더 컴파일
+	TArray<FShaderMacro> EmptyMacros;
+	FShaderVariant* ShadowShaderVariant = ShadowDepthShader->GetOrCompileShaderVariant(RHIDevice->GetDevice(), EmptyMacros);
+	if (!ShadowShaderVariant)
+	{
+		UE_LOG("RenderShadowPass: Failed to compile ShadowDepth shader");
+		return;
+	}
+
+	// Step 3: 현재 렌더 타겟 및 뷰포트 저장 (복구용)
+	ID3D11RenderTargetView* PrevRTV = nullptr;
+	ID3D11DepthStencilView* PrevDSV = nullptr;
+	RHIDevice->GetDeviceContext()->OMGetRenderTargets(1, &PrevRTV, &PrevDSV);
+
+	D3D11_VIEWPORT PrevViewport;
+	UINT NumViewports = 1;
+	RHIDevice->GetDeviceContext()->RSGetViewports(&NumViewports, &PrevViewport);
+
+	// Step 4: 섀도우를 캐스팅하는 각 라이트에 대해 루프
+	for (USpotLightComponent* SpotLight : SceneLocals.SpotLights)
+	{
+		// 4-1. 유효성 및 섀도우 캐스팅 여부 확인
+		if (!SpotLight || 
+			!SpotLight->IsVisible() || 
+			!SpotLight->GetOwner()->IsActorVisible() || 
+			!SpotLight->GetIsCastShadows())
+			continue;
+
+		// 4-2. LightManager에게 섀도우 맵 렌더 시작 요청
+		//      -> DSV 바인딩, LightView/LightProj 행렬 계산 및 반환
+		FMatrix LightView, LightProj;
+		int32 ShadowMapIndex = GWorld->GetLightManager()->BeginShadowMapRender(
+			RHIDevice, SpotLight, LightView, LightProj);
+
+		if (ShadowMapIndex < 0)
+			continue;
+
+		D3D11_VIEWPORT ShadowViewport = {};
+		ShadowViewport.TopLeftX = 0.0f;
+		ShadowViewport.TopLeftY = 0.0f;
+		ShadowViewport.Width = 1024.0f;   // FShadowMap::Initialize의 width와 일치
+		ShadowViewport.Height = 1024.0f;  // FShadowMap::Initialize의 height와 일치
+		ShadowViewport.MinDepth = 0.0f;
+		ShadowViewport.MaxDepth = 1.0f;
+		RHIDevice->GetDeviceContext()->RSSetViewports(1, &ShadowViewport);
+
+		// 4-3. ViewProj 버퍼 업데이트 (라이트 공간 행렬)
+		ViewProjBufferType ViewProjBuffer;
+		ViewProjBuffer.View = LightView;
+		ViewProjBuffer.Proj = LightProj;
+		ViewProjBuffer.InvView = LightView.InverseAffine();
+		ViewProjBuffer.InvProj = LightProj.InversePerspectiveProjection();
+		RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
+
+
+		// 4-4. 메시 수집 (쉐도우 패스용 로컬 배열 사용)
+		TArray<FMeshBatchElement> ShadowMeshBatches;
+		for (UMeshComponent* MeshComponent : Proxies.Meshes)
+		{
+			MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
+		}
+
+		// 4-5. 셰이더 오버라이드 (ShadowDepth 셰이더로 변경)
+		for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
+		{
+			BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
+			BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
+			BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
+		}
+
+		// 4-6. 그리기 (bIsShadowPass=true로 설정하여 DepthStencilState 덮어쓰기 방지)
+		DrawMeshBatches(ShadowMeshBatches, true, true);
+
+		// 4-7. 섀도우 맵 렌더 종료
+		GWorld->GetLightManager()->EndShadowMapRender(RHIDevice);
+	}
+
+	// Step 5: 렌더 타겟 및 뷰포트 복구
+	RHIDevice->GetDeviceContext()->OMSetRenderTargets(1, &PrevRTV, PrevDSV);
+	RHIDevice->GetDeviceContext()->RSSetViewports(1, &PrevViewport);
+
+	// 릴리스
+	if (PrevRTV) PrevRTV->Release();
+	if (PrevDSV) PrevDSV->Release();
+
+	// Step 6: ViewProj 버퍼를 카메라의 것으로 복구
+		// RenderShadowPass에서 라이트의 VP로 덮어썼던 b1 버퍼를
+		// 다시 메인 카메라의 VP로 설정합니다.
+	FMatrix InvView = View->ViewMatrix.InverseAffine();
+	FMatrix InvProjection;
+	if (View->ProjectionMode == ECameraProjectionMode::Perspective)
+	{
+		InvProjection = View->ProjectionMatrix.InversePerspectiveProjection();
+	}
+	else
+	{
+		InvProjection = View->ProjectionMatrix.InverseOrthographicProjection();
+	}
+
+	ViewProjBufferType ViewProjBuffer = ViewProjBufferType(View->ViewMatrix, View->ProjectionMatrix, InvView, InvProjection);
+	RHIDevice->SetAndUpdateConstantBuffer(ViewProjBufferType(ViewProjBuffer));
+} 
 
 void FSceneRenderer::PerformFrustumCulling()
 {
@@ -908,12 +1032,16 @@ void FSceneRenderer::RenderOverayEditorPrimitivesPass()
 }
 
 // 수집한 Batch 그리기
-void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, bool bClearListAfterDraw)
+void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, bool bClearListAfterDraw, bool bIsShadowPass)
 {
 	if (InMeshBatches.IsEmpty()) return;
 
 	// RHI 상태 초기 설정 (Opaque Pass 기본값)
-	RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual); // 깊이 쓰기 ON
+	// Shadow Pass일 경우 FShadowMap::BeginRender()에서 이미 설정했으므로 덮어쓰지 않음
+	if (!bIsShadowPass)
+	{
+		RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual); // 깊이 쓰기 ON
+	}
 
 	// PS 리소스 초기화
 	ID3D11ShaderResourceView* nullSRVs[2] = { nullptr, nullptr };
@@ -940,10 +1068,15 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 	for (const FMeshBatchElement& Batch : InMeshBatches)
 	{
 		// --- 필수 요소 유효성 검사 ---
-		if (!Batch.VertexShader || !Batch.PixelShader || !Batch.VertexBuffer || !Batch.IndexBuffer || Batch.VertexStride == 0)
+		// Shadow Pass에서는 Pixel Shader가 없을 수 있음 (depth-only rendering)
+		bool bRequiresPixelShader = !bIsShadowPass;
+		if (!Batch.VertexShader ||
+			(bRequiresPixelShader && !Batch.PixelShader) ||
+			!Batch.VertexBuffer ||
+			!Batch.IndexBuffer ||
+			Batch.VertexStride == 0)
 		{
 			// 셰이더나 버퍼, 스트라이드 정보가 없으면 그릴 수 없음
-			UE_LOG("셰이더가 없는 컴포넌트가 있습니다!");
 			continue;
 		}
 

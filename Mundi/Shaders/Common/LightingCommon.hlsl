@@ -131,6 +131,49 @@ float CalculateExponentFalloff(float distance, float attenuationRadius, float fa
 }
 
 //================================================================================================
+// Shadow Mapping Functions
+//================================================================================================
+
+/**
+ * Sample shadow map for a specific spotlight
+ * Returns 0.0 if in shadow, 1.0 if lit
+ *
+ * @param shadowMapIndex - Index into shadow map array
+ * @param lightSpacePos - Position in light's clip space
+ */
+float SampleShadowMap(uint shadowMapIndex, float4 lightSpacePos)
+{
+    // Perspective divide to get NDC coordinates
+    float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+
+    // Convert NDC [-1, 1] to texture coordinates [0, 1]
+    float2 shadowTexCoord;
+    shadowTexCoord.x = projCoords.x * 0.5f + 0.5f;
+    shadowTexCoord.y = -projCoords.y * 0.5f + 0.5f; // Flip Y for D3D
+
+    // Check if position is outside shadow map bounds
+    if (shadowTexCoord.x < 0.0f || shadowTexCoord.x > 1.0f ||
+        shadowTexCoord.y < 0.0f || shadowTexCoord.y > 1.0f ||
+        projCoords.z < 0.0f || projCoords.z > 1.0f)
+    {
+        return 1.0f; // Outside shadow map = not shadowed
+    }
+
+    // Current depth in light space
+    float currentDepth = projCoords.z;
+
+    // Bias to prevent shadow acne
+    float bias = 0.005f;
+    currentDepth -= bias;
+
+    // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
+    float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
+    float shadow = g_ShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+
+    return shadow;
+}
+
+//================================================================================================
 // 통합 조명 계산 함수
 //================================================================================================
 
@@ -230,14 +273,23 @@ float3 CalculateSpotLight(FSpotLightInfo light, float3 worldPos, float3 normal, 
     // 두 감쇠를 결합
     float attenuation = distanceAttenuation * spotAttenuation;
 
+    // Shadow mapping (if this light casts shadows)
+    float shadow = 1.0f;
+    if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
+    {
+        // Transform world position to light space
+        float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.LightViewProjection);
+        shadow = SampleShadowMap(light.ShadowMapIndex, lightSpacePos);
+    }
+
     // Diffuse (light.Color는 이미 Intensity 포함)
-    float3 diffuse = CalculateDiffuse(lightDir, normal, light.Color, materialColor) * attenuation;
+    float3 diffuse = CalculateDiffuse(lightDir, normal, light.Color, materialColor) * attenuation * shadow;
 
     // Specular (선택사항)
     float3 specular = float3(0.0f, 0.0f, 0.0f);
     if (includeSpecular)
     {
-        specular = CalculateSpecular(lightDir, normal, viewDir, light.Color, specularPower) * attenuation;
+        specular = CalculateSpecular(lightDir, normal, viewDir, light.Color, specularPower) * attenuation * shadow;
     }
 
     return diffuse + specular;
