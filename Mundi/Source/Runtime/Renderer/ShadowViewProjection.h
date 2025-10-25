@@ -47,7 +47,7 @@ struct FShadowViewProjection
 		return Result;
 	}
 
-	// DirectionalLight용 Shadow VP 행렬 생성 (향후 확장용)
+	// DirectionalLight용 Shadow VP 행렬 생성 (여기서 만들어 쓰세요 영빈씨)
 	// @param Direction - 라이트 방향
 	// @param SceneBounds - 씬의 바운딩 박스
 	// @param ViewFrustum - 카메라 절두체
