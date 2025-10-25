@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include "ShadowConfiguration.h"
-
 class UAmbientLightComponent;
 class UDirectionalLightComponent;
 class UPointLightComponent;
@@ -67,44 +65,14 @@ public:
     FLightManager() = default;
     ~FLightManager();
 
-    void Initialize(D3D11RHI* RHIDevice, const FShadowConfiguration& InShadowConfig = FShadowConfiguration::GetPlatformDefault());
+    void Initialize(D3D11RHI* RHIDevice);
     void Release();
-
-    // Shadow 설정 가져오기
-    const FShadowConfiguration& GetShadowConfiguration() const { return ShadowConfig; }
 
     void UpdateLightBuffer(D3D11RHI* RHIDevice);
     void SetDirtyFlag();
 
-    /**
-    * @brief 매 프레임에 활성화된 스포트라이트 목록을 기반으로 섀도우 맵 인덱스를 할당합니다.
-    * @param VisibleSpotLights - SceneRenderer가 수집한, 현재 뷰에 보이는 스포트라이트 목록
-    */
-    void AssignShadowMapIndices(D3D11RHI* RHIDevice, const TArray<USpotLightComponent*>& VisibleSpotLights);
-
-    /**
-     * @brief 특정 라이트의 섀도우 맵 렌더링을 시작하고, 렌더링에 필요한 행렬을 반환합니다.
-     * @param RHI - RHI 디바이스
-     * @param Light - 렌더링할 스포트라이트
-     * @param OutLightView - (출력) 라이트의 뷰 행렬
-     * @param OutLightProj - (출력) 라이트의 투영 행렬
-     * @return 렌더링할 섀도우 맵 배열 인덱스. 할당되지 않았다면 -1.
-     */
-    int32 BeginShadowMapRender(D3D11RHI* RHI, USpotLightComponent* Light, FMatrix& OutLightView, FMatrix& OutLightProj);
-
-    /**
-     * @brief 섀도우 맵 렌더링을 종료합니다. (현재는 특별한 작업 없음, 추후 확장용)
-     */
-    void EndShadowMapRender(D3D11RHI* RHI);
-
     TArray<FPointLightInfo>& GetPointLightInfoList() { return PointLightInfoList; }
     TArray<FSpotLightInfo>& GetSpotLightInfoList() { return SpotLightInfoList; }
-
-    /**
-     * Bind shadow map textures to shader
-     * @param RHIDevice - D3D11 device interface
-     */
-    void BindShadowMaps(D3D11RHI* RHIDevice);
 
     template<typename T>
     void RegisterLight(T* LightComponent);
@@ -115,14 +83,6 @@ public:
 
     void ClearAllLightList();
 private:
-    /**
-     * Create shadow map for a specific spotlight
-     * @param RHIDevice - D3D11 device interface
-     * @param SpotLight - The spotlight component
-     * @return Shadow map index, or -1 if failed
-     */
-    int32 CreateShadowMapForLight(D3D11RHI* RHIDevice, USpotLightComponent* SpotLight);
-
     bool bHaveToUpdate = true;
     bool bPointLightDirty = true;
     bool bSpotLightDirty = true;
@@ -146,13 +106,6 @@ private:
     TSet<ULightComponent*> LightComponentList;
     uint32 PointLightNum = 0;
     uint32 SpotLightNum = 0;
-
-    // Shadow mapping resources
-    FShadowMap* ShadowMapArray = nullptr; // Single shadow map array for all shadow-casting spotlights
-    TMap<USpotLightComponent*, int32> LightToShadowMapIndex; // Map light to shadow map index
-
-    // Shadow 설정
-    FShadowConfiguration ShadowConfig;
 };
 
 template<> void FLightManager::RegisterLight<UAmbientLightComponent>(UAmbientLightComponent* LightComponent);
