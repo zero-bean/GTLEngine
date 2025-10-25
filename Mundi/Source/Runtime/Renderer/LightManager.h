@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "ShadowConfiguration.h"
+
 class UAmbientLightComponent;
 class UDirectionalLightComponent;
 class UPointLightComponent;
@@ -65,8 +67,11 @@ public:
     FLightManager() = default;
     ~FLightManager();
 
-    void Initialize(D3D11RHI* RHIDevice);
+    void Initialize(D3D11RHI* RHIDevice, const FShadowConfiguration& InShadowConfig = FShadowConfiguration::GetPlatformDefault());
     void Release();
+
+    // Shadow 설정 가져오기
+    const FShadowConfiguration& GetShadowConfiguration() const { return ShadowConfig; }
 
     void UpdateLightBuffer(D3D11RHI* RHIDevice);
     void SetDirtyFlag();

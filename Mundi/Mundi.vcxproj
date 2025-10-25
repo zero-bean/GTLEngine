@@ -212,6 +212,7 @@
     <ClCompile Include="Source\Runtime\Engine\GameFramework\SpotLightActor.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\LightManager.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\SceneView.cpp" />
+    <ClCompile Include="Source\Runtime\Renderer\ShadowConfiguration.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\ShadowMap.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\TileLightCuller.cpp" />
     <ClCompile Include="Source\Slate\Widgets\PropertyRenderer.cpp" />
@@ -469,6 +470,7 @@
     <ClInclude Include="Source\Runtime\Engine\Components\SpotLightComponent.h" />
     <ClInclude Include="Source\Runtime\Renderer\MeshBatchElement.h" />
     <ClInclude Include="Source\Runtime\Renderer\SceneView.h" />
+    <ClInclude Include="Source\Runtime\Renderer\ShadowConfiguration.h" />
     <ClInclude Include="Source\Runtime\Renderer\ShadowMap.h" />
     <ClInclude Include="Source\Runtime\Renderer\TileCullingStats.h" />
     <ClInclude Include="Source\Runtime\Renderer\TileLightCuller.h" />
