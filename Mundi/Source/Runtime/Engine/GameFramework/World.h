@@ -29,6 +29,7 @@ class UStaticMesh;
 class FOcclusionCullingManagerCPU;
 struct Frustum;
 struct FCandidateDrawable;
+class FShadowManager;
 
 class UWorld final : public UObject
 {
@@ -68,6 +69,7 @@ public:
     void SetLevel(std::unique_ptr<ULevel> InLevel);
     ULevel* GetLevel() const { return Level.get(); }
     FLightManager* GetLightManager() const { return LightManager.get(); }
+    FShadowManager* GetShadowManager() const { return ShadowManager.get(); }
 
     ACameraActor* GetCameraActor() { return MainCameraActor; }
     void SetCameraActor(ACameraActor* InCamera) 
@@ -114,6 +116,10 @@ private:
 
     /** === 라이트 매니저 ===*/
     std::unique_ptr<FLightManager> LightManager;
+
+    /** === 섀도우 매니저 ===*/
+    std::unique_ptr<FShadowManager> ShadowManager;
+
     // Object naming system
     TMap<FString, int32> ObjectTypeCounts;
 

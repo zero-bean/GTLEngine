@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "ShadowConfiguration.h"
 
@@ -6,7 +6,7 @@
 class D3D11RHI;
 class FShadowMap;
 class USpotLightComponent;
-class FMatrix;
+struct FMatrix;
 
 // Shadow 렌더링 컨텍스트
 // BeginShadowRender 호출 시 반환되는 정보

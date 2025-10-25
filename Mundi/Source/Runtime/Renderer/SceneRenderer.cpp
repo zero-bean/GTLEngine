@@ -40,6 +40,7 @@
 #include "ResourceManager.h"
 #include "TileLightCuller.h"
 #include "LineComponent.h"
+#include "ShadowManager.h"
 
 FSceneRenderer::FSceneRenderer(UWorld* InWorld, FSceneView* InView, URenderer* InOwnerRenderer)
 	: World(InWorld)
@@ -86,7 +87,7 @@ void FSceneRenderer::Render()
 		// 2. 라이트 버퍼 업데이트 및 섀도우 맵 바인딩
 		GWorld->GetLightManager()->SetDirtyFlag();
 		GWorld->GetLightManager()->UpdateLightBuffer(RHIDevice);	//라이트 구조체 버퍼 업데이트, 바인딩
-		GWorld->GetLightManager()->BindShadowMaps(RHIDevice);		//섀도우 맵 텍스처 바인딩 (t5)
+		GWorld->GetShadowManager()->BindShadowResources(RHIDevice);	//섀도우 맵 텍스처 바인딩 (t5)
 		PerformTileLightCulling();	// 타일 기반 라이트 컬링 수행
 
 		// 3. 메인 렌더링
@@ -444,8 +445,8 @@ void FSceneRenderer::PerformTileLightCulling()
 
 void FSceneRenderer::RenderShadowPass()
 {
-	// Step 1: 섀도우 캐스팅 라이트에 인덱스 할당 (LightManager에게 위임)
-	GWorld->GetLightManager()->AssignShadowMapIndices(RHIDevice, SceneLocals.SpotLights);
+	// Step 1: 섀도우 캐스팅 라이트에 인덱스 할당 (ShadowManager에게 위임)
+	GWorld->GetShadowManager()->AssignShadowIndices(RHIDevice, SceneLocals.SpotLights);
 
 	// Step 2: Shadow Depth 셰이더 로드
 	UShader* ShadowDepthShader = UResourceManager::GetInstance().Load<UShader>("Shaders/Materials/ShadowDepth.hlsl");
@@ -483,20 +484,18 @@ void FSceneRenderer::RenderShadowPass()
 			!SpotLight->GetIsCastShadows())
 			continue;
 
-		// 4-2. LightManager에게 섀도우 맵 렌더 시작 요청
+		// 4-2. ShadowManager에게 섀도우 맵 렌더 시작 요청
 		//      -> DSV 바인딩, LightView/LightProj 행렬 계산 및 반환
-		FMatrix LightView, LightProj;
-		int32 ShadowMapIndex = GWorld->GetLightManager()->BeginShadowMapRender(RHIDevice, SpotLight, LightView, LightProj);
-
-		if (ShadowMapIndex < 0)
+		FShadowRenderContext ShadowContext;
+		if (!GWorld->GetShadowManager()->BeginShadowRender(RHIDevice, SpotLight, ShadowContext))
 			continue;
 
 		// 4-3. ViewProj 버퍼 업데이트 (라이트 공간 행렬)
 		ViewProjBufferType ViewProjBuffer;
-		ViewProjBuffer.View = LightView;
-		ViewProjBuffer.Proj = LightProj;
-		ViewProjBuffer.InvView = LightView.InverseAffine();
-		ViewProjBuffer.InvProj = LightProj.InversePerspectiveProjection();
+		ViewProjBuffer.View = ShadowContext.LightView;
+		ViewProjBuffer.Proj = ShadowContext.LightProjection;
+		ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
+		ViewProjBuffer.InvProj = ShadowContext.LightProjection.InversePerspectiveProjection();
 		RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
 
 
@@ -519,7 +518,7 @@ void FSceneRenderer::RenderShadowPass()
 		DrawMeshBatches(ShadowMeshBatches, true, true);
 
 		// 4-7. 섀도우 맵 렌더 종료
-		GWorld->GetLightManager()->EndShadowMapRender(RHIDevice);
+		GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
 	}
 
 	// Step 5: 렌더 타겟 및 뷰포트 복구

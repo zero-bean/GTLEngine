@@ -43,6 +43,12 @@ void FShadowManager::Release()
 
 void FShadowManager::AssignShadowIndices(D3D11RHI* RHI, const TArray<USpotLightComponent*>& VisibleSpotLights)
 {
+	// Lazy initialization: 최초 호출 시 ShadowMap 초기화
+	if (!ShadowMapArray)
+	{
+		Initialize(RHI, FShadowConfiguration::GetPlatformDefault());
+	}
+
 	// 매 프레임 초기화 (Dynamic 환경)
 	LightToShadowIndex.clear();
 
@@ -72,6 +78,12 @@ void FShadowManager::AssignShadowIndices(D3D11RHI* RHI, const TArray<USpotLightC
 
 bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, USpotLightComponent* Light, FShadowRenderContext& OutContext)
 {
+	// ShadowMap이 초기화되지 않았다면 실패
+	if (!ShadowMapArray)
+	{
+		return false;
+	}
+
 	// 이 라이트가 Shadow Map을 할당받았는지 확인
 	if (!LightToShadowIndex.Contains(Light))
 	{
@@ -114,6 +126,10 @@ void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 		ID3D11ShaderResourceView* ShadowMapSRV = ShadowMapArray->GetSRV();
 		RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &ShadowMapSRV);
 	}
+
+	// Shadow Comparison Sampler를 슬롯 s2에 바인딩
+	ID3D11SamplerState* ShadowSampler = RHI->GetShadowComparisonSamplerState();
+	RHI->GetDeviceContext()->PSSetSamplers(2, 1, &ShadowSampler);
 }
 
 void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
@@ -121,6 +137,10 @@ void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
 	// Shadow Map 언바인딩
 	ID3D11ShaderResourceView* NullSRV = nullptr;
 	RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &NullSRV);
+
+	// Shadow Sampler 언바인딩
+	ID3D11SamplerState* NullSampler = nullptr;
+	RHI->GetDeviceContext()->PSSetSamplers(2, 1, &NullSampler);
 }
 
 int32 FShadowManager::GetShadowMapIndex(USpotLightComponent* Light) const

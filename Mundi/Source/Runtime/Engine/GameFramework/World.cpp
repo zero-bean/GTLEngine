@@ -24,6 +24,7 @@
 #include "Frustum.h"
 #include "Level.h"
 #include "LightManager.h"
+#include "ShadowManager.h"
 
 IMPLEMENT_CLASS(UWorld)
 
@@ -34,6 +35,7 @@ UWorld::UWorld()
 	//PIE의 경우 Initalize 없이 빈 Level 생성만 해야함
 	Level = std::make_unique<ULevel>();
 	LightManager = std::make_unique<FLightManager>();
+	ShadowManager = std::make_unique<FShadowManager>();
 
 }
 
