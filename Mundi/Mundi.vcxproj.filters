@@ -419,6 +419,9 @@
     <ClCompile Include="Source\Editor\Clipboard\ClipboardManager.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\ShadowConfiguration.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\ShadowMap.cpp" />
+    <ClCompile Include="Source\Runtime\Renderer\ShadowManager.cpp">
+      <Filter>Source\Runtime\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <!-- ThirdParty/ImGui Files -->
   <!-- Source Files -->
@@ -876,6 +879,9 @@
     <ClInclude Include="Source\Runtime\Renderer\ShadowConfiguration.h" />
     <ClInclude Include="Source\Runtime\Renderer\ShadowMap.h" />
     <ClInclude Include="Source\Runtime\Renderer\ShadowViewProjection.h">
+      <Filter>Source\Runtime\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Renderer\ShadowManager.h">
       <Filter>Source\Runtime\Renderer</Filter>
     </ClInclude>
   </ItemGroup>

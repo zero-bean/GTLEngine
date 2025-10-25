@@ -213,6 +213,7 @@
     <ClCompile Include="Source\Runtime\Renderer\LightManager.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\SceneView.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\ShadowConfiguration.cpp" />
+    <ClCompile Include="Source\Runtime\Renderer\ShadowManager.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\ShadowMap.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\TileLightCuller.cpp" />
     <ClCompile Include="Source\Slate\Widgets\PropertyRenderer.cpp" />
@@ -471,6 +472,7 @@
     <ClInclude Include="Source\Runtime\Renderer\MeshBatchElement.h" />
     <ClInclude Include="Source\Runtime\Renderer\SceneView.h" />
     <ClInclude Include="Source\Runtime\Renderer\ShadowConfiguration.h" />
+    <ClInclude Include="Source\Runtime\Renderer\ShadowManager.h" />
     <ClInclude Include="Source\Runtime\Renderer\ShadowMap.h" />
     <ClInclude Include="Source\Runtime\Renderer\ShadowViewProjection.h" />
     <ClInclude Include="Source\Runtime\Renderer\TileCullingStats.h" />
