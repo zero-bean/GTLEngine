@@ -1156,8 +1156,8 @@ inline FMatrix FMatrix::LookAtLH(const FVector& Eye, const FVector& At, const FV
 	View.Rows[1] = _mm_set_ps(0.0f, ZAxis.Y, YAxis.Y, XAxis.Y);
 	View.Rows[2] = _mm_set_ps(0.0f, ZAxis.Z, YAxis.Z, XAxis.Z);
 	View.Rows[3] = _mm_set_ps(1.0f, -FVector::Dot(Eye, ZAxis), -FVector::Dot(Eye, YAxis), -FVector::Dot(Eye, XAxis));
-
-	return View.Transpose(); // Transpose to get the final row-major matrix
+	
+	return View; // Transpose to get the final row-major matrix
 }
 
 inline FMatrix FMatrix::PerspectiveFovLH(float FovY, float Aspect, float Zn, float Zf)

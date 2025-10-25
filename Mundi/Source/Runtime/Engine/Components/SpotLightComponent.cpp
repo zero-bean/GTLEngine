@@ -115,7 +115,7 @@ FSpotLightInfo USpotLightComponent::GetLightInfo() const
 		{
 			LightUp = FVector(1, 0, 0);
 		}
-		FMatrix LightView = FMatrix::LookAtLH(LightPos, LightPos + LightDir, LightUp).Transpose();
+		FMatrix LightView = FMatrix::LookAtLH(LightPos, LightPos + LightDir, LightUp);
 
 		// Light Projection matrix
 		float FOV = GetOuterConeAngle() * 2.0f;

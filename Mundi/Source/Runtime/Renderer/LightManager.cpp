@@ -10,7 +10,7 @@
 
 #define NUM_POINT_LIGHT_MAX 256
 #define NUM_SPOT_LIGHT_MAX 256
-#define MAX_SHADOW_CASTING_LIGHTS 4
+#define MAX_SHADOW_CASTING_LIGHTS 10
 
 FLightManager::~FLightManager()
 {
@@ -202,7 +202,7 @@ int32 FLightManager::BeginShadowMapRender(D3D11RHI* RHI, USpotLightComponent* Li
 	{
 		LightUp = FVector(1, 0, 0);
 	}
-	OutLightView = FMatrix::LookAtLH(LightPos, LightPos + LightDir, LightUp).Transpose();
+	OutLightView = FMatrix::LookAtLH(LightPos, LightPos + LightDir, LightUp);
 
 	// 라이트 공간 Projection 행렬 계산
 	float FOV = Light->GetOuterConeAngle() * 2.0f;

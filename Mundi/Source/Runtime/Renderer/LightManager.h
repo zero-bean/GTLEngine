@@ -128,10 +128,6 @@ private:
     ID3D11ShaderResourceView* PointLightBufferSRV = nullptr;
     ID3D11ShaderResourceView* SpotLightBufferSRV = nullptr;
 
-    // Shadow mapping resources
-    FShadowMap* ShadowMapArray; // Single shadow map array for all shadow-casting spotlights
-    TMap<USpotLightComponent*, int32> LightToShadowMapIndex; // Map light to shadow map index
-
     TArray<UAmbientLightComponent*> AmbientLightList;
     TArray<UDirectionalLightComponent*> DIrectionalLightList;
     TArray<UPointLightComponent*> PointLightList;
@@ -145,6 +141,10 @@ private:
     TSet<ULightComponent*> LightComponentList;
     uint32 PointLightNum = 0;
     uint32 SpotLightNum = 0;
+
+    // Shadow mapping resources
+    FShadowMap* ShadowMapArray; // Single shadow map array for all shadow-casting spotlights
+    TMap<USpotLightComponent*, int32> LightToShadowMapIndex; // Map light to shadow map index
 };
 
 template<> void FLightManager::RegisterLight<UAmbientLightComponent>(UAmbientLightComponent* LightComponent);
