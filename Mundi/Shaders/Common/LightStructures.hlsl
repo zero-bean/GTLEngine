@@ -44,5 +44,8 @@ struct FSpotLightInfo
     float AttenuationRadius; // 4 bytes - 감쇠 반경
     float FalloffExponent;  // 4 bytes - 예술적 제어를 위한 감쇠 지수
     uint bUseInverseSquareFalloff; // 4 bytes - uint32 (true = 물리 기반, false = 지수 기반)
-    float Padding;         // 4 bytes - 정렬을 위한 패딩 (Attenuation 제거됨)
+    uint bCastShadow;       // 4 bytes - 섀도우 캐스팅 여부
+    uint ShadowMapIndex;    // 4 bytes - 섀도우 맵 인덱스 (-1이면 섀도우 없음)
+    float3 Padding;          // 12 bytes - 패딩
+    row_major float4x4 LightViewProjection; // 64 bytes - 라이트 공간 변환 행렬
 };

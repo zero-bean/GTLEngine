@@ -5,9 +5,13 @@
 #include "SpotLightComponent.h"
 #include "PointLightComponent.h"
 #include "D3D11RHI.h"
+#include "ShadowMap.h"
+#include "SceneComponent.h"
 
 #define NUM_POINT_LIGHT_MAX 256
 #define NUM_SPOT_LIGHT_MAX 256
+#define MAX_SHADOW_CASTING_LIGHTS 4
+
 FLightManager::~FLightManager()
 {
 	Release();
@@ -23,6 +27,13 @@ void FLightManager::Initialize(D3D11RHI* RHIDevice)
 	{
 		RHIDevice->CreateStructuredBuffer(sizeof(FSpotLightInfo), NUM_SPOT_LIGHT_MAX, nullptr, &SpotLightBuffer);
 		RHIDevice->CreateStructuredBufferSRV(SpotLightBuffer, &SpotLightBufferSRV);
+	}
+
+	// Initialize shadow map array
+	if (!ShadowMapArray)
+	{
+		ShadowMapArray = new FShadowMap();
+		ShadowMapArray->Initialize(RHIDevice, 1024, 1024, MAX_SHADOW_CASTING_LIGHTS);
 	}
 }
 void FLightManager::Release()
@@ -48,6 +59,15 @@ void FLightManager::Release()
 		SpotLightBufferSRV->Release();
 		SpotLightBufferSRV = nullptr;
 	}
+
+	// Release shadow map array
+	if (ShadowMapArray)
+	{
+		ShadowMapArray->Release();
+		delete ShadowMapArray;
+		ShadowMapArray = nullptr;
+	}
+	LightToShadowMapIndex.clear();
 }
 
 void FLightManager::UpdateLightBuffer(D3D11RHI* RHIDevice)
@@ -135,6 +155,72 @@ void FLightManager::SetDirtyFlag()
 	bHaveToUpdate = true;
 	bPointLightDirty = true;
 	bSpotLightDirty = true;
+}
+
+void FLightManager::AssignShadowMapIndices(D3D11RHI* RHIDevice, const TArray<USpotLightComponent*>& VisibleSpotLights)
+{
+	LightToShadowMapIndex.clear(); // 매 프레임 초기화 (Dynamic 환경)
+
+	int32 CurrentIndex = 0;
+	for (USpotLightComponent* Light : VisibleSpotLights)
+	{
+		// Case A. 비활성화 혹은 존재하지 않는다면 쉐도우 렌더링에 제외합니다.
+		if (!Light || !Light->GetIsCastShadows())
+		{
+			Light->SetShadowMapIndex(-1);
+			continue;
+		}
+
+		// Case B. 쉐도우 렌더 수 상한선에 도달하면 쉐도우 렌더링에 제외합니다.
+		if (CurrentIndex >= MAX_SHADOW_CASTING_LIGHTS)
+		{
+			Light->SetShadowMapIndex(-1);
+			continue;
+		}
+
+		// 쉐도우 렌더링 목록에 포함합니다.
+		LightToShadowMapIndex.Add(Light, CurrentIndex);
+		Light->SetShadowMapIndex(CurrentIndex); // 라이트 컴포넌트 자체에도 인덱스 저장
+		CurrentIndex++;
+	}
+}
+
+int32 FLightManager::BeginShadowMapRender(D3D11RHI* RHI, USpotLightComponent* Light, FMatrix& OutLightView, FMatrix& OutLightProj)
+{
+	if (!LightToShadowMapIndex.Contains(Light))
+	{
+		return -1; // 이 라이트는 섀도우 맵이 할당되지 않음
+	}
+
+	int32 Index = LightToShadowMapIndex[Light];
+
+	// 라이트 공간 View 행렬 계산 (월드 좌표 사용!)
+	FVector LightPos = Light->GetWorldLocation();  // ✓ 월드 좌표로 수정
+	FVector LightDir = Light->GetDirection();
+	FVector LightUp = FVector(0, 1, 0);
+	if (FMath::Abs(FVector::Dot(LightDir, LightUp)) > 0.99f)
+	{
+		LightUp = FVector(1, 0, 0);
+	}
+	OutLightView = FMatrix::LookAtLH(LightPos, LightPos + LightDir, LightUp).Transpose();
+
+	// 라이트 공간 Projection 행렬 계산
+	float FOV = Light->GetOuterConeAngle() * 2.0f;
+	float AspectRatio = 1.0f; // 섀도우 맵은 정사각형
+	float NearPlane = 0.1f;
+	float FarPlane = Light->GetAttenuationRadius();
+	OutLightProj = FMatrix::PerspectiveFovLH(DegreesToRadians(FOV), AspectRatio, NearPlane, FarPlane);
+
+	// 실제 섀도우 맵 리소스(DSV) 바인딩
+	ShadowMapArray->BeginRender(RHI, Index);
+
+	return Index;
+}
+
+void FLightManager::EndShadowMapRender(D3D11RHI* RHI)
+{
+	// 현재는 BeginRender에서 DSV를 바인딩하므로 특별히 할 일은 없지만,
+	// 명시적인 상태 관리를 위해 남겨둡니다.
 }
 
 void FLightManager::ClearAllLightList()
@@ -292,4 +378,40 @@ template<> void FLightManager::UpdateLight<USpotLightComponent>(USpotLightCompon
 	}
 	bSpotLightDirty = true;
 	bHaveToUpdate = true;
+}
+
+int32 FLightManager::CreateShadowMapForLight(D3D11RHI* RHIDevice, USpotLightComponent* SpotLight)
+{
+	// Check if this light already has a shadow map
+	if (LightToShadowMapIndex.Contains(SpotLight))
+	{
+		return LightToShadowMapIndex[SpotLight];
+	}
+
+	// Check if we have reached the maximum number of shadow-casting lights
+	int32 Index = LightToShadowMapIndex.Num();
+	if (Index >= MAX_SHADOW_CASTING_LIGHTS)
+	{
+		// Cannot create more shadow maps
+		return -1;
+	}
+
+	// Assign next available array slot
+	LightToShadowMapIndex.Add(SpotLight, Index);
+
+	return Index;
+}
+
+void FLightManager::BindShadowMaps(D3D11RHI* RHIDevice)
+{
+	// Bind shadow map texture array to shader slot t5
+	if (ShadowMapArray)
+	{
+		ID3D11ShaderResourceView* SRV = ShadowMapArray->GetSRV();
+		RHIDevice->GetDeviceContext()->PSSetShaderResources(5, 1, &SRV);
+	}
+
+	// Bind shadow comparison sampler to shader slot s2
+	ID3D11SamplerState* ShadowSampler = RHIDevice->GetShadowComparisonSamplerState();
+	RHIDevice->GetDeviceContext()->PSSetSamplers(2, 1, &ShadowSampler);
 }

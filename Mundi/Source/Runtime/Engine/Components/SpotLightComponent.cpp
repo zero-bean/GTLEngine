@@ -100,7 +100,38 @@ FSpotLightInfo USpotLightComponent::GetLightInfo() const
 	Info.AttenuationRadius = GetAttenuationRadius();
 	Info.FalloffExponent = GetFalloffExponent(); // Always pass FalloffExponent (used when bUseInverseSquareFalloff = false)
 	Info.bUseInverseSquareFalloff = IsUsingInverseSquareFalloff() ? 1u : 0u;
-	Info.Padding = 0.0f; // 패딩 초기화
+	Info.bCastShadow = GetIsCastShadows() ? 1u : 0u;
+	Info.ShadowMapIndex = static_cast<uint32>(GetShadowMapIndex());
+	Info.Padding = 0; // 패딩 초기화
+
+	// Calculate Light View-Projection matrix for shadow mapping
+	if (Info.bCastShadow && Info.ShadowMapIndex != 0xFFFFFFFF)
+	{
+		// Light View matrix
+		FVector LightPos = GetWorldLocation();
+		FVector LightDir = GetDirection();
+		FVector LightUp = FVector(0, 1, 0);
+		if (FMath::Abs(FVector::Dot(LightDir, LightUp)) > 0.99f)
+		{
+			LightUp = FVector(1, 0, 0);
+		}
+		FMatrix LightView = FMatrix::LookAtLH(LightPos, LightPos + LightDir, LightUp).Transpose();
+
+		// Light Projection matrix
+		float FOV = GetOuterConeAngle() * 2.0f;
+		float AspectRatio = 1.0f; // Shadow map is square
+		float NearPlane = 0.1f;
+		float FarPlane = GetAttenuationRadius();
+		FMatrix LightProj = FMatrix::PerspectiveFovLH(DegreesToRadians(FOV), AspectRatio, NearPlane, FarPlane);
+
+		// Combined Light View-Projection matrix
+		Info.LightViewProjection = LightView * LightProj;
+	}
+	else
+	{
+		// Identity matrix if not casting shadows
+		Info.LightViewProjection = FMatrix::Identity();
+	}
 
 	return Info;
 }

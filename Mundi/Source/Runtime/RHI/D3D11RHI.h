@@ -177,6 +177,9 @@ public:
     // RTV Getters
     ID3D11RenderTargetView* GetBackBufferRTV() const { return BackBufferRTV; }
 
+    // Sampler State Getters
+    ID3D11SamplerState* GetShadowComparisonSamplerState() const { return ShadowComparisonSamplerState; }
+
 private:
 	void CreateDeviceAndSwapChain(HWND hWindow); // 여기서 디바이스, 디바이스 컨택스트, 스왑체인, 뷰포트를 초기화한다
 	void CreateFrameBuffer();
@@ -212,6 +215,7 @@ private:
 	ID3D11RasterizerState* WireFrameRasterizerState{};//
 	ID3D11RasterizerState* DecalRasterizerState{};//
 	ID3D11RasterizerState* NoCullRasterizerState{};//
+	ID3D11RasterizerState* ShadowRasterizerState{};//
 
 	ID3D11DepthStencilState* DepthStencilState{};
 	ID3D11DepthStencilState* DepthStencilStateLessEqualWrite = nullptr;      // 기본
@@ -254,6 +258,7 @@ private:
 	ID3D11SamplerState* DefaultSamplerState = nullptr;
 	ID3D11SamplerState* LinearClampSamplerState = nullptr;
 	ID3D11SamplerState* PointClampSamplerState = nullptr;
+	ID3D11SamplerState* ShadowComparisonSamplerState = nullptr;
 
 	UShader* PreShader = nullptr; // Shaders, Inputlayout
 

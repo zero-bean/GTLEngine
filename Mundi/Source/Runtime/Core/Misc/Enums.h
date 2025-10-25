@@ -341,7 +341,8 @@ enum class ERasterizerMode : uint32
     Solid,          // 면으로 채움 (기본값)
     Wireframe,      // 선으로 그림
     Solid_NoCull,   // 면으로 채우고, 뒷면 컬링 안 함(양면 그리기)
-    Decal           // 데칼 전용 상태 (Z-Fighting 방지용 DepthBias를 추가로 줌)
+    Decal,          // 데칼 전용 상태 (Z-Fighting 방지용 DepthBias를 추가로 줌)
+    Shadow          // 쉐도우 맵 렌더링 전용 (Shadow acne 방지용 DepthBias 적용)
 };
 
 // RHI가 사용할 RTV

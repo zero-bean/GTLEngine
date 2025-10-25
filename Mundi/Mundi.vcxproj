@@ -212,6 +212,7 @@
     <ClCompile Include="Source\Runtime\Engine\GameFramework\SpotLightActor.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\LightManager.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\SceneView.cpp" />
+    <ClCompile Include="Source\Runtime\Renderer\ShadowMap.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\TileLightCuller.cpp" />
     <ClCompile Include="Source\Slate\Widgets\PropertyRenderer.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp">
@@ -366,6 +367,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\Materials\ShadowDepth.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\Materials\UberLit.hlsl">
       <FileType>Document</FileType>
       <DeploymentContent>false</DeploymentContent>
@@ -464,6 +469,7 @@
     <ClInclude Include="Source\Runtime\Engine\Components\SpotLightComponent.h" />
     <ClInclude Include="Source\Runtime\Renderer\MeshBatchElement.h" />
     <ClInclude Include="Source\Runtime\Renderer\SceneView.h" />
+    <ClInclude Include="Source\Runtime\Renderer\ShadowMap.h" />
     <ClInclude Include="Source\Runtime\Renderer\TileCullingStats.h" />
     <ClInclude Include="Source\Runtime\Renderer\TileLightCuller.h" />
     <ClInclude Include="Source\Runtime\RHI\SwapGuard.h" />

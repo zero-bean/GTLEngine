@@ -31,6 +31,13 @@ StructuredBuffer<uint> g_TileLightIndices : register(t2);
 StructuredBuffer<FPointLightInfo> g_PointLightList : register(t3);
 StructuredBuffer<FSpotLightInfo> g_SpotLightList : register(t4);
 
+// --- Shadow Map Resources ---
+// t5: Shadow map texture array (각 인덱스는 스포트라이트의 섀도우 맵)
+Texture2DArray g_ShadowMaps : register(t5);
+
+// Shadow map sampler - comparison sampler for PCF
+SamplerComparisonState g_ShadowSampler : register(s2);
+
 // b11: 타일 컬링 설정 상수 버퍼
 cbuffer TileCullingBuffer : register(b11)
 {

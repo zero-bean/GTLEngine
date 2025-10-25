@@ -6,6 +6,8 @@ class UPointLightComponent;
 class USpotLightComponent;
 class ULightComponent;
 class D3D11RHI;
+class FShadowMap;
+class USceneComponent;
 
 enum class ELightType
 {
@@ -49,8 +51,11 @@ struct FSpotLightInfo
     float AttenuationRadius;    // 4 bytes
     float FalloffExponent;      // 4 bytes - Falloff exponent for artistic control
     uint32 bUseInverseSquareFalloff; // 4 bytes - true = physically accurate, false = exponent-based
-	float Padding;            // 4 bytes padding to reach 64 bytes (16-byte aligned)
-	// Total: 64 bytes
+    uint32 bCastShadow;         // 4 bytes - true = this light casts shadow
+    uint32 ShadowMapIndex;      // 4 bytes - index to shadow map array (-1 if no shadow)
+    FVector Padding;            // 4 bytes - padding
+    FMatrix LightViewProjection; // 64 bytes - Light space transformation matrix
+	// Total: 144 bytes
 };
 
 class FLightManager
@@ -66,8 +71,35 @@ public:
     void UpdateLightBuffer(D3D11RHI* RHIDevice);
     void SetDirtyFlag();
 
+    /**
+    * @brief 매 프레임에 활성화된 스포트라이트 목록을 기반으로 섀도우 맵 인덱스를 할당합니다.
+    * @param VisibleSpotLights - SceneRenderer가 수집한, 현재 뷰에 보이는 스포트라이트 목록
+    */
+    void AssignShadowMapIndices(D3D11RHI* RHIDevice, const TArray<USpotLightComponent*>& VisibleSpotLights);
+
+    /**
+     * @brief 특정 라이트의 섀도우 맵 렌더링을 시작하고, 렌더링에 필요한 행렬을 반환합니다.
+     * @param RHI - RHI 디바이스
+     * @param Light - 렌더링할 스포트라이트
+     * @param OutLightView - (출력) 라이트의 뷰 행렬
+     * @param OutLightProj - (출력) 라이트의 투영 행렬
+     * @return 렌더링할 섀도우 맵 배열 인덱스. 할당되지 않았다면 -1.
+     */
+    int32 BeginShadowMapRender(D3D11RHI* RHI, USpotLightComponent* Light, FMatrix& OutLightView, FMatrix& OutLightProj);
+
+    /**
+     * @brief 섀도우 맵 렌더링을 종료합니다. (현재는 특별한 작업 없음, 추후 확장용)
+     */
+    void EndShadowMapRender(D3D11RHI* RHI);
+
     TArray<FPointLightInfo>& GetPointLightInfoList() { return PointLightInfoList; }
     TArray<FSpotLightInfo>& GetSpotLightInfoList() { return SpotLightInfoList; }
+
+    /**
+     * Bind shadow map textures to shader
+     * @param RHIDevice - D3D11 device interface
+     */
+    void BindShadowMaps(D3D11RHI* RHIDevice);
 
     template<typename T>
     void RegisterLight(T* LightComponent);
@@ -78,6 +110,13 @@ public:
 
     void ClearAllLightList();
 private:
+    /**
+     * Create shadow map for a specific spotlight
+     * @param RHIDevice - D3D11 device interface
+     * @param SpotLight - The spotlight component
+     * @return Shadow map index, or -1 if failed
+     */
+    int32 CreateShadowMapForLight(D3D11RHI* RHIDevice, USpotLightComponent* SpotLight);
 
     bool bHaveToUpdate = true;
     bool bPointLightDirty = true;
@@ -88,6 +127,10 @@ private:
     ID3D11Buffer* SpotLightBuffer = nullptr;
     ID3D11ShaderResourceView* PointLightBufferSRV = nullptr;
     ID3D11ShaderResourceView* SpotLightBufferSRV = nullptr;
+
+    // Shadow mapping resources
+    FShadowMap* ShadowMapArray; // Single shadow map array for all shadow-casting spotlights
+    TMap<USpotLightComponent*, int32> LightToShadowMapIndex; // Map light to shadow map index
 
     TArray<UAmbientLightComponent*> AmbientLightList;
     TArray<UDirectionalLightComponent*> DIrectionalLightList;
