@@ -136,4 +136,113 @@ struct FShadowViewProjection
 		return Result;
 	}
 
+	// PointLight용 Cube Map Shadow VP 행렬 6개 생성
+	// @param Position - 라이트 월드 위치
+	// @param AttenuationRadius - 라이트 감쇠 반경 (Far plane으로 사용)
+	// @param NearPlane - Near clipping plane (기본값 0.1f)
+	// @return 6개의 VP 행렬 배열 (+X, -X, +Y, -Y, +Z, -Z 순서, DirectX Cube Face 순서)
+	static TArray<FShadowViewProjection> CreateForPointLightCube(
+		const FVector& Position,
+		float AttenuationRadius,
+		float NearPlane = 0.1f)
+	{
+		TArray<FShadowViewProjection> Results;
+		Results.Reserve(6);
+
+		// Cube Map의 6개 면에 대한 방향 및 Up 벡터
+		// DirectX Cube Map Face 순서: +X, -X, +Y, -Y, +Z, -Z
+		struct FCubeFace
+		{
+			FVector Direction;
+			FVector Up;
+		};
+
+		// Z-Up Left-Handed 좌표계에서 각 면의 방향과 Up 벡터
+		FCubeFace CubeFaces[6] =
+		{
+			{ FVector( 1,  0,  0), FVector(0, 0,  1) },  // +X (Right)
+			{ FVector(-1,  0,  0), FVector(0, 0,  1) },  // -X (Left)
+			{ FVector( 0,  1,  0), FVector(0, 0,  1) },  // +Y (Forward)
+			{ FVector( 0, -1,  0), FVector(0, 0,  1) },  // -Y (Back)
+			{ FVector( 0,  0,  1), FVector(0, 1,  0) },  // +Z (Up)
+			{ FVector( 0,  0, -1), FVector(0, 1,  0) }   // -Z (Down)
+		};
+
+		// 각 면에 대한 VP 행렬 생성
+		for (int i = 0; i < 6; i++)
+		{
+			FShadowViewProjection VP;
+
+			// View 행렬 생성
+			VP.View = FMatrix::LookAtLH(
+				Position,
+				Position + CubeFaces[i].Direction,
+				CubeFaces[i].Up);
+
+			// Projection 행렬 생성 (90도 FOV, 정사각형 aspect ratio)
+			VP.Projection = FMatrix::PerspectiveFovLH(
+				DegreesToRadians(90.0f),  // 90도 FOV
+				1.0f,                      // 정사각형 aspect ratio
+				NearPlane,
+				AttenuationRadius);
+
+			// ViewProjection 계산
+			VP.ViewProjection = VP.View * VP.Projection;
+
+			Results.Add(VP);
+		}
+
+		return Results;
+	}
+
+	// PointLight용 Paraboloid Shadow VP 행렬 2개 생성
+	// @param Position - 라이트 월드 위치
+	// @param AttenuationRadius - 라이트 감쇠 반경 (Far plane으로 사용)
+	// @param NearPlane - Near clipping plane (기본값 0.1f)
+	// @return 2개의 VP 행렬 배열 (전면 반구, 후면 반구 순서)
+	static TArray<FShadowViewProjection> CreateForPointLightParaboloid(
+		const FVector& Position,
+		float AttenuationRadius,
+		float NearPlane = 0.1f)
+	{
+		TArray<FShadowViewProjection> Results;
+		Results.Reserve(2);
+
+		// Paraboloid는 2개 반구: 전면(+Y), 후면(-Y)
+		FVector Directions[2] =
+		{
+			FVector(0, 1, 0),   // 전면 반구 (+Y Forward)
+			FVector(0, -1, 0)   // 후면 반구 (-Y Back)
+		};
+
+		FVector Up = FVector(0, 0, 1);  // Z-Up
+
+		for (int i = 0; i < 2; i++)
+		{
+			FShadowViewProjection VP;
+
+			// View 행렬 생성
+			VP.View = FMatrix::LookAtLH(
+				Position,
+				Position + Directions[i],
+				Up);
+
+			// Projection 행렬: Paraboloid 변환은 Vertex Shader에서 처리
+			// 여기서는 기본 Orthographic Projection 사용
+			float Size = AttenuationRadius * 2.0f;
+			VP.Projection = FMatrix::OrthoLH(
+				Size,
+				Size,
+				NearPlane,
+				AttenuationRadius);
+
+			// ViewProjection 계산
+			VP.ViewProjection = VP.View * VP.Projection;
+
+			Results.Add(VP);
+		}
+
+		return Results;
+	}
+
 };

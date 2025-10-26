@@ -40,8 +40,11 @@ struct FPointLightInfo
     float AttenuationRadius;    // 4 bytes (moved up to fill slot)
     float FalloffExponent;      // 4 bytes - Falloff exponent for artistic control
     uint32 bUseInverseSquareFalloff; // 4 bytes - true = physically accurate, false = exponent-based
-	FVector2D Padding;            // 8 bytes padding to reach 48 bytes (16-byte aligned)
-	// Total: 48 bytes
+	uint32 bCastShadow;         // 4 bytes - true = this light casts shadow
+	uint32 ShadowMapIndex;      // 4 bytes - index to shadow map array (-1 if no shadow)
+	uint32 bUseParaboloidMap;   // 4 bytes - true = use paraboloid map, false = use cube map
+	FVector2D Padding;          // 8 bytes - padding to reach 64 bytes (16-byte aligned)
+	// Total: 64 bytes
 };
 
 struct FSpotLightInfo
