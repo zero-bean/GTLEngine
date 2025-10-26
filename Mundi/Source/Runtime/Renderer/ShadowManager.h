@@ -1,12 +1,32 @@
 ﻿#pragma once
 
 #include "ShadowConfiguration.h"
+#include "ShadowMap.h"
 
 // Forward Declarations
 class D3D11RHI;
-class FShadowMap;
 class USpotLightComponent;
 struct FMatrix;
+
+/**
+ * @brief 쉐도우 캐스팅이 가능한 라이트들을 타입별로 그룹화한 구조체
+ */
+struct FShadowCastingLights
+{
+	const TArray<UDirectionalLightComponent*>& DirectionalLights;
+	const TArray<USpotLightComponent*>& SpotLights;
+	const TArray<UPointLightComponent*>& PointLights;
+
+	FShadowCastingLights(
+		const TArray<UDirectionalLightComponent*>& InDirectionalLights,
+		const TArray<USpotLightComponent*>& InSpotLights,
+		const TArray<UPointLightComponent*>& InPointLights)
+		: DirectionalLights(InDirectionalLights)
+		, SpotLights(InSpotLights)
+		, PointLights(InPointLights)
+	{
+	}
+};
 
 // Shadow 렌더링 컨텍스트
 // BeginShadowRender 호출 시 반환되는 정보
@@ -40,10 +60,12 @@ public:
 	// Shadow 시스템 해제
 	void Release();
 
-	// Shadow Map 인덱스 할당
-	// @param RHI - D3D11 RHI 디바이스
-	// @param VisibleSpotLights - 현재 뷰에 보이는 SpotLight 목록
-	void AssignShadowIndices(D3D11RHI* RHI, const TArray<USpotLightComponent*>& VisibleSpotLights);
+    /**
+    * @brief 매 프레임에 활성화된 라이트 목록을 기반으로 섀도우 맵 인덱스를 할당합니다.
+    * @param RHIDevice - RHI 디바이스
+    * @param ShadowLights - 타입별로 그룹화된 섀도우 캐스팅 라이트 구조체
+    */
+    void AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingLights& InLights);
 
 	// Shadow 렌더링 시작
 	// @param RHI - D3D11 RHI 디바이스
@@ -67,7 +89,8 @@ public:
 	// Query 메서드들
 	const FShadowConfiguration& GetShadowConfiguration() const { return Config; }
 	int32 GetShadowMapIndex(USpotLightComponent* Light) const;
-	FShadowMap* GetShadowMapArray() const { return ShadowMapArray; }
+	FShadowMap& GetSpotLightShadowMap() { return SpotLightShadowMap; }
+	const FShadowMap& GetSpotLightShadowMap() const { return SpotLightShadowMap; }
 
 private:
 	// RHI 디바이스 참조
@@ -76,9 +99,10 @@ private:
 	// Shadow 설정
 	FShadowConfiguration Config;
 
-	// Shadow Map 리소스
-	FShadowMap* ShadowMapArray;
+	// 초기화 플래그
+	bool bIsInitialized = false;
 
-	// 라이트 → Shadow Map Index 매핑
-	TMap<USpotLightComponent*, int32> LightToShadowIndex;
+	// Shadow Map 리소스
+	FShadowMap SpotLightShadowMap;
+	FShadowMap DirectionalLightShadowMap;
 };

@@ -446,7 +446,8 @@ void FSceneRenderer::PerformTileLightCulling()
 void FSceneRenderer::RenderShadowPass()
 {
 	// Step 1: 섀도우 캐스팅 라이트에 인덱스 할당 (ShadowManager에게 위임)
-	GWorld->GetShadowManager()->AssignShadowIndices(RHIDevice, SceneLocals.SpotLights);
+	FShadowCastingLights ShadowLights(SceneGlobals.DirectionalLights, SceneLocals.SpotLights, SceneLocals.PointLights);
+	GWorld->GetShadowManager()->AssignShadowMapIndices(RHIDevice, ShadowLights);
 
 	// Step 2: Shadow Depth 셰이더 로드
 	UShader* ShadowDepthShader = UResourceManager::GetInstance().Load<UShader>("Shaders/Materials/ShadowDepth.hlsl");

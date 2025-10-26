@@ -1,13 +1,13 @@
 ﻿#include "pch.h"
 #include "ShadowManager.h"
-#include "ShadowMap.h"
 #include "ShadowViewProjection.h"
 #include "SpotLightComponent.h"
+#include "DirectionalLightComponent.h"
+#include "PointLightComponent.h"
 #include "D3D11RHI.h"
 
 FShadowManager::FShadowManager()
 	: RHIDevice(nullptr)
-	, ShadowMapArray(nullptr)
 {
 }
 
@@ -18,79 +18,126 @@ FShadowManager::~FShadowManager()
 
 void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InConfig)
 {
+	if (bIsInitialized)
+	{
+		return;  // 이미 초기화되어 있으면 스킵
+	}
+
 	RHIDevice = RHI;
 	Config = InConfig;
 
 	// Shadow Map Array 초기화
-	if (!ShadowMapArray)
-	{
-		ShadowMapArray = new FShadowMap();
-		ShadowMapArray->Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxShadowCastingLights);
-	}
+	SpotLightShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxShadowCastingLights);
+	DirectionalLightShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxShadowCastingLights);
+
+	bIsInitialized = true;
 }
 
 void FShadowManager::Release()
 {
-	if (ShadowMapArray)
+	if (!bIsInitialized)
 	{
-		ShadowMapArray->Release();
-		delete ShadowMapArray;
-		ShadowMapArray = nullptr;
+		return;  // 초기화되지 않았으면 스킵
 	}
 
-	LightToShadowIndex.clear();
+	SpotLightShadowMap.Release();
+	DirectionalLightShadowMap.Release();
+
+	bIsInitialized = false;
 }
 
-void FShadowManager::AssignShadowIndices(D3D11RHI* RHI, const TArray<USpotLightComponent*>& VisibleSpotLights)
+void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingLights& InLights)
 {
 	// Lazy initialization: 최초 호출 시 ShadowMap 초기화
-	if (!ShadowMapArray)
+	if (!bIsInitialized)
 	{
 		Initialize(RHI, FShadowConfiguration::GetPlatformDefault());
 	}
 
 	// 매 프레임 초기화 (Dynamic 환경)
-	LightToShadowIndex.clear();
+	uint32 CurrentShadowIndex = 0;
 
-	int32 CurrentIndex = 0;
-	for (USpotLightComponent* Light : VisibleSpotLights)
+	// 1. DirectionalLight 처리
+	uint32 DirectionalLightCount = 0;
+	for (UDirectionalLightComponent* DirLight : InLights.DirectionalLights)
 	{
-		// 비활성화 혹은 존재하지 않는다면 쉐도우 렌더링에 제외
-		if (!Light || !Light->GetIsCastShadows())
+		// 유효성 검사
+		if (!DirLight ||
+			!DirLight->IsVisible() ||
+			!DirLight->GetOwner()->IsActorVisible() ||
+			!DirLight->GetIsCastShadows())
 		{
-			Light->SetShadowMapIndex(-1);
+			if (DirLight) { DirLight->SetShadowMapIndex(-1); }
 			continue;
 		}
 
-		// 쉐도우 렌더 수 상한선에 도달하면 쉐도우 렌더링에 제외
-		if (CurrentIndex >= static_cast<int32>(Config.MaxShadowCastingLights))
+		// Week08: 방향광은 1개만 지원
+		if (DirectionalLightCount >= 1)
 		{
-			Light->SetShadowMapIndex(-1);
+			DirLight->SetShadowMapIndex(-1);
 			continue;
 		}
 
-		// 쉐도우 렌더링 목록에 포함
-		LightToShadowIndex.Add(Light, CurrentIndex);
-		Light->SetShadowMapIndex(CurrentIndex);
-		CurrentIndex++;
+		DirLight->SetShadowMapIndex(CurrentShadowIndex);
+		CurrentShadowIndex++;
+		DirectionalLightCount++;
+	}
+
+	// 2. PointLight 처리
+	for (UPointLightComponent* PointLight : InLights.PointLights)
+	{
+		if (!PointLight ||
+			!PointLight->IsVisible() ||
+			!PointLight->GetOwner()->IsActorVisible() ||
+			!PointLight->GetIsCastShadows())
+		{
+			if (PointLight) { PointLight->SetShadowMapIndex(-1); }
+			continue;
+		}
+
+		// 쉐도우 맵 배열 상한선 검사
+		if (CurrentShadowIndex >= static_cast<int32>(Config.MaxShadowCastingLights))
+		{
+			PointLight->SetShadowMapIndex(-1);
+			continue;
+		}
+
+		// TODO
+	}
+
+	// 3. SpotLight 처리
+	for (USpotLightComponent* SpotLight : InLights.SpotLights)
+	{
+		// 유효성 검사
+		if (!SpotLight ||
+			!SpotLight->IsVisible() ||
+			!SpotLight->GetOwner()->IsActorVisible() ||
+			!SpotLight->GetIsCastShadows())
+		{
+			if (SpotLight) { SpotLight->SetShadowMapIndex(-1); }
+			continue;
+		}
+
+		// 쉐도우 맵 배열 상한선 검사
+		if (CurrentShadowIndex >= static_cast<int32>(Config.MaxShadowCastingLights))
+		{
+			SpotLight->SetShadowMapIndex(-1);
+			continue;
+		}
+
+		SpotLight->SetShadowMapIndex(CurrentShadowIndex);
+		CurrentShadowIndex++;
 	}
 }
 
 bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, USpotLightComponent* Light, FShadowRenderContext& OutContext)
 {
-	// ShadowMap이 초기화되지 않았다면 실패
-	if (!ShadowMapArray)
-	{
-		return false;
-	}
-
 	// 이 라이트가 Shadow Map을 할당받았는지 확인
-	if (!LightToShadowIndex.Contains(Light))
+	int32 Index = Light->GetShadowMapIndex();
+	if (Index < 0)
 	{
 		return false;
 	}
-
-	int32 Index = LightToShadowIndex[Light];
 
 	// FShadowViewProjection 헬퍼 사용하여 VP 행렬 계산
 	FShadowViewProjection ShadowVP = FShadowViewProjection::CreateForSpotLight(
@@ -105,27 +152,21 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, USpotLightComponent* Light
 	OutContext.ShadowMapIndex = Index;
 
 	// Shadow Map 렌더링 시작 (DSV 바인딩, Viewport 설정)
-	ShadowMapArray->BeginRender(RHI, Index);
+	SpotLightShadowMap.BeginRender(RHI, Index);
 
 	return true;
 }
 
 void FShadowManager::EndShadowRender(D3D11RHI* RHI)
 {
-	if (ShadowMapArray)
-	{
-		ShadowMapArray->EndRender(RHI);
-	}
+	SpotLightShadowMap.EndRender(RHI);
 }
 
 void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 {
 	// Shadow Map Texture Array를 셰이더 슬롯 t5에 바인딩
-	if (ShadowMapArray)
-	{
-		ID3D11ShaderResourceView* ShadowMapSRV = ShadowMapArray->GetSRV();
-		RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &ShadowMapSRV);
-	}
+	ID3D11ShaderResourceView* ShadowMapSRV = SpotLightShadowMap.GetSRV();
+	RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &ShadowMapSRV);
 
 	// Shadow Comparison Sampler를 슬롯 s2에 바인딩
 	ID3D11SamplerState* ShadowSampler = RHI->GetShadowComparisonSamplerState();
@@ -145,9 +186,5 @@ void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
 
 int32 FShadowManager::GetShadowMapIndex(USpotLightComponent* Light) const
 {
-	if (LightToShadowIndex.Contains(Light))
-	{
-		return LightToShadowIndex.FindRef(Light);
-	}
-	return -1;
+	return Light ? Light->GetShadowMapIndex() : -1;
 }
