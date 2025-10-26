@@ -163,9 +163,9 @@ float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     float currentDepth = projCoords.z;
 
     // Bias to prevent shadow acne
-    float bias = 0.005f;
+    float bias = 0.00001f;
     currentDepth -= bias;
-
+    
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
     float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
     float shadow = g_SpotLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
