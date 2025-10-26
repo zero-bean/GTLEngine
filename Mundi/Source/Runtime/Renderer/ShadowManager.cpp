@@ -30,6 +30,14 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 	SpotLightShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxShadowCastingLights);
 	DirectionalLightShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxShadowCastingLights);
 
+	// PointLight Shadow Map 초기화 (Config.MaxShadowCastingLights 사용)
+	// 주의: Cube Map은 메모리를 많이 사용함 (각 라이트당 6개 면)
+	// Cube Map: 각 라이트당 6개 면 필요
+	PointLightCubeShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxShadowCastingLights, true);
+
+	// Paraboloid Map: 각 라이트당 2개 반구 필요
+	PointLightParaboloidShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxShadowCastingLights * 2, false);
+
 	bIsInitialized = true;
 }
 
@@ -42,6 +50,8 @@ void FShadowManager::Release()
 
 	SpotLightShadowMap.Release();
 	DirectionalLightShadowMap.Release();
+	PointLightCubeShadowMap.Release();
+	PointLightParaboloidShadowMap.Release();
 
 	bIsInitialized = false;
 }
@@ -84,6 +94,7 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 	}
 
 	// 2. PointLight 처리
+	uint32 PointLightCount = 0;
 	for (UPointLightComponent* PointLight : InLights.PointLights)
 	{
 		if (!PointLight ||
@@ -95,14 +106,16 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 			continue;
 		}
 
-		// 쉐도우 맵 배열 상한선 검사
-		if (CurrentShadowIndex >= static_cast<int32>(Config.MaxShadowCastingLights))
+		// 섀도우맵 배열 상한선 검사 (Config 설정 사용)
+		if (PointLightCount >= Config.MaxShadowCastingLights)
 		{
 			PointLight->SetShadowMapIndex(-1);
 			continue;
 		}
 
-		// TODO
+		// 섀도우맵 인덱스 할당 (PointLight는 별도 카운터 사용)
+		PointLight->SetShadowMapIndex(PointLightCount);
+		PointLightCount++;
 	}
 
 	// 3. SpotLight 처리
@@ -187,10 +200,79 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent
 	return true;
 }
 
+bool FShadowManager::BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, FShadowRenderContext& OutContext)
+{
+	// 이 라이트가 Shadow Map을 할당받았는지 확인
+	int32 Index = Light->GetShadowMapIndex();
+	if (Index < 0)
+	{
+		return false;
+	}
+
+	// Cube Face 인덱스 유효성 검사
+	if (CubeFaceIndex >= 6)
+	{
+		return false;
+	}
+
+	// FShadowViewProjection 헬퍼 사용하여 6개 VP 행렬 계산
+	TArray<FShadowViewProjection> ShadowVPs = FShadowViewProjection::CreateForPointLightCube(
+		Light->GetWorldLocation(),
+		Light->GetAttenuationRadius());
+
+	// 해당 Cube Face의 VP 행렬 사용
+	FShadowViewProjection& ShadowVP = ShadowVPs[CubeFaceIndex];
+
+	// 출력 컨텍스트 설정
+	OutContext.LightView = ShadowVP.View;
+	OutContext.LightProjection = ShadowVP.Projection;
+	OutContext.ShadowMapIndex = Index;
+
+	// Cube Shadow Map 렌더링 시작
+	// ArrayIndex = (LightIndex * 6) + CubeFaceIndex
+	uint32 ArrayIndex = (Index * 6) + CubeFaceIndex;
+	PointLightCubeShadowMap.BeginRender(RHI, ArrayIndex);
+
+	return true;
+}
+
+bool FShadowManager::BeginShadowRenderParaboloid(D3D11RHI* RHI, UPointLightComponent* Light, bool bFrontHemisphere, FShadowRenderContext& OutContext)
+{
+	// 이 라이트가 Shadow Map을 할당받았는지 확인
+	int32 Index = Light->GetShadowMapIndex();
+	if (Index < 0)
+	{
+		return false;
+	}
+
+	// FShadowViewProjection 헬퍼 사용하여 2개 VP 행렬 계산
+	TArray<FShadowViewProjection> ShadowVPs = FShadowViewProjection::CreateForPointLightParaboloid(
+		Light->GetWorldLocation(),
+		Light->GetAttenuationRadius());
+
+	// 전면(0) 또는 후면(1) 반구 선택
+	uint32 HemisphereIndex = bFrontHemisphere ? 0 : 1;
+	FShadowViewProjection& ShadowVP = ShadowVPs[HemisphereIndex];
+
+	// 출력 컨텍스트 설정
+	OutContext.LightView = ShadowVP.View;
+	OutContext.LightProjection = ShadowVP.Projection;
+	OutContext.ShadowMapIndex = Index;
+
+	// Paraboloid Shadow Map 렌더링 시작
+	// ArrayIndex = (LightIndex * 2) + HemisphereIndex
+	uint32 ArrayIndex = (Index * 2) + HemisphereIndex;
+	PointLightParaboloidShadowMap.BeginRender(RHI, ArrayIndex);
+
+	return true;
+}
+
 void FShadowManager::EndShadowRender(D3D11RHI* RHI)
 {
 	SpotLightShadowMap.EndRender(RHI);
 	DirectionalLightShadowMap.EndRender(RHI);
+	PointLightCubeShadowMap.EndRender(RHI);
+	PointLightParaboloidShadowMap.EndRender(RHI);
 }
 
 void FShadowManager::BindShadowResources(D3D11RHI* RHI)
