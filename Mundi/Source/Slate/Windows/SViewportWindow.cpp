@@ -1468,6 +1468,16 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 				ImGui::SetTooltip("타일 기반 라이트 컬링 통계를 표시합니다.");
 			}
 
+			bool bShadowMapStats = UStatsOverlayD2D::Get().IsShadowMapVisible();
+			if (ImGui::Checkbox(" SHADOW", &bShadowMapStats))
+			{
+				UStatsOverlayD2D::Get().ToggleShadowMap();
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("쉐도우 맵 메모리 사용량 통계를 표시합니다.");
+			}
+
 			ImGui::EndMenu();
 		}
 

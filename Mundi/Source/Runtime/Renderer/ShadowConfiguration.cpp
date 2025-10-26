@@ -10,6 +10,9 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 	{
 	case EShadowQuality::Low:
 		Config.ShadowMapResolution = 512;
+		Config.MaxDirectionalLights = 1;
+		Config.MaxSpotLights = 1;
+		Config.MaxPointLights = 2;
 		Config.MaxShadowCastingLights = 4;
 		Config.DefaultShadowBias = 0.01f;
 		Config.DefaultShadowSlopeBias = 0.0f;
@@ -19,6 +22,9 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 
 	case EShadowQuality::Medium:
 		Config.ShadowMapResolution = 1024;
+		Config.MaxDirectionalLights = 1;
+		Config.MaxSpotLights = 4;
+		Config.MaxPointLights = 5;
 		Config.MaxShadowCastingLights = 10;
 		Config.DefaultShadowBias = 0.005f;
 		Config.DefaultShadowSlopeBias = 0.0f;
@@ -28,6 +34,9 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 
 	case EShadowQuality::High:
 		Config.ShadowMapResolution = 2048;
+		Config.MaxDirectionalLights = 1;
+		Config.MaxSpotLights = 7;
+		Config.MaxPointLights = 8;
 		Config.MaxShadowCastingLights = 16;
 		Config.DefaultShadowBias = 0.003f;
 		Config.DefaultShadowSlopeBias = 0.0f;
@@ -37,6 +46,9 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 
 	case EShadowQuality::Ultra:
 		Config.ShadowMapResolution = 4096;
+		Config.MaxDirectionalLights = 1;
+		Config.MaxSpotLights = 15;
+		Config.MaxPointLights = 16;
 		Config.MaxShadowCastingLights = 32;
 		Config.DefaultShadowBias = 0.002f;
 		Config.DefaultShadowSlopeBias = 0.0f;
