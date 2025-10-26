@@ -38,6 +38,12 @@ Texture2DArray g_SpotLightShadowMaps : register(t5);
 // t6: DirectionalLight Shadow map texture array
 Texture2DArray g_DirectionalLightShadowMaps : register(t6);
 
+// t7: PointLight Cube Shadow map texture cube array
+TextureCubeArray g_PointLightShadowCubeMaps : register(t7);
+
+// t8: PointLight Paraboloid Shadow map texture array
+Texture2DArray g_PointLightShadowParaboloidMaps : register(t8);
+
 // Shadow map sampler - comparison sampler for PCF
 SamplerComparisonState g_ShadowSampler : register(s2);
 

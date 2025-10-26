@@ -285,6 +285,14 @@ void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 	ID3D11ShaderResourceView* DirShadowMapSRV = DirectionalLightShadowMap.GetSRV();
 	RHI->GetDeviceContext()->PSSetShaderResources(6, 1, &DirShadowMapSRV);
 
+	// PointLight Cube Shadow Map Texture Cube Array를 셰이더 슬롯 t7에 바인딩
+	ID3D11ShaderResourceView* PointCubeShadowMapSRV = PointLightCubeShadowMap.GetSRV();
+	RHI->GetDeviceContext()->PSSetShaderResources(7, 1, &PointCubeShadowMapSRV);
+
+	// PointLight Paraboloid Shadow Map Texture Array를 셰이더 슬롯 t8에 바인딩
+	ID3D11ShaderResourceView* PointParaboloidShadowMapSRV = PointLightParaboloidShadowMap.GetSRV();
+	RHI->GetDeviceContext()->PSSetShaderResources(8, 1, &PointParaboloidShadowMapSRV);
+
 	// Shadow Comparison Sampler를 슬롯 s2에 바인딩
 	ID3D11SamplerState* ShadowSampler = RHI->GetShadowComparisonSamplerState();
 	RHI->GetDeviceContext()->PSSetSamplers(2, 1, &ShadowSampler);
@@ -292,9 +300,9 @@ void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 
 void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
 {
-	// Shadow Map 언바인딩 (t5, t6 동시 해제)
-	ID3D11ShaderResourceView* NullSRVs[2] = { nullptr, nullptr };
-	RHI->GetDeviceContext()->PSSetShaderResources(5, 2, NullSRVs);
+	// Shadow Map 언바인딩 (t5, t6, t7, t8 동시 해제)
+	ID3D11ShaderResourceView* NullSRVs[4] = { nullptr, nullptr, nullptr, nullptr };
+	RHI->GetDeviceContext()->PSSetShaderResources(5, 4, NullSRVs);
 
 	// Shadow Sampler 언바인딩
 	ID3D11SamplerState* NullSampler = nullptr;
