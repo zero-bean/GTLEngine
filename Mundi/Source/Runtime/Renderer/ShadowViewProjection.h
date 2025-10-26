@@ -157,15 +157,17 @@ struct FShadowViewProjection
 			FVector Up;
 		};
 
-		// Z-Up Left-Handed 좌표계에서 각 면의 방향과 Up 벡터
+		// DirectX Cube Map Face 순서에 맞춘 Z-Up Left-Handed 좌표계 매핑
+		// DirectX 순서: +X, -X, +Y(Up), -Y(Down), +Z(Forward), -Z(Back)
+		// Z-Up 좌표계: Right=+X, Forward=+Y, Up=+Z
 		FCubeFace CubeFaces[6] =
 		{
-			{ FVector( 1,  0,  0), FVector(0, 0,  1) },  // +X (Right)
-			{ FVector(-1,  0,  0), FVector(0, 0,  1) },  // -X (Left)
-			{ FVector( 0,  1,  0), FVector(0, 0,  1) },  // +Y (Forward)
-			{ FVector( 0, -1,  0), FVector(0, 0,  1) },  // -Y (Back)
-			{ FVector( 0,  0,  1), FVector(0, 1,  0) },  // +Z (Up)
-			{ FVector( 0,  0, -1), FVector(0, 1,  0) }   // -Z (Down)
+			{ FVector( 1,  0,  0), FVector(0, 0,  1) },  // Slice 0: +X (Right)
+			{ FVector(-1,  0,  0), FVector(0, 0,  1) },  // Slice 1: -X (Left)
+			{ FVector( 0,  0,  1), FVector(0, -1,  0) }, // Slice 2: +Z (Up) → DirectX +Y 위치
+			{ FVector( 0,  0, -1), FVector(0,  1,  0) }, // Slice 3: -Z (Down) → DirectX -Y 위치
+			{ FVector( 0,  1,  0), FVector(0, 0,  1) },  // Slice 4: +Y (Forward) → DirectX +Z 위치
+			{ FVector( 0, -1,  0), FVector(0, 0,  1) }   // Slice 5: -Y (Back) → DirectX -Z 위치
 		};
 
 		// 각 면에 대한 VP 행렬 생성

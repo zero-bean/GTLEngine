@@ -288,7 +288,7 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     float currentDepth = projCoords.z;
 
     // Bias to prevent shadow acne (can be adjusted for directional lights)
-    float bias = 0.005f;
+    float bias = 0.00001f;
     currentDepth -= bias;
 
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
@@ -323,14 +323,10 @@ float SamplePointLightShadowCube(
     float currentDepth = saturate((distance - nearPlane) / (attenuationRadius - nearPlane));
 
     // 3. Bias to prevent shadow acne
-    float bias = 0.005f;
+    float bias = 0.00001f;
     currentDepth -= bias;
 
     // 4. Cube Map 샘플링 좌표 계산
-    // Z-Up 좌표계에서 Y가 forward이므로 좌표 변환 필요
-    // Cube Map 표준: +X, -X, +Y, -Y, +Z, -Z
-    // 프로젝트 좌표계: Forward=+Y, Up=+Z, Right=+X
-    // lightToPixel을 Cube Map 좌표계로 변환: (X, Z, Y)
     float3 cubeDir = float3(lightToPixel.x, lightToPixel.z, lightToPixel.y);
 
     // 5. TextureCubeArray 샘플링
@@ -371,9 +367,7 @@ float SamplePointLightShadowParaboloid(
     float3 viewDir = lightToPixel / distance;
 
     // 2. 전면/후면 반구 선택
-    // Z-Up 좌표계에서 Y가 forward
-    // viewDir.y > 0: 전면 반구, viewDir.y <= 0: 후면 반구
-    bool bFrontHemisphere = (viewDir.y > 0.0f);
+    bool bFrontHemisphere = (viewDir.z > 0.0f);
     uint hemisphereOffset = bFrontHemisphere ? 0 : 1;
 
     // 3. Paraboloid UV 계산
@@ -395,7 +389,7 @@ float SamplePointLightShadowParaboloid(
     }
 
     // 4. Bias to prevent shadow acne
-    float bias = 0.005f;
+    float bias = 0.00001f;
     float currentDepth = paraboloidDepth - bias;
 
     // 5. Texture2DArray 샘플링
