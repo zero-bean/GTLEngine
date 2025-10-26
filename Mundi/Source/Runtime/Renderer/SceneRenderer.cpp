@@ -475,7 +475,54 @@ void FSceneRenderer::RenderShadowPass()
 	UINT NumViewports = 1;
 	RHIDevice->GetDeviceContext()->RSGetViewports(&NumViewports, &PrevViewport);
 
-	// Step 4: 섀도우를 캐스팅하는 각 라이트에 대해 루프
+	// Step 4-A: DirectionalLight 섀도우 렌더링
+	for (UDirectionalLightComponent* DirLight : SceneGlobals.DirectionalLights)
+	{
+		// 4-A-1. 유효성 및 섀도우 캐스팅 여부 확인
+		if (!DirLight ||
+			!DirLight->IsVisible() ||
+			!DirLight->GetOwner()->IsActorVisible() ||
+			!DirLight->GetIsCastShadows())
+			continue;
+
+		// 4-A-2. ShadowManager에게 섀도우 맵 렌더 시작 요청
+		//        -> DSV 바인딩, LightView/LightProj 행렬 계산 및 반환
+		FShadowRenderContext ShadowContext;
+		if (!GWorld->GetShadowManager()->BeginShadowRender(RHIDevice, DirLight,
+			View->ViewMatrix, View->ProjectionMatrix, ShadowContext))
+			continue;
+
+		// 4-A-3. ViewProj 버퍼 업데이트 (라이트 공간 행렬)
+		ViewProjBufferType ViewProjBuffer;
+		ViewProjBuffer.View = ShadowContext.LightView;
+		ViewProjBuffer.Proj = ShadowContext.LightProjection;
+		ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
+		ViewProjBuffer.InvProj = ShadowContext.LightProjection.InverseOrthographicProjection(); // Orthographic!
+		RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
+
+		// 4-A-4. 메시 수집 (쉐도우 패스용 로컬 배열 사용)
+		TArray<FMeshBatchElement> ShadowMeshBatches;
+		for (UMeshComponent* MeshComponent : Proxies.Meshes)
+		{
+			MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
+		}
+
+		// 4-A-5. 셰이더 오버라이드 (ShadowDepth 셰이더로 변경)
+		for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
+		{
+			BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
+			BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
+			BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
+		}
+
+		// 4-A-6. 그리기 (bIsShadowPass=true로 설정하여 DepthStencilState 덮어쓰기 방지)
+		DrawMeshBatches(ShadowMeshBatches, true, true);
+
+		// 4-A-7. 섀도우 맵 렌더 종료
+		GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
+	}
+
+	// Step 4-B: SpotLight 섀도우 렌더링
 	for (USpotLightComponent* SpotLight : SceneLocals.SpotLights)
 	{
 		// 4-1. 유효성 및 섀도우 캐스팅 여부 확인

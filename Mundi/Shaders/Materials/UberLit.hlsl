@@ -168,7 +168,7 @@ PS_INPUT mainVS(VS_INPUT Input)
     finalColor += CalculateAmbientLight(AmbientLight, Ka);
 
     // Directional light (diffuse + specular)
-    finalColor += CalculateDirectionalLight(DirectionalLight, worldNormal, viewDir, baseColor, true, specPower);
+    finalColor += CalculateDirectionalLight(DirectionalLight, Out.WorldPos, worldNormal, viewDir, baseColor, true, specPower);
 
     // Point lights (diffuse + specular)
     for (int i = 0; i < PointLightCount; i++)
@@ -307,7 +307,7 @@ PS_OUTPUT mainPS(PS_INPUT Input)
     litColor += CalculateAmbientLight(AmbientLight, Ka);
 
     // Directional light (diffuse만)
-    litColor += CalculateDirectionalLight(DirectionalLight, normal, float3(0, 0, 0), baseColor, false, 0.0f);
+    litColor += CalculateDirectionalLight(DirectionalLight, Input.WorldPos, normal, float3(0, 0, 0), baseColor, false, 0.0f);
 
     // 타일 기반 라이트 컬링 적용 (활성화된 경우)
     if (bUseTileCulling)
@@ -409,7 +409,7 @@ PS_OUTPUT mainPS(PS_INPUT Input)
     litColor += CalculateAmbientLight(AmbientLight, Ka);
 
     // Directional light (diffuse + specular)
-    litColor += CalculateDirectionalLight(DirectionalLight, normal, viewDir, baseColor, true, specPower);
+    litColor += CalculateDirectionalLight(DirectionalLight, Input.WorldPos, normal, viewDir, baseColor, true, specPower);
 
     // 타일 기반 라이트 컬링 적용 (활성화된 경우)
     if (bUseTileCulling)

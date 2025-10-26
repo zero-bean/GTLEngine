@@ -20,9 +20,14 @@ struct FAmbientLightInfo
 struct FDirectionalLightInfo
 {
     float4 Color;       // 16 bytes - FLinearColor (Intensity + Temperature 포함)
-    
+
     float3 Direction;   // 12 bytes - FVector
-    float Padding;      // 4 bytes - 정렬을 위한 패딩
+    uint bCastShadow;   // 4 bytes - 섀도우 캐스팅 여부
+
+    uint ShadowMapIndex; // 4 bytes - 섀도우 맵 인덱스 (-1이면 섀도우 없음)
+    float3 Padding;      // 12 bytes - 패딩
+
+    row_major float4x4 LightViewProjection; // 64 bytes - 라이트 공간 변환 행렬
 };
 
 struct FPointLightInfo

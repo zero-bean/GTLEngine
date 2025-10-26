@@ -19,6 +19,10 @@ public:
 	// Light Info
 	FDirectionalLightInfo GetLightInfo() const;
 
+	// Shadow ViewProjection (updated by ShadowManager each frame)
+	void SetLightViewProjection(const FMatrix& InViewProjection) { CachedLightViewProjection = InViewProjection; }
+	const FMatrix& GetLightViewProjection() const { return CachedLightViewProjection; }
+
 	// Virtual Interface
 	void OnRegister(UWorld* InWorld) override;
 	void OnUnregister() override;
@@ -36,4 +40,7 @@ public:
 protected:
 	// Direction Gizmo (shows light direction)
 	class UGizmoArrowComponent* DirectionGizmo = nullptr;
+
+	// Cached LightViewProjection matrix (updated by ShadowManager)
+	FMatrix CachedLightViewProjection = FMatrix::Identity();
 };

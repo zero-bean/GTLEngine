@@ -157,16 +157,51 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, USpotLightComponent* Light
 	return true;
 }
 
+bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent* Light,
+	const FMatrix& CameraView, const FMatrix& CameraProjection, FShadowRenderContext& OutContext)
+{
+	// 이 라이트가 Shadow Map을 할당받았는지 확인
+	int32 Index = Light->GetShadowMapIndex();
+	if (Index < 0)
+	{
+		return false;
+	}
+
+	// FShadowViewProjection 헬퍼 사용하여 VP 행렬 계산 (Frustum 기반)
+	FShadowViewProjection ShadowVP = FShadowViewProjection::CreateForDirectionalLight(
+		Light->GetLightDirection(),
+		CameraView,
+		CameraProjection);
+
+	// 출력 컨텍스트 설정
+	OutContext.LightView = ShadowVP.View;
+	OutContext.LightProjection = ShadowVP.Projection;
+	OutContext.ShadowMapIndex = Index;
+
+	// Light Component에 계산된 ViewProjection 저장 (Light Buffer 업데이트 시 사용)
+	Light->SetLightViewProjection(ShadowVP.ViewProjection);
+
+	// DirectionalLight Shadow Map 렌더링 시작 (DSV 바인딩, Viewport 설정)
+	DirectionalLightShadowMap.BeginRender(RHI, Index);
+
+	return true;
+}
+
 void FShadowManager::EndShadowRender(D3D11RHI* RHI)
 {
 	SpotLightShadowMap.EndRender(RHI);
+	DirectionalLightShadowMap.EndRender(RHI);
 }
 
 void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 {
-	// Shadow Map Texture Array를 셰이더 슬롯 t5에 바인딩
-	ID3D11ShaderResourceView* ShadowMapSRV = SpotLightShadowMap.GetSRV();
-	RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &ShadowMapSRV);
+	// SpotLight Shadow Map Texture Array를 셰이더 슬롯 t5에 바인딩
+	ID3D11ShaderResourceView* SpotShadowMapSRV = SpotLightShadowMap.GetSRV();
+	RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &SpotShadowMapSRV);
+
+	// DirectionalLight Shadow Map Texture Array를 셰이더 슬롯 t6에 바인딩
+	ID3D11ShaderResourceView* DirShadowMapSRV = DirectionalLightShadowMap.GetSRV();
+	RHI->GetDeviceContext()->PSSetShaderResources(6, 1, &DirShadowMapSRV);
 
 	// Shadow Comparison Sampler를 슬롯 s2에 바인딩
 	ID3D11SamplerState* ShadowSampler = RHI->GetShadowComparisonSamplerState();
@@ -175,9 +210,9 @@ void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 
 void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
 {
-	// Shadow Map 언바인딩
-	ID3D11ShaderResourceView* NullSRV = nullptr;
-	RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &NullSRV);
+	// Shadow Map 언바인딩 (t5, t6 동시 해제)
+	ID3D11ShaderResourceView* NullSRVs[2] = { nullptr, nullptr };
+	RHI->GetDeviceContext()->PSSetShaderResources(5, 2, NullSRVs);
 
 	// Shadow Sampler 언바인딩
 	ID3D11SamplerState* NullSampler = nullptr;

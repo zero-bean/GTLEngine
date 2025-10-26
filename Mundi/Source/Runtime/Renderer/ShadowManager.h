@@ -67,12 +67,22 @@ public:
     */
     void AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingLights& InLights);
 
-	// Shadow 렌더링 시작
+	// Shadow 렌더링 시작 - SpotLight
 	// @param RHI - D3D11 RHI 디바이스
 	// @param Light - 렌더링할 SpotLight
 	// @param OutContext - (출력) Shadow 렌더링 컨텍스트
 	// @return 성공 여부
 	bool BeginShadowRender(D3D11RHI* RHI, USpotLightComponent* Light, FShadowRenderContext& OutContext);
+
+	// Shadow 렌더링 시작 - DirectionalLight
+	// @param RHI - D3D11 RHI 디바이스
+	// @param Light - 렌더링할 DirectionalLight
+	// @param CameraView - 카메라의 View 행렬
+	// @param CameraProjection - 카메라의 Projection 행렬
+	// @param OutContext - (출력) Shadow 렌더링 컨텍스트
+	// @return 성공 여부
+	bool BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent* Light,
+		const FMatrix& CameraView, const FMatrix& CameraProjection, FShadowRenderContext& OutContext);
 
 	// Shadow 렌더링 종료
 	// @param RHI - D3D11 RHI 디바이스

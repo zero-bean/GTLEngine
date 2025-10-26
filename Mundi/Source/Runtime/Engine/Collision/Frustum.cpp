@@ -172,6 +172,56 @@ bool Intersects(const FPlane& P, const FVector4& Center, const FVector4& Extents
     return Distance + radius >= 0.0f;
 }
 
+void GetFrustumCornersWorldSpace(const FMatrix& InViewProjInverse, TArray<FVector>& OutCorners)
+{
+    // NDC 공간의 Frustum 8개 코너 점 정의
+    // DirectX는 NDC에서 z 범위가 [0, 1]이므로 Near=0, Far=1
+    static const FVector4 NDCCorners[8] = {
+        // Near plane (z = 0 in D3D NDC)
+        { -1, -1, 0, 1 },  // Left-Bottom-Near
+        {  1, -1, 0, 1 },  // Right-Bottom-Near
+        {  1,  1, 0, 1 },  // Right-Top-Near
+        { -1,  1, 0, 1 },  // Left-Top-Near
+        // Far plane (z = 1 in D3D NDC)
+        { -1, -1, 1, 1 },  // Left-Bottom-Far
+        {  1, -1, 1, 1 },  // Right-Bottom-Far
+        {  1,  1, 1, 1 },  // Right-Top-Far
+        { -1,  1, 1, 1 }   // Left-Top-Far
+    };
+
+    // 출력 배열 크기 확보
+    OutCorners.Empty();
+    OutCorners.Reserve(8);
+
+    // 각 NDC 코너를 월드 공간으로 변환
+    for (int i = 0; i < 8; ++i)
+    {
+        // Row-vector 방식: v' = v * M
+        // NDC 코너를 InvViewProj 행렬로 곱하여 월드 공간으로 변환
+        FVector4 WorldPosHomogeneous = NDCCorners[i] * InViewProjInverse;
+
+        // Perspective divide (동차 좌표 → 데카르트 좌표)
+        if (WorldPosHomogeneous.W != 0.0f)
+        {
+            float InvW = 1.0f / WorldPosHomogeneous.W;
+            OutCorners.Add(FVector(
+                WorldPosHomogeneous.X * InvW,
+                WorldPosHomogeneous.Y * InvW,
+                WorldPosHomogeneous.Z * InvW
+            ));
+        }
+        else
+        {
+            // W=0인 경우 (방향 벡터) - 일반적으로 발생하지 않지만 안전장치
+            OutCorners.Add(FVector(
+                WorldPosHomogeneous.X,
+                WorldPosHomogeneous.Y,
+                WorldPosHomogeneous.Z
+            ));
+        }
+    }
+}
+
 bool IsAABBVisible(const FFrustum& Frustum, const FAABB& Bound)
 {
     // AABB 중심/반길이
