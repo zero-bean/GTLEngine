@@ -205,7 +205,7 @@ bool WorldPosToParaboloidUV(
 
     // 5. NDC [-1, 1]을 UV [0, 1]로 변환
     outUV.x = paraboloidNDC.x * 0.5f + 0.5f;
-    outUV.y = -paraboloidNDC.y * 0.5f + 0.5f;  // Y 플립 (DirectX)
+    outUV.y = paraboloidNDC.y * 0.5f + 0.5f;  // Y 플립 (DirectX)
 
     // 6. 선형 깊이 계산 [0, 1]
     outDepth = saturate((distance - nearPlane) / (attenuationRadius - nearPlane));

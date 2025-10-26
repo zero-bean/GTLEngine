@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "PointLightComponent.h"
 #include "BillboardComponent.h"
+#include "ShadowManager.h"
 
 IMPLEMENT_CLASS(UPointLightComponent)
 
@@ -27,6 +28,21 @@ FPointLightInfo UPointLightComponent::GetLightInfo() const
 	Info.AttenuationRadius = GetAttenuationRadius();
 	Info.FalloffExponent = GetFalloffExponent(); // Always pass FalloffExponent (used when bUseInverseSquareFalloff = false)
 	Info.bUseInverseSquareFalloff = IsUsingInverseSquareFalloff() ? 1u : 0u;
+
+	// Shadow 설정
+	Info.bCastShadow = GetIsCastShadows() ? 1u : 0u;
+	Info.ShadowMapIndex = static_cast<uint32>(GetShadowMapIndex());
+
+	// Paraboloid Map 사용 여부 (ShadowManager의 전역 설정)
+	if (GWorld && GWorld->GetShadowManager())
+	{
+		Info.bUseParaboloidMap = GWorld->GetShadowManager()->GetUseParaboloidMaps() ? 1u : 0u;
+	}
+	else
+	{
+		Info.bUseParaboloidMap = 0u; // 기본값: Cube Map
+	}
+
 	Info.Padding = FVector2D(0.0f, 0.0f); // 패딩 초기화
 
 	return Info;
