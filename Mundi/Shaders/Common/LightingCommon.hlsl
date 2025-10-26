@@ -134,6 +134,92 @@ float CalculateExponentFalloff(float distance, float attenuationRadius, float fa
 // Shadow Mapping Functions
 //================================================================================================
 
+//------------------------------------------------------------------------------------------------
+// Paraboloid 유틸리티 함수
+//------------------------------------------------------------------------------------------------
+
+/**
+ * World Position을 Paraboloid UV 좌표와 깊이로 변환
+ *
+ * @param worldPos - 월드 공간 위치
+ * @param lightPos - 라이트 위치
+ * @param attenuationRadius - 라이트 감쇠 반경
+ * @param nearPlane - Near clipping plane
+ * @param bFrontHemisphere - true = 전면 반구 (+Z), false = 후면 반구 (-Z)
+ * @param outUV - (출력) Paraboloid UV 좌표 [0, 1]
+ * @param outDepth - (출력) 선형 깊이 [0, 1]
+ * @return 유효한 샘플인지 여부 (범위 내 = true, 범위 밖 = false)
+ */
+bool WorldPosToParaboloidUV(
+    float3 worldPos,
+    float3 lightPos,
+    float attenuationRadius,
+    float nearPlane,
+    bool bFrontHemisphere,
+    out float2 outUV,
+    out float outDepth)
+{
+    // 1. Light View Space로 변환 (라이트 중심 기준)
+    float3 lightVec = worldPos - lightPos;
+    float distance = length(lightVec);
+
+    // epsilon으로 0으로 나누기 방지
+    if (distance < 0.0001f)
+    {
+        outUV = float2(0.5f, 0.5f);
+        outDepth = 0.0f;
+        return false;
+    }
+
+    float3 viewDir = lightVec / distance;
+
+    // 2. 전면/후면 반구 선택에 따라 Z 부호 조정
+    // Z축: Forward = +Y, Up = +Z, Right = +X (Z-Up Left-Handed)
+    // Paraboloid는 기본적으로 +Z를 forward로 가정
+    // 따라서 viewDir을 Z축 기준으로 재정렬 필요
+
+    // Z-Up 좌표계에서 Y가 forward이므로, viewDir.y를 z로 사용
+    float3 paraboloidDir = float3(viewDir.x, viewDir.z, viewDir.y);
+
+    if (!bFrontHemisphere)
+    {
+        // 후면 반구: Z를 반전시켜 -Z 방향이 forward가 되도록
+        paraboloidDir.z = -paraboloidDir.z;
+    }
+
+    // 3. Paraboloid 투영 공식
+    float denominator = 1.0f + paraboloidDir.z;
+
+    // Z가 음수면 해당 반구 범위를 벗어난 것 (clipping)
+    if (denominator <= 0.0001f)
+    {
+        outUV = float2(0.5f, 0.5f);
+        outDepth = 1.0f;
+        return false;
+    }
+
+    // 4. Paraboloid UV 좌표 계산 (NDC: -1 ~ 1)
+    float2 paraboloidNDC;
+    paraboloidNDC.x = paraboloidDir.x / denominator;
+    paraboloidNDC.y = paraboloidDir.y / denominator;
+
+    // 5. NDC [-1, 1]을 UV [0, 1]로 변환
+    outUV.x = paraboloidNDC.x * 0.5f + 0.5f;
+    outUV.y = -paraboloidNDC.y * 0.5f + 0.5f;  // Y 플립 (DirectX)
+
+    // 6. 선형 깊이 계산 [0, 1]
+    outDepth = saturate((distance - nearPlane) / (attenuationRadius - nearPlane));
+
+    // 7. UV 범위 체크 (Paraboloid는 원형 영역)
+    // UV가 [0, 1] 범위를 벗어나면 유효하지 않음
+    if (outUV.x < 0.0f || outUV.x > 1.0f || outUV.y < 0.0f || outUV.y > 1.0f)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * Sample SpotLight shadow map
  * Returns 0.0 if in shadow, 1.0 if lit
@@ -212,6 +298,115 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     return shadow;
 }
 
+/**
+ * Sample PointLight shadow map (Cube Map)
+ * Returns 0.0 if in shadow, 1.0 if lit
+ *
+ * @param shadowMapIndex - Index into cube shadow map array
+ * @param worldPos - World position
+ * @param lightPos - Light position
+ * @param attenuationRadius - Light attenuation radius
+ * @param nearPlane - Near clipping plane
+ */
+float SamplePointLightShadowCube(
+    uint shadowMapIndex,
+    float3 worldPos,
+    float3 lightPos,
+    float attenuationRadius,
+    float nearPlane)
+{
+    // 1. 라이트에서 픽셀로의 방향 벡터 계산
+    float3 lightToPixel = worldPos - lightPos;
+    float distance = length(lightToPixel);
+
+    // 2. 현재 깊이 계산 (선형 깊이 [0, 1])
+    float currentDepth = saturate((distance - nearPlane) / (attenuationRadius - nearPlane));
+
+    // 3. Bias to prevent shadow acne
+    float bias = 0.005f;
+    currentDepth -= bias;
+
+    // 4. Cube Map 샘플링 좌표 계산
+    // Z-Up 좌표계에서 Y가 forward이므로 좌표 변환 필요
+    // Cube Map 표준: +X, -X, +Y, -Y, +Z, -Z
+    // 프로젝트 좌표계: Forward=+Y, Up=+Z, Right=+X
+    // lightToPixel을 Cube Map 좌표계로 변환: (X, Z, Y)
+    float3 cubeDir = float3(lightToPixel.x, lightToPixel.z, lightToPixel.y);
+
+    // 5. TextureCubeArray 샘플링
+    // SampleCmpLevelZero: cube direction + array index
+    float4 sampleCoord = float4(cubeDir, shadowMapIndex);
+    float shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, sampleCoord, currentDepth);
+
+    return shadow;
+}
+
+/**
+ * Sample PointLight shadow map (Paraboloid)
+ * Returns 0.0 if in shadow, 1.0 if lit
+ *
+ * @param shadowMapIndex - Index into paraboloid shadow map array
+ * @param worldPos - World position
+ * @param lightPos - Light position
+ * @param attenuationRadius - Light attenuation radius
+ * @param nearPlane - Near clipping plane
+ */
+float SamplePointLightShadowParaboloid(
+    uint shadowMapIndex,
+    float3 worldPos,
+    float3 lightPos,
+    float attenuationRadius,
+    float nearPlane)
+{
+    // 1. 라이트에서 픽셀로의 방향 벡터 계산
+    float3 lightToPixel = worldPos - lightPos;
+    float distance = length(lightToPixel);
+
+    // epsilon으로 0으로 나누기 방지
+    if (distance < 0.0001f)
+    {
+        return 1.0f; // 라이트 중심에 있으면 그림자 없음
+    }
+
+    float3 viewDir = lightToPixel / distance;
+
+    // 2. 전면/후면 반구 선택
+    // Z-Up 좌표계에서 Y가 forward
+    // viewDir.y > 0: 전면 반구, viewDir.y <= 0: 후면 반구
+    bool bFrontHemisphere = (viewDir.y > 0.0f);
+    uint hemisphereOffset = bFrontHemisphere ? 0 : 1;
+
+    // 3. Paraboloid UV 계산
+    float2 paraboloidUV;
+    float paraboloidDepth;
+    bool bValidSample = WorldPosToParaboloidUV(
+        worldPos,
+        lightPos,
+        attenuationRadius,
+        nearPlane,
+        bFrontHemisphere,
+        paraboloidUV,
+        paraboloidDepth);
+
+    // 유효하지 않은 샘플 (범위 밖)
+    if (!bValidSample)
+    {
+        return 1.0f; // 범위 밖은 그림자 없음
+    }
+
+    // 4. Bias to prevent shadow acne
+    float bias = 0.005f;
+    float currentDepth = paraboloidDepth - bias;
+
+    // 5. Texture2DArray 샘플링
+    // ArrayIndex = (LightIndex * 2) + HemisphereIndex
+    uint arrayIndex = (shadowMapIndex * 2) + hemisphereOffset;
+    float3 sampleCoord = float3(paraboloidUV, arrayIndex);
+    float shadow = g_PointLightShadowParaboloidMaps.SampleCmpLevelZero(g_ShadowSampler, sampleCoord, currentDepth);
+
+    return shadow;
+}
+
 //================================================================================================
 // 통합 조명 계산 함수
 //================================================================================================
@@ -249,7 +444,7 @@ float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, f
     return diffuse + specular;
 }
 
-// Point Light 계산 (Diffuse + Specular with Attenuation and Falloff)
+// Point Light 계산 (Diffuse + Specular with Attenuation and Falloff + Shadow)
 float3 CalculatePointLight(FPointLightInfo light, float3 worldPos, float3 normal, float3 viewDir, float4 materialColor, bool includeSpecular, float specularPower)
 {
     float3 lightVec = light.Position - worldPos;
@@ -272,14 +467,42 @@ float3 CalculatePointLight(FPointLightInfo light, float3 worldPos, float3 normal
         attenuation = CalculateExponentFalloff(distance, light.AttenuationRadius, light.FalloffExponent);
     }
 
+    // Shadow mapping (if this light casts shadows)
+    float shadow = 1.0f;
+    if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
+    {
+        // Near plane (하드코딩, 추후 FPointLightInfo에 추가 가능)
+        const float nearPlane = 0.1f;
+
+        // Paraboloid 또는 Cube Map 선택
+        if (light.bUseParaboloidMap)
+        {
+            shadow = SamplePointLightShadowParaboloid(
+                light.ShadowMapIndex,
+                worldPos,
+                light.Position,
+                light.AttenuationRadius,
+                nearPlane);
+        }
+        else
+        {
+            shadow = SamplePointLightShadowCube(
+                light.ShadowMapIndex,
+                worldPos,
+                light.Position,
+                light.AttenuationRadius,
+                nearPlane);
+        }
+    }
+
     // Diffuse (light.Color는 이미 Intensity 포함)
-    float3 diffuse = CalculateDiffuse(lightDir, normal, light.Color, materialColor) * attenuation;
+    float3 diffuse = CalculateDiffuse(lightDir, normal, light.Color, materialColor) * attenuation * shadow;
 
     // Specular (선택사항)
     float3 specular = float3(0.0f, 0.0f, 0.0f);
     if (includeSpecular)
     {
-        specular = CalculateSpecular(lightDir, normal, viewDir, light.Color, specularPower) * attenuation;
+        specular = CalculateSpecular(lightDir, normal, viewDir, light.Color, specularPower) * attenuation * shadow;
     }
 
     return diffuse + specular;
