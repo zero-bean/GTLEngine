@@ -234,8 +234,16 @@ void UEditorEngine::Render()
 {
     Renderer->BeginFrame();
 
-    UI.Render();
+    // 1. ImGui BeginFrame 먼저 호출 (SLATE도 ImGui를 사용하므로)
+    UI.BeginFrame();
+
+    // 2. SLATE 렌더링 (Scene + Shadow Pass 실행, ImGui 위젯 포함)
     SLATE.Render();
+
+    // 3. UI 위젯 렌더링 (Shadow Pass 이후)
+    UI.Render();
+
+    // 4. ImGui EndFrame
     UI.EndFrame();
 
     Renderer->EndFrame();

@@ -544,15 +544,40 @@ void FSceneRenderer::RenderShadowPass()
 		ViewProjBuffer.Proj = ShadowContext.LightProjection;
 		ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
 		ViewProjBuffer.InvProj = ShadowContext.LightProjection.InversePerspectiveProjection();
+
+		// Debug: Print View/Projection Matrix
+		UE_LOG("[ShadowPass] LightView Matrix:");
+		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.View.M[0][0], ViewProjBuffer.View.M[0][1], ViewProjBuffer.View.M[0][2], ViewProjBuffer.View.M[0][3]);
+		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.View.M[1][0], ViewProjBuffer.View.M[1][1], ViewProjBuffer.View.M[1][2], ViewProjBuffer.View.M[1][3]);
+		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.View.M[2][0], ViewProjBuffer.View.M[2][1], ViewProjBuffer.View.M[2][2], ViewProjBuffer.View.M[2][3]);
+		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.View.M[3][0], ViewProjBuffer.View.M[3][1], ViewProjBuffer.View.M[3][2], ViewProjBuffer.View.M[3][3]);
+
+		UE_LOG("[ShadowPass] LightProjection Matrix:");
+		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.Proj.M[0][0], ViewProjBuffer.Proj.M[0][1], ViewProjBuffer.Proj.M[0][2], ViewProjBuffer.Proj.M[0][3]);
+		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.Proj.M[1][0], ViewProjBuffer.Proj.M[1][1], ViewProjBuffer.Proj.M[1][2], ViewProjBuffer.Proj.M[1][3]);
+		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.Proj.M[2][0], ViewProjBuffer.Proj.M[2][1], ViewProjBuffer.Proj.M[2][2], ViewProjBuffer.Proj.M[2][3]);
+		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.Proj.M[3][0], ViewProjBuffer.Proj.M[3][1], ViewProjBuffer.Proj.M[3][2], ViewProjBuffer.Proj.M[3][3]);
+
 		RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
 
 
 		// 4-4. 메시 수집 (쉐도우 패스용 로컬 배열 사용)
 		TArray<FMeshBatchElement> ShadowMeshBatches;
+		FVector LightPos = SpotLight->GetWorldLocation();
+
 		for (UMeshComponent* MeshComponent : Proxies.Meshes)
 		{
 			MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
+
+			// 메쉬의 월드 위치 로깅
+			FVector MeshWorldPos = MeshComponent->GetWorldLocation();
+			float Distance = (MeshWorldPos - LightPos).Size();
+
+			UE_LOG("[ShadowPass] Mesh at (%.2f, %.2f, %.2f), Distance from Light: %.2f",
+				MeshWorldPos.X, MeshWorldPos.Y, MeshWorldPos.Z, Distance);
 		}
+
+		UE_LOG("[ShadowPass] SpotLight Index=%d, Collected Meshes=%d", ShadowContext.ShadowMapIndex, ShadowMeshBatches.size());
 
 		// 4-5. 셰이더 오버라이드 (ShadowDepth 셰이더로 변경)
 		for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
@@ -1071,6 +1096,11 @@ void FSceneRenderer::RenderOverayEditorPrimitivesPass()
 // 수집한 Batch 그리기
 void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, bool bClearListAfterDraw, bool bIsShadowPass)
 {
+	if (bIsShadowPass)
+	{
+		UE_LOG("[DrawMeshBatches] Shadow Pass: %d batches to draw", InMeshBatches.size());
+	}
+
 	if (InMeshBatches.IsEmpty()) return;
 
 	// RHI 상태 초기 설정 (Opaque Pass 기본값)
@@ -1225,6 +1255,12 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 		RHIDevice->SetAndUpdateConstantBuffer(ColorBufferType(Batch.InstanceColor, Batch.ObjectID));
 
 		// 5. 드로우 콜 실행
+		if (bIsShadowPass)
+		{
+			UE_LOG("[DrawMeshBatches] Shadow DrawIndexed: IndexCount=%d, StartIndex=%d, BaseVertex=%d",
+				Batch.IndexCount, Batch.StartIndex, Batch.BaseVertexIndex);
+		}
+
 		RHIDevice->GetDeviceContext()->DrawIndexed(Batch.IndexCount, Batch.StartIndex, Batch.BaseVertexIndex);
 	}
 

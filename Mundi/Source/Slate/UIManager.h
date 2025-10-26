@@ -38,7 +38,8 @@ public:
 	void Update(float DeltaTime);
 	void SetDeltaTime(float InDeltaTime) { CurrentDeltaTime = InDeltaTime; }
 	float GetDeltaTime() const { return CurrentDeltaTime; }
-	void Render();
+	void BeginFrame();  // ImGui BeginFrame만 호출
+	void Render();      // UI 위젯 렌더링만
 	void EndFrame();
 	bool RegisterUIWindow(UUIWindow* InWindow);
 	bool UnregisterUIWindow(UUIWindow* InWindow);

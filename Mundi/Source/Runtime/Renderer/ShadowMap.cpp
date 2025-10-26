@@ -57,7 +57,7 @@ void FShadowMap::Initialize(D3D11RHI* RHI, UINT InWidth, UINT InHeight, UINT InA
 		ShadowMapDSVs.Add(DSV);
 	}
 
-	// Create shader resource view for entire array
+	// Create shader resource view for entire array (for shaders)
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = DXGI_FORMAT_R32_FLOAT; // Read as float in shader
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
@@ -68,6 +68,25 @@ void FShadowMap::Initialize(D3D11RHI* RHI, UINT InWidth, UINT InHeight, UINT InA
 
 	hr = RHI->GetDevice()->CreateShaderResourceView(ShadowMapTexture, &srvDesc, &ShadowMapSRV);
 	assert(SUCCEEDED(hr), "Failed to create shadow map SRV");
+
+	// Create individual slice SRVs (for ImGui - TEXTURE2D not array)
+	ShadowMapSliceSRVs.clear();
+	for (UINT i = 0; i < ArraySize; i++)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC sliceSrvDesc = {};
+		sliceSrvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		sliceSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		sliceSrvDesc.Texture2DArray.MostDetailedMip = 0;
+		sliceSrvDesc.Texture2DArray.MipLevels = 1;
+		sliceSrvDesc.Texture2DArray.FirstArraySlice = i;
+		sliceSrvDesc.Texture2DArray.ArraySize = 1; // Single slice only
+
+		ID3D11ShaderResourceView* SliceSRV = nullptr;
+		hr = RHI->GetDevice()->CreateShaderResourceView(ShadowMapTexture, &sliceSrvDesc, &SliceSRV);
+		assert(SUCCEEDED(hr), "Failed to create shadow map slice SRV");
+
+		ShadowMapSliceSRVs.Add(SliceSRV);
+	}
 
 	// Setup viewport
 	ShadowViewport.TopLeftX = 0.0f;
@@ -85,6 +104,16 @@ void FShadowMap::Release()
 		ShadowMapSRV->Release();
 		ShadowMapSRV = nullptr;
 	}
+
+	for (ID3D11ShaderResourceView* SliceSRV : ShadowMapSliceSRVs)
+	{
+		if (SliceSRV)
+		{
+			SliceSRV->Release();
+			SliceSRV = nullptr;
+		}
+	}
+	ShadowMapSliceSRVs.clear();
 
 	for (ID3D11DepthStencilView* DSV : ShadowMapDSVs)
 	{
@@ -108,7 +137,7 @@ void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex)
 	assert(RHI != nullptr, "RHI is null");
 	assert(ArrayIndex < ArraySize, "Array index out of bounds");
 
-	UE_LOG("[DEBUG] FShadowMap::BeginRender - ArrayIndex=%d, ArraySize=%d, Width=%d, Height=%d",
+	UE_LOG("[ShadowMap] BeginRender - ArrayIndex=%d, ArraySize=%d, Width=%d, Height=%d",
 		ArrayIndex, ArraySize, Width, Height);
 
 	ID3D11DeviceContext* pContext = RHI->GetDeviceContext();
@@ -116,7 +145,7 @@ void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex)
 	// N개의 쉐도우 DSV에서 특정 DSV를 가져옵니다.
 	ID3D11DepthStencilView* DSV = ShadowMapDSVs[ArrayIndex];
 
-	UE_LOG("[DEBUG] FShadowMap::BeginRender - DSV = 0x%p", DSV);
+	UE_LOG("[ShadowMap] BeginRender - DSV=0x%p, SRV=0x%p", DSV, ShadowMapSRV);
 
 	// DSV를 초기화합니다.
 	pContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -146,8 +175,12 @@ void FShadowMap::EndRender(D3D11RHI* RHI)
 {
 	assert(RHI != nullptr, "RHI is null");
 
-	// Unbind render targets
+	UE_LOG("[ShadowMap] EndRender - Unbinding DSV, SRV=0x%p still valid", ShadowMapSRV);
+
+	// Unbind render targets (DSV만 unbind, SRV는 유지)
 	ID3D11RenderTargetView* nullRTV = nullptr;
 	ID3D11DepthStencilView* nullDSV = nullptr;
 	RHI->GetDeviceContext()->OMSetRenderTargets(1, &nullRTV, nullDSV);
+
+	UE_LOG("[ShadowMap] EndRender - DSV unbound, SRV ready for read access");
 }

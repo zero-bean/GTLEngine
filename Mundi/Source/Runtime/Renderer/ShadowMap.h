@@ -24,6 +24,10 @@ public:
 	void EndRender(D3D11RHI* RHI);
 
 	ID3D11ShaderResourceView* GetSRV() const { return ShadowMapSRV; }
+	ID3D11ShaderResourceView* GetSliceSRV(UINT ArrayIndex) const
+	{
+		return (ArrayIndex < ShadowMapSliceSRVs.size()) ? ShadowMapSliceSRVs[ArrayIndex] : nullptr;
+	}
 	UINT GetWidth() const { return Width; }
 	UINT GetHeight() const { return Height; }
 	UINT GetArraySize() const { return ArraySize; }
@@ -37,7 +41,8 @@ private:
 
 	// Depth texture array resources
 	ID3D11Texture2D* ShadowMapTexture;
-	ID3D11ShaderResourceView* ShadowMapSRV;
+	ID3D11ShaderResourceView* ShadowMapSRV; // Full array SRV (for shaders)
+	TArray<ID3D11ShaderResourceView*> ShadowMapSliceSRVs; // Individual slice SRVs (for ImGui)
 
 	// PointLight, DirectionalLight는 여러 맵을 필요로 하기에 확장성을 위해 배열로 보유합니다.
 	TArray<ID3D11DepthStencilView*> ShadowMapDSVs;

@@ -29,6 +29,8 @@
 #include "SpotLightComponent.h"
 #include "SceneComponent.h"
 #include "Color.h"
+#include "ShadowManager.h"
+#include "ShadowMap.h"
 
 using namespace std;
 
@@ -538,6 +540,66 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 		ImGui::Separator();
 		ImGui::Text("[Reflected Properties]");
 		UPropertyRenderer::RenderAllPropertiesWithInheritance(SelectedComponent);
+	}
+
+	// SpotLightComponent인 경우 ShadowMap 표시
+	if (USpotLightComponent* SpotLight = Cast<USpotLightComponent>(SelectedComponent))
+	{
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Text("[Shadow Map]");
+
+		bool bCastShadows = SpotLight->GetIsCastShadows();
+		ImGui::Text("Cast Shadows: %s", bCastShadows ? "True" : "False");
+
+		if (bCastShadows)
+		{
+			FShadowManager* ShadowManager = GWorld->GetShadowManager();
+
+			if (ShadowManager)
+			{
+				const FShadowMap& SpotLightShadowMap = ShadowManager->GetSpotLightShadowMap();
+				int ShadowMapIndex = SpotLight->GetShadowMapIndex();
+				ID3D11ShaderResourceView* ShadowSRV = SpotLightShadowMap.GetSliceSRV(ShadowMapIndex);
+
+				UE_LOG("[UI] Getting ShadowMap Slice SRV: Index=%d, SRV=0x%p, Width=%u, Height=%u",
+					ShadowMapIndex, ShadowSRV, SpotLightShadowMap.GetWidth(), SpotLightShadowMap.GetHeight());
+
+				ImGui::Text("Shadow Map Index: %d", ShadowMapIndex);
+				ImGui::Text("Resolution: %u x %u", SpotLightShadowMap.GetWidth(), SpotLightShadowMap.GetHeight());
+				ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
+
+				if (ShadowSRV)
+				{
+					ImGui::Spacing();
+
+					// ShadowMap 크기 조절 (입력 가능한 슬라이더)
+					static float ShadowMapDisplaySize = 256.0f;
+					ImGui::SetNextItemWidth(200.0f);
+					ImGui::DragFloat("Display Size", &ShadowMapDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
+					ImGui::Spacing();
+
+					// ShadowMap 이미지 표시 (R32_FLOAT이므로 빨간색으로 보임)
+					ImGui::Image(
+						(ImTextureID)ShadowSRV,
+						ImVec2(ShadowMapDisplaySize, ShadowMapDisplaySize),
+						ImVec2(0, 0),  // uv0
+						ImVec2(1, 1),  // uv1
+						ImVec4(1, 1, 1, 1),  // tint color
+						ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
+					);
+					ImGui::TextWrapped("Note: R32_FLOAT format appears as red channel. Brightness indicates depth.");
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SRV is NULL!");
+				}
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ShadowManager is NULL!");
+			}
+		}
 	}
 }
 
