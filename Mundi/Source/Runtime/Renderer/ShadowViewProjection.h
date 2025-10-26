@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Frustum.h"  // GetFrustumCornersWorldSpace 함수 사용
+
 // Shadow rendering에 필요한 View/Projection 행렬 집합
 // 주의: 이 헤더를 사용하기 전에 pch.h가 include되어야 함 (FMatrix, FVector 정의 필요)
 struct FShadowViewProjection
@@ -47,12 +49,91 @@ struct FShadowViewProjection
 		return Result;
 	}
 
-	// DirectionalLight용 Shadow VP 행렬 생성 (여기서 만들어 쓰세요 영빈씨)
-	// @param Direction - 라이트 방향
-	// @param SceneBounds - 씬의 바운딩 박스
-	// @param ViewFrustum - 카메라 절두체
-	// static FShadowViewProjection CreateForDirectionalLight(
-	//     const FVector& Direction,
-	//     const FBox& SceneBounds,
-	//     const FFrustumPlanes& ViewFrustum);
+	// DirectionalLight용 Shadow VP 행렬 생성 (View Frustum 기반)
+	// @param Direction - 라이트 방향 (정규화되지 않아도 됨)
+	// @param CameraView - 카메라의 View 행렬
+	// @param CameraProjection - 카메라의 Projection 행렬
+	static FShadowViewProjection CreateForDirectionalLight(
+		const FVector& Direction,
+		const FMatrix& CameraView,
+		const FMatrix& CameraProjection)
+	{
+		FShadowViewProjection Result;
+
+		// === 1. Camera Frustum의 8개 코너를 월드 공간으로 변환 ===
+		TArray<FVector> FrustumCorners;
+
+		// ViewProjection의 역행렬 계산: (V * P)^-1 = P^-1 * V^-1
+		// Projection이 Perspective인지 Orthographic인지 알 수 없으므로
+		// 간단한 방법: ViewProjection을 재계산하고 역행렬 구하기
+		FMatrix InvView = CameraView.InverseAffine();
+		FMatrix InvProj = CameraProjection.InversePerspectiveProjection(); // 일단 Perspective 가정
+		FMatrix InvViewProj = InvProj * InvView;
+
+		GetFrustumCornersWorldSpace(InvViewProj, FrustumCorners);
+
+		// === 2. Light View 행렬 생성 ===
+		FVector LightDir = Direction.GetNormalized();
+
+		// Up vector 선택 (LightDir와 평행하지 않은 벡터)
+		FVector Up = (FMath::Abs(LightDir.Y) < 0.99f)
+			? FVector(0, 1, 0)
+			: FVector(1, 0, 0);
+
+		// Frustum 중심점 계산 (8개 코너의 평균)
+		FVector FrustumCenter = FVector::Zero();
+		for (int i = 0; i < 8; ++i)
+		{
+			FrustumCenter += FrustumCorners[i];
+		}
+		FrustumCenter /= 8.0f;
+
+		// Light Position: Frustum 중심에서 라이트 방향 반대쪽
+		// (거리는 임의로 설정, Orthographic이므로 위치는 범위에만 영향)
+		FVector LightPos = FrustumCenter - LightDir * 1000.0f;
+
+		Result.View = FMatrix::LookAtLH(LightPos, LightPos + LightDir, Up);
+
+		// === 3. Frustum 코너를 Light Space로 변환하여 AABB 계산 ===
+		float MinX = FLT_MAX, MaxX = -FLT_MAX;
+		float MinY = FLT_MAX, MaxY = -FLT_MAX;
+		float MinZ = FLT_MAX, MaxZ = -FLT_MAX;
+
+		for (int i = 0; i < 8; ++i)
+		{
+			// World Space 코너를 Light View Space로 변환
+			FVector LightSpaceCorner = FrustumCorners[i] * Result.View;
+
+			MinX = FMath::Min(MinX, LightSpaceCorner.X);
+			MaxX = FMath::Max(MaxX, LightSpaceCorner.X);
+			MinY = FMath::Min(MinY, LightSpaceCorner.Y);
+			MaxY = FMath::Max(MaxY, LightSpaceCorner.Y);
+			MinZ = FMath::Min(MinZ, LightSpaceCorner.Z);
+			MaxZ = FMath::Max(MaxZ, LightSpaceCorner.Z);
+		}
+
+		// === 4. Orthographic Projection 생성 (AABB 범위 기반) ===
+		float Width = MaxX - MinX;
+		float Height = MaxY - MinY;
+		float Depth = MaxZ - MinZ;
+
+		// 중심을 원점으로 맞춘 Orthographic Projection
+		Result.Projection = FMatrix::OrthoLH(Width, Height, 0.0f, Depth);
+
+		// AABB 중심을 원점으로 이동시키기 위한 오프셋 적용
+		// (OrthoLH는 중심 기준이므로, Min/Max가 비대칭이면 보정 필요)
+		float CenterX = (MaxX + MinX) * 0.5f;
+		float CenterY = (MaxY + MinY) * 0.5f;
+
+		// View 행렬에 오프셋 추가 (Translation 조정)
+		Result.View.M[3][0] -= CenterX;
+		Result.View.M[3][1] -= CenterY;
+		Result.View.M[3][2] -= MinZ;  // Near plane을 0으로 맞춤
+
+		// === 5. ViewProjection 계산 ===
+		Result.ViewProjection = Result.View * Result.Projection;
+
+		return Result;
+	}
+
 };

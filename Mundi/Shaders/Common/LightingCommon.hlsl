@@ -135,13 +135,13 @@ float CalculateExponentFalloff(float distance, float attenuationRadius, float fa
 //================================================================================================
 
 /**
- * Sample shadow map for a specific spotlight
+ * Sample SpotLight shadow map
  * Returns 0.0 if in shadow, 1.0 if lit
  *
  * @param shadowMapIndex - Index into shadow map array
  * @param lightSpacePos - Position in light's clip space
  */
-float SampleShadowMap(uint shadowMapIndex, float4 lightSpacePos)
+float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
 {
     // Perspective divide to get NDC coordinates
     float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
@@ -168,7 +168,46 @@ float SampleShadowMap(uint shadowMapIndex, float4 lightSpacePos)
 
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
     float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-    float shadow = g_ShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+    float shadow = g_SpotLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+
+    return shadow;
+}
+
+/**
+ * Sample DirectionalLight shadow map
+ * Returns 0.0 if in shadow, 1.0 if lit
+ *
+ * @param shadowMapIndex - Index into shadow map array
+ * @param lightSpacePos - Position in light's clip space
+ */
+float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
+{
+    // Perspective divide to get NDC coordinates
+    float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+
+    // Convert NDC [-1, 1] to texture coordinates [0, 1]
+    float2 shadowTexCoord;
+    shadowTexCoord.x = projCoords.x * 0.5f + 0.5f;
+    shadowTexCoord.y = -projCoords.y * 0.5f + 0.5f; // Flip Y for D3D
+
+    // Check if position is outside shadow map bounds
+    if (shadowTexCoord.x < 0.0f || shadowTexCoord.x > 1.0f ||
+        shadowTexCoord.y < 0.0f || shadowTexCoord.y > 1.0f ||
+        projCoords.z < 0.0f || projCoords.z > 1.0f)
+    {
+        return 1.0f; // Outside shadow map = not shadowed
+    }
+
+    // Current depth in light space
+    float currentDepth = projCoords.z;
+
+    // Bias to prevent shadow acne (can be adjusted for directional lights)
+    float bias = 0.005f;
+    currentDepth -= bias;
+
+    // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
+    float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
+    float shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
 
     return shadow;
 }
@@ -177,8 +216,8 @@ float SampleShadowMap(uint shadowMapIndex, float4 lightSpacePos)
 // 통합 조명 계산 함수
 //================================================================================================
 
-// Directional Light 계산 (Diffuse + Specular)
-float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 normal, float3 viewDir, float4 materialColor, bool includeSpecular, float specularPower)
+// Directional Light 계산 (Diffuse + Specular + Shadow)
+float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, float3 normal, float3 viewDir, float4 materialColor, bool includeSpecular, float specularPower)
 {
     // Light.Direction이 영벡터인 경우, 정규화 문제 방지
     if (all(light.Direction == float3(0.0f, 0.0f, 0.0f)))
@@ -188,14 +227,23 @@ float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 normal, flo
 
     float3 lightDir = normalize(-light.Direction);
 
+    // Shadow mapping (if this light casts shadows)
+    float shadow = 1.0f;
+    if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
+    {
+        // Transform world position to light space
+        float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.LightViewProjection);
+        shadow = SampleDirectionalLightShadowMap(light.ShadowMapIndex, lightSpacePos);
+    }
+
     // Diffuse (light.Color는 이미 Intensity 포함)
-    float3 diffuse = CalculateDiffuse(lightDir, normal, light.Color, materialColor);
+    float3 diffuse = CalculateDiffuse(lightDir, normal, light.Color, materialColor) * shadow;
 
     // Specular (선택사항)
     float3 specular = float3(0.0f, 0.0f, 0.0f);
     if (includeSpecular)
     {
-        specular = CalculateSpecular(lightDir, normal, viewDir, light.Color, specularPower);
+        specular = CalculateSpecular(lightDir, normal, viewDir, light.Color, specularPower) * shadow;
     }
 
     return diffuse + specular;
@@ -279,7 +327,7 @@ float3 CalculateSpotLight(FSpotLightInfo light, float3 worldPos, float3 normal, 
     {
         // Transform world position to light space
         float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.LightViewProjection);
-        shadow = SampleShadowMap(light.ShadowMapIndex, lightSpacePos);
+        shadow = SampleSpotLightShadowMap(light.ShadowMapIndex, lightSpacePos);
     }
 
     // Diffuse (light.Color는 이미 Intensity 포함)
@@ -336,9 +384,10 @@ float3 CalculateAllLights(
     // Ambient (비재질 오브젝트는 Ka = Kd 가정)
     litColor += CalculateAmbientLight(AmbientLight, baseColor.rgb);
 
-    // Directional
+    // Directional (with shadow support)
     litColor += CalculateDirectionalLight(
         DirectionalLight,
+        worldPos,  // worldPos 추가 (shadow 계산용)
         normal,
         viewDir,  // LAMBERT에서는 무시됨
         baseColor,

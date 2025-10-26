@@ -26,8 +26,11 @@ struct FDirectionalLightInfo
 {
     FLinearColor Color;     // 16 bytes - Color already includes Intensity and Temperature
     FVector Direction;      // 12 bytes
-    float Padding;          // 4 bytes padding to reach 32 bytes (16-byte aligned)
-    // Total: 32 bytes
+    uint32 bCastShadow;     // 4 bytes - true = this light casts shadow
+    uint32 ShadowMapIndex;  // 4 bytes - index to shadow map array (-1 if no shadow)
+    FVector Padding;        // 12 bytes - padding
+    FMatrix LightViewProjection; // 64 bytes - Light space transformation matrix
+    // Total: 112 bytes
 };
 
 struct FPointLightInfo

@@ -30,7 +30,16 @@ FDirectionalLightInfo UDirectionalLightComponent::GetLightInfo() const
 	// Use GetLightColorWithIntensity() to include Temperature + Intensity
 	Info.Color = GetLightColorWithIntensity();
 	Info.Direction = GetLightDirection();
-	Info.Padding = 0.0f; // 패딩 초기화
+
+	// Shadow casting information
+	Info.bCastShadow = GetIsCastShadows() ? 1u : 0u;
+	Info.ShadowMapIndex = static_cast<uint32>(GetShadowMapIndex()); // Cast int32 to uint32 (converts -1 to 0xFFFFFFFF)
+	Info.Padding = FVector::Zero(); // 패딩 초기화
+
+	// Use cached LightViewProjection (updated by ShadowManager each frame during shadow pass)
+	// NOTE: Unlike SpotLight which calculates VP matrix here, DirectionalLight needs camera frustum info,
+	// so the matrix is calculated and cached by ShadowManager during RenderShadowPass()
+	Info.LightViewProjection = CachedLightViewProjection;
 
 	return Info;
 }
