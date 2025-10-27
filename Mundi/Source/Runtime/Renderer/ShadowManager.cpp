@@ -30,13 +30,12 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 	SpotLightShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxSpotLights);
 	DirectionalLightShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxDirectionalLights);
 
-	// PointLight Shadow Map 초기화 (Config.MaxShadowCastingLights 사용)
-	// 주의: Cube Map은 메모리를 많이 사용함 (각 라이트당 6개 면)
-	// Cube Map: 각 라이트당 6개 면 필요
-	PointLightCubeShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxShadowCastingLights, true);
+	// PointLight Shadow Map 초기화
+	// Cube Map: ArraySize = MaxPointLights (내부에서 * 6 처리)
+	PointLightCubeShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxPointLights, true);
 
-	// Paraboloid Map: 각 라이트당 2개 반구 필요
-	PointLightParaboloidShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxShadowCastingLights * 2, false);
+	// Paraboloid Map: ArraySize = MaxPointLights * 2 (각 라이트당 2개 반구)
+	PointLightParaboloidShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxPointLights * 2, false);
 
 	bIsInitialized = true;
 }

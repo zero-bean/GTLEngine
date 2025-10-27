@@ -21,24 +21,14 @@ void FShadowMap::Initialize(D3D11RHI* RHI, UINT InWidth, UINT InHeight, UINT InA
 {
 	Width = InWidth;
 	Height = InHeight;
-	ArraySize = InArraySize;
+	ArraySize = bInIsCubeMap ? InArraySize * 6 : InArraySize;
 	bIsCubeMap = bInIsCubeMap;
 
 	D3D11_TEXTURE2D_DESC texDesc = {};
 	texDesc.Width = Width;
 	texDesc.Height = Height;
 	texDesc.MipLevels = 1;
-
-	// CubeMap인 경우 ArraySize는 6의 배수여야 함 (각 큐브당 6개 면)
-	if (bIsCubeMap)
-	{
-		texDesc.ArraySize = ArraySize * 6; // 큐브맵 배열: 각 큐브당 6개 면
-	}
-	else
-	{
-		texDesc.ArraySize = ArraySize; // 일반 2D 섀도우맵 배열
-	}
-
+	texDesc.ArraySize = ArraySize;
 	texDesc.Format = DXGI_FORMAT_R32_TYPELESS; // Typeless를 선언해야만, 텍스쳐 Read & Write 2가지가 가능해집니다.
 	texDesc.SampleDesc.Count = 1;
 	texDesc.SampleDesc.Quality = 0;
@@ -61,7 +51,7 @@ void FShadowMap::Initialize(D3D11RHI* RHI, UINT InWidth, UINT InHeight, UINT InA
 
 	// 각 배열 슬라이스에 대한 깊이 스텐실 뷰 생성
 	ShadowMapDSVs.clear();
-	UINT numDSVs = bIsCubeMap ? (ArraySize * 6) : ArraySize;
+	UINT numDSVs = ArraySize;
 	for (UINT i = 0; i < numDSVs; i++)
 	{
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
@@ -90,7 +80,7 @@ void FShadowMap::Initialize(D3D11RHI* RHI, UINT InWidth, UINT InHeight, UINT InA
 		srvDesc.TextureCubeArray.MostDetailedMip = 0;
 		srvDesc.TextureCubeArray.MipLevels = 1;
 		srvDesc.TextureCubeArray.First2DArrayFace = 0;
-		srvDesc.TextureCubeArray.NumCubes = ArraySize; // 큐브 개수
+		srvDesc.TextureCubeArray.NumCubes = ArraySize / 6; // 큐브 개수
 	}
 	else
 	{

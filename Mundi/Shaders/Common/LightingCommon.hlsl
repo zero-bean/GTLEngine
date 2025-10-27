@@ -288,7 +288,7 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     float currentDepth = projCoords.z;
 
     // Bias to prevent shadow acne (can be adjusted for directional lights)
-    float bias = 0.0001f;
+    float bias = 0.005f;
     currentDepth -= bias;
 
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
@@ -319,22 +319,23 @@ float SamplePointLightShadowCube(
     float3 lightToPixel = worldPos - lightPos;
     float distance = length(lightToPixel);
 
-    // 2. Z-Up Left-Handed → Y-Up Left-Handed 좌표 변환 (handedness fix 포함)
-    // Shadow map은 Y-Up 좌표계로 렌더링됨 (ShadowViewProjection.h 참조)
-    // 변환: Z-Up (X, Y, Z) → Y-Up (-X, Z, -Y)
-    float3 cubeDir = float3(lightToPixel.x, lightToPixel.z, lightToPixel.y);
+    // 2. 선형 거리를 비선형 깊이로 변환 (Perspective Projection)
+    // Perspective projection formula: Z_ndc = (far / (far - near)) - (far * near) / ((far - near) * Z_view)
+    // 여기서 Z_view = distance (view space에서의 깊이)
+    float far = attenuationRadius;
+    float near = nearPlane;
+    float nonlinearDepth = (far / (far - near)) - (far * near) / ((far - near) * distance);
 
-    // 3. 현재 깊이 계산 (선형 깊이 [0, 1])
-    // ShadowDepthCube.hlsl이 선형 깊이를 출력하므로 동일하게 선형 깊이로 비교
-    float currentDepth = saturate((distance - nearPlane) / (attenuationRadius - nearPlane));
+    // 3. [0, 1] 범위로 정규화 (DirectX의 경우 이미 [0, 1] 범위겠지만 보험)
+    float currentDepth = saturate(nonlinearDepth);
 
     // 4. Bias to prevent shadow acne
-    float bias = 0.001f;
+    float bias = 0.005f;
     currentDepth -= bias;
 
     // 5. TextureCubeArray 샘플링
     // SampleCmpLevelZero: cube direction + array index
-    float4 sampleCoord = float4(cubeDir, shadowMapIndex);
+    float4 sampleCoord = float4(lightToPixel, shadowMapIndex);
     float shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, sampleCoord, currentDepth);
 
     return shadow;
@@ -468,8 +469,8 @@ float3 CalculatePointLight(FPointLightInfo light, float3 worldPos, float3 normal
     float shadow = 1.0f;
     if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
     {
-        // Near plane (하드코딩, 추후 FPointLightInfo에 추가 가능)
-        const float nearPlane = 0.1f;
+        // Near plane (하드코딩, ShadowViewProjection.h의 값과 일치해야 함)
+        const float nearPlane = 0.01f;
 
         // Paraboloid 또는 Cube Map 선택
         if (light.bUseParaboloidMap)

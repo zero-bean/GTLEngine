@@ -140,11 +140,11 @@ struct FShadowViewProjection
 	// @param Position - 라이트 월드 위치
 	// @param AttenuationRadius - 라이트 감쇠 반경 (Far plane으로 사용)
 	// @param NearPlane - Near clipping plane (기본값 0.1f)
-	// @return 6개의 VP 행렬 배열 (+X, -X, +Y, -Y, +Z, -Z 순서, DirectX Cube Face 순서)
+	// @return 6개의 VP 행렬 배열
 	static TArray<FShadowViewProjection> CreateForPointLightCube(
 		const FVector& Position,
 		float AttenuationRadius,
-		float NearPlane = 0.1f)
+		float NearPlane = 0.01f)
 	{
 		TArray<FShadowViewProjection> Results;
 		Results.Reserve(6);
@@ -157,17 +157,15 @@ struct FShadowViewProjection
 			FVector Up;
 		};
 
-		// DirectX Cube Map Face 순서에 맞춘 Z-Up Left-Handed 좌표계 매핑
-		// DirectX 순서: +X, -X, +Y(Up), -Y(Down), +Z(Forward), -Z(Back)
-		// Z-Up 좌표계: Right=+X, Forward=+Y, Up=+Z
+		// Cube Map Face 정의
 		FCubeFace CubeFaces[6] =
 		{
-			{ FVector( 1,  0,  0), FVector(0, 0,  1) },  // Slice 0: +X (Right)
-			{ FVector(-1,  0,  0), FVector(0, 0,  1) },  // Slice 1: -X (Left)
-			{ FVector( 0,  0,  1), FVector(0, -1,  0) }, // Slice 2: +Z (Up) → DirectX +Y 위치
-			{ FVector( 0,  0, -1), FVector(0,  1,  0) }, // Slice 3: -Z (Down) → DirectX -Y 위치
-			{ FVector( 0,  1,  0), FVector(0, 0,  1) },  // Slice 4: +Y (Forward) → DirectX +Z 위치
-			{ FVector( 0, -1,  0), FVector(0, 0,  1) }   // Slice 5: -Y (Back) → DirectX -Z 위치
+			{ FVector( 1,  0,  0), FVector(0,  1,  0) },  // Slice 0: +X (Right)
+			{ FVector(-1,  0,  0), FVector(0,  1,  0) },  // Slice 1: -X (Left)
+			{ FVector( 0,  1,  0), FVector(0,  0,  -1) }, // Slice 2: +Y (Up)
+			{ FVector( 0, -1,  0), FVector(0,  0,  1) }, // Slice 3: -Y (Down)
+			{ FVector( 0,  0,  1), FVector(0,  1,  0) },  // Slice 4: +Z (Forward)                       
+			{ FVector( 0,  0, -1), FVector(0,  1,  0) }   // Slice 5: -Z (Back)
 		};
 
 		// 각 면에 대한 VP 행렬 생성
