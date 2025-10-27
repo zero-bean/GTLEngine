@@ -111,12 +111,20 @@ FSpotLightInfo USpotLightComponent::GetLightInfo() const
 	// Calculate Light View-Projection matrix for shadow mapping
 	if (Info.bCastShadow && Info.ShadowMapIndex != 0xFFFFFFFF)
 	{
+		FVector LightPos = GetWorldLocation();
+		float AttenuationRadius = GetAttenuationRadius();
+
+		UE_LOG("[SpotLight] Shadow Matrix Creation:");
+		UE_LOG("  Position: (%.2f, %.2f, %.2f)", LightPos.X, LightPos.Y, LightPos.Z);
+		UE_LOG("  AttenuationRadius (Far Plane): %.2f", AttenuationRadius);
+		UE_LOG("  FOV: %.2f degrees", GetOuterConeAngle() * 2.0f);
+
 		// FShadowViewProjection 헬퍼 사용하여 중복 제거
 		FShadowViewProjection ShadowVP = FShadowViewProjection::CreateForSpotLight(
-			GetWorldLocation(),
+			LightPos,
 			GetDirection(),
 			GetOuterConeAngle() * 2.0f,  // 전체 FOV
-			GetAttenuationRadius());
+			AttenuationRadius);
 
 		Info.LightViewProjection = ShadowVP.ViewProjection;
 	}

@@ -206,8 +206,9 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     //currentDepth -= bias;
 
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
+    // DirectionalLight는 Forward-Z이므로 별도 sampler 사용 (LESS_EQUAL)
     float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-    float shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+    float shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_DirectionalShadowSampler, shadowSampleCoord, currentDepth);
 
     return shadow;
 }
@@ -234,13 +235,15 @@ float SamplePointLightShadowCube(
     float distance = length(lightToPixel);
 
     // 2. 선형 거리를 비선형 깊이로 변환 (Perspective Projection)
-    // Perspective projection formula: Z_ndc = (far / (far - near)) - (far * near) / ((far - near) * Z_view)
-    // 여기서 Z_view = distance (view space에서의 깊이)
-    float far = attenuationRadius;
-    float near = nearPlane;
-    float nonlinearDepth = (far / (far - near)) - (far * near) / ((far - near) * distance);
+    // REVERSE-Z: Projection에서 Near/Far가 스왑되어 전달됨
+    // PerspectiveFovLH(90, 1.0, AttenuationRadius, NearPlane) 형태로 호출
+    // 즉, Near 파라미터 = AttenuationRadius, Far 파라미터 = NearPlane
+    // Reverse-Z formula: Z_ndc = (near / (near - far)) - (near * far) / ((near - far) * Z_view)
+    float near = attenuationRadius;  // Projection의 Near 파라미터 (먼 거리)
+    float far = nearPlane;           // Projection의 Far 파라미터 (가까운 거리)
+    float nonlinearDepth = (near / (near - far)) - (near * far) / ((near - far) * distance);
 
-    // 3. [0, 1] 범위로 정규화 (DirectX의 경우 이미 [0, 1] 범위겠지만 보험)
+    // 3. [0, 1] 범위로 정규화
     float currentDepth = saturate(nonlinearDepth);
 
     // 4. Bias to prevent shadow acne

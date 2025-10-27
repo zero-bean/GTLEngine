@@ -120,6 +120,8 @@ public:
 	int32 GetShadowMapIndex(USpotLightComponent* Light) const;
 	FShadowMap& GetSpotLightShadowMap() { return SpotLightShadowMap; }
 	const FShadowMap& GetSpotLightShadowMap() const { return SpotLightShadowMap; }
+	FShadowMap& GetDirectionalLightShadowMap() { return DirectionalLightShadowMap; }
+	const FShadowMap& GetDirectionalLightShadowMap() const { return DirectionalLightShadowMap; }
 	FShadowMap& GetPointLightCubeShadowMap() { return PointLightCubeShadowMap; }
 	const FShadowMap& GetPointLightCubeShadowMap() const { return PointLightCubeShadowMap; }
 

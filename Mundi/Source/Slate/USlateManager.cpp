@@ -185,6 +185,7 @@ void USlateManager::Render()
 {
     // 메인 툴바 렌더링 (항상 최상단에)
     MainToolbar->RenderWidget();
+
     if (TopPanel)
     {
         TopPanel->OnRender();

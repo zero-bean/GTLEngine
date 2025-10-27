@@ -147,7 +147,7 @@ void FSceneRenderer::RenderWireframePath()
 	RenderOpaquePass(EViewModeIndex::VMI_Unlit);
 
 	// Wireframe으로 그리기
-	RHIDevice->ClearDepthBuffer(1.0f, 0);
+	RHIDevice->ClearDepthBuffer(0.0f, 0);  // REVERSE-Z
 	RHIDevice->RSSetState(ERasterizerMode::Wireframe);
 	RHIDevice->OMSetRenderTargets(ERTVMode::SceneColorTarget);
 	RenderOpaquePass(EViewModeIndex::VMI_Unlit);
@@ -176,7 +176,7 @@ void FSceneRenderer::RenderSceneDepthPath()
 
 	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	RHIDevice->GetDeviceContext()->ClearRenderTargetView(RHIDevice->GetCurrentTargetRTV(), ClearColor);
-	RHIDevice->ClearDepthBuffer(1.0f, 0);
+	RHIDevice->ClearDepthBuffer(0.0f, 0);  // REVERSE-Z
 
 	// 2. Base Pass - Scene에 메시 그리기
 	RenderOpaquePass(EViewModeIndex::VMI_Unlit);
@@ -838,7 +838,7 @@ void FSceneRenderer::RenderDecalPass()
 
 	// 데칼 렌더 설정
 	RHIDevice->RSSetState(ERasterizerMode::Decal);
-	RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqualReadOnly); // 깊이 쓰기 OFF
+	RHIDevice->OMSetDepthStencilState(EComparisonFunc::GreaterEqualReadOnly); // REVERSE-Z: 깊이 쓰기 OFF
 	RHIDevice->OMSetBlendState(true);
 
 	for (UDecalComponent* Decal : Proxies.Decals)
@@ -904,7 +904,7 @@ void FSceneRenderer::RenderDecalPass()
 
 	// 상태 복구
 	RHIDevice->RSSetState(ERasterizerMode::Solid);
-	RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual);
+	RHIDevice->OMSetDepthStencilState(EComparisonFunc::GreaterEqual);  // REVERSE-Z
 	RHIDevice->OMSetBlendState(false);
 }
 
@@ -1139,9 +1139,9 @@ void FSceneRenderer::RenderOverayEditorPrimitivesPass()
 	// 후처리된 최종 이미지 위에 원본 씬의 뎁스 버퍼를 사용하여 3D 오버레이를 렌더링합니다.
 	RHIDevice->OMSetRenderTargets(ERTVMode::SceneColorTargetWithId);
 
-	// 뎁스 버퍼를 Clear하고 LessEqual로 그리기 때문에 오버레이로 표시되는데
+	// 뎁스 버퍼를 Clear하고 GreaterEqual로 그리기 때문에 오버레이로 표시되는데
 	// 오버레이 끼리는 깊이 테스트가 가능함
-	RHIDevice->ClearDepthBuffer(1.0f, 0);
+	RHIDevice->ClearDepthBuffer(0.0f, 0);  // REVERSE-Z
 
 	for (UPrimitiveComponent* GizmoComp : Proxies.OverlayPrimitives)
 	{
@@ -1155,13 +1155,18 @@ void FSceneRenderer::RenderOverayEditorPrimitivesPass()
 // 수집한 Batch 그리기
 void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, bool bClearListAfterDraw, bool bIsShadowPass)
 {
+	if (bIsShadowPass)
+	{
+		UE_LOG("[DrawMeshBatches] Shadow Pass: %d batches to draw", InMeshBatches.size());
+	}
+
 	if (InMeshBatches.IsEmpty()) return;
 
 	// RHI 상태 초기 설정 (Opaque Pass 기본값)
 	// Shadow Pass일 경우 FShadowMap::BeginRender()에서 이미 설정했으므로 덮어쓰지 않음
 	if (!bIsShadowPass)
 	{
-		RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual); // 깊이 쓰기 ON
+		RHIDevice->OMSetDepthStencilState(EComparisonFunc::GreaterEqual); // REVERSE-Z: 깊이 쓰기 ON
 	}
 
 	// PS 리소스 초기화
@@ -1309,6 +1314,12 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 		RHIDevice->SetAndUpdateConstantBuffer(ColorBufferType(Batch.InstanceColor, Batch.ObjectID));
 
 		// 5. 드로우 콜 실행
+		if (bIsShadowPass)
+		{
+			UE_LOG("[DrawMeshBatches] Shadow DrawIndexed: IndexCount=%d, StartIndex=%d, BaseVertex=%d",
+				Batch.IndexCount, Batch.StartIndex, Batch.BaseVertexIndex);
+		}
+
 		RHIDevice->GetDeviceContext()->DrawIndexed(Batch.IndexCount, Batch.StartIndex, Batch.BaseVertexIndex);
 	}
 

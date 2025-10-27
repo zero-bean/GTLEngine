@@ -10,12 +10,16 @@ struct FShadowViewProjection
 	FMatrix Projection;
 	FMatrix ViewProjection;
 
-	// SpotLight용 Shadow VP 행렬 생성
+	// SpotLight용 Shadow VP 행렬 생성 (Reverse-Z)
 	// @param Position - 라이트 월드 위치
 	// @param Direction - 라이트 방향
 	// @param FOV - 전체 원뿔 각도 (OuterConeAngle * 2)
 	// @param AttenuationRadius - 라이트 감쇠 반경 (Far plane으로 사용)
 	// @param NearPlane - Near clipping plane (기본값 0.1f)
+	//
+	// NOTE: Reverse-Z 사용 - Near/Far를 swap하여 depth precision 향상
+	//       Depth range: [1.0 (near) → 0.0 (far)]
+	//       Comparison: GreaterEqual 필요
 	static FShadowViewProjection CreateForSpotLight(
 		const FVector& Position,
 		const FVector& Direction,
@@ -25,23 +29,24 @@ struct FShadowViewProjection
 	{
 		FShadowViewProjection Result;
 
-		// View 행렬 계산
-		FVector LightUp = FVector(0, 1, 0);
+		// View 행렬 계산 (Unreal 축: Z=Up)
+		FVector LightUp = FVector(0, 0, 1);  // Z축이 Up
 		// Direction과 Up 벡터가 평행하면 다른 Up 벡터 사용
 		if (FMath::Abs(FVector::Dot(Direction, LightUp)) > 0.99f)
 		{
-			LightUp = FVector(1, 0, 0);
+			LightUp = FVector(1, 0, 0);  // X축(Forward)을 Up으로
 		}
 
 		Result.View = FMatrix::LookAtLH(Position, Position + Direction, LightUp);
 
 		// Projection 행렬 계산 (정사각형 shadow map 가정)
+		// REVERSE-Z: Near와 Far를 swap!
 		float AspectRatio = 1.0f;
 		Result.Projection = FMatrix::PerspectiveFovLH(
 			DegreesToRadians(FOV),
 			AspectRatio,
-			NearPlane,
-			AttenuationRadius);
+			AttenuationRadius,  // Reversed: Far → Near
+			NearPlane);         // Reversed: Near → Far
 
 		// ViewProjection 행렬 계산
 		Result.ViewProjection = Result.View * Result.Projection;
@@ -75,10 +80,10 @@ struct FShadowViewProjection
 		// === 2. Light View 행렬 생성 ===
 		FVector LightDir = Direction.GetNormalized();
 
-		// Up vector 선택 (LightDir와 평행하지 않은 벡터)
-		FVector Up = (FMath::Abs(LightDir.Y) < 0.99f)
-			? FVector(0, 1, 0)
-			: FVector(1, 0, 0);
+		// Up vector 선택 (LightDir와 평행하지 않은 벡터) - Unreal 축: Z=Up
+		FVector Up = (FMath::Abs(LightDir.Z) < 0.99f)
+			? FVector(0, 0, 1)  // Z축이 Up
+			: FVector(1, 0, 0);  // Z축과 평행하면 X축(Forward)을 Up으로
 
 		// Frustum 중심점 계산 (8개 코너의 평균)
 		FVector FrustumCenter = FVector::Zero();
@@ -118,6 +123,9 @@ struct FShadowViewProjection
 		float Depth = MaxZ - MinZ;
 
 		// 중심을 원점으로 맞춘 Orthographic Projection
+		// NOTE: Orthographic은 선형 depth 분포를 가지므로 Reverse-Z의 정밀도 이득이 거의 없음
+		// 품질 문제(심한 아크네)로 인해 DirectionalLight는 Forward-Z 유지
+		// (메인 씬/SpotLight/PointLight는 Reverse-Z 사용)
 		Result.Projection = FMatrix::OrthoLH(Width, Height, 0.0f, Depth);
 
 		// AABB 중심을 원점으로 이동시키기 위한 오프셋 적용
@@ -157,15 +165,15 @@ struct FShadowViewProjection
 			FVector Up;
 		};
 
-		// Cube Map Face 정의
+		// Cube Map Face 정의 (Unreal 축: X=Forward, Y=Right, Z=Up)
 		FCubeFace CubeFaces[6] =
 		{
-			{ FVector( 1,  0,  0), FVector(0,  1,  0) },  // Slice 0: +X (Right)
-			{ FVector(-1,  0,  0), FVector(0,  1,  0) },  // Slice 1: -X (Left)
-			{ FVector( 0,  1,  0), FVector(0,  0,  -1) }, // Slice 2: +Y (Up)
-			{ FVector( 0, -1,  0), FVector(0,  0,  1) }, // Slice 3: -Y (Down)
-			{ FVector( 0,  0,  1), FVector(0,  1,  0) },  // Slice 4: +Z (Forward)                       
-			{ FVector( 0,  0, -1), FVector(0,  1,  0) }   // Slice 5: -Z (Back)
+			{ FVector( 1,  0,  0), FVector(0,  0,  1) },  // Slice 0: +X (Forward) - Up은 Z
+			{ FVector(-1,  0,  0), FVector(0,  0,  1) },  // Slice 1: -X (Back) - Up은 Z
+			{ FVector( 0,  1,  0), FVector(0,  0,  1) },  // Slice 2: +Y (Right) - Up은 Z
+			{ FVector( 0, -1,  0), FVector(0,  0,  1) },  // Slice 3: -Y (Left) - Up은 Z
+			{ FVector( 0,  0,  1), FVector(-1, 0,  0) },  // Slice 4: +Z (Up) - Up은 -X (Back)
+			{ FVector( 0,  0, -1), FVector( 1, 0,  0) }   // Slice 5: -Z (Down) - Up은 +X (Forward)
 		};
 
 		// 각 면에 대한 VP 행렬 생성
@@ -180,11 +188,12 @@ struct FShadowViewProjection
 				CubeFaces[i].Up);
 
 			// Projection 행렬 생성 (90도 FOV, 정사각형 aspect ratio)
+			// REVERSE-Z: Near와 Far를 swap!
 			VP.Projection = FMatrix::PerspectiveFovLH(
 				DegreesToRadians(90.0f),  // 90도 FOV
 				1.0f,                      // 정사각형 aspect ratio
-				NearPlane,
-				AttenuationRadius);
+				AttenuationRadius,         // Reversed: Far → Near
+				NearPlane);                // Reversed: Near → Far
 
 			// ViewProjection 계산
 			VP.ViewProjection = VP.View * VP.Projection;
