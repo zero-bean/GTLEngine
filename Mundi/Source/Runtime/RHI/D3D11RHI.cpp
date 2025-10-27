@@ -89,8 +89,8 @@ void D3D11RHI::ClearAllBuffer()
     DeviceContext->ClearRenderTargetView(BackBufferRTV, ClearColor);
     DeviceContext->ClearRenderTargetView(GetCurrentTargetRTV(), ClearId);
     DeviceContext->ClearRenderTargetView(IdBufferRTV, ClearId);
-    
-    ClearDepthBuffer(0.0f, 0);                 // REVERSE-Z: 깊이값 초기화 (0.0 = far)
+
+    ClearDepthBuffer(1.0f, 0);
 }
 
 void D3D11RHI::ClearDepthBuffer(float Depth, UINT Stencil)
@@ -178,17 +178,17 @@ void D3D11RHI::CreateDepthStencilState()
     // DepthWriteMask/Func는 무시되지만 값은 그대로 둬도 됨
     Device->CreateDepthStencilState(&desc, &DepthStencilStateDisable);
 
-    // 5) (선택) GreaterEqual + Write ALL (REVERSE-Z)
+    // 5) LessEqual + Write ALL
     desc.DepthEnable = TRUE;
     desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
+    desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
     desc.StencilEnable = FALSE;
     Device->CreateDepthStencilState(&desc, &DepthStencilStateGreaterEqualWrite);
 
-    // 6) GreaterEqual + Write ZERO (REVERSE-Z ReadOnly)
+    // 6) LessEqual + Write ZERO (ReadOnly)
     desc.DepthEnable = TRUE;
     desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
+    desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
     desc.StencilEnable = FALSE;
     Device->CreateDepthStencilState(&desc, &DepthStencilStateGreaterEqualReadOnly);
 
@@ -207,11 +207,11 @@ void D3D11RHI::CreateDepthStencilState()
     desc.BackFace = desc.FrontFace;
     Device->CreateDepthStencilState(&desc, &DepthStencilStateOverlayWriteStencil);
 
-    // 7) StencilRejectOverlay: GreaterEqual + DepthWrite ALL + Stencil EQUAL 0 (keep) - REVERSE-Z
+    // 8) StencilRejectOverlay: LessEqual + DepthWrite ALL + Stencil EQUAL 0 (keep)
     ZeroMemory(&desc, sizeof(desc));
     desc.DepthEnable = TRUE;
     desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;  // REVERSE-Z
+    desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
     desc.StencilEnable = TRUE;
     desc.StencilReadMask = 0xFF;
     desc.StencilWriteMask = 0x00; // no stencil write
@@ -261,31 +261,20 @@ void D3D11RHI::CreateSamplerState()
 	HR = Device->CreateSamplerState(&PointClampDesc, &PointClampSamplerState);
 
 	// Shadow Comparison Sampler (for shadow mapping with PCF)
-	// REVERSE-Z: Use GREATER_EQUAL comparison and BorderColor = 0.0
 	D3D11_SAMPLER_DESC ShadowComparisonDesc = {};
 	ShadowComparisonDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT; // PCF filtering
 	ShadowComparisonDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
 	ShadowComparisonDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
 	ShadowComparisonDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-	ShadowComparisonDesc.BorderColor[0] = 0.0f; // REVERSE-Z: Outside shadow map = 0.0 (far) = lit
-	ShadowComparisonDesc.BorderColor[1] = 0.0f;
-	ShadowComparisonDesc.BorderColor[2] = 0.0f;
-	ShadowComparisonDesc.BorderColor[3] = 0.0f;
-	ShadowComparisonDesc.ComparisonFunc = D3D11_COMPARISON_GREATER; // REVERSE-Z: Pass if fragment depth > occluder depth (체크리스트 권장)
+	ShadowComparisonDesc.BorderColor[0] = 1.0f; // Outside shadow map = lit
+	ShadowComparisonDesc.BorderColor[1] = 1.0f;
+	ShadowComparisonDesc.BorderColor[2] = 1.0f;
+	ShadowComparisonDesc.BorderColor[3] = 1.0f;
+	ShadowComparisonDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL; // Pass if occluder depth <= sample depth
 	ShadowComparisonDesc.MinLOD = 0;
 	ShadowComparisonDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	HR = Device->CreateSamplerState(&ShadowComparisonDesc, &ShadowComparisonSamplerState);
-
-	// DirectionalLight Shadow Comparison Sampler (Forward-Z용)
-	D3D11_SAMPLER_DESC DirectionalShadowDesc = ShadowComparisonDesc;
-	DirectionalShadowDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;  // FORWARD-Z
-	DirectionalShadowDesc.BorderColor[0] = 1.0f;  // Forward-Z: Outside = 1.0 (far) = lit
-	DirectionalShadowDesc.BorderColor[1] = 1.0f;
-	DirectionalShadowDesc.BorderColor[2] = 1.0f;
-	DirectionalShadowDesc.BorderColor[3] = 1.0f;
-
-	HR = Device->CreateSamplerState(&DirectionalShadowDesc, &DirectionalShadowComparisonSamplerState);
 }
 
 HRESULT D3D11RHI::CreateIndexBuffer(ID3D11Device* device, const FMeshData* meshData, ID3D11Buffer** outBuffer)
@@ -362,10 +351,6 @@ void D3D11RHI::RSSetState(ERasterizerMode ViewModeIndex)
 
 	case ERasterizerMode::Shadow:
 		DeviceContext->RSSetState(ShadowRasterizerState);
-        break;
-
-	case ERasterizerMode::DirectionalShadow:
-		DeviceContext->RSSetState(DirectionalShadowRasterizerState);
         break;
 
 	default:
@@ -682,25 +667,12 @@ void D3D11RHI::CreateRasterizerState()
     ShadowRasterizerDesc.CullMode = D3D11_CULL_BACK;
     ShadowRasterizerDesc.DepthClipEnable = TRUE;
 
-    // Shadow acne 방지를 위한 DepthBias 설정 (REVERSE-Z)
-    ShadowRasterizerDesc.DepthBias = -5;              // REVERSE-Z: 음수 (카메라 방향)
-    ShadowRasterizerDesc.SlopeScaledDepthBias = -1.0f;  // REVERSE-Z: 음수, 크기 감소 (1.0→0.5)
-    ShadowRasterizerDesc.DepthBiasClamp = 0.0f;         // 바이어스 제한 없음
+    // Shadow acne 방지를 위한 DepthBias 설정
+    ShadowRasterizerDesc.DepthBias = 1000;
+    ShadowRasterizerDesc.SlopeScaledDepthBias = 2.0f;
+    ShadowRasterizerDesc.DepthBiasClamp = 0.0f;
 
     Device->CreateRasterizerState(&ShadowRasterizerDesc, &ShadowRasterizerState);
-
-    // DirectionalLight Shadow 전용 래스터라이저 상태 (FORWARD-Z)
-    D3D11_RASTERIZER_DESC DirectionalShadowRasterizerDesc = {};
-    DirectionalShadowRasterizerDesc.FillMode = D3D11_FILL_SOLID;
-    DirectionalShadowRasterizerDesc.CullMode = D3D11_CULL_BACK;
-    DirectionalShadowRasterizerDesc.DepthClipEnable = TRUE;
-
-    // FORWARD-Z용 양수 bias (Orthographic은 slope 효과 적음, constant bias 중심)
-    DirectionalShadowRasterizerDesc.DepthBias = 1000;           // FORWARD-Z: 양수 (라이트 방향)
-    DirectionalShadowRasterizerDesc.SlopeScaledDepthBias = 2.0f;  // FORWARD-Z: 양수 (Orthographic은 효과 적음)
-    DirectionalShadowRasterizerDesc.DepthBiasClamp = 0.0f;
-
-    Device->CreateRasterizerState(&DirectionalShadowRasterizerDesc, &DirectionalShadowRasterizerState);
 }
 
 void D3D11RHI::CreateConstantBuffer(ID3D11Buffer** ConstantBuffer, uint32 Size)
@@ -750,11 +722,6 @@ void D3D11RHI::ReleaseSamplerState()
         ShadowComparisonSamplerState->Release();
         ShadowComparisonSamplerState = nullptr;
     }
-    if (DirectionalShadowComparisonSamplerState)
-    {
-        DirectionalShadowComparisonSamplerState->Release();
-        DirectionalShadowComparisonSamplerState = nullptr;
-    }
 }
 
 void D3D11RHI::ReleaseBlendState()
@@ -797,11 +764,6 @@ void D3D11RHI::ReleaseRasterizerState()
     {
         ShadowRasterizerState->Release();
         ShadowRasterizerState = nullptr;
-    }
-    if (DirectionalShadowRasterizerState)
-    {
-        DirectionalShadowRasterizerState->Release();
-        DirectionalShadowRasterizerState = nullptr;
     }
     DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 }

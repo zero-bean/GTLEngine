@@ -42,8 +42,7 @@ Texture2DArray g_DirectionalLightShadowMaps : register(t6);
 TextureCubeArray g_PointLightShadowCubeMaps : register(t7);
 
 // Shadow map sampler - comparison sampler for PCF
-SamplerComparisonState g_ShadowSampler : register(s2);  // Reverse-Z용 (SpotLight/PointLight)
-SamplerComparisonState g_DirectionalShadowSampler : register(s3);  // Forward-Z용 (DirectionalLight)
+SamplerComparisonState g_ShadowSampler : register(s2);
 
 // b11: 타일 컬링 설정 상수 버퍼
 cbuffer TileCullingBuffer : register(b11)

@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ShadowMap.h"
 
 FShadowMap::FShadowMap()
@@ -158,13 +158,13 @@ void FShadowMap::Release()
 	}
 }
 
-void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex, bool bUseReverseZ)
+void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex)
 {
 	assert(RHI != nullptr, "RHI is null");
 	assert(ArrayIndex < ArraySize, "Array index out of bounds");
 
-	UE_LOG("[ShadowMap] BeginRender - ArrayIndex=%d, ArraySize=%d, Width=%d, Height=%d, ReverseZ=%d",
-		ArrayIndex, ArraySize, Width, Height, bUseReverseZ);
+	UE_LOG("[ShadowMap] BeginRender - ArrayIndex=%d, ArraySize=%d, Width=%d, Height=%d",
+		ArrayIndex, ArraySize, Width, Height);
 
 	ID3D11DeviceContext* pContext = RHI->GetDeviceContext();
 
@@ -174,9 +174,7 @@ void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex, bool bUseReverseZ)
 	UE_LOG("[ShadowMap] BeginRender - DSV=0x%p, SRV=0x%p", DSV, ShadowMapSRV);
 
 	// DSV를 초기화합니다.
-	// REVERSE-Z: Clear to 0.0 (far plane), FORWARD-Z: Clear to 1.0 (far plane)
-	float ClearDepth = bUseReverseZ ? 0.0f : 1.0f;
-	pContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, ClearDepth, 0);
+	pContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	// Unbind all pixel shader resources (depth-only pass doesn't need textures)
 	ID3D11ShaderResourceView* pNullSRVs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
@@ -185,16 +183,11 @@ void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex, bool bUseReverseZ)
 	// Unbind pixel shader (depth-only rendering)
 	pContext->PSSetShader(nullptr, nullptr, 0);
 
-	// Set rasterizer state based on Reverse-Z or Forward-Z
-	// REVERSE-Z (SpotLight/PointLight): 음수 bias (-5, -1.0f)
-	// FORWARD-Z (DirectionalLight): 양수 bias (1000, 2.0f)
-	ERasterizerMode RasterizerMode = bUseReverseZ ? ERasterizerMode::Shadow : ERasterizerMode::DirectionalShadow;
-	RHI->RSSetState(RasterizerMode);
+	// Set rasterizer state for shadow rendering
+	RHI->RSSetState(ERasterizerMode::Shadow);
 
 	// Set depth-stencil state for shadow rendering (depth write enabled, depth test enabled)
-	// REVERSE-Z: GreaterEqual, FORWARD-Z: LessEqual
-	EComparisonFunc DepthFunc = bUseReverseZ ? EComparisonFunc::GreaterEqual : EComparisonFunc::LessEqual;
-	RHI->OMSetDepthStencilState(DepthFunc);
+	RHI->OMSetDepthStencilState(EComparisonFunc::LessEqual);
 
 	// OM 단계에서, 컬러 렌더링을 하지 않고 오직 깊이 버퍼만 쓰도록 설정합니다.
 	ID3D11RenderTargetView* nullRTV = nullptr;

@@ -228,8 +228,7 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent
 	Light->SetLightViewProjection(ShadowVP.ViewProjection);
 
 	// DirectionalLight Shadow Map 렌더링 시작 (DSV 바인딩, Viewport 설정)
-	// DirectionalLight는 Orthographic이므로 Forward-Z 사용 (Reverse-Z 정밀도 이득 없음)
-	DirectionalLightShadowMap.BeginRender(RHI, Index, false);
+	DirectionalLightShadowMap.BeginRender(RHI, Index);
 
 	return true;
 }
@@ -291,11 +290,9 @@ void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 	ID3D11ShaderResourceView* PointCubeShadowMapSRV = PointLightCubeShadowMap.GetSRV();
 	RHI->GetDeviceContext()->PSSetShaderResources(7, 1, &PointCubeShadowMapSRV);
 
-	// Shadow Comparison Sampler를 슬롯 s2, s3에 바인딩
+	// Shadow Comparison Sampler를 슬롯 s2에 바인딩
 	ID3D11SamplerState* ShadowSampler = RHI->GetShadowComparisonSamplerState();
-	ID3D11SamplerState* DirectionalShadowSampler = RHI->GetDirectionalShadowComparisonSamplerState();
-	ID3D11SamplerState* Samplers[2] = { ShadowSampler, DirectionalShadowSampler };
-	RHI->GetDeviceContext()->PSSetSamplers(2, 2, Samplers);  // s2: Reverse-Z, s3: Forward-Z
+	RHI->GetDeviceContext()->PSSetSamplers(2, 1, &ShadowSampler);
 }
 
 void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)

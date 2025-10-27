@@ -56,10 +56,9 @@ FMatrix UCameraComponent::GetProjectionMatrix(float ViewportAspectRatio) const
 {
     if (ProjectionMode == ECameraProjectionMode::Perspective)
     {
-        // REVERSE-Z: Near/Far 스왑
         return FMatrix::PerspectiveFovLH(FieldOfView * (PI / 180.0f),
             ViewportAspectRatio,
-            FarClip, NearClip);
+            NearClip, FarClip);
     }
     else
     {
@@ -70,22 +69,18 @@ FMatrix UCameraComponent::GetProjectionMatrix(float ViewportAspectRatio) const
         orthoWidth = orthoWidth * ZooMFactor;
         orthoHeight = orthoWidth / ViewportAspectRatio;
 
-        // REVERSE-Z는 Orthographic에서 큰 이득 없지만 일관성을 위해 적용
         return FMatrix::OrthoLH(orthoWidth, orthoHeight,
             NearClip, FarClip);
-        /*return FMatrix::OrthoLH_XForward(orthoWidth, orthoHeight,
-            NearClip, FarClip);*/
     }
 }
 FMatrix UCameraComponent::GetProjectionMatrix(float ViewportAspectRatio, FViewport* Viewport) const
 {
     if (ProjectionMode == ECameraProjectionMode::Perspective)
     {
-        // REVERSE-Z: Near/Far 스왑
         return FMatrix::PerspectiveFovLH(
             FieldOfView * (PI / 180.0f),
             ViewportAspectRatio,
-            FarClip, NearClip);
+            NearClip, FarClip);
     }
     else
     {
@@ -100,8 +95,6 @@ FMatrix UCameraComponent::GetProjectionMatrix(float ViewportAspectRatio, FViewpo
             orthoWidth,
             orthoHeight,
             NearClip, FarClip);
-        /*return FMatrix::OrthoLH_XForward(orthoWidth, orthoHeight,
-            NearClip, FarClip);*/
     }
 }
 FVector UCameraComponent::GetForward() const

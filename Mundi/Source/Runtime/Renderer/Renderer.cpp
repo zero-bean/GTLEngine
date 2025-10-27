@@ -245,7 +245,7 @@ void URenderer::EndLineBatch(const FMatrix& ModelMatrix)
 		RHIDevice->GetDeviceContext()->DrawIndexed(DynamicLineMesh->GetCurrentIndexCount(), 0, 0);
 		// 상태 복구
 		RHIDevice->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		RHIDevice->OMSetDepthStencilState(EComparisonFunc::GreaterEqual);  // REVERSE-Z
+		RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual);
 	}
 
 	bLineBatchActive = false;

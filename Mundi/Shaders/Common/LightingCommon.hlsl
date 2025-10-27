@@ -202,16 +202,13 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     // Current depth in light space
     float currentDepth = projCoords.z;
 
-    // DirectionalLight는 FORWARD-Z 사용 (Orthographic은 Reverse-Z 이득 없음)
-    // Orthographic은 slope-scaled bias가 효과 없으므로 constant software bias 사용
-    // Hardware rasterizer bias가 Reverse-Z용 음수이므로 큰 software bias 필요
-    float bias = 0.0005f;  // Forward-Z이므로 빼기 (아크네 방지)
+    // Bias to prevent shadow acne (can be adjusted for directional lights)
+    float bias = 0.0001f;
     currentDepth -= bias;
 
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
-    // DirectionalLight는 Forward-Z이므로 별도 sampler 사용 (LESS_EQUAL)
     float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-    float shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_DirectionalShadowSampler, shadowSampleCoord, currentDepth);
+    float shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
 
     return shadow;
 }
@@ -238,20 +235,18 @@ float SamplePointLightShadowCube(
     float distance = length(lightToPixel);
 
     // 2. 선형 거리를 비선형 깊이로 변환 (Perspective Projection)
-    // REVERSE-Z: Projection에서 Near/Far가 스왑되어 전달됨
-    // PerspectiveFovLH(90, 1.0, AttenuationRadius, NearPlane) 형태로 호출
-    // 즉, Near 파라미터 = AttenuationRadius, Far 파라미터 = NearPlane
-    // Reverse-Z formula: Z_ndc = (near / (near - far)) - (near * far) / ((near - far) * Z_view)
-    float near = attenuationRadius;  // Projection의 Near 파라미터 (먼 거리)
-    float far = nearPlane;           // Projection의 Far 파라미터 (가까운 거리)
-    float nonlinearDepth = (near / (near - far)) - (near * far) / ((near - far) * distance);
+    // PerspectiveFovLH(90, 1.0, NearPlane, AttenuationRadius) 형태로 호출
+    // Forward-Z formula: Z_ndc = (far / (far - near)) - (near * far) / ((far - near) * Z_view)
+    float near = nearPlane;
+    float far = attenuationRadius;
+    float nonlinearDepth = (far / (far - near)) - (near * far) / ((far - near) * distance);
 
     // 3. [0, 1] 범위로 정규화
     float currentDepth = saturate(nonlinearDepth);
 
-    // 4. Hardware Rasterizer Bias 사용 중 (Software bias 제거)
-    float bias = 0.001f;
-    currentDepth += bias;
+    // 4. Software bias to prevent shadow acne
+    float bias = 0.0001f;
+    currentDepth -= bias;
 
     // 5. TextureCubeArray 샘플링
     // SampleCmpLevelZero: cube direction + array index

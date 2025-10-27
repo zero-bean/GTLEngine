@@ -39,7 +39,7 @@ enum class EComparisonFunc
 	GreaterEqual,
 	Disable,
 	LessEqualReadOnly,
-	GreaterEqualReadOnly,  // REVERSE-Z용 읽기 전용
+	GreaterEqualReadOnly,
 	// 필요시 추가 후 OMSetDepthStencilState 함수 수정
 };
 
@@ -180,7 +180,6 @@ public:
 
     // Sampler State Getters
     ID3D11SamplerState* GetShadowComparisonSamplerState() const { return ShadowComparisonSamplerState; }
-    ID3D11SamplerState* GetDirectionalShadowComparisonSamplerState() const { return DirectionalShadowComparisonSamplerState; }
 
 private:
 	void CreateDeviceAndSwapChain(HWND hWindow); // 여기서 디바이스, 디바이스 컨택스트, 스왑체인, 뷰포트를 초기화한다
@@ -217,16 +216,15 @@ private:
 	ID3D11RasterizerState* WireFrameRasterizerState{};//
 	ID3D11RasterizerState* DecalRasterizerState{};//
 	ID3D11RasterizerState* NoCullRasterizerState{};//
-	ID3D11RasterizerState* ShadowRasterizerState{};// Reverse-Z용 (음수 bias)
-	ID3D11RasterizerState* DirectionalShadowRasterizerState{};// Forward-Z용 (양수 bias)
+	ID3D11RasterizerState* ShadowRasterizerState{};
 
 	ID3D11DepthStencilState* DepthStencilState{};
 	ID3D11DepthStencilState* DepthStencilStateLessEqualWrite = nullptr;      // 기본
 	ID3D11DepthStencilState* DepthStencilStateLessEqualReadOnly = nullptr;   // 읽기 전용
 	ID3D11DepthStencilState* DepthStencilStateAlwaysNoWrite = nullptr;       // 기즈모/오버레이
 	ID3D11DepthStencilState* DepthStencilStateDisable = nullptr;              // 깊이 테스트/쓰기 모두 끔
-	ID3D11DepthStencilState* DepthStencilStateGreaterEqualWrite = nullptr;   // REVERSE-Z 쓰기
-	ID3D11DepthStencilState* DepthStencilStateGreaterEqualReadOnly = nullptr;  // REVERSE-Z 읽기 전용
+	ID3D11DepthStencilState* DepthStencilStateGreaterEqualWrite = nullptr;
+	ID3D11DepthStencilState* DepthStencilStateGreaterEqualReadOnly = nullptr;
 	// Stencil-based overlay control
 	ID3D11DepthStencilState* DepthStencilStateOverlayWriteStencil = nullptr;   // overlay writes stencil=1
 	ID3D11DepthStencilState* DepthStencilStateStencilRejectOverlay = nullptr;  // draw only where stencil==0
@@ -262,8 +260,7 @@ private:
 	ID3D11SamplerState* DefaultSamplerState = nullptr;
 	ID3D11SamplerState* LinearClampSamplerState = nullptr;
 	ID3D11SamplerState* PointClampSamplerState = nullptr;
-	ID3D11SamplerState* ShadowComparisonSamplerState = nullptr;  // Reverse-Z용 (SpotLight/PointLight)
-	ID3D11SamplerState* DirectionalShadowComparisonSamplerState = nullptr;  // Forward-Z용 (DirectionalLight)
+	ID3D11SamplerState* ShadowComparisonSamplerState = nullptr;
 
 	UShader* PreShader = nullptr; // Shaders, Inputlayout
 
