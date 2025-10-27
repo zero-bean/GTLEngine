@@ -17,7 +17,8 @@ public:
 	// 특정 배열 슬라이스에 렌더링 시작
 	// RHI - D3D11 디바이스 인터페이스
 	// ArrayIndex - 렌더링할 배열 슬라이스 인덱스 (CubeMap인 경우 CubeIndex * 6 + FaceIndex)
-	void BeginRender(D3D11RHI* RHI, UINT ArrayIndex);
+	// bUseReverseZ - true: Reverse-Z (SpotLight/PointLight), false: Forward-Z (DirectionalLight)
+	void BeginRender(D3D11RHI* RHI, UINT ArrayIndex, bool bUseReverseZ = true);
 	void EndRender(D3D11RHI* RHI);
 
 	ID3D11ShaderResourceView* GetSRV() const { return ShadowMapSRV; }

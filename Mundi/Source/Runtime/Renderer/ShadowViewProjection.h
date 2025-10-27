@@ -123,6 +123,9 @@ struct FShadowViewProjection
 		float Depth = MaxZ - MinZ;
 
 		// 중심을 원점으로 맞춘 Orthographic Projection
+		// NOTE: Orthographic은 선형 depth 분포를 가지므로 Reverse-Z의 정밀도 이득이 거의 없음
+		// 품질 문제(심한 아크네)로 인해 DirectionalLight는 Forward-Z 유지
+		// (메인 씬/SpotLight/PointLight는 Reverse-Z 사용)
 		Result.Projection = FMatrix::OrthoLH(Width, Height, 0.0f, Depth);
 
 		// AABB 중심을 원점으로 이동시키기 위한 오프셋 적용
@@ -185,11 +188,12 @@ struct FShadowViewProjection
 				CubeFaces[i].Up);
 
 			// Projection 행렬 생성 (90도 FOV, 정사각형 aspect ratio)
+			// REVERSE-Z: Near와 Far를 swap!
 			VP.Projection = FMatrix::PerspectiveFovLH(
 				DegreesToRadians(90.0f),  // 90도 FOV
 				1.0f,                      // 정사각형 aspect ratio
-				NearPlane,
-				AttenuationRadius);
+				AttenuationRadius,         // Reversed: Far → Near
+				NearPlane);                // Reversed: Near → Far
 
 			// ViewProjection 계산
 			VP.ViewProjection = VP.View * VP.Projection;
