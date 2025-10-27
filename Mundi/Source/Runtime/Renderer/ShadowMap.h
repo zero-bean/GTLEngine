@@ -27,6 +27,26 @@ public:
 	bool IsCubeMap() const { return bIsCubeMap; }
 	const D3D11_VIEWPORT& GetViewport() const { return ShadowViewport; }
 
+	/**
+	 * @brief 이 쉐도우 맵이 할당한 전체 GPU 메모리 크기를 반환합니다 (바이트).
+	 * @return 할당된 메모리 사용량 (바이트)
+	 */
+	uint64_t GetAllocatedMemoryBytes() const;
+
+	/**
+	 * @brief 실제 사용 중인 슬롯에 해당하는 메모리 크기를 반환합니다 (바이트).
+	 * @param UsedSlotCount - 실제 사용 중인 슬롯 수
+	 * @return 사용 중인 메모리 크기 (바이트)
+	 */
+	uint64_t GetUsedMemoryBytes(uint32 UsedSlotCount) const;
+
+	/**
+	 * @brief DXGI 포맷의 바이트 크기를 반환합니다 (픽셀당).
+	 * @param format - DXGI 포맷
+	 * @return 픽셀당 바이트 수
+	 */
+	static uint64_t GetDepthFormatSize(DXGI_FORMAT format);
+
 private:
 	// 섀도우맵 크기
 	UINT Width;

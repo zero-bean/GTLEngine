@@ -144,15 +144,10 @@ void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex)
 	assert(RHI != nullptr, "RHI is null");
 	assert(ArrayIndex < ArraySize, "Array index out of bounds");
 
-	UE_LOG("[DEBUG] FShadowMap::BeginRender - ArrayIndex=%d, ArraySize=%d, Width=%d, Height=%d",
-		ArrayIndex, ArraySize, Width, Height);
-
 	ID3D11DeviceContext* pContext = RHI->GetDeviceContext();
 
 	// N개의 쉐도우 DSV에서 특정 DSV를 가져옵니다.
 	ID3D11DepthStencilView* DSV = ShadowMapDSVs[ArrayIndex];
-
-	UE_LOG("[DEBUG] FShadowMap::BeginRender - DSV = 0x%p", DSV);
 
 	// DSV를 초기화합니다.
 	pContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -186,4 +181,74 @@ void FShadowMap::EndRender(D3D11RHI* RHI)
 	ID3D11RenderTargetView* nullRTV = nullptr;
 	ID3D11DepthStencilView* nullDSV = nullptr;
 	RHI->GetDeviceContext()->OMSetRenderTargets(1, &nullRTV, nullDSV);
+}
+
+uint64_t FShadowMap::GetAllocatedMemoryBytes() const
+{
+	// 텍스처가 초기화되지 않았으면 0 반환
+	if (!ShadowMapTexture)
+	{
+		return 0;
+	}
+
+	// 텍스처 Description을 쿼리하여 실제 포맷 확인
+	D3D11_TEXTURE2D_DESC desc;
+	ShadowMapTexture->GetDesc(&desc);
+
+	// 포맷별 바이트 크기 계산
+	uint64_t BytesPerPixel = GetDepthFormatSize(desc.Format);
+
+	// 전체 할당된 메모리 = (Width * Height) * BytesPerPixel * ArraySize
+	uint64_t PixelsPerMap = static_cast<uint64_t>(Width) * static_cast<uint64_t>(Height);
+	uint64_t TotalMemory = PixelsPerMap * BytesPerPixel * ArraySize;
+
+	return TotalMemory;
+}
+
+uint64_t FShadowMap::GetUsedMemoryBytes(uint32 UsedSlotCount) const
+{
+	// 텍스처가 초기화되지 않았으면 0 반환
+	if (!ShadowMapTexture)
+	{
+		return 0;
+	}
+
+	// 텍스처 Description을 쿼리하여 실제 포맷 확인
+	D3D11_TEXTURE2D_DESC desc;
+	ShadowMapTexture->GetDesc(&desc);
+
+	// 포맷별 바이트 크기 계산
+	uint64_t BytesPerPixel = GetDepthFormatSize(desc.Format);
+
+	// 사용 중인 메모리 = (Width * Height) * BytesPerPixel * UsedSlotCount
+	uint64_t PixelsPerMap = static_cast<uint64_t>(Width) * static_cast<uint64_t>(Height);
+	uint64_t UsedMemory = PixelsPerMap * BytesPerPixel * UsedSlotCount;
+
+	return UsedMemory;
+}
+
+uint64_t FShadowMap::GetDepthFormatSize(DXGI_FORMAT format)
+{
+	switch (format)
+	{
+		// 32-bit formats (4 bytes per pixel)
+		case DXGI_FORMAT_R32_TYPELESS:
+		case DXGI_FORMAT_D32_FLOAT:
+		case DXGI_FORMAT_R32_FLOAT:
+		case DXGI_FORMAT_D24_UNORM_S8_UINT:
+		case DXGI_FORMAT_R24G8_TYPELESS:
+		case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+		case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+			return 4;
+
+		// 16-bit formats (2 bytes per pixel)
+		case DXGI_FORMAT_R16_TYPELESS:
+		case DXGI_FORMAT_D16_UNORM:
+		case DXGI_FORMAT_R16_UNORM:
+			return 2;
+
+		// 기본값: 32-bit (안전한 상한선)
+		default:
+			return 4;
+	}
 }

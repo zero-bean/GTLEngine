@@ -288,7 +288,7 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     float currentDepth = projCoords.z;
 
     // Bias to prevent shadow acne (can be adjusted for directional lights)
-    float bias = 0.00001f;
+    float bias = 0.0001f;
     currentDepth -= bias;
 
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)

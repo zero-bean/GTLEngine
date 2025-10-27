@@ -422,10 +422,14 @@
       <Filter>Source\Runtime\Engine\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Clipboard\ClipboardManager.cpp" />
-    <ClCompile Include="Source\Runtime\Renderer\ShadowConfiguration.cpp" />
-    <ClCompile Include="Source\Runtime\Renderer\ShadowMap.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\ShadowManager.cpp">
       <Filter>Source\Runtime\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Renderer\ShadowMap.cpp">
+      <Filter>Source\Runtime\AssetManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Renderer\ShadowConfiguration.cpp">
+      <Filter>Source\Runtime\AssetManagement</Filter>
     </ClCompile>
   </ItemGroup>
   <!-- ThirdParty/ImGui Files -->
@@ -881,12 +885,19 @@
       <Filter>Source\Runtime\Engine\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Clipboard\ClipboardManager.h" />
-    <ClInclude Include="Source\Runtime\Renderer\ShadowConfiguration.h" />
-    <ClInclude Include="Source\Runtime\Renderer\ShadowMap.h" />
     <ClInclude Include="Source\Runtime\Renderer\ShadowViewProjection.h">
       <Filter>Source\Runtime\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Runtime\Renderer\ShadowManager.h">
+      <Filter>Source\Runtime\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Renderer\ShadowMap.h">
+      <Filter>Source\Runtime\AssetManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Renderer\ShadowConfiguration.h">
+      <Filter>Source\Runtime\AssetManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Renderer\ShadowStats.h">
       <Filter>Source\Runtime\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
