@@ -650,6 +650,21 @@ void FSceneRenderer::RenderShadowPass()
 	}
 	else
 	{
+		// Cube Map 모드: ShadowDepthCube 셰이더 로드
+		UShader* CubeShader = UResourceManager::GetInstance().Load<UShader>("Shaders/Materials/ShadowDepthCube.hlsl");
+		if (!CubeShader)
+		{
+			UE_LOG("RenderShadowPass: Failed to load ShadowDepthCube shader");
+			goto skip_pointlight_shadows;
+		}
+
+		FShaderVariant* CubeShaderVariant = CubeShader->GetOrCompileShaderVariant(RHIDevice->GetDevice(), EmptyMacros);
+		if (!CubeShaderVariant)
+		{
+			UE_LOG("RenderShadowPass: Failed to compile ShadowDepthCube shader");
+			goto skip_pointlight_shadows;
+		}
+
 		// Cube Map 모드: 각 라이트당 6번 렌더링 (6개 면)
 		for (UPointLightComponent* PointLight : SceneLocals.PointLights)
 		{
@@ -658,6 +673,10 @@ void FSceneRenderer::RenderShadowPass()
 				!PointLight->IsVisible() ||
 				!PointLight->GetOwner()->IsActorVisible() ||
 				!PointLight->GetIsCastShadows())
+				continue;
+
+			// Shadow Map이 할당되지 않은 라이트는 스킵
+			if (PointLight->GetShadowMapIndex() < 0)
 				continue;
 
 			// 6개 면 렌더링 (+X, -X, +Y, -Y, +Z, -Z)
@@ -676,6 +695,14 @@ void FSceneRenderer::RenderShadowPass()
 				ViewProjBuffer.InvProj = ShadowContext.LightProjection.InversePerspectiveProjection();  // Cube는 Perspective
 				RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
 
+				// CubeShadow 상수 버퍼 설정
+				CubeShadowBufferType CubeBuffer;
+				CubeBuffer.AttenuationRadius = PointLight->GetAttenuationRadius();
+				CubeBuffer.NearPlane = 0.1f;
+				CubeBuffer.Padding[0] = 0.0f;
+				CubeBuffer.Padding[1] = 0.0f;
+				RHIDevice->SetAndUpdateConstantBuffer(CubeBuffer);
+
 				// 메시 수집
 				TArray<FMeshBatchElement> ShadowMeshBatches;
 				for (UMeshComponent* MeshComponent : Proxies.Meshes)
@@ -683,12 +710,12 @@ void FSceneRenderer::RenderShadowPass()
 					MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
 				}
 
-				// 셰이더 오버라이드 (기본 ShadowDepth 셰이더 사용)
+				// 셰이더 오버라이드 (ShadowDepthCube 셰이더 사용)
 				for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
 				{
-					BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
-					BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
-					BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
+					BatchElement.VertexShader = CubeShaderVariant->VertexShader;
+					BatchElement.PixelShader = CubeShaderVariant->PixelShader;
+					BatchElement.InputLayout = CubeShaderVariant->InputLayout;
 				}
 
 				// 그리기

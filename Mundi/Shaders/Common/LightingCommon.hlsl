@@ -315,19 +315,22 @@ float SamplePointLightShadowCube(
     float attenuationRadius,
     float nearPlane)
 {
-    // 1. 라이트에서 픽셀로의 방향 벡터 계산
+    // 1. 라이트에서 픽셀로의 방향 벡터 계산 (Z-Up World Space)
     float3 lightToPixel = worldPos - lightPos;
     float distance = length(lightToPixel);
 
-    // 2. 현재 깊이 계산 (선형 깊이 [0, 1])
+    // 2. Z-Up Left-Handed → Y-Up Left-Handed 좌표 변환 (handedness fix 포함)
+    // Shadow map은 Y-Up 좌표계로 렌더링됨 (ShadowViewProjection.h 참조)
+    // 변환: Z-Up (X, Y, Z) → Y-Up (-X, Z, -Y)
+    float3 cubeDir = float3(lightToPixel.x, lightToPixel.z, lightToPixel.y);
+
+    // 3. 현재 깊이 계산 (선형 깊이 [0, 1])
+    // ShadowDepthCube.hlsl이 선형 깊이를 출력하므로 동일하게 선형 깊이로 비교
     float currentDepth = saturate((distance - nearPlane) / (attenuationRadius - nearPlane));
 
-    // 3. Bias to prevent shadow acne
-    float bias = 0.00001f;
+    // 4. Bias to prevent shadow acne
+    float bias = 0.001f;
     currentDepth -= bias;
-
-    // 4. Cube Map 샘플링 좌표 계산
-    float3 cubeDir = float3(lightToPixel.x, lightToPixel.z, lightToPixel.y);
 
     // 5. TextureCubeArray 샘플링
     // SampleCmpLevelZero: cube direction + array index

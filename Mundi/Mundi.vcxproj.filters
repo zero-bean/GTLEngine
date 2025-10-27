@@ -47,7 +47,12 @@
     <FxCompile Include="Shaders\Common\LightStructures.hlsl">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Materials\ShadowDepth.hlsl" />
+    <FxCompile Include="Shaders\Materials\ShadowDepthParaboloid.hlsl">
+      <Filter>Shaders\Materials</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Materials\ShadowDepth.hlsl">
+      <Filter>Shaders\Materials</Filter>
+    </FxCompile>
   </ItemGroup>
   <!-- Root Files -->
   <ItemGroup>
