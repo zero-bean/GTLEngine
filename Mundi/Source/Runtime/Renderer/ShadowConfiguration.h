@@ -17,7 +17,15 @@ struct FShadowConfiguration
 	EShadowQuality Quality = EShadowQuality::Medium;
 
 	uint32 ShadowMapResolution = 1024;
+
+	// 광원 타입별 최대 쉐도우 캐스팅 라이트 수
+	uint32 MaxDirectionalLights = 1;
+	uint32 MaxSpotLights = 9;
+	uint32 MaxPointLights = 5;
+
+	// 전체 쉐도우 캐스팅 라이트 수 (통계/검증용)
 	uint32 MaxShadowCastingLights = 10;
+
 	float DefaultShadowBias = 0.005f;
 	float DefaultShadowSlopeBias = 0.0f;
 	bool bEnablePCF = true;

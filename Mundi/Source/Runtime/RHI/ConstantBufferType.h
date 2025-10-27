@@ -166,7 +166,7 @@ MACRO(ColorBufferType)              \
 MACRO(CameraBufferType)             \
 MACRO(FLightBufferType)             \
 MACRO(FViewportConstants)           \
-MACRO(FTileCullingBufferType)
+MACRO(FTileCullingBufferType)       \
 
 // 16 바이트 패딩 어썰트
 #define STATIC_ASSERT_CBUFFER_ALIGNMENT(Type) \

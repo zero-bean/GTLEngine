@@ -33,13 +33,17 @@ struct FDirectionalLightInfo
 struct FPointLightInfo
 {
     float4 Color;           // 16 bytes - FLinearColor (Intensity + Temperature 포함)
-    
+
     float3 Position;        // 12 bytes - FVector
     float AttenuationRadius; // 4 bytes (슬롯 채우기 위해 위로 이동)
-    
+
     float FalloffExponent;  // 4 bytes - 예술적 제어를 위한 감쇠 지수
     uint bUseInverseSquareFalloff; // 4 bytes - uint32 (true = 물리 기반, false = 지수 기반)
-    float2 Padding;         // 8 bytes - 정렬을 위한 패딩 (Attenuation 제거됨)
+    uint bCastShadow;       // 4 bytes - 섀도우 캐스팅 여부
+    uint ShadowMapIndex;    // 4 bytes - 섀도우 맵 인덱스 (-1이면 섀도우 없음)
+
+    float3 Padding;         // 12 bytes - 64 bytes 정렬을 위한 패딩
+    // Total: 64 bytes
 };
 
 struct FSpotLightInfo

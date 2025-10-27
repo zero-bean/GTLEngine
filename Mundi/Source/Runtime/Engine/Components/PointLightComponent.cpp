@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "PointLightComponent.h"
 #include "BillboardComponent.h"
+#include "ShadowManager.h"
 
 IMPLEMENT_CLASS(UPointLightComponent)
 
@@ -27,7 +28,12 @@ FPointLightInfo UPointLightComponent::GetLightInfo() const
 	Info.AttenuationRadius = GetAttenuationRadius();
 	Info.FalloffExponent = GetFalloffExponent(); // Always pass FalloffExponent (used when bUseInverseSquareFalloff = false)
 	Info.bUseInverseSquareFalloff = IsUsingInverseSquareFalloff() ? 1u : 0u;
-	Info.Padding = FVector2D(0.0f, 0.0f); // 패딩 초기화
+
+	// Shadow 설정
+	Info.bCastShadow = GetIsCastShadows() ? 1u : 0u;
+	Info.ShadowMapIndex = static_cast<uint32>(GetShadowMapIndex());
+
+	Info.Padding = FVector::Zero(); // 패딩 초기화
 
 	return Info;
 }

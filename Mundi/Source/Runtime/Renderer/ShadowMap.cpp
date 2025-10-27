@@ -1,10 +1,11 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "ShadowMap.h"
 
 FShadowMap::FShadowMap()
 	: Width(0)
 	, Height(0)
 	, ArraySize(0)
+	, bIsCubeMap(false)
 	, ShadowMapTexture(nullptr)
 	, ShadowMapSRV(nullptr)
 {
@@ -16,31 +17,42 @@ FShadowMap::~FShadowMap()
 	Release();
 }
 
-void FShadowMap::Initialize(D3D11RHI* RHI, UINT InWidth, UINT InHeight, UINT InArraySize)
+void FShadowMap::Initialize(D3D11RHI* RHI, UINT InWidth, UINT InHeight, UINT InArraySize, bool bInIsCubeMap)
 {
 	Width = InWidth;
 	Height = InHeight;
-	ArraySize = InArraySize;
+	ArraySize = bInIsCubeMap ? InArraySize * 6 : InArraySize;
+	bIsCubeMap = bInIsCubeMap;
 
 	D3D11_TEXTURE2D_DESC texDesc = {};
 	texDesc.Width = Width;
 	texDesc.Height = Height;
 	texDesc.MipLevels = 1;
-	texDesc.ArraySize = ArraySize; // Array of shadow maps
+	texDesc.ArraySize = ArraySize;
 	texDesc.Format = DXGI_FORMAT_R32_TYPELESS; // Typeless를 선언해야만, 텍스쳐 Read & Write 2가지가 가능해집니다.
 	texDesc.SampleDesc.Count = 1;
 	texDesc.SampleDesc.Quality = 0;
 	texDesc.Usage = D3D11_USAGE_DEFAULT;
 	texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE; // DSV 및 SRV를 사용하도록 설정합니다.
 	texDesc.CPUAccessFlags = 0;
-	texDesc.MiscFlags = 0;
+
+	// CubeMap인 경우 TEXTURECUBE 플래그 추가
+	if (bIsCubeMap)
+	{
+		texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+	}
+	else
+	{
+		texDesc.MiscFlags = 0;
+	}
 
 	HRESULT hr = RHI->GetDevice()->CreateTexture2D(&texDesc, nullptr, &ShadowMapTexture);
 	assert(SUCCEEDED(hr), "Failed to create shadow map texture array");
 
-	// Create depth stencil views for each array slice
+	// 각 배열 슬라이스에 대한 깊이 스텐실 뷰 생성
 	ShadowMapDSVs.clear();
-	for (UINT i = 0; i < ArraySize; i++)
+	UINT numDSVs = ArraySize;
+	for (UINT i = 0; i < numDSVs; i++)
 	{
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 		dsvDesc.Format = DXGI_FORMAT_D32_FLOAT; // 32-bit depth
@@ -57,14 +69,28 @@ void FShadowMap::Initialize(D3D11RHI* RHI, UINT InWidth, UINT InHeight, UINT InA
 		ShadowMapDSVs.Add(DSV);
 	}
 
-	// Create shader resource view for entire array (for shaders)
+	// 전체 배열에 대한 셰이더 리소스 뷰 생성
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = DXGI_FORMAT_R32_FLOAT; // Read as float in shader
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-	srvDesc.Texture2DArray.MostDetailedMip = 0;
-	srvDesc.Texture2DArray.MipLevels = 1;
-	srvDesc.Texture2DArray.FirstArraySlice = 0;
-	srvDesc.Texture2DArray.ArraySize = ArraySize;
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT; // 셰이더에서 float로 읽기
+
+	if (bIsCubeMap)
+	{
+		// TextureCubeArray로 바인딩
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+		srvDesc.TextureCubeArray.MostDetailedMip = 0;
+		srvDesc.TextureCubeArray.MipLevels = 1;
+		srvDesc.TextureCubeArray.First2DArrayFace = 0;
+		srvDesc.TextureCubeArray.NumCubes = ArraySize / 6; // 큐브 개수
+	}
+	else
+	{
+		// Texture2DArray로 바인딩
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		srvDesc.Texture2DArray.MostDetailedMip = 0;
+		srvDesc.Texture2DArray.MipLevels = 1;
+		srvDesc.Texture2DArray.FirstArraySlice = 0;
+		srvDesc.Texture2DArray.ArraySize = ArraySize;
+	}
 
 	hr = RHI->GetDevice()->CreateShaderResourceView(ShadowMapTexture, &srvDesc, &ShadowMapSRV);
 	assert(SUCCEEDED(hr), "Failed to create shadow map SRV");
@@ -185,4 +211,74 @@ void FShadowMap::EndRender(D3D11RHI* RHI)
 	RHI->GetDeviceContext()->OMSetRenderTargets(1, &nullRTV, nullDSV);
 
 	UE_LOG("[ShadowMap] EndRender - DSV unbound, SRV ready for read access");
+}
+
+uint64_t FShadowMap::GetAllocatedMemoryBytes() const
+{
+	// 텍스처가 초기화되지 않았으면 0 반환
+	if (!ShadowMapTexture)
+	{
+		return 0;
+	}
+
+	// 텍스처 Description을 쿼리하여 실제 포맷 확인
+	D3D11_TEXTURE2D_DESC desc;
+	ShadowMapTexture->GetDesc(&desc);
+
+	// 포맷별 바이트 크기 계산
+	uint64_t BytesPerPixel = GetDepthFormatSize(desc.Format);
+
+	// 전체 할당된 메모리 = (Width * Height) * BytesPerPixel * ArraySize
+	uint64_t PixelsPerMap = static_cast<uint64_t>(Width) * static_cast<uint64_t>(Height);
+	uint64_t TotalMemory = PixelsPerMap * BytesPerPixel * ArraySize;
+
+	return TotalMemory;
+}
+
+uint64_t FShadowMap::GetUsedMemoryBytes(uint32 UsedSlotCount) const
+{
+	// 텍스처가 초기화되지 않았으면 0 반환
+	if (!ShadowMapTexture)
+	{
+		return 0;
+	}
+
+	// 텍스처 Description을 쿼리하여 실제 포맷 확인
+	D3D11_TEXTURE2D_DESC desc;
+	ShadowMapTexture->GetDesc(&desc);
+
+	// 포맷별 바이트 크기 계산
+	uint64_t BytesPerPixel = GetDepthFormatSize(desc.Format);
+
+	// 사용 중인 메모리 = (Width * Height) * BytesPerPixel * UsedSlotCount
+	uint64_t PixelsPerMap = static_cast<uint64_t>(Width) * static_cast<uint64_t>(Height);
+	uint64_t UsedMemory = PixelsPerMap * BytesPerPixel * UsedSlotCount;
+
+	return UsedMemory;
+}
+
+uint64_t FShadowMap::GetDepthFormatSize(DXGI_FORMAT format)
+{
+	switch (format)
+	{
+		// 32-bit formats (4 bytes per pixel)
+		case DXGI_FORMAT_R32_TYPELESS:
+		case DXGI_FORMAT_D32_FLOAT:
+		case DXGI_FORMAT_R32_FLOAT:
+		case DXGI_FORMAT_D24_UNORM_S8_UINT:
+		case DXGI_FORMAT_R24G8_TYPELESS:
+		case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+		case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+			return 4;
+
+		// 16-bit formats (2 bytes per pixel)
+		case DXGI_FORMAT_R16_TYPELESS:
+		case DXGI_FORMAT_D16_UNORM:
+		case DXGI_FORMAT_R16_UNORM:
+			return 2;
+
+		// 기본값: 32-bit (안전한 상한선)
+		default:
+			return 4;
+	}
 }

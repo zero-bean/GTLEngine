@@ -474,6 +474,7 @@
     <ClInclude Include="Source\Runtime\Renderer\ShadowConfiguration.h" />
     <ClInclude Include="Source\Runtime\Renderer\ShadowManager.h" />
     <ClInclude Include="Source\Runtime\Renderer\ShadowMap.h" />
+    <ClInclude Include="Source\Runtime\Renderer\ShadowStats.h" />
     <ClInclude Include="Source\Runtime\Renderer\ShadowViewProjection.h" />
     <ClInclude Include="Source\Runtime\Renderer\TileCullingStats.h" />
     <ClInclude Include="Source\Runtime\Renderer\TileLightCuller.h" />

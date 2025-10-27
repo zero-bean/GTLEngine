@@ -214,6 +214,49 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     return shadow;
 }
 
+/**
+ * Sample PointLight shadow map (Cube Map)
+ * Returns 0.0 if in shadow, 1.0 if lit
+ *
+ * @param shadowMapIndex - Index into cube shadow map array
+ * @param worldPos - World position
+ * @param lightPos - Light position
+ * @param attenuationRadius - Light attenuation radius
+ * @param nearPlane - Near clipping plane
+ */
+float SamplePointLightShadowCube(
+    uint shadowMapIndex,
+    float3 worldPos,
+    float3 lightPos,
+    float attenuationRadius,
+    float nearPlane)
+{
+    // 1. 라이트에서 픽셀로의 방향 벡터 계산 (Z-Up World Space)
+    float3 lightToPixel = worldPos - lightPos;
+    float distance = length(lightToPixel);
+
+    // 2. 선형 거리를 비선형 깊이로 변환 (Perspective Projection)
+    // Perspective projection formula: Z_ndc = (far / (far - near)) - (far * near) / ((far - near) * Z_view)
+    // 여기서 Z_view = distance (view space에서의 깊이)
+    float far = attenuationRadius;
+    float near = nearPlane;
+    float nonlinearDepth = (far / (far - near)) - (far * near) / ((far - near) * distance);
+
+    // 3. [0, 1] 범위로 정규화 (DirectX의 경우 이미 [0, 1] 범위겠지만 보험)
+    float currentDepth = saturate(nonlinearDepth);
+
+    // 4. Bias to prevent shadow acne
+    float bias = 0.005f;
+    currentDepth -= bias;
+
+    // 5. TextureCubeArray 샘플링
+    // SampleCmpLevelZero: cube direction + array index
+    float4 sampleCoord = float4(lightToPixel, shadowMapIndex);
+    float shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, sampleCoord, currentDepth);
+
+    return shadow;
+}
+
 //================================================================================================
 // 통합 조명 계산 함수
 //================================================================================================
@@ -251,7 +294,7 @@ float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, f
     return diffuse + specular;
 }
 
-// Point Light 계산 (Diffuse + Specular with Attenuation and Falloff)
+// Point Light 계산 (Diffuse + Specular with Attenuation and Falloff + Shadow)
 float3 CalculatePointLight(FPointLightInfo light, float3 worldPos, float3 normal, float3 viewDir, float4 materialColor, bool includeSpecular, float specularPower)
 {
     float3 lightVec = light.Position - worldPos;
@@ -274,14 +317,30 @@ float3 CalculatePointLight(FPointLightInfo light, float3 worldPos, float3 normal
         attenuation = CalculateExponentFalloff(distance, light.AttenuationRadius, light.FalloffExponent);
     }
 
+    // Shadow mapping (if this light casts shadows)
+    float shadow = 1.0f;
+    if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
+    {
+        // Near plane (하드코딩, ShadowViewProjection.h의 값과 일치해야 함)
+        const float nearPlane = 0.01f;
+
+        // Cube Map Shadow 샘플링
+        shadow = SamplePointLightShadowCube(
+            light.ShadowMapIndex,
+            worldPos,
+            light.Position,
+            light.AttenuationRadius,
+            nearPlane);
+    }
+
     // Diffuse (light.Color는 이미 Intensity 포함)
-    float3 diffuse = CalculateDiffuse(lightDir, normal, light.Color, materialColor) * attenuation;
+    float3 diffuse = CalculateDiffuse(lightDir, normal, light.Color, materialColor) * attenuation * shadow;
 
     // Specular (선택사항)
     float3 specular = float3(0.0f, 0.0f, 0.0f);
     if (includeSpecular)
     {
-        specular = CalculateSpecular(lightDir, normal, viewDir, light.Color, specularPower) * attenuation;
+        specular = CalculateSpecular(lightDir, normal, viewDir, light.Color, specularPower) * attenuation * shadow;
     }
 
     return diffuse + specular;

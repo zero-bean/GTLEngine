@@ -594,6 +594,62 @@ void FSceneRenderer::RenderShadowPass()
 		GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
 	}
 
+	// Step 4-C: PointLight 섀도우 렌더링 (Cube Map)
+	// Cube Map 모드: 각 라이트당 6번 렌더링 (6개 면)
+	for (UPointLightComponent* PointLight : SceneLocals.PointLights)
+	{
+		// 유효성 및 섀도우 캐스팅 여부 확인
+		if (!PointLight ||
+			!PointLight->IsVisible() ||
+			!PointLight->GetOwner()->IsActorVisible() ||
+			!PointLight->GetIsCastShadows())
+			continue;
+
+		// Shadow Map이 할당되지 않은 라이트는 스킵
+		if (PointLight->GetShadowMapIndex() < 0)
+			continue;
+
+		// 6개 면 렌더링 (+X, -X, +Y, -Y, +Z, -Z)
+		for (uint32 CubeFaceIdx = 0; CubeFaceIdx < 6; CubeFaceIdx++)
+		{
+			// ShadowManager에게 섀도우 맵 렌더 시작 요청
+			FShadowRenderContext ShadowContext;
+			if (!GWorld->GetShadowManager()->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, ShadowContext))
+				continue;
+
+			// ViewProj 버퍼 업데이트 (라이트 공간 행렬)
+			ViewProjBufferType ViewProjBuffer;
+			ViewProjBuffer.View = ShadowContext.LightView;
+			ViewProjBuffer.Proj = ShadowContext.LightProjection;
+			ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
+			ViewProjBuffer.InvProj = ShadowContext.LightProjection.InversePerspectiveProjection();  // Cube는 Perspective
+			RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
+
+			// 메시 수집
+			TArray<FMeshBatchElement> ShadowMeshBatches;
+			for (UMeshComponent* MeshComponent : Proxies.Meshes)
+			{
+				MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
+			}
+
+			// 셰이더 오버라이드 (ShadowDepth 셰이더 사용, 비선형 깊이)
+			for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
+			{
+				BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
+				BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
+				BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
+			}
+
+			// 그리기
+			DrawMeshBatches(ShadowMeshBatches, true, true);
+
+			// 섀도우 맵 렌더 종료
+			GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
+		}
+	}
+
+skip_pointlight_shadows:
+
 	// Step 5: 렌더 타겟 및 뷰포트 복구
 	RHIDevice->GetDeviceContext()->OMSetRenderTargets(1, &PrevRTV, PrevDSV);
 	RHIDevice->GetDeviceContext()->RSSetViewports(1, &PrevViewport);

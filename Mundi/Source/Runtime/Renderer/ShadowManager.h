@@ -2,10 +2,13 @@
 
 #include "ShadowConfiguration.h"
 #include "ShadowMap.h"
+#include "ShadowStats.h"
 
 // Forward Declarations
 class D3D11RHI;
 class USpotLightComponent;
+class UPointLightComponent;
+class UDirectionalLightComponent;
 struct FMatrix;
 
 /**
@@ -84,6 +87,14 @@ public:
 	bool BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent* Light,
 		const FMatrix& CameraView, const FMatrix& CameraProjection, FShadowRenderContext& OutContext);
 
+	// Shadow 렌더링 시작 - PointLight (Cube Map용)
+	// @param RHI - D3D11 RHI 디바이스
+	// @param Light - 렌더링할 PointLight
+	// @param CubeFaceIndex - 큐브맵 면 인덱스 (0~5: +X, -X, +Y, -Y, +Z, -Z)
+	// @param OutContext - (출력) Shadow 렌더링 컨텍스트
+	// @return 성공 여부
+	bool BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, FShadowRenderContext& OutContext);
+
 	// Shadow 렌더링 종료
 	// @param RHI - D3D11 RHI 디바이스
 	void EndShadowRender(D3D11RHI* RHI);
@@ -101,6 +112,8 @@ public:
 	int32 GetShadowMapIndex(USpotLightComponent* Light) const;
 	FShadowMap& GetSpotLightShadowMap() { return SpotLightShadowMap; }
 	const FShadowMap& GetSpotLightShadowMap() const { return SpotLightShadowMap; }
+	FShadowMap& GetPointLightCubeShadowMap() { return PointLightCubeShadowMap; }
+	const FShadowMap& GetPointLightCubeShadowMap() const { return PointLightCubeShadowMap; }
 
 private:
 	// RHI 디바이스 참조
@@ -115,4 +128,5 @@ private:
 	// Shadow Map 리소스
 	FShadowMap SpotLightShadowMap;
 	FShadowMap DirectionalLightShadowMap;
+	FShadowMap PointLightCubeShadowMap;       // PointLight Cube Map (6 faces per light)
 };

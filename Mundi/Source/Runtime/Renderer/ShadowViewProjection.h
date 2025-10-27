@@ -141,4 +141,63 @@ struct FShadowViewProjection
 		return Result;
 	}
 
+	// PointLight용 Cube Map Shadow VP 행렬 6개 생성
+	// @param Position - 라이트 월드 위치
+	// @param AttenuationRadius - 라이트 감쇠 반경 (Far plane으로 사용)
+	// @param NearPlane - Near clipping plane (기본값 0.1f)
+	// @return 6개의 VP 행렬 배열
+	static TArray<FShadowViewProjection> CreateForPointLightCube(
+		const FVector& Position,
+		float AttenuationRadius,
+		float NearPlane = 0.01f)
+	{
+		TArray<FShadowViewProjection> Results;
+		Results.Reserve(6);
+
+		// Cube Map의 6개 면에 대한 방향 및 Up 벡터
+		// DirectX Cube Map Face 순서: +X, -X, +Y, -Y, +Z, -Z
+		struct FCubeFace
+		{
+			FVector Direction;
+			FVector Up;
+		};
+
+		// Cube Map Face 정의
+		FCubeFace CubeFaces[6] =
+		{
+			{ FVector( 1,  0,  0), FVector(0,  1,  0) },  // Slice 0: +X (Right)
+			{ FVector(-1,  0,  0), FVector(0,  1,  0) },  // Slice 1: -X (Left)
+			{ FVector( 0,  1,  0), FVector(0,  0,  -1) }, // Slice 2: +Y (Up)
+			{ FVector( 0, -1,  0), FVector(0,  0,  1) }, // Slice 3: -Y (Down)
+			{ FVector( 0,  0,  1), FVector(0,  1,  0) },  // Slice 4: +Z (Forward)                       
+			{ FVector( 0,  0, -1), FVector(0,  1,  0) }   // Slice 5: -Z (Back)
+		};
+
+		// 각 면에 대한 VP 행렬 생성
+		for (int i = 0; i < 6; i++)
+		{
+			FShadowViewProjection VP;
+
+			// View 행렬 생성
+			VP.View = FMatrix::LookAtLH(
+				Position,
+				Position + CubeFaces[i].Direction,
+				CubeFaces[i].Up);
+
+			// Projection 행렬 생성 (90도 FOV, 정사각형 aspect ratio)
+			VP.Projection = FMatrix::PerspectiveFovLH(
+				DegreesToRadians(90.0f),  // 90도 FOV
+				1.0f,                      // 정사각형 aspect ratio
+				NearPlane,
+				AttenuationRadius);
+
+			// ViewProjection 계산
+			VP.ViewProjection = VP.View * VP.Projection;
+
+			Results.Add(VP);
+		}
+
+		return Results;
+	}
+
 };
