@@ -2,6 +2,7 @@
 #include "PointLightComponent.h"
 #include "BillboardComponent.h"
 #include "ShadowManager.h"
+#include "ShadowViewProjection.h"
 
 IMPLEMENT_CLASS(UPointLightComponent)
 
@@ -13,6 +14,10 @@ END_PROPERTIES()
 UPointLightComponent::UPointLightComponent()
 {
 	SourceRadius = 0.0f;
+
+	// PointLight는 6개 큐브맵 면을 렌더링하므로 성능 고려
+	ShadowBias = 0.005f;           // 중간-낮은 bias
+	ShadowSlopeBias = 1.5f;        // 중간-높은 slope bias
 }
 
 UPointLightComponent::~UPointLightComponent()
@@ -33,7 +38,35 @@ FPointLightInfo UPointLightComponent::GetLightInfo() const
 	Info.bCastShadow = GetIsCastShadows() ? 1u : 0u;
 	Info.ShadowMapIndex = static_cast<uint32>(GetShadowMapIndex());
 
-	Info.Padding = FVector::Zero(); // 패딩 초기화
+	// 패딩 초기화 (16 bytes)
+	Info.Padding[0] = 0.0f;
+	Info.Padding[1] = 0.0f;
+	Info.Padding[2] = 0.0f;
+	Info.Padding[3] = 0.0f;
+
+	// LightViewProjection 행렬 생성 (섀도우 캐스팅 여부와 관계없이 항상 생성)
+	if (Info.bCastShadow && Info.ShadowMapIndex != 0xFFFFFFFF)
+	{
+		// FShadowViewProjection 헬퍼 사용하여 큐브맵 6개 면의 VP 행렬 생성
+		TArray<FShadowViewProjection> CubeVPs = FShadowViewProjection::CreateForPointLightCube(
+			GetWorldLocation(),
+			GetAttenuationRadius(),
+			0.01f); // Near plane (ShadowViewProjection.h의 기본값과 동일)
+
+		// 6개의 행렬을 Info에 복사
+		for (int i = 0; i < 6; i++)
+		{
+			Info.LightViewProjection[i] = CubeVPs[i].ViewProjection;
+		}
+	}
+	else
+	{
+		// 섀도우를 사용하지 않는 경우 Identity 행렬로 초기화
+		for (int i = 0; i < 6; i++)
+		{
+			Info.LightViewProjection[i] = FMatrix::Identity();
+		}
+	}
 
 	return Info;
 }

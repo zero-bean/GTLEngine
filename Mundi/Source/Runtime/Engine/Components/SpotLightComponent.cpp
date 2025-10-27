@@ -16,6 +16,9 @@ USpotLightComponent::USpotLightComponent()
 {
 	InnerConeAngle = 30.0f;
 	OuterConeAngle = 45.0f;
+
+	ShadowBias = 0.00001f;
+	ShadowSlopeBias = 1.0f;
 }
 
 void USpotLightComponent::ValidateConeAngles()

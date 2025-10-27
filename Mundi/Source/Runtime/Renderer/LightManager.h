@@ -42,8 +42,9 @@ struct FPointLightInfo
     uint32 bUseInverseSquareFalloff; // 4 bytes - true = physically accurate, false = exponent-based
 	uint32 bCastShadow;         // 4 bytes - true = this light casts shadow
 	uint32 ShadowMapIndex;      // 4 bytes - index to shadow map array (-1 if no shadow)
-	FVector Padding;            // 12 bytes - padding to reach 64 bytes (16-byte aligned)
-	// Total: 64 bytes
+	float Padding[4];           // 16 bytes - padding for 16-byte alignment (required for FMatrix array)
+	FMatrix LightViewProjection[6]; // 384 bytes (64 bytes × 6) - View-Projection matrices for cube map faces
+	// Total: 448 bytes (16-byte aligned)
 };
 
 struct FSpotLightInfo

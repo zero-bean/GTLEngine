@@ -9,51 +9,43 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 	switch (InQuality)
 	{
 	case EShadowQuality::Low:
-		Config.ShadowMapResolution = 512;
+		Config.DirectionalLightResolution = 512;
+		Config.SpotLightResolution = 512;
+		Config.PointLightResolution = 512;
 		Config.MaxDirectionalLights = 1;
 		Config.MaxSpotLights = 1;
 		Config.MaxPointLights = 2;
 		Config.MaxShadowCastingLights = 4;
-		Config.DefaultShadowBias = 0.01f;
-		Config.DefaultShadowSlopeBias = 0.0f;
-		Config.bEnablePCF = true;
-		Config.PCFSamples = 1;
 		break;
 
 	case EShadowQuality::Medium:
-		Config.ShadowMapResolution = 1024;
+		Config.DirectionalLightResolution = 1024;
+		Config.SpotLightResolution = 1024;
+		Config.PointLightResolution = 1024;
 		Config.MaxDirectionalLights = 1;
 		Config.MaxSpotLights = 4;
 		Config.MaxPointLights = 5;
 		Config.MaxShadowCastingLights = 10;
-		Config.DefaultShadowBias = 0.005f;
-		Config.DefaultShadowSlopeBias = 0.0f;
-		Config.bEnablePCF = true;
-		Config.PCFSamples = 4;
 		break;
 
 	case EShadowQuality::High:
-		Config.ShadowMapResolution = 2048;
+		Config.DirectionalLightResolution = 2048;
+		Config.SpotLightResolution = 2048;
+		Config.PointLightResolution = 2048;
 		Config.MaxDirectionalLights = 1;
 		Config.MaxSpotLights = 7;
 		Config.MaxPointLights = 8;
 		Config.MaxShadowCastingLights = 16;
-		Config.DefaultShadowBias = 0.003f;
-		Config.DefaultShadowSlopeBias = 0.0f;
-		Config.bEnablePCF = true;
-		Config.PCFSamples = 9;
 		break;
 
 	case EShadowQuality::Ultra:
-		Config.ShadowMapResolution = 4096;
+		Config.DirectionalLightResolution = 4096;
+		Config.SpotLightResolution = 4096;
+		Config.PointLightResolution = 4096;
 		Config.MaxDirectionalLights = 1;
 		Config.MaxSpotLights = 15;
 		Config.MaxPointLights = 16;
 		Config.MaxShadowCastingLights = 32;
-		Config.DefaultShadowBias = 0.002f;
-		Config.DefaultShadowSlopeBias = 0.0f;
-		Config.bEnablePCF = true;
-		Config.PCFSamples = 16;
 		break;
 
 	case EShadowQuality::Custom:
@@ -67,31 +59,32 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 
 FShadowConfiguration FShadowConfiguration::GetPlatformDefault()
 {
-	// 현재는 Medium 품질을 기본값으로 반환
-	// 향후 플랫폼별로 차별화 가능 (PC: High, Console: Medium, Mobile: Low)
-	return FromQuality(EShadowQuality::Medium);
+	return FromQuality(EShadowQuality::Custom);
 }
 
 bool FShadowConfiguration::IsValid() const
 {
-	// Shadow map 해상도는 2의 제곱수이고 적절한 범위 내에 있어야 함
-	if (ShadowMapResolution < 256 || ShadowMapResolution > 8192)
-		return false;
+	// 각 라이트 타입별 Shadow map 해상도는 2의 제곱수이고 적절한 범위 내에 있어야 함
+	auto IsResolutionValid = [](uint32 Resolution) -> bool
+		{
+			if (Resolution < 256 || Resolution > 8192)
+				return false;
+			// 2의 제곱수 확인
+			if ((Resolution & (Resolution - 1)) != 0)
+				return false;
+			return true;
+		};
 
 	// 2의 제곱수 확인
-	if ((ShadowMapResolution & (ShadowMapResolution - 1)) != 0)
+	if (!IsResolutionValid(DirectionalLightResolution))
+		return false;
+	if (!IsResolutionValid(SpotLightResolution))
+		return false;
+	if (!IsResolutionValid(PointLightResolution))
 		return false;
 
 	// 최대 라이트 수는 적절한 범위 내
-	if (MaxShadowCastingLights < 1 || MaxShadowCastingLights > 64)
-		return false;
-
-	// Bias는 음수가 아니어야 함
-	if (DefaultShadowBias < 0.0f || DefaultShadowSlopeBias < 0.0f)
-		return false;
-
-	// PCF 샘플 수는 유효한 값이어야 함
-	if (PCFSamples != 1 && PCFSamples != 4 && PCFSamples != 9 && PCFSamples != 16)
+	if (MaxShadowCastingLights < 1)
 		return false;
 
 	return true;
