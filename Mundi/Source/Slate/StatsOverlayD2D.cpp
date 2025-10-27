@@ -335,7 +335,7 @@ void UStatsOverlayD2D::Draw()
 			TotalAllocMB);
 
 		// 4. 텍스트를 여러 줄 표시해야 하므로 패널 높이를 늘립니다.
-		const float shadowPanelHeight = 160.0f;
+		const float shadowPanelHeight = 240.0f;
 		D2D1_RECT_F rc = D2D1::RectF(Margin, NextY, Margin + PanelWidth, NextY + shadowPanelHeight);
 
 		// 5. DrawTextBlock 함수를 호출하여 화면에 그립니다.
