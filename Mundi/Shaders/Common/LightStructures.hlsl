@@ -42,8 +42,10 @@ struct FPointLightInfo
     uint bCastShadow;       // 4 bytes - 섀도우 캐스팅 여부
     uint ShadowMapIndex;    // 4 bytes - 섀도우 맵 인덱스 (-1이면 섀도우 없음)
 
-    float3 Padding;         // 12 bytes - 64 bytes 정렬을 위한 패딩
-    // Total: 64 bytes
+    float4 Padding;         // 16 bytes - 16-byte 정렬을 위한 패딩 (float4x4 배열 요구사항)
+
+    row_major float4x4 LightViewProjection[6]; // 384 bytes (64 bytes × 6) - 큐브맵 각 면의 View-Projection 행렬
+    // Total: 448 bytes
 };
 
 struct FSpotLightInfo

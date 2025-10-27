@@ -3,6 +3,7 @@
 #include "ShadowConfiguration.h"
 #include "ShadowMap.h"
 #include "ShadowStats.h"
+#include "ShadowViewProjection.h"
 
 // Forward Declarations
 class D3D11RHI;
@@ -95,9 +96,10 @@ public:
 	// @param RHI - D3D11 RHI 디바이스
 	// @param Light - 렌더링할 PointLight
 	// @param CubeFaceIndex - 큐브맵 면 인덱스 (0~5: +X, -X, +Y, -Y, +Z, -Z)
+	// @param ShadowVP - 해당 큐브맵 면의 View-Projection 행렬 (미리 계산된 값)
 	// @param OutContext - (출력) Shadow 렌더링 컨텍스트
 	// @return 성공 여부
-	bool BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, FShadowRenderContext& OutContext);
+	bool BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, const FShadowViewProjection& ShadowVP, FShadowRenderContext& OutContext);
 
 	// Shadow 렌더링 종료
 	// @param RHI - D3D11 RHI 디바이스

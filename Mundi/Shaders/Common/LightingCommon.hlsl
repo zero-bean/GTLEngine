@@ -213,44 +213,68 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
 }
 
 /**
- * Sample PointLight shadow map (Cube Map)
+ * Sample PointLight shadow map using LightViewProjection matrices
  * Returns 0.0 if in shadow, 1.0 if lit
  *
- * @param shadowMapIndex - Index into cube shadow map array
+ * @param light - Point light information (includes 6 VP matrices)
  * @param worldPos - World position
- * @param lightPos - Light position
- * @param attenuationRadius - Light attenuation radius
- * @param nearPlane - Near clipping plane
  */
-float SamplePointLightShadowCube(
-    uint shadowMapIndex,
-    float3 worldPos,
-    float3 lightPos,
-    float attenuationRadius,
-    float nearPlane)
+float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos)
 {
-    // 1. 라이트에서 픽셀로의 방향 벡터 계산 (Z-Up World Space)
-    float3 lightToPixel = worldPos - lightPos;
-    float distance = length(lightToPixel);
+    // 1. 라이트에서 픽셀로의 방향 벡터 계산
+    float3 lightToPixel = worldPos - light.Position;
 
-    // 2. 선형 거리를 비선형 깊이로 변환 (Perspective Projection)
-    // Perspective projection formula: Z_ndc = (far / (far - near)) - (far * near) / ((far - near) * Z_view)
-    // 여기서 Z_view = distance (view space에서의 깊이)
-    float far = attenuationRadius;
-    float near = nearPlane;
-    float nonlinearDepth = (far / (far - near)) - (far * near) / ((far - near) * distance);
+    // 2. 방향에 따라 큐브맵 면 선택 (0-5)
+    // Cube Map Face 순서: +X(0), -X(1), +Y(2), -Y(3), +Z(4), -Z(5)
+    float3 absDir = abs(lightToPixel);
+    uint faceIndex = 0;
 
-    // 3. [0, 1] 범위로 정규화 (DirectX의 경우 이미 [0, 1] 범위겠지만 보험)
-    float currentDepth = saturate(nonlinearDepth);
+    if (absDir.x >= absDir.y && absDir.x >= absDir.z)
+    {
+        // X축이 가장 큼
+        faceIndex = lightToPixel.x > 0.0f ? 0 : 1; // +X or -X
+    }
+    else if (absDir.y >= absDir.z)
+    {
+        // Y축이 가장 큼
+        faceIndex = lightToPixel.y > 0.0f ? 2 : 3; // +Y or -Y
+    }
+    else
+    {
+        // Z축이 가장 큼
+        faceIndex = lightToPixel.z > 0.0f ? 4 : 5; // +Z or -Z
+    }
 
-    // 4. Bias to prevent shadow acne
-    float bias = 0.005f;
-    currentDepth -= bias;
+    // 3. 선택된 LightViewProjection으로 LightSpacePos 계산
+    float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.LightViewProjection[faceIndex]);
 
-    // 5. TextureCubeArray 샘플링
-    // SampleCmpLevelZero: cube direction + array index
-    float4 sampleCoord = float4(lightToPixel, shadowMapIndex);
-    float shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, sampleCoord, currentDepth);
+    // 4. Perspective divide to get NDC coordinates
+    float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+
+    // 5. Convert NDC [-1, 1] to texture coordinates [0, 1]
+    float2 shadowTexCoord;
+    shadowTexCoord.x = projCoords.x * 0.5f + 0.5f;
+    shadowTexCoord.y = -projCoords.y * 0.5f + 0.5f; // Flip Y for D3D
+
+    // 6. Check if position is outside shadow map bounds
+    if (shadowTexCoord.x < 0.0f || shadowTexCoord.x > 1.0f ||
+        shadowTexCoord.y < 0.0f || shadowTexCoord.y > 1.0f ||
+        projCoords.z < 0.0f || projCoords.z > 1.0f)
+    {
+        return 1.0f; // Outside shadow map = not shadowed
+    }
+
+    // 7. Current depth in light space
+    float currentDepth = projCoords.z;
+
+    // 8. Bias to prevent shadow acne
+    //float bias = 0.005f;
+    //currentDepth -= bias;
+
+    // 9. Use comparison sampler for hardware PCF
+    // TextureCubeArray 샘플링: direction + array index 사용
+    float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
+    float shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, cubeSampleCoord, currentDepth);
 
     return shadow;
 }
@@ -319,16 +343,8 @@ float3 CalculatePointLight(FPointLightInfo light, float3 worldPos, float3 normal
     float shadow = 1.0f;
     if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
     {
-        // Near plane (하드코딩, ShadowViewProjection.h의 값과 일치해야 함)
-        const float nearPlane = 0.01f;
-
-        // Cube Map Shadow 샘플링
-        shadow = SamplePointLightShadowCube(
-            light.ShadowMapIndex,
-            worldPos,
-            light.Position,
-            light.AttenuationRadius,
-            nearPlane);
+        // LightViewProjection 기반 Shadow 샘플링
+        shadow = SamplePointLightShadowMap(light, worldPos);
     }
 
     // Diffuse (light.Color는 이미 Intensity 포함)

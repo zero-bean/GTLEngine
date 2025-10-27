@@ -41,6 +41,7 @@
 #include "TileLightCuller.h"
 #include "LineComponent.h"
 #include "ShadowManager.h"
+#include "ShadowViewProjection.h"
 
 FSceneRenderer::FSceneRenderer(UWorld* InWorld, FSceneView* InView, URenderer* InOwnerRenderer)
 	: World(InWorld)
@@ -86,8 +87,8 @@ void FSceneRenderer::Render()
 
 		// 2. 라이트 버퍼 업데이트 및 섀도우 맵 바인딩
 		GWorld->GetLightManager()->SetDirtyFlag();
-		GWorld->GetLightManager()->UpdateLightBuffer(RHIDevice);	//라이트 구조체 버퍼 업데이트, 바인딩
-		GWorld->GetShadowManager()->BindShadowResources(RHIDevice);	//섀도우 맵 텍스처 바인딩 (t5)
+		GWorld->GetLightManager()->UpdateLightBuffer(RHIDevice);	// 라이트 구조체 버퍼 업데이트, 바인딩
+		GWorld->GetShadowManager()->BindShadowResources(RHIDevice);	// 섀도우 맵 텍스처 바인딩 (t5)
 		PerformTileLightCulling();	// 타일 기반 라이트 컬링 수행
 
 		// 3. 메인 렌더링
@@ -597,12 +598,18 @@ void FSceneRenderer::RenderPointLightShadows(FShaderVariant* ShadowShaderVariant
 		if (PointLight->GetShadowMapIndex() < 0)
 			continue;
 
+		// 라이트당 한 번만 6개 VP 행렬 계산 (중복 계산 제거)
+		TArray<FShadowViewProjection> CubeShadowVPs = FShadowViewProjection::CreateForPointLightCube(
+			PointLight->GetWorldLocation(),
+			PointLight->GetAttenuationRadius(),
+			0.01f); // Near plane
+
 		// 6개 면 렌더링 (+X, -X, +Y, -Y, +Z, -Z)
 		for (uint32 CubeFaceIdx = 0; CubeFaceIdx < 6; CubeFaceIdx++)
 		{
-			// ShadowManager에게 섀도우 맵 렌더 시작 요청
+			// ShadowManager에게 섀도우 맵 렌더 시작 요청 (미리 계산된 VP 전달)
 			FShadowRenderContext ShadowContext;
-			if (!GWorld->GetShadowManager()->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, ShadowContext))
+			if (!GWorld->GetShadowManager()->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, CubeShadowVPs[CubeFaceIdx], ShadowContext))
 				continue;
 
 			// ViewProj 버퍼 업데이트 (Perspective)

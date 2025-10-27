@@ -274,7 +274,7 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent
 	return true;
 }
 
-bool FShadowManager::BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, FShadowRenderContext& OutContext)
+bool FShadowManager::BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, const FShadowViewProjection& ShadowVP, FShadowRenderContext& OutContext)
 {
 	// 이 라이트가 Shadow Map을 할당받았는지 확인
 	int32 Index = Light->GetShadowMapIndex();
@@ -289,14 +289,7 @@ bool FShadowManager::BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* 
 		return false;
 	}
 
-	// FShadowViewProjection 헬퍼 사용하여 6개 VP 행렬 계산
-	TArray<FShadowViewProjection> ShadowVPs = FShadowViewProjection::CreateForPointLightCube(
-		Light->GetWorldLocation(),
-		Light->GetAttenuationRadius());
-
-	// 해당 Cube Face의 VP 행렬 사용
-	FShadowViewProjection& ShadowVP = ShadowVPs[CubeFaceIndex];
-
+	// 미리 계산된 VP 행렬 사용 (중복 계산 제거)
 	// 출력 컨텍스트 설정
 	OutContext.LightView = ShadowVP.View;
 	OutContext.LightProjection = ShadowVP.Projection;
