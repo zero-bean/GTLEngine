@@ -9,43 +9,33 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 	switch (InQuality)
 	{
 	case EShadowQuality::Low:
-		Config.DirectionalLightResolution = 512;
+		Config.DirectionalLightResolution = 1024;
 		Config.SpotLightResolution = 512;
 		Config.PointLightResolution = 512;
 		Config.MaxDirectionalLights = 1;
-		Config.MaxSpotLights = 1;
-		Config.MaxPointLights = 2;
-		Config.MaxShadowCastingLights = 4;
+		Config.MaxSpotLights = 100;
+		Config.MaxPointLights = 50;
+		Config.MaxShadowCastingLights = 151;
 		break;
 
 	case EShadowQuality::Medium:
-		Config.DirectionalLightResolution = 1024;
+		Config.DirectionalLightResolution = 2048;
 		Config.SpotLightResolution = 1024;
 		Config.PointLightResolution = 1024;
 		Config.MaxDirectionalLights = 1;
-		Config.MaxSpotLights = 4;
-		Config.MaxPointLights = 5;
-		Config.MaxShadowCastingLights = 10;
+		Config.MaxSpotLights = 200;
+		Config.MaxPointLights = 100;
+		Config.MaxShadowCastingLights = 301;
 		break;
 
 	case EShadowQuality::High:
-		Config.DirectionalLightResolution = 2048;
-		Config.SpotLightResolution = 2048;
-		Config.PointLightResolution = 2048;
-		Config.MaxDirectionalLights = 1;
-		Config.MaxSpotLights = 7;
-		Config.MaxPointLights = 8;
-		Config.MaxShadowCastingLights = 16;
-		break;
-
-	case EShadowQuality::Ultra:
 		Config.DirectionalLightResolution = 4096;
-		Config.SpotLightResolution = 4096;
-		Config.PointLightResolution = 4096;
+		Config.SpotLightResolution = 2048;
+		Config.PointLightResolution = 1024;
 		Config.MaxDirectionalLights = 1;
-		Config.MaxSpotLights = 15;
-		Config.MaxPointLights = 16;
-		Config.MaxShadowCastingLights = 32;
+		Config.MaxSpotLights = 300;
+		Config.MaxPointLights = 150;
+		Config.MaxShadowCastingLights = 451;
 		break;
 
 	case EShadowQuality::Custom:

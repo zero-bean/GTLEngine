@@ -186,7 +186,7 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 	// 광원별 해상도
 	Stats.DirectionalLightResolution = DirectionalLightShadowMap.GetWidth();
 	Stats.SpotLightResolution = SpotLightShadowMap.GetWidth();
-	Stats.PointLightResolution = 0; // TODO: PointLight 쉐도우 맵 구현 시 추가
+	Stats.PointLightResolution = PointLightCubeShadowMap.GetWidth();
 
 	// 실제 쉐도우 캐스팅 라이트 수
 	Stats.DirectionalLightCount = DirectionalLightCount;
@@ -201,7 +201,7 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 	// 각 쉐도우 맵의 실제 사용 중인 메모리 계산 (활성 라이트 수 기반)
 	Stats.DirectionalLightUsedBytes = DirectionalLightShadowMap.GetUsedMemoryBytes(DirectionalLightCount);
 	Stats.SpotLightUsedBytes = SpotLightShadowMap.GetUsedMemoryBytes(SpotLightCount);
-	Stats.PointLightUsedBytes = PointLightCubeShadowMap.GetWidth();
+	Stats.PointLightUsedBytes = PointLightCubeShadowMap.GetUsedMemoryBytes(PointLightCount * 6); // 큐브맵이므로 6개 면
 
 	// 총 할당된 메모리
 	Stats.TotalAllocatedBytes = Stats.DirectionalLightAllocatedBytes + Stats.SpotLightAllocatedBytes + Stats.PointLightAllocatedBytes;
