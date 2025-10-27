@@ -1816,6 +1816,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 		}
 
 		// 쉐도우맵 (Shadow Map)
+		ImGui::Indent(33.0f);
 		if (IconShadowMap && IconShadowMap->GetShaderResourceView())
 		{
 			ImGui::Image((void*)IconShadowMap->GetShaderResourceView(), IconSize);
@@ -1915,6 +1916,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 		{
 			ImGui::SetTooltip("쉐도우 맵 해상도 설정");
 		}
+		ImGui::Unindent(30.0f); // 오프셋 복원
 
 		ImGui::PopStyleColor(3);
 		ImGui::PopStyleVar(2);
