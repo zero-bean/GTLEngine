@@ -244,8 +244,8 @@ float SamplePointLightShadowCube(
     float currentDepth = saturate(nonlinearDepth);
 
     // 4. Bias to prevent shadow acne
-    //float bias = 0.005f;
-    //currentDepth -= bias;
+    float bias = 0.005f;
+    currentDepth -= bias;
 
     // 5. TextureCubeArray 샘플링
     // SampleCmpLevelZero: cube direction + array index

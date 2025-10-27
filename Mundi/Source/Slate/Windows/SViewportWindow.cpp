@@ -1831,84 +1831,184 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 
 			// 현재 쉐도우 맵 해상도 가져오기
 			UWorld* World = ViewportClient->GetWorld();
-			uint32 CurrentResolution = 1024; // 기본값
+			uint32 DirResolution = 1024;
+			uint32 SpotResolution = 1024;
+			uint32 PointResolution = 1024;
 			if (World && World->GetShadowManager())
 			{
-				CurrentResolution = World->GetShadowManager()->GetShadowConfiguration().ShadowMapResolution;
+				const FShadowConfiguration& Config = World->GetShadowManager()->GetShadowConfiguration();
+				DirResolution = Config.DirectionalLightResolution;
+				SpotResolution = Config.SpotLightResolution;
+				PointResolution = Config.PointLightResolution;
 			}
 
-			// 512x512
-			bool bIs512 = (CurrentResolution == 512);
-			const char* Icon512 = bIs512 ? "●" : "○";
-			char Label512[32];
-			sprintf_s(Label512, "%s 512 x 512", Icon512);
-			if (ImGui::MenuItem(Label512))
+			// === Directional Light 서브메뉴 ===
+			if (ImGui::BeginMenu("Directional Light"))
 			{
-				if (World && World->GetShadowManager())
+				ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "해상도");
+				ImGui::Separator();
+
+				// 512x512
+				bool bDirIs512 = (DirResolution == 512);
+				const char* DirIcon512 = bDirIs512 ? "●" : "○";
+				char DirLabel512[32];
+				sprintf_s(DirLabel512, "%s 512 x 512##Dir", DirIcon512);
+				if (ImGui::MenuItem(DirLabel512))
 				{
-					World->GetShadowManager()->SetShadowMapResolution(512);
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetDirectionalLightResolution(512);
 				}
-			}
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::SetTooltip("쉐도우 맵 해상도를 512x512로 설정합니다. (낮은 품질, 높은 성능)");
-			}
 
-			// 1024x1024
-			bool bIs1024 = (CurrentResolution == 1024);
-			const char* Icon1024 = bIs1024 ? "●" : "○";
-			char Label1024[32];
-			sprintf_s(Label1024, "%s 1024 x 1024", Icon1024);
-			if (ImGui::MenuItem(Label1024))
-			{
-				if (World && World->GetShadowManager())
+				// 1024x1024
+				bool bDirIs1024 = (DirResolution == 1024);
+				const char* DirIcon1024 = bDirIs1024 ? "●" : "○";
+				char DirLabel1024[32];
+				sprintf_s(DirLabel1024, "%s 1024 x 1024##Dir", DirIcon1024);
+				if (ImGui::MenuItem(DirLabel1024))
 				{
-					World->GetShadowManager()->SetShadowMapResolution(1024);
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetDirectionalLightResolution(1024);
 				}
-			}
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::SetTooltip("쉐도우 맵 해상도를 1024x1024로 설정합니다. (중간 품질, 균형잡힌 성능)");
-			}
 
-			// 2048x2048
-			bool bIs2048 = (CurrentResolution == 2048);
-			const char* Icon2048 = bIs2048 ? "●" : "○";
-			char Label2048[32];
-			sprintf_s(Label2048, "%s 2048 x 2048", Icon2048);
-			if (ImGui::MenuItem(Label2048))
-			{
-				if (World && World->GetShadowManager())
+				// 2048x2048
+				bool bDirIs2048 = (DirResolution == 2048);
+				const char* DirIcon2048 = bDirIs2048 ? "●" : "○";
+				char DirLabel2048[32];
+				sprintf_s(DirLabel2048, "%s 2048 x 2048##Dir", DirIcon2048);
+				if (ImGui::MenuItem(DirLabel2048))
 				{
-					World->GetShadowManager()->SetShadowMapResolution(2048);
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetDirectionalLightResolution(2048);
 				}
-			}
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::SetTooltip("쉐도우 맵 해상도를 2048x2048로 설정합니다. (높은 품질, 낮은 성능)");
-			}
 
-			// 4096x4096
-			bool bIs4096 = (CurrentResolution == 4096);
-			const char* Icon4096 = bIs4096 ? "●" : "○";
-			char Label4096[32];
-			sprintf_s(Label4096, "%s 4096 x 4096", Icon4096);
-			if (ImGui::MenuItem(Label4096))
-			{
-				if (World && World->GetShadowManager())
+				// 4096x4096
+				bool bDirIs4096 = (DirResolution == 4096);
+				const char* DirIcon4096 = bDirIs4096 ? "●" : "○";
+				char DirLabel4096[32];
+				sprintf_s(DirLabel4096, "%s 4096 x 4096##Dir", DirIcon4096);
+				if (ImGui::MenuItem(DirLabel4096))
 				{
-					World->GetShadowManager()->SetShadowMapResolution(4096);
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetDirectionalLightResolution(4096);
 				}
+
+				ImGui::Separator();
+				ImGui::Text("현재: %d x %d", DirResolution, DirResolution);
+
+				ImGui::EndMenu();
 			}
-			if (ImGui::IsItemHovered())
+
+			// === Spot Light 서브메뉴 ===
+			if (ImGui::BeginMenu("Spot Light"))
 			{
-				ImGui::SetTooltip("쉐도우 맵 해상도를 4096x4096로 설정합니다. (최고 품질, 매우 낮은 성능)");
+				ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "해상도");
+				ImGui::Separator();
+
+				// 512x512
+				bool bSpotIs512 = (SpotResolution == 512);
+				const char* SpotIcon512 = bSpotIs512 ? "●" : "○";
+				char SpotLabel512[32];
+				sprintf_s(SpotLabel512, "%s 512 x 512##Spot", SpotIcon512);
+				if (ImGui::MenuItem(SpotLabel512))
+				{
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetSpotLightResolution(512);
+				}
+
+				// 1024x1024
+				bool bSpotIs1024 = (SpotResolution == 1024);
+				const char* SpotIcon1024 = bSpotIs1024 ? "●" : "○";
+				char SpotLabel1024[32];
+				sprintf_s(SpotLabel1024, "%s 1024 x 1024##Spot", SpotIcon1024);
+				if (ImGui::MenuItem(SpotLabel1024))
+				{
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetSpotLightResolution(1024);
+				}
+
+				// 2048x2048
+				bool bSpotIs2048 = (SpotResolution == 2048);
+				const char* SpotIcon2048 = bSpotIs2048 ? "●" : "○";
+				char SpotLabel2048[32];
+				sprintf_s(SpotLabel2048, "%s 2048 x 2048##Spot", SpotIcon2048);
+				if (ImGui::MenuItem(SpotLabel2048))
+				{
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetSpotLightResolution(2048);
+				}
+
+				// 4096x4096
+				bool bSpotIs4096 = (SpotResolution == 4096);
+				const char* SpotIcon4096 = bSpotIs4096 ? "●" : "○";
+				char SpotLabel4096[32];
+				sprintf_s(SpotLabel4096, "%s 4096 x 4096##Spot", SpotIcon4096);
+				if (ImGui::MenuItem(SpotLabel4096))
+				{
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetSpotLightResolution(4096);
+				}
+
+				ImGui::Separator();
+				ImGui::Text("현재: %d x %d", SpotResolution, SpotResolution);
+
+				ImGui::EndMenu();
 			}
 
-			ImGui::Separator();
+			// === Point Light 서브메뉴 ===
+			if (ImGui::BeginMenu("Point Light"))
+			{
+				ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "해상도");
+				ImGui::Separator();
 
-			// 현재 설정값 표시
-			ImGui::Text("현재 해상도: %d x %d", CurrentResolution, CurrentResolution);
+				// 512x512
+				bool bPointIs512 = (PointResolution == 512);
+				const char* PointIcon512 = bPointIs512 ? "●" : "○";
+				char PointLabel512[32];
+				sprintf_s(PointLabel512, "%s 512 x 512##Point", PointIcon512);
+				if (ImGui::MenuItem(PointLabel512))
+				{
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetPointLightResolution(512);
+				}
+
+				// 1024x1024
+				bool bPointIs1024 = (PointResolution == 1024);
+				const char* PointIcon1024 = bPointIs1024 ? "●" : "○";
+				char PointLabel1024[32];
+				sprintf_s(PointLabel1024, "%s 1024 x 1024##Point", PointIcon1024);
+				if (ImGui::MenuItem(PointLabel1024))
+				{
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetPointLightResolution(1024);
+				}
+
+				// 2048x2048
+				bool bPointIs2048 = (PointResolution == 2048);
+				const char* PointIcon2048 = bPointIs2048 ? "●" : "○";
+				char PointLabel2048[32];
+				sprintf_s(PointLabel2048, "%s 2048 x 2048##Point", PointIcon2048);
+				if (ImGui::MenuItem(PointLabel2048))
+				{
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetPointLightResolution(2048);
+				}
+
+				// 4096x4096
+				bool bPointIs4096 = (PointResolution == 4096);
+				const char* PointIcon4096 = bPointIs4096 ? "●" : "○";
+				char PointLabel4096[32];
+				sprintf_s(PointLabel4096, "%s 4096 x 4096##Point", PointIcon4096);
+				if (ImGui::MenuItem(PointLabel4096))
+				{
+					if (World && World->GetShadowManager())
+						World->GetShadowManager()->SetPointLightResolution(4096);
+				}
+
+				ImGui::Separator();
+				ImGui::Text("현재: %d x %d", PointResolution, PointResolution);
+
+				ImGui::EndMenu();
+			}
 
 			ImGui::EndMenu();
 		}
