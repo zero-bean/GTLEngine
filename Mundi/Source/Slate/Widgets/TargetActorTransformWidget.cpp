@@ -601,6 +601,95 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 			}
 		}
 	}
+	// PointLightComponent인 경우 CubeShadowMap 표시 (6개 면) - SpotLight는 제외
+	else if (UPointLightComponent* PointLight = Cast<UPointLightComponent>(SelectedComponent))
+	{
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Text("[Cube Shadow Map]");
+
+		bool bCastShadows = PointLight->GetIsCastShadows();
+		ImGui::Text("Cast Shadows: %s", bCastShadows ? "True" : "False");
+
+		if (bCastShadows)
+		{
+			FShadowManager* ShadowManager = GWorld->GetShadowManager();
+
+			if (ShadowManager)
+			{
+				const FShadowMap& PointLightCubeShadowMap = ShadowManager->GetPointLightCubeShadowMap();
+				int ShadowMapIndex = PointLight->GetShadowMapIndex();
+
+				ImGui::Text("Shadow Map Index: %d", ShadowMapIndex);
+				ImGui::Text("Resolution: %u x %u", PointLightCubeShadowMap.GetWidth(), PointLightCubeShadowMap.GetHeight());
+				ImGui::Text("Cube Map Array Size: %u", PointLightCubeShadowMap.GetArraySize());
+
+				if (ShadowMapIndex >= 0 && ShadowMapIndex < (int)PointLightCubeShadowMap.GetArraySize() / 6)
+				{
+					// CubeShadowMap 크기 조절
+					static float CubeShadowMapDisplaySize = 128.0f;
+					ImGui::SetNextItemWidth(200.0f);
+					ImGui::DragFloat("Display Size##Cube", &CubeShadowMapDisplaySize, 1.0f, 64.0f, 256.0f, "%.0f");
+					ImGui::Spacing();
+
+					// 6개 면 이름 (Unreal 축: X=Forward, Y=Right, Z=Up)
+					const char* FaceNames[6] = {
+						"+X (Forward)",
+						"-X (Back)",
+						"+Y (Right)",
+						"-Y (Left)",
+						"+Z (Up)",
+						"-Z (Down)"
+					};
+
+					// 2x3 그리드로 6개 면 표시
+					for (int row = 0; row < 2; row++)
+					{
+						for (int col = 0; col < 3; col++)
+						{
+							int faceIndex = row * 3 + col;
+							uint32 ArrayIndex = (ShadowMapIndex * 6) + faceIndex;
+
+							ID3D11ShaderResourceView* FaceSRV = PointLightCubeShadowMap.GetSliceSRV(ArrayIndex);
+
+							if (col > 0) ImGui::SameLine();
+
+							ImGui::BeginGroup();
+							ImGui::Text("%s", FaceNames[faceIndex]);
+
+							if (FaceSRV)
+							{
+								ImGui::Image(
+									(ImTextureID)FaceSRV,
+									ImVec2(CubeShadowMapDisplaySize, CubeShadowMapDisplaySize),
+									ImVec2(0, 0),  // uv0
+									ImVec2(1, 1),  // uv1
+									ImVec4(1, 1, 1, 1),  // tint color
+									ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
+								);
+							}
+							else
+							{
+								ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "NULL");
+							}
+
+							ImGui::EndGroup();
+						}
+					}
+
+					ImGui::TextWrapped("Note: R32_FLOAT format appears as red channel. Brightness indicates depth.");
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Invalid ShadowMap Index!");
+				}
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ShadowManager is NULL!");
+			}
+		}
+	}
 }
 
 void UTargetActorTransformWidget::UpdateTransformFromComponent(USceneComponent* SelectedComponent)

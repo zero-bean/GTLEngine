@@ -238,19 +238,20 @@ float SamplePointLightShadowCube(
     float distance = length(lightToPixel);
 
     // 2. 선형 거리를 비선형 깊이로 변환 (Perspective Projection)
-    // REVERSE-Z: Projection에서 Near/Far가 스왑되었으므로 공식도 역전
+    // REVERSE-Z: Projection에서 Near/Far가 스왑되어 전달됨
+    // PerspectiveFovLH(90, 1.0, AttenuationRadius, NearPlane) 형태로 호출
+    // 즉, Near 파라미터 = AttenuationRadius, Far 파라미터 = NearPlane
     // Reverse-Z formula: Z_ndc = (near / (near - far)) - (near * far) / ((near - far) * Z_view)
-    // 여기서 Z_view = distance (view space에서의 깊이)
-    float far = attenuationRadius;
-    float near = nearPlane;
+    float near = attenuationRadius;  // Projection의 Near 파라미터 (먼 거리)
+    float far = nearPlane;           // Projection의 Far 파라미터 (가까운 거리)
     float nonlinearDepth = (near / (near - far)) - (near * far) / ((near - far) * distance);
 
     // 3. [0, 1] 범위로 정규화
     float currentDepth = saturate(nonlinearDepth);
 
     // 4. Hardware Rasterizer Bias 사용 중 (Software bias 제거)
-    // float bias = 0.0f;
-    // currentDepth += bias;
+    float bias = 0.001f;
+    currentDepth += bias;
 
     // 5. TextureCubeArray 샘플링
     // SampleCmpLevelZero: cube direction + array index

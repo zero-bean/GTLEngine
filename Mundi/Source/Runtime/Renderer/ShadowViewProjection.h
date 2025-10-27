@@ -29,12 +29,12 @@ struct FShadowViewProjection
 	{
 		FShadowViewProjection Result;
 
-		// View 행렬 계산
-		FVector LightUp = FVector(0, 1, 0);
+		// View 행렬 계산 (Unreal 축: Z=Up)
+		FVector LightUp = FVector(0, 0, 1);  // Z축이 Up
 		// Direction과 Up 벡터가 평행하면 다른 Up 벡터 사용
 		if (FMath::Abs(FVector::Dot(Direction, LightUp)) > 0.99f)
 		{
-			LightUp = FVector(1, 0, 0);
+			LightUp = FVector(1, 0, 0);  // X축(Forward)을 Up으로
 		}
 
 		Result.View = FMatrix::LookAtLH(Position, Position + Direction, LightUp);
@@ -80,10 +80,10 @@ struct FShadowViewProjection
 		// === 2. Light View 행렬 생성 ===
 		FVector LightDir = Direction.GetNormalized();
 
-		// Up vector 선택 (LightDir와 평행하지 않은 벡터)
-		FVector Up = (FMath::Abs(LightDir.Y) < 0.99f)
-			? FVector(0, 1, 0)
-			: FVector(1, 0, 0);
+		// Up vector 선택 (LightDir와 평행하지 않은 벡터) - Unreal 축: Z=Up
+		FVector Up = (FMath::Abs(LightDir.Z) < 0.99f)
+			? FVector(0, 0, 1)  // Z축이 Up
+			: FVector(1, 0, 0);  // Z축과 평행하면 X축(Forward)을 Up으로
 
 		// Frustum 중심점 계산 (8개 코너의 평균)
 		FVector FrustumCenter = FVector::Zero();
@@ -165,15 +165,15 @@ struct FShadowViewProjection
 			FVector Up;
 		};
 
-		// Cube Map Face 정의
+		// Cube Map Face 정의 (Unreal 축: X=Forward, Y=Right, Z=Up)
 		FCubeFace CubeFaces[6] =
 		{
-			{ FVector( 1,  0,  0), FVector(0,  1,  0) },  // Slice 0: +X (Right)
-			{ FVector(-1,  0,  0), FVector(0,  1,  0) },  // Slice 1: -X (Left)
-			{ FVector( 0,  1,  0), FVector(0,  0,  -1) }, // Slice 2: +Y (Up)
-			{ FVector( 0, -1,  0), FVector(0,  0,  1) }, // Slice 3: -Y (Down)
-			{ FVector( 0,  0,  1), FVector(0,  1,  0) },  // Slice 4: +Z (Forward)                       
-			{ FVector( 0,  0, -1), FVector(0,  1,  0) }   // Slice 5: -Z (Back)
+			{ FVector( 1,  0,  0), FVector(0,  0,  1) },  // Slice 0: +X (Forward) - Up은 Z
+			{ FVector(-1,  0,  0), FVector(0,  0,  1) },  // Slice 1: -X (Back) - Up은 Z
+			{ FVector( 0,  1,  0), FVector(0,  0,  1) },  // Slice 2: +Y (Right) - Up은 Z
+			{ FVector( 0, -1,  0), FVector(0,  0,  1) },  // Slice 3: -Y (Left) - Up은 Z
+			{ FVector( 0,  0,  1), FVector(-1, 0,  0) },  // Slice 4: +Z (Up) - Up은 -X (Back)
+			{ FVector( 0,  0, -1), FVector( 1, 0,  0) }   // Slice 5: -Z (Down) - Up은 +X (Forward)
 		};
 
 		// 각 면에 대한 VP 행렬 생성
