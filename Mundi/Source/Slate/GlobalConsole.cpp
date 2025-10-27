@@ -43,19 +43,19 @@ void UGlobalConsole::Log(const char* fmt, ...)
 
 void UGlobalConsole::LogV(const char* fmt, va_list args)
 {
-    // if (ConsoleWidget)
-    // {
-    //     ConsoleWidget->VAddLog(fmt, args);
-    // }
-    // else
-    // {
+    if (ConsoleWidget)
+    {
+        ConsoleWidget->VAddLog(fmt, args);
+    }
+    else
+    {
         // Fallback to OutputDebugString if console widget not available
         char tmp[1024];
         vsnprintf_s(tmp, _countof(tmp), fmt, args);
         OutputDebugStringA("[No Console] ");
         OutputDebugStringA(tmp);
         OutputDebugStringA("\n");
-    // }
+    }
 }
 
 // Global C functions for compatibility

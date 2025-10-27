@@ -139,28 +139,22 @@ void UUIManager::Update(float DeltaTime)
 }
 
 /**
- * @brief ImGui BeginFrame만 호출
+ * @brief 모든 UI 윈도우 렌더링
  */
-void UUIManager::BeginFrame()
+void UUIManager::Render()
 {
-	if (!bIsInitialized || !ImGuiHelper)
+	if (!bIsInitialized)
+	{
+		return;
+	}
+
+	if (!ImGuiHelper)
 	{
 		return;
 	}
 
 	// ImGui 프레임 시작
 	ImGuiHelper->BeginFrame();
-}
-
-/**
- * @brief 모든 UI 윈도우 렌더링 (BeginFrame 제외)
- */
-void UUIManager::Render()
-{
-	if (!bIsInitialized || !ImGuiHelper)
-	{
-		return;
-	}
 
 	// 우선순위에 따라 정렬 (필요한 경우에만 진행)
 	// SortUIWindowsByPriority();

@@ -17,10 +17,7 @@ public:
 	float GetTemperature() const { return Temperature; }
 
 	// Shadow 옵션 설정
-	void SetShadowResolutionScale(float InShadowResolutionScale) { ShadowResolutionScale = InShadowResolutionScale; }
-	float GetShadowResolutionScale() const { return ShadowResolutionScale; }
-
-	void GetShadowBias(float InShadowBias) { ShadowBias = InShadowBias; }
+	void SetShadowBias(float InShadowBias) { ShadowBias = InShadowBias; }
 	float GetShadowBias() const { return ShadowBias; }
 
 	void SetShadowSlopeBias(float InShadowSlopeBias) { ShadowSlopeBias = InShadowSlopeBias; }
@@ -41,8 +38,7 @@ public:
 protected:
 	float Temperature = 6500.0f; // 색온도 (K)
 
-	float ShadowResolutionScale = 1.f;
-	float ShadowBias = 0.1f;
-	float ShadowSlopeBias = 0.f;
+	float ShadowBias = 0.001f;
+	float ShadowSlopeBias = 10.f;
 	float ShadowSharpen = 1.f;
 };

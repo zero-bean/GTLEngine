@@ -7,6 +7,12 @@ IMPLEMENT_CLASS(ULightComponent)
 BEGIN_PROPERTIES(ULightComponent)
 	ADD_PROPERTY_RANGE(float, Temperature, "Light", 1000.0f, 15000.0f, true,
 		"조명의 색온도를 켈빈(K) 단위로 설정합니다\n(1000K: 주황색, 6500K: 주광색, 15000K: 푸른색)")
+	ADD_PROPERTY_RANGE(float, ShadowBias, "Shadow", 0.0f, 0.01f, true,
+		"섀도우 바이어스 값입니다\n(섀도우 아크네를 제거하기 위한 깊이 오프셋)")
+	ADD_PROPERTY_RANGE(float, ShadowSlopeBias, "Shadow", 0.0f, 4.0f, true,
+		"섀도우 슬로프 바이어스 값입니다\n(경사면에서의 섀도우 아크네 제거)")
+	ADD_PROPERTY_RANGE(float, ShadowSharpen, "Shadow", 0.0f, 4.0f, true,
+		"섀도우 선명도입니다\n")
 END_PROPERTIES()
 
 // Color Temperature to RGB conversion using blackbody radiation approximation
@@ -71,6 +77,9 @@ static FLinearColor ColorTemperatureToRGB(float InTemperature)
 ULightComponent::ULightComponent()
 {
 	Temperature = 6500.0f;
+	ShadowBias = 0.001f;
+	ShadowSlopeBias = 0.0f;
+	ShadowSharpen = 1.0f;
 }
 
 ULightComponent::~ULightComponent()

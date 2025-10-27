@@ -5,6 +5,9 @@
 
 UDirectionalLightComponent::UDirectionalLightComponent()
 {
+	// DirectionalLight는 넓은 영역을 커버하므로 높은 bias와 해상도 필요
+	ShadowBias = 0.005f;          // 높은 bias (shadow acne 방지)
+	ShadowSlopeBias = 2.0f;        // 높은 slope bias (경사면 아크네 방지)
 }
 
 UDirectionalLightComponent::~UDirectionalLightComponent()

@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "StatsOverlayD2D.h"
 #include "Color.h"
 
@@ -64,7 +64,6 @@ void D3D11RHI::Release()
     if (DepthStencilStateAlwaysNoWrite) { DepthStencilStateAlwaysNoWrite->Release(); DepthStencilStateAlwaysNoWrite = nullptr; }
     if (DepthStencilStateDisable) { DepthStencilStateDisable->Release(); DepthStencilStateDisable = nullptr; }
     if (DepthStencilStateGreaterEqualWrite) { DepthStencilStateGreaterEqualWrite->Release(); DepthStencilStateGreaterEqualWrite = nullptr; }
-    if (DepthStencilStateGreaterEqualReadOnly) { DepthStencilStateGreaterEqualReadOnly->Release(); DepthStencilStateGreaterEqualReadOnly = nullptr; }
     if (DepthStencilStateOverlayWriteStencil) { DepthStencilStateOverlayWriteStencil->Release(); DepthStencilStateOverlayWriteStencil = nullptr; }
     if (DepthStencilStateStencilRejectOverlay) { DepthStencilStateStencilRejectOverlay->Release(); DepthStencilStateStencilRejectOverlay = nullptr; }
 
@@ -89,8 +88,8 @@ void D3D11RHI::ClearAllBuffer()
     DeviceContext->ClearRenderTargetView(BackBufferRTV, ClearColor);
     DeviceContext->ClearRenderTargetView(GetCurrentTargetRTV(), ClearId);
     DeviceContext->ClearRenderTargetView(IdBufferRTV, ClearId);
-
-    ClearDepthBuffer(1.0f, 0);
+    
+    ClearDepthBuffer(1.0f, 0);                 // 깊이값 초기화
 }
 
 void D3D11RHI::ClearDepthBuffer(float Depth, UINT Stencil)
@@ -178,21 +177,13 @@ void D3D11RHI::CreateDepthStencilState()
     // DepthWriteMask/Func는 무시되지만 값은 그대로 둬도 됨
     Device->CreateDepthStencilState(&desc, &DepthStencilStateDisable);
 
-    // 5) LessEqual + Write ALL
+    // 5) (선택) GreaterEqual + Write ALL
     desc.DepthEnable = TRUE;
     desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-    desc.StencilEnable = FALSE;
+    desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
     Device->CreateDepthStencilState(&desc, &DepthStencilStateGreaterEqualWrite);
 
-    // 6) LessEqual + Write ZERO (ReadOnly)
-    desc.DepthEnable = TRUE;
-    desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-    desc.StencilEnable = FALSE;
-    Device->CreateDepthStencilState(&desc, &DepthStencilStateGreaterEqualReadOnly);
-
-    // 7) OverlayWriteStencil: Always + NoWriteDepth + Stencil=REPLACE 1
+    // 6) OverlayWriteStencil: Always + NoWriteDepth + Stencil=REPLACE 1
     ZeroMemory(&desc, sizeof(desc));
     desc.DepthEnable = TRUE;
     desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
@@ -207,7 +198,7 @@ void D3D11RHI::CreateDepthStencilState()
     desc.BackFace = desc.FrontFace;
     Device->CreateDepthStencilState(&desc, &DepthStencilStateOverlayWriteStencil);
 
-    // 8) StencilRejectOverlay: LessEqual + DepthWrite ALL + Stencil EQUAL 0 (keep)
+    // 7) StencilRejectOverlay: LessEqual + DepthWrite ALL + Stencil EQUAL 0 (keep)
     ZeroMemory(&desc, sizeof(desc));
     desc.DepthEnable = TRUE;
     desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -668,9 +659,9 @@ void D3D11RHI::CreateRasterizerState()
     ShadowRasterizerDesc.DepthClipEnable = TRUE;
 
     // Shadow acne 방지를 위한 DepthBias 설정
-    ShadowRasterizerDesc.DepthBias = 1000;
+    ShadowRasterizerDesc.DepthBias = 10;              // 양수 = 라이트에서 멀어지는 방향
     ShadowRasterizerDesc.SlopeScaledDepthBias = 2.0f;
-    ShadowRasterizerDesc.DepthBiasClamp = 0.0f;
+    ShadowRasterizerDesc.DepthBiasClamp = 0.0f;         // 바이어스 제한 없음
 
     Device->CreateRasterizerState(&ShadowRasterizerDesc, &ShadowRasterizerState);
 }
@@ -888,9 +879,6 @@ void D3D11RHI::OMSetDepthStencilState(EComparisonFunc Func)
         break;
     case EComparisonFunc::LessEqualReadOnly:
         DeviceContext->OMSetDepthStencilState(DepthStencilStateLessEqualReadOnly, 0);
-        break;
-    case EComparisonFunc::GreaterEqualReadOnly:
-        DeviceContext->OMSetDepthStencilState(DepthStencilStateGreaterEqualReadOnly, 0);
         break;
     }
 }

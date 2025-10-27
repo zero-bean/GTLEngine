@@ -22,6 +22,7 @@ class UGizmoArrowComponent;
 class FSceneView;
 class FTileLightCuller;
 class ULineComponent;
+struct FShadowRenderContext;
 
 struct FCandidateDrawable;
 
@@ -124,6 +125,54 @@ private:
 
 	/** @brief 프레임 렌더링의 마무리 작업을 수행합니다. (예: 로그 출력) */
 	void FinalizeFrame();
+private:
+	// === Shadow Pass Helper Functions ===
+
+	/** @brief 라이트가 섀도우 캐스팅에 유효한지 검사합니다. */
+	template<typename TLightComponent>
+	bool IsLightValidForShadowCasting(const TLightComponent* Light) const
+	{
+		return Light &&
+			   Light->IsVisible() &&
+			   Light->GetOwner()->IsActorVisible() &&
+			   Light->GetIsCastShadows();
+	}
+
+	/** @brief 섀도우 패스용 메시 배치를 수집합니다. */
+	void CollectShadowMeshBatches(TArray<FMeshBatchElement>& OutMeshBatches) const;
+
+	/** @brief 메시 배치의 셰이더를 섀도우 뎁스 셰이더로 오버라이드합니다. */
+	void OverrideShadowShader(TArray<FMeshBatchElement>& MeshBatches, FShaderVariant* ShadowShaderVariant);
+
+	/** @brief 섀도우 렌더링을 위한 ViewProj 상수 버퍼를 업데이트합니다. */
+	void UpdateViewProjBufferForShadow(const FShadowRenderContext& ShadowContext, bool bIsOrthographic);
+
+	/** @brief DirectionalLight의 섀도우를 렌더링합니다. */
+	void RenderDirectionalLightShadows(FShaderVariant* ShadowShaderVariant);
+
+	/** @brief SpotLight의 섀도우를 렌더링합니다. */
+	void RenderSpotLightShadows(FShaderVariant* ShadowShaderVariant);
+
+	/** @brief PointLight의 섀도우를 렌더링합니다 (Cube Map). */
+	void RenderPointLightShadows(FShaderVariant* ShadowShaderVariant);
+
+	/** @brief 카메라의 ViewProj 상수 버퍼를 복구합니다. */
+	void RestoreCameraViewProj();
+
+	// === Shadow Pass Render State Management ===
+
+	/** @brief 섀도우 패스의 렌더 상태를 저장하고 자동으로 복구하는 RAII 구조체 */
+	struct FSavedRenderState
+	{
+		ID3D11RenderTargetView* RTV = nullptr;
+		ID3D11DepthStencilView* DSV = nullptr;
+		D3D11_VIEWPORT Viewport;
+
+		void Save(D3D11RHI* RHI);
+		void Restore(D3D11RHI* RHI);
+		void Release();
+	};
+
 private:
 	// --- 렌더링 컨텍스트 (외부에서 주입받음) ---
 	UWorld* World;

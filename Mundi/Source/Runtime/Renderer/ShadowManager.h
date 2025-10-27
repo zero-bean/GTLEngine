@@ -3,6 +3,7 @@
 #include "ShadowConfiguration.h"
 #include "ShadowMap.h"
 #include "ShadowStats.h"
+#include "ShadowViewProjection.h"
 
 // Forward Declarations
 class D3D11RHI;
@@ -38,11 +39,15 @@ struct FShadowRenderContext
 	FMatrix LightView;
 	FMatrix LightProjection;
 	int32 ShadowMapIndex;
+	float ShadowBias;
+	float ShadowSlopeBias;
 
 	FShadowRenderContext()
 		: LightView(FMatrix::Identity())
 		, LightProjection(FMatrix::Identity())
 		, ShadowMapIndex(-1)
+		, ShadowBias(0.001f)
+		, ShadowSlopeBias(0.0f)
 	{}
 };
 
@@ -91,9 +96,10 @@ public:
 	// @param RHI - D3D11 RHI 디바이스
 	// @param Light - 렌더링할 PointLight
 	// @param CubeFaceIndex - 큐브맵 면 인덱스 (0~5: +X, -X, +Y, -Y, +Z, -Z)
+	// @param ShadowVP - 해당 큐브맵 면의 View-Projection 행렬 (미리 계산된 값)
 	// @param OutContext - (출력) Shadow 렌더링 컨텍스트
 	// @return 성공 여부
-	bool BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, FShadowRenderContext& OutContext);
+	bool BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, const FShadowViewProjection& ShadowVP, FShadowRenderContext& OutContext);
 
 	// Shadow 렌더링 종료
 	// @param RHI - D3D11 RHI 디바이스
@@ -107,13 +113,20 @@ public:
 	// @param RHI - D3D11 RHI 디바이스
 	void UnbindShadowResources(D3D11RHI* RHI);
 
+	// 디렉셔널 라이트 쉐도우 맵 해상도 변경
+	void SetDirectionalLightResolution(uint32 NewResolution);
+
+	// 스팟 라이트 쉐도우 맵 해상도 변경
+	void SetSpotLightResolution(uint32 NewResolution);
+
+	// 포인트 라이트 쉐도우 맵 해상도 변경
+	void SetPointLightResolution(uint32 NewResolution);
+
 	// Query 메서드들
 	const FShadowConfiguration& GetShadowConfiguration() const { return Config; }
 	int32 GetShadowMapIndex(USpotLightComponent* Light) const;
 	FShadowMap& GetSpotLightShadowMap() { return SpotLightShadowMap; }
 	const FShadowMap& GetSpotLightShadowMap() const { return SpotLightShadowMap; }
-	FShadowMap& GetDirectionalLightShadowMap() { return DirectionalLightShadowMap; }
-	const FShadowMap& GetDirectionalLightShadowMap() const { return DirectionalLightShadowMap; }
 	FShadowMap& GetPointLightCubeShadowMap() { return PointLightCubeShadowMap; }
 	const FShadowMap& GetPointLightCubeShadowMap() const { return PointLightCubeShadowMap; }
 

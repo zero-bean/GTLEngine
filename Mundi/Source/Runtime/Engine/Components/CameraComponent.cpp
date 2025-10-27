@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "CameraComponent.h"
 #include "FViewport.h"
 
@@ -68,6 +68,7 @@ FMatrix UCameraComponent::GetProjectionMatrix(float ViewportAspectRatio) const
         // 줌 계산
         orthoWidth = orthoWidth * ZooMFactor;
         orthoHeight = orthoWidth / ViewportAspectRatio;
+
 
         return FMatrix::OrthoLH(orthoWidth, orthoHeight,
             NearClip, FarClip);

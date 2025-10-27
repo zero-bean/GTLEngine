@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "SceneRenderer.h"
 
 // FSceneRenderer가 사용하는 모든 헤더 포함
@@ -41,6 +41,7 @@
 #include "TileLightCuller.h"
 #include "LineComponent.h"
 #include "ShadowManager.h"
+#include "ShadowViewProjection.h"
 
 FSceneRenderer::FSceneRenderer(UWorld* InWorld, FSceneView* InView, URenderer* InOwnerRenderer)
 	: World(InWorld)
@@ -86,8 +87,8 @@ void FSceneRenderer::Render()
 
 		// 2. 라이트 버퍼 업데이트 및 섀도우 맵 바인딩
 		GWorld->GetLightManager()->SetDirtyFlag();
-		GWorld->GetLightManager()->UpdateLightBuffer(RHIDevice);	//라이트 구조체 버퍼 업데이트, 바인딩
-		GWorld->GetShadowManager()->BindShadowResources(RHIDevice);	//섀도우 맵 텍스처 바인딩 (t5)
+		GWorld->GetLightManager()->UpdateLightBuffer(RHIDevice);	// 라이트 구조체 버퍼 업데이트, 바인딩
+		GWorld->GetShadowManager()->BindShadowResources(RHIDevice);	// 섀도우 맵 텍스처 바인딩 (t5)
 		PerformTileLightCulling();	// 타일 기반 라이트 컬링 수행
 
 		// 3. 메인 렌더링
@@ -177,7 +178,7 @@ void FSceneRenderer::RenderSceneDepthPath()
 	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	RHIDevice->GetDeviceContext()->ClearRenderTargetView(RHIDevice->GetCurrentTargetRTV(), ClearColor);
 	RHIDevice->ClearDepthBuffer(1.0f, 0);
-	
+
 	// 2. Base Pass - Scene에 메시 그리기
 	RenderOpaquePass(EViewModeIndex::VMI_Unlit);
 
@@ -445,11 +446,11 @@ void FSceneRenderer::PerformTileLightCulling()
 
 void FSceneRenderer::RenderShadowPass()
 {
-	// Step 1: 섀도우 캐스팅 라이트에 인덱스 할당 (ShadowManager에게 위임)
+	// Step 1: 섀도우 캐스팅 라이트에 인덱스 할당
 	FShadowCastingLights ShadowLights(SceneGlobals.DirectionalLights, SceneLocals.SpotLights, SceneLocals.PointLights);
 	GWorld->GetShadowManager()->AssignShadowMapIndices(RHIDevice, ShadowLights);
 
-	// Step 2: Shadow Depth 셰이더 로드
+	// Step 2: 섀도우 뎁스 셰이더 로드 및 컴파일
 	UShader* ShadowDepthShader = UResourceManager::GetInstance().Load<UShader>("Shaders/Materials/ShadowDepth.hlsl");
 	if (!ShadowDepthShader)
 	{
@@ -457,7 +458,6 @@ void FSceneRenderer::RenderShadowPass()
 		return;
 	}
 
-	// 셰이더 컴파일
 	TArray<FShaderMacro> EmptyMacros;
 	FShaderVariant* ShadowShaderVariant = ShadowDepthShader->GetOrCompileShaderVariant(RHIDevice->GetDevice(), EmptyMacros);
 	if (!ShadowShaderVariant)
@@ -466,179 +466,161 @@ void FSceneRenderer::RenderShadowPass()
 		return;
 	}
 
-	// Step 3: 현재 렌더 타겟 및 뷰포트 저장 (복구용)
-	ID3D11RenderTargetView* PrevRTV = nullptr;
-	ID3D11DepthStencilView* PrevDSV = nullptr;
-	RHIDevice->GetDeviceContext()->OMGetRenderTargets(1, &PrevRTV, &PrevDSV);
+	// Step 3: 렌더 상태 저장 (RAII 패턴)
+	FSavedRenderState SavedState;
+	SavedState.Save(RHIDevice);
 
-	D3D11_VIEWPORT PrevViewport;
-	UINT NumViewports = 1;
-	RHIDevice->GetDeviceContext()->RSGetViewports(&NumViewports, &PrevViewport);
+	// Step 4: 라이트 타입별 섀도우 렌더링
+	RenderDirectionalLightShadows(ShadowShaderVariant);
+	RenderSpotLightShadows(ShadowShaderVariant);
+	RenderPointLightShadows(ShadowShaderVariant);
 
-	// Step 4-A: DirectionalLight 섀도우 렌더링
+	// Step 5: 렌더 상태 복구
+	SavedState.Restore(RHIDevice);
+
+	// Step 6: 카메라 ViewProj 버퍼 복구
+	RestoreCameraViewProj();
+}
+
+//====================================================================================
+// Shadow Pass Helper Functions
+//====================================================================================
+
+void FSceneRenderer::CollectShadowMeshBatches(TArray<FMeshBatchElement>& OutMeshBatches) const
+{
+	for (UMeshComponent* MeshComponent : Proxies.Meshes)
+	{
+		MeshComponent->CollectMeshBatches(OutMeshBatches, View);
+	}
+}
+
+void FSceneRenderer::OverrideShadowShader(TArray<FMeshBatchElement>& MeshBatches, FShaderVariant* ShadowShaderVariant)
+{
+	for (FMeshBatchElement& BatchElement : MeshBatches)
+	{
+		BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
+		BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
+		BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
+	}
+}
+
+void FSceneRenderer::UpdateViewProjBufferForShadow(const FShadowRenderContext& ShadowContext, bool bIsOrthographic)
+{
+	ViewProjBufferType ViewProjBuffer;
+	ViewProjBuffer.View = ShadowContext.LightView;
+	ViewProjBuffer.Proj = ShadowContext.LightProjection;
+	ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
+
+	if (bIsOrthographic)
+	{
+		ViewProjBuffer.InvProj = ShadowContext.LightProjection.InverseOrthographicProjection();
+	}
+	else
+	{
+		ViewProjBuffer.InvProj = ShadowContext.LightProjection.InversePerspectiveProjection();
+	}
+
+	RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
+}
+
+void FSceneRenderer::RenderDirectionalLightShadows(FShaderVariant* ShadowShaderVariant)
+{
 	for (UDirectionalLightComponent* DirLight : SceneGlobals.DirectionalLights)
 	{
-		// 4-A-1. 유효성 및 섀도우 캐스팅 여부 확인
-		if (!DirLight ||
-			!DirLight->IsVisible() ||
-			!DirLight->GetOwner()->IsActorVisible() ||
-			!DirLight->GetIsCastShadows())
+		// 유효성 검사
+		if (!IsLightValidForShadowCasting(DirLight))
 			continue;
 
-		// 4-A-2. ShadowManager에게 섀도우 맵 렌더 시작 요청
-		//        -> DSV 바인딩, LightView/LightProj 행렬 계산 및 반환
+		// ShadowManager에게 섀도우 맵 렌더 시작 요청
 		FShadowRenderContext ShadowContext;
 		if (!GWorld->GetShadowManager()->BeginShadowRender(RHIDevice, DirLight,
 			View->ViewMatrix, View->ProjectionMatrix, ShadowContext))
 			continue;
 
-		// 4-A-3. ViewProj 버퍼 업데이트 (라이트 공간 행렬)
-		ViewProjBufferType ViewProjBuffer;
-		ViewProjBuffer.View = ShadowContext.LightView;
-		ViewProjBuffer.Proj = ShadowContext.LightProjection;
-		ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
-		ViewProjBuffer.InvProj = ShadowContext.LightProjection.InverseOrthographicProjection(); // Orthographic!
-		RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
+		// ViewProj 버퍼 업데이트 (Orthographic)
+		UpdateViewProjBufferForShadow(ShadowContext, true);
 
-		// 4-A-4. 메시 수집 (쉐도우 패스용 로컬 배열 사용)
+		// 메시 수집
 		TArray<FMeshBatchElement> ShadowMeshBatches;
-		for (UMeshComponent* MeshComponent : Proxies.Meshes)
-		{
-			MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
-		}
+		CollectShadowMeshBatches(ShadowMeshBatches);
 
-		// 4-A-5. 셰이더 오버라이드 (ShadowDepth 셰이더로 변경)
-		for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
-		{
-			BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
-			BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
-			BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
-		}
+		// 셰이더 오버라이드
+		OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
 
-		// 4-A-6. 그리기 (bIsShadowPass=true로 설정하여 DepthStencilState 덮어쓰기 방지)
+		// 그리기
 		DrawMeshBatches(ShadowMeshBatches, true, true);
 
-		// 4-A-7. 섀도우 맵 렌더 종료
+		// 섀도우 맵 렌더 종료
 		GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
 	}
+}
 
-	// Step 4-B: SpotLight 섀도우 렌더링
+void FSceneRenderer::RenderSpotLightShadows(FShaderVariant* ShadowShaderVariant)
+{
 	for (USpotLightComponent* SpotLight : SceneLocals.SpotLights)
 	{
-		// 4-1. 유효성 및 섀도우 캐스팅 여부 확인
-		if (!SpotLight || 
-			!SpotLight->IsVisible() || 
-			!SpotLight->GetOwner()->IsActorVisible() || 
-			!SpotLight->GetIsCastShadows())
+		// 유효성 검사
+		if (!IsLightValidForShadowCasting(SpotLight))
 			continue;
 
-		// 4-2. ShadowManager에게 섀도우 맵 렌더 시작 요청
-		//      -> DSV 바인딩, LightView/LightProj 행렬 계산 및 반환
+		// ShadowManager에게 섀도우 맵 렌더 시작 요청
 		FShadowRenderContext ShadowContext;
 		if (!GWorld->GetShadowManager()->BeginShadowRender(RHIDevice, SpotLight, ShadowContext))
 			continue;
 
-		// 4-3. ViewProj 버퍼 업데이트 (라이트 공간 행렬)
-		ViewProjBufferType ViewProjBuffer;
-		ViewProjBuffer.View = ShadowContext.LightView;
-		ViewProjBuffer.Proj = ShadowContext.LightProjection;
-		ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
-		ViewProjBuffer.InvProj = ShadowContext.LightProjection.InversePerspectiveProjection();
+		// ViewProj 버퍼 업데이트 (Perspective)
+		UpdateViewProjBufferForShadow(ShadowContext, false);
 
-		// Debug: Print View/Projection Matrix
-		UE_LOG("[ShadowPass] LightView Matrix:");
-		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.View.M[0][0], ViewProjBuffer.View.M[0][1], ViewProjBuffer.View.M[0][2], ViewProjBuffer.View.M[0][3]);
-		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.View.M[1][0], ViewProjBuffer.View.M[1][1], ViewProjBuffer.View.M[1][2], ViewProjBuffer.View.M[1][3]);
-		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.View.M[2][0], ViewProjBuffer.View.M[2][1], ViewProjBuffer.View.M[2][2], ViewProjBuffer.View.M[2][3]);
-		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.View.M[3][0], ViewProjBuffer.View.M[3][1], ViewProjBuffer.View.M[3][2], ViewProjBuffer.View.M[3][3]);
-
-		UE_LOG("[ShadowPass] LightProjection Matrix:");
-		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.Proj.M[0][0], ViewProjBuffer.Proj.M[0][1], ViewProjBuffer.Proj.M[0][2], ViewProjBuffer.Proj.M[0][3]);
-		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.Proj.M[1][0], ViewProjBuffer.Proj.M[1][1], ViewProjBuffer.Proj.M[1][2], ViewProjBuffer.Proj.M[1][3]);
-		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.Proj.M[2][0], ViewProjBuffer.Proj.M[2][1], ViewProjBuffer.Proj.M[2][2], ViewProjBuffer.Proj.M[2][3]);
-		UE_LOG("  [%.2f, %.2f, %.2f, %.2f]", ViewProjBuffer.Proj.M[3][0], ViewProjBuffer.Proj.M[3][1], ViewProjBuffer.Proj.M[3][2], ViewProjBuffer.Proj.M[3][3]);
-
-		RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
-
-
-		// 4-4. 메시 수집 (쉐도우 패스용 로컬 배열 사용)
+		// 메시 수집
 		TArray<FMeshBatchElement> ShadowMeshBatches;
-		FVector LightPos = SpotLight->GetWorldLocation();
+		CollectShadowMeshBatches(ShadowMeshBatches);
 
-		for (UMeshComponent* MeshComponent : Proxies.Meshes)
-		{
-			MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
+		// 셰이더 오버라이드
+		OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
 
-			// 메쉬의 월드 위치 로깅
-			FVector MeshWorldPos = MeshComponent->GetWorldLocation();
-			float Distance = (MeshWorldPos - LightPos).Size();
-
-			UE_LOG("[ShadowPass] Mesh at (%.2f, %.2f, %.2f), Distance from Light: %.2f",
-				MeshWorldPos.X, MeshWorldPos.Y, MeshWorldPos.Z, Distance);
-		}
-
-		UE_LOG("[ShadowPass] SpotLight Index=%d, Collected Meshes=%d", ShadowContext.ShadowMapIndex, ShadowMeshBatches.size());
-
-		// 4-5. 셰이더 오버라이드 (ShadowDepth 셰이더로 변경)
-		for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
-		{
-			BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
-			BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
-			BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
-		}
-
-		// 4-6. 그리기 (bIsShadowPass=true로 설정하여 DepthStencilState 덮어쓰기 방지)
+		// 그리기
 		DrawMeshBatches(ShadowMeshBatches, true, true);
 
-		// 4-7. 섀도우 맵 렌더 종료
+		// 섀도우 맵 렌더 종료
 		GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
 	}
+}
 
-	// Step 4-C: PointLight 섀도우 렌더링 (Cube Map)
-	// Cube Map 모드: 각 라이트당 6번 렌더링 (6개 면)
+void FSceneRenderer::RenderPointLightShadows(FShaderVariant* ShadowShaderVariant)
+{
 	for (UPointLightComponent* PointLight : SceneLocals.PointLights)
 	{
-		// 유효성 및 섀도우 캐스팅 여부 확인
-		if (!PointLight ||
-			!PointLight->IsVisible() ||
-			!PointLight->GetOwner()->IsActorVisible() ||
-			!PointLight->GetIsCastShadows())
+		// 유효성 검사
+		if (!IsLightValidForShadowCasting(PointLight))
 			continue;
 
 		// Shadow Map이 할당되지 않은 라이트는 스킵
 		if (PointLight->GetShadowMapIndex() < 0)
 			continue;
 
+		// 라이트당 한 번만 6개 VP 행렬 계산 (중복 계산 제거)
+		TArray<FShadowViewProjection> CubeShadowVPs = FShadowViewProjection::CreateForPointLightCube(
+			PointLight->GetWorldLocation(),
+			PointLight->GetAttenuationRadius(),
+			0.01f); // Near plane
+
 		// 6개 면 렌더링 (+X, -X, +Y, -Y, +Z, -Z)
 		for (uint32 CubeFaceIdx = 0; CubeFaceIdx < 6; CubeFaceIdx++)
 		{
-			// ShadowManager에게 섀도우 맵 렌더 시작 요청
+			// ShadowManager에게 섀도우 맵 렌더 시작 요청 (미리 계산된 VP 전달)
 			FShadowRenderContext ShadowContext;
-			if (!GWorld->GetShadowManager()->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, ShadowContext))
+			if (!GWorld->GetShadowManager()->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, CubeShadowVPs[CubeFaceIdx], ShadowContext))
 				continue;
 
-			// ViewProj 버퍼 업데이트 (라이트 공간 행렬)
-			ViewProjBufferType ViewProjBuffer;
-			ViewProjBuffer.View = ShadowContext.LightView;
-			ViewProjBuffer.Proj = ShadowContext.LightProjection;
-			ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
-			ViewProjBuffer.InvProj = ShadowContext.LightProjection.InversePerspectiveProjection();  // Cube는 Perspective
-			RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
+			// ViewProj 버퍼 업데이트 (Perspective)
+			UpdateViewProjBufferForShadow(ShadowContext, false);
 
 			// 메시 수집
 			TArray<FMeshBatchElement> ShadowMeshBatches;
-			for (UMeshComponent* MeshComponent : Proxies.Meshes)
-			{
-				MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
-			}
+			CollectShadowMeshBatches(ShadowMeshBatches);
 
-			// 셰이더 오버라이드 (ShadowDepth 셰이더 사용, 비선형 깊이)
-			for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
-			{
-				BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
-				BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
-				BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
-			}
+			// 셰이더 오버라이드
+			OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
 
 			// 그리기
 			DrawMeshBatches(ShadowMeshBatches, true, true);
@@ -647,22 +629,13 @@ void FSceneRenderer::RenderShadowPass()
 			GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
 		}
 	}
+}
 
-skip_pointlight_shadows:
-
-	// Step 5: 렌더 타겟 및 뷰포트 복구
-	RHIDevice->GetDeviceContext()->OMSetRenderTargets(1, &PrevRTV, PrevDSV);
-	RHIDevice->GetDeviceContext()->RSSetViewports(1, &PrevViewport);
-
-	// 릴리스
-	if (PrevRTV) PrevRTV->Release();
-	if (PrevDSV) PrevDSV->Release();
-
-	// Step 6: ViewProj 버퍼를 카메라의 것으로 복구
-		// RenderShadowPass에서 라이트의 VP로 덮어썼던 b1 버퍼를
-		// 다시 메인 카메라의 VP로 설정합니다.
+void FSceneRenderer::RestoreCameraViewProj()
+{
 	FMatrix InvView = View->ViewMatrix.InverseAffine();
 	FMatrix InvProjection;
+
 	if (View->ProjectionMode == ECameraProjectionMode::Perspective)
 	{
 		InvProjection = View->ProjectionMatrix.InversePerspectiveProjection();
@@ -674,7 +647,44 @@ skip_pointlight_shadows:
 
 	ViewProjBufferType ViewProjBuffer = ViewProjBufferType(View->ViewMatrix, View->ProjectionMatrix, InvView, InvProjection);
 	RHIDevice->SetAndUpdateConstantBuffer(ViewProjBufferType(ViewProjBuffer));
-} 
+}
+
+//====================================================================================
+// FSavedRenderState Implementation
+//====================================================================================
+
+void FSceneRenderer::FSavedRenderState::Save(D3D11RHI* RHI)
+{
+	// 현재 렌더 타겟 및 뷰포트 저장
+	RHI->GetDeviceContext()->OMGetRenderTargets(1, &RTV, &DSV);
+
+	UINT NumViewports = 1;
+	RHI->GetDeviceContext()->RSGetViewports(&NumViewports, &Viewport);
+}
+
+void FSceneRenderer::FSavedRenderState::Restore(D3D11RHI* RHI)
+{
+	// 렌더 타겟 및 뷰포트 복구
+	RHI->GetDeviceContext()->OMSetRenderTargets(1, &RTV, DSV);
+	RHI->GetDeviceContext()->RSSetViewports(1, &Viewport);
+
+	// 릴리스
+	Release();
+}
+
+void FSceneRenderer::FSavedRenderState::Release()
+{
+	if (RTV)
+	{
+		RTV->Release();
+		RTV = nullptr;
+	}
+	if (DSV)
+	{
+		DSV->Release();
+		DSV = nullptr;
+	}
+}
 
 void FSceneRenderer::PerformFrustumCulling()
 {
@@ -835,7 +845,7 @@ void FSceneRenderer::RenderDecalPass()
 
 	// 데칼 렌더 설정
 	RHIDevice->RSSetState(ERasterizerMode::Decal);
-	RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqualReadOnly);
+	RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqualReadOnly); // 깊이 쓰기 OFF
 	RHIDevice->OMSetBlendState(true);
 
 	for (UDecalComponent* Decal : Proxies.Decals)
@@ -1136,7 +1146,7 @@ void FSceneRenderer::RenderOverayEditorPrimitivesPass()
 	// 후처리된 최종 이미지 위에 원본 씬의 뎁스 버퍼를 사용하여 3D 오버레이를 렌더링합니다.
 	RHIDevice->OMSetRenderTargets(ERTVMode::SceneColorTargetWithId);
 
-	// 뎁스 버퍼를 Clear하고 GreaterEqual로 그리기 때문에 오버레이로 표시되는데
+	// 뎁스 버퍼를 Clear하고 LessEqual로 그리기 때문에 오버레이로 표시되는데
 	// 오버레이 끼리는 깊이 테스트가 가능함
 	RHIDevice->ClearDepthBuffer(1.0f, 0);
 
@@ -1152,18 +1162,13 @@ void FSceneRenderer::RenderOverayEditorPrimitivesPass()
 // 수집한 Batch 그리기
 void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, bool bClearListAfterDraw, bool bIsShadowPass)
 {
-	if (bIsShadowPass)
-	{
-		UE_LOG("[DrawMeshBatches] Shadow Pass: %d batches to draw", InMeshBatches.size());
-	}
-
 	if (InMeshBatches.IsEmpty()) return;
 
 	// RHI 상태 초기 설정 (Opaque Pass 기본값)
 	// Shadow Pass일 경우 FShadowMap::BeginRender()에서 이미 설정했으므로 덮어쓰지 않음
 	if (!bIsShadowPass)
 	{
-		RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual);
+		RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual); // 깊이 쓰기 ON
 	}
 
 	// PS 리소스 초기화
@@ -1311,12 +1316,6 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 		RHIDevice->SetAndUpdateConstantBuffer(ColorBufferType(Batch.InstanceColor, Batch.ObjectID));
 
 		// 5. 드로우 콜 실행
-		if (bIsShadowPass)
-		{
-			UE_LOG("[DrawMeshBatches] Shadow DrawIndexed: IndexCount=%d, StartIndex=%d, BaseVertex=%d",
-				Batch.IndexCount, Batch.StartIndex, Batch.BaseVertexIndex);
-		}
-
 		RHIDevice->GetDeviceContext()->DrawIndexed(Batch.IndexCount, Batch.StartIndex, Batch.BaseVertexIndex);
 	}
 

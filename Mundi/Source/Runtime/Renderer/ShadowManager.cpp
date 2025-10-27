@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "ShadowManager.h"
 #include "ShadowViewProjection.h"
 #include "SpotLightComponent.h"
@@ -18,21 +18,13 @@ FShadowManager::~FShadowManager()
 
 void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InConfig)
 {
-	if (bIsInitialized)
-	{
-		return;  // 이미 초기화되어 있으면 스킵
-	}
-
 	RHIDevice = RHI;
 	Config = InConfig;
 
-	// Shadow Map Array 초기화 (광원 타입별로 적절한 배열 크기 할당)
-	SpotLightShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxSpotLights);
-	DirectionalLightShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxDirectionalLights);
-
-	// PointLight Shadow Map 초기화
-	// Cube Map: ArraySize = MaxPointLights (내부에서 * 6 처리)
-	PointLightCubeShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxPointLights, true);
+	// Shadow Map Array 초기화 (광원 타입별로 각각의 해상도 사용)
+	SpotLightShadowMap.Initialize(RHI, Config.SpotLightResolution, Config.SpotLightResolution, Config.MaxSpotLights);
+	DirectionalLightShadowMap.Initialize(RHI, Config.DirectionalLightResolution, Config.DirectionalLightResolution, Config.MaxDirectionalLights);
+	PointLightCubeShadowMap.Initialize(RHI, Config.PointLightResolution, Config.PointLightResolution, Config.MaxPointLights, true);
 
 	bIsInitialized = true;
 }
@@ -49,6 +41,51 @@ void FShadowManager::Release()
 	PointLightCubeShadowMap.Release();
 
 	bIsInitialized = false;
+}
+
+void FShadowManager::SetDirectionalLightResolution(uint32 NewResolution)
+{
+	// 초기화되지 않았으면 설정만 변경
+	if (!bIsInitialized)
+	{
+		Config.DirectionalLightResolution = NewResolution;
+		return;
+	}
+
+	// 이미 초기화된 경우 재초기화
+	Config.DirectionalLightResolution = NewResolution;
+	Release();
+	Initialize(RHIDevice, Config);
+}
+
+void FShadowManager::SetSpotLightResolution(uint32 NewResolution)
+{
+	// 초기화되지 않았으면 설정만 변경
+	if (!bIsInitialized)
+	{
+		Config.SpotLightResolution = NewResolution;
+		return;
+	}
+
+	// 이미 초기화된 경우 재초기화
+	Config.SpotLightResolution = NewResolution;
+	Release();
+	Initialize(RHIDevice, Config);
+}
+
+void FShadowManager::SetPointLightResolution(uint32 NewResolution)
+{
+	// 초기화되지 않았으면 설정만 변경
+	if (!bIsInitialized)
+	{
+		Config.PointLightResolution = NewResolution;
+		return;
+	}
+
+	// 이미 초기화된 경우 재초기화
+	Config.PointLightResolution = NewResolution;
+	Release();
+	Initialize(RHIDevice, Config);
 }
 
 void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingLights& InLights)
@@ -143,7 +180,7 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 
 	// 쉐도우 맵 통계 수집 및 업데이트
 	FShadowStats Stats;
-	Stats.ShadowMapResolution = Config.ShadowMapResolution;
+	//Stats.ShadowMapResolution = Config.ShadowMapResolution;
 	Stats.MaxShadowCastingLights = Config.MaxShadowCastingLights;
 
 	// 광원별 해상도
@@ -159,12 +196,12 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 	// 각 쉐도우 맵의 할당된 메모리 계산 (전체 텍스처 배열 크기)
 	Stats.DirectionalLightAllocatedBytes = DirectionalLightShadowMap.GetAllocatedMemoryBytes();
 	Stats.SpotLightAllocatedBytes = SpotLightShadowMap.GetAllocatedMemoryBytes();
-	Stats.PointLightAllocatedBytes = 0; // TODO: PointLight 쉐도우 맵 구현 시 추가
+	Stats.PointLightAllocatedBytes = PointLightCubeShadowMap.GetAllocatedMemoryBytes();
 
 	// 각 쉐도우 맵의 실제 사용 중인 메모리 계산 (활성 라이트 수 기반)
 	Stats.DirectionalLightUsedBytes = DirectionalLightShadowMap.GetUsedMemoryBytes(DirectionalLightCount);
 	Stats.SpotLightUsedBytes = SpotLightShadowMap.GetUsedMemoryBytes(SpotLightCount);
-	Stats.PointLightUsedBytes = 0; // TODO: PointLight 쉐도우 맵 구현 시 추가
+	Stats.PointLightUsedBytes = PointLightCubeShadowMap.GetWidth();
 
 	// 총 할당된 메모리
 	Stats.TotalAllocatedBytes = Stats.DirectionalLightAllocatedBytes + Stats.SpotLightAllocatedBytes + Stats.PointLightAllocatedBytes;
@@ -196,9 +233,11 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, USpotLightComponent* Light
 	OutContext.LightView = ShadowVP.View;
 	OutContext.LightProjection = ShadowVP.Projection;
 	OutContext.ShadowMapIndex = Index;
+	OutContext.ShadowBias = Light->GetShadowBias();
+	OutContext.ShadowSlopeBias = Light->GetShadowSlopeBias();
 
 	// Shadow Map 렌더링 시작 (DSV 바인딩, Viewport 설정)
-	SpotLightShadowMap.BeginRender(RHI, Index);
+	SpotLightShadowMap.BeginRender(RHI, Index, OutContext.ShadowBias, OutContext.ShadowSlopeBias);
 
 	return true;
 }
@@ -223,17 +262,19 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent
 	OutContext.LightView = ShadowVP.View;
 	OutContext.LightProjection = ShadowVP.Projection;
 	OutContext.ShadowMapIndex = Index;
+	OutContext.ShadowBias = Light->GetShadowBias();
+	OutContext.ShadowSlopeBias = Light->GetShadowSlopeBias();
 
 	// Light Component에 계산된 ViewProjection 저장 (Light Buffer 업데이트 시 사용)
 	Light->SetLightViewProjection(ShadowVP.ViewProjection);
 
 	// DirectionalLight Shadow Map 렌더링 시작 (DSV 바인딩, Viewport 설정)
-	DirectionalLightShadowMap.BeginRender(RHI, Index);
+	DirectionalLightShadowMap.BeginRender(RHI, Index, OutContext.ShadowBias, OutContext.ShadowSlopeBias);
 
 	return true;
 }
 
-bool FShadowManager::BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, FShadowRenderContext& OutContext)
+bool FShadowManager::BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, const FShadowViewProjection& ShadowVP, FShadowRenderContext& OutContext)
 {
 	// 이 라이트가 Shadow Map을 할당받았는지 확인
 	int32 Index = Light->GetShadowMapIndex();
@@ -248,23 +289,18 @@ bool FShadowManager::BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* 
 		return false;
 	}
 
-	// FShadowViewProjection 헬퍼 사용하여 6개 VP 행렬 계산
-	TArray<FShadowViewProjection> ShadowVPs = FShadowViewProjection::CreateForPointLightCube(
-		Light->GetWorldLocation(),
-		Light->GetAttenuationRadius());
-
-	// 해당 Cube Face의 VP 행렬 사용
-	FShadowViewProjection& ShadowVP = ShadowVPs[CubeFaceIndex];
-
+	// 미리 계산된 VP 행렬 사용 (중복 계산 제거)
 	// 출력 컨텍스트 설정
 	OutContext.LightView = ShadowVP.View;
 	OutContext.LightProjection = ShadowVP.Projection;
 	OutContext.ShadowMapIndex = Index;
+	OutContext.ShadowBias = Light->GetShadowBias();
+	OutContext.ShadowSlopeBias = Light->GetShadowSlopeBias();
 
 	// Cube Shadow Map 렌더링 시작
 	// ArrayIndex = (LightIndex * 6) + CubeFaceIndex
 	uint32 ArrayIndex = (Index * 6) + CubeFaceIndex;
-	PointLightCubeShadowMap.BeginRender(RHI, ArrayIndex);
+	PointLightCubeShadowMap.BeginRender(RHI, ArrayIndex, OutContext.ShadowBias, OutContext.ShadowSlopeBias);
 
 	return true;
 }
@@ -301,9 +337,9 @@ void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
 	ID3D11ShaderResourceView* NullSRVs[3] = { nullptr, nullptr, nullptr };
 	RHI->GetDeviceContext()->PSSetShaderResources(5, 3, NullSRVs);
 
-	// Shadow Sampler 언바인딩 (s2, s3)
-	ID3D11SamplerState* NullSamplers[2] = { nullptr, nullptr };
-	RHI->GetDeviceContext()->PSSetSamplers(2, 2, NullSamplers);
+	// Shadow Sampler 언바인딩
+	ID3D11SamplerState* NullSampler = nullptr;
+	RHI->GetDeviceContext()->PSSetSamplers(2, 1, &NullSampler);
 }
 
 int32 FShadowManager::GetShadowMapIndex(USpotLightComponent* Light) const

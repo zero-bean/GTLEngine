@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 class FShadowMap
 {
@@ -17,14 +17,12 @@ public:
 	// 특정 배열 슬라이스에 렌더링 시작
 	// RHI - D3D11 디바이스 인터페이스
 	// ArrayIndex - 렌더링할 배열 슬라이스 인덱스 (CubeMap인 경우 CubeIndex * 6 + FaceIndex)
-	void BeginRender(D3D11RHI* RHI, UINT ArrayIndex);
+	// DepthBias - 섀도우 뎁스 바이어스 (기본값 10)
+	// SlopeScaledDepthBias - 섀도우 슬로프 바이어스 (기본값 1.0f)
+	void BeginRender(D3D11RHI* RHI, UINT ArrayIndex, float DepthBias = 10.0f, float SlopeScaledDepthBias = 1.0f);
 	void EndRender(D3D11RHI* RHI);
 
 	ID3D11ShaderResourceView* GetSRV() const { return ShadowMapSRV; }
-	ID3D11ShaderResourceView* GetSliceSRV(UINT ArrayIndex) const
-	{
-		return (ArrayIndex < ShadowMapSliceSRVs.size()) ? ShadowMapSliceSRVs[ArrayIndex] : nullptr;
-	}
 	UINT GetWidth() const { return Width; }
 	UINT GetHeight() const { return Height; }
 	UINT GetArraySize() const { return ArraySize; }
@@ -62,8 +60,7 @@ private:
 
 	// 깊이 텍스처 배열 리소스
 	ID3D11Texture2D* ShadowMapTexture;
-	ID3D11ShaderResourceView* ShadowMapSRV; // Full array SRV (for shaders)
-	TArray<ID3D11ShaderResourceView*> ShadowMapSliceSRVs; // Individual slice SRVs (for ImGui)
+	ID3D11ShaderResourceView* ShadowMapSRV;
 
 	// PointLight, DirectionalLight는 여러 맵을 필요로 하기에 확장성을 위해 배열로 보유합니다.
 	TArray<ID3D11DepthStencilView*> ShadowMapDSVs;
