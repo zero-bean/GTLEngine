@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "CameraComponent.h"
 #include "FViewport.h"
 
@@ -72,8 +72,6 @@ FMatrix UCameraComponent::GetProjectionMatrix(float ViewportAspectRatio) const
 
         return FMatrix::OrthoLH(orthoWidth, orthoHeight,
             NearClip, FarClip);
-        /*return FMatrix::OrthoLH_XForward(orthoWidth, orthoHeight,
-            NearClip, FarClip);*/
     }
 }
 FMatrix UCameraComponent::GetProjectionMatrix(float ViewportAspectRatio, FViewport* Viewport) const
@@ -98,8 +96,6 @@ FMatrix UCameraComponent::GetProjectionMatrix(float ViewportAspectRatio, FViewpo
             orthoWidth,
             orthoHeight,
             NearClip, FarClip);
-        /*return FMatrix::OrthoLH_XForward(orthoWidth, orthoHeight,
-            NearClip, FarClip);*/
     }
 }
 FVector UCameraComponent::GetForward() const

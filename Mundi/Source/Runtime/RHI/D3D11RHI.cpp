@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "StatsOverlayD2D.h"
 #include "Color.h"
 
@@ -660,7 +660,7 @@ void D3D11RHI::CreateRasterizerState()
 
     // Shadow acne 방지를 위한 DepthBias 설정
     ShadowRasterizerDesc.DepthBias = 10;              // 양수 = 라이트에서 멀어지는 방향
-    ShadowRasterizerDesc.SlopeScaledDepthBias = 1.0f;   // 경사에 비례한 바이어스
+    ShadowRasterizerDesc.SlopeScaledDepthBias = 2.0f;
     ShadowRasterizerDesc.DepthBiasClamp = 0.0f;         // 바이어스 제한 없음
 
     Device->CreateRasterizerState(&ShadowRasterizerDesc, &ShadowRasterizerState);

@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "ShadowManager.h"
 #include "ShadowViewProjection.h"
 #include "SpotLightComponent.h"
