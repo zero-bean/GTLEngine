@@ -2,6 +2,7 @@
 
 #include "ShadowConfiguration.h"
 #include "ShadowMap.h"
+#include "ShadowStats.h"
 
 // Forward Declarations
 class D3D11RHI;
