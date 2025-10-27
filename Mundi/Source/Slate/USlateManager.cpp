@@ -472,3 +472,68 @@ void USlateManager::ToggleConsole()
         bConsoleShouldFocus = true;
     }
 }
+
+void USlateManager::SetActiveViewport(SViewportWindow* ActiveViewport)
+{
+    // 모든 뷰포트 비활성화
+    for (int i = 0; i < 4; i++)
+    {
+        if (Viewports[i])
+        {
+            Viewports[i]->SetActive(false);
+            if (Viewports[i]->GetViewportClient())
+            {
+                Viewports[i]->GetViewportClient()->SetActive(false);
+            }
+        }
+    }
+
+    // 메인 뷰포트도 비활성화
+    if (MainViewport)
+    {
+        MainViewport->SetActive(false);
+        if (MainViewport->GetViewportClient())
+        {
+            MainViewport->GetViewportClient()->SetActive(false);
+        }
+    }
+
+    // 선택된 뷰포트 활성화
+    if (ActiveViewport)
+    {
+        ActiveViewport->SetActive(true);
+        if (ActiveViewport->GetViewportClient())
+        {
+            ActiveViewport->GetViewportClient()->SetActive(true);
+        }
+    }
+}
+
+void USlateManager::StopPilotingActor(AActor* TargetActor)
+{
+    if (!TargetActor)
+        return;
+
+    // 모든 뷰포트에서 해당 액터를 piloting 중이면 해제
+    for (int i = 0; i < 4; i++)
+    {
+        if (Viewports[i] && Viewports[i]->GetViewportClient())
+        {
+            FViewportClient* Client = Viewports[i]->GetViewportClient();
+            if (Client->IsPiloting() && Client->GetPilotActor() == TargetActor)
+            {
+                Client->StopPiloting();
+            }
+        }
+    }
+
+    // 메인 뷰포트도 확인
+    if (MainViewport && MainViewport->GetViewportClient())
+    {
+        FViewportClient* Client = MainViewport->GetViewportClient();
+        if (Client->IsPiloting() && Client->GetPilotActor() == TargetActor)
+        {
+            Client->StopPiloting();
+        }
+    }
+}

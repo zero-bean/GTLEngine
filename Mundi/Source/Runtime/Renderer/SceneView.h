@@ -45,4 +45,7 @@ public:
 	EViewModeIndex ViewMode = EViewModeIndex::VMI_Lit_Phong;
     ECameraProjectionMode ProjectionMode = ECameraProjectionMode::Perspective;
     float ZNear{}, ZFar{};
+
+    // 뷰포트 참조 (ViewportClient 접근용)
+    FViewport* Viewport = nullptr;
 };
