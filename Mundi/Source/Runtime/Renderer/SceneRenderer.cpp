@@ -569,138 +569,57 @@ void FSceneRenderer::RenderShadowPass()
 		GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
 	}
 
-	// Step 4-C: PointLight 섀도우 렌더링 (Cube Map 또는 Paraboloid)
-	bool bUseParaboloidMaps = GWorld->GetShadowManager()->GetUseParaboloidMaps();
-
-	if (bUseParaboloidMaps)
+	// Step 4-C: PointLight 섀도우 렌더링 (Cube Map)
+	// Cube Map 모드: 각 라이트당 6번 렌더링 (6개 면)
+	for (UPointLightComponent* PointLight : SceneLocals.PointLights)
 	{
-		// Paraboloid 모드: Paraboloid 셰이더 로드
-		UShader* ParaboloidShader = UResourceManager::GetInstance().Load<UShader>("Shaders/Materials/ShadowDepthParaboloid.hlsl");
-		if (!ParaboloidShader)
-		{
-			UE_LOG("RenderShadowPass: Failed to load ShadowDepthParaboloid shader");
-			goto skip_pointlight_shadows;
-		}
+		// 유효성 및 섀도우 캐스팅 여부 확인
+		if (!PointLight ||
+			!PointLight->IsVisible() ||
+			!PointLight->GetOwner()->IsActorVisible() ||
+			!PointLight->GetIsCastShadows())
+			continue;
 
-		FShaderVariant* ParaboloidShaderVariant = ParaboloidShader->GetOrCompileShaderVariant(RHIDevice->GetDevice(), EmptyMacros);
-		if (!ParaboloidShaderVariant)
-		{
-			UE_LOG("RenderShadowPass: Failed to compile ShadowDepthParaboloid shader");
-			goto skip_pointlight_shadows;
-		}
+		// Shadow Map이 할당되지 않은 라이트는 스킵
+		if (PointLight->GetShadowMapIndex() < 0)
+			continue;
 
-		// Paraboloid 모드: 각 라이트당 2번 렌더링 (전면/후면 반구)
-		for (UPointLightComponent* PointLight : SceneLocals.PointLights)
+		// 6개 면 렌더링 (+X, -X, +Y, -Y, +Z, -Z)
+		for (uint32 CubeFaceIdx = 0; CubeFaceIdx < 6; CubeFaceIdx++)
 		{
-			// 유효성 및 섀도우 캐스팅 여부 확인
-			if (!PointLight ||
-				!PointLight->IsVisible() ||
-				!PointLight->GetOwner()->IsActorVisible() ||
-				!PointLight->GetIsCastShadows())
+			// ShadowManager에게 섀도우 맵 렌더 시작 요청
+			FShadowRenderContext ShadowContext;
+			if (!GWorld->GetShadowManager()->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, ShadowContext))
 				continue;
 
-			// 2개 반구 렌더링
-			for (uint32 HemisphereIdx = 0; HemisphereIdx < 2; HemisphereIdx++)
+			// ViewProj 버퍼 업데이트 (라이트 공간 행렬)
+			ViewProjBufferType ViewProjBuffer;
+			ViewProjBuffer.View = ShadowContext.LightView;
+			ViewProjBuffer.Proj = ShadowContext.LightProjection;
+			ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
+			ViewProjBuffer.InvProj = ShadowContext.LightProjection.InversePerspectiveProjection();  // Cube는 Perspective
+			RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
+
+			// 메시 수집
+			TArray<FMeshBatchElement> ShadowMeshBatches;
+			for (UMeshComponent* MeshComponent : Proxies.Meshes)
 			{
-				bool bFrontHemisphere = (HemisphereIdx == 0);
-
-				// ShadowManager에게 섀도우 맵 렌더 시작 요청
-				FShadowRenderContext ShadowContext;
-				if (!GWorld->GetShadowManager()->BeginShadowRenderParaboloid(RHIDevice, PointLight, bFrontHemisphere, ShadowContext))
-					continue;
-
-				// ViewProj 버퍼 업데이트 (라이트 공간 행렬)
-				ViewProjBufferType ViewProjBuffer;
-				ViewProjBuffer.View = ShadowContext.LightView;
-				ViewProjBuffer.Proj = ShadowContext.LightProjection;
-				ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
-				ViewProjBuffer.InvProj = ShadowContext.LightProjection.InverseOrthographicProjection();  // Paraboloid는 Ortho 사용
-				RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
-
-				// Paraboloid 상수 버퍼 설정
-				ParaboloidShadowBufferType ParaboloidBuffer;
-				ParaboloidBuffer.AttenuationRadius = PointLight->GetAttenuationRadius();
-				ParaboloidBuffer.NearPlane = 0.1f;
-				ParaboloidBuffer.bFrontHemisphere = bFrontHemisphere ? 1u : 0u;
-				ParaboloidBuffer.Padding = 0.0f;
-				RHIDevice->SetAndUpdateConstantBuffer(ParaboloidBuffer);
-
-				// 메시 수집
-				TArray<FMeshBatchElement> ShadowMeshBatches;
-				for (UMeshComponent* MeshComponent : Proxies.Meshes)
-				{
-					MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
-				}
-
-				// 셰이더 오버라이드 (Paraboloid 셰이더로 변경)
-				for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
-				{
-					BatchElement.VertexShader = ParaboloidShaderVariant->VertexShader;
-					BatchElement.PixelShader = ParaboloidShaderVariant->PixelShader;
-					BatchElement.InputLayout = ParaboloidShaderVariant->InputLayout;
-				}
-
-				// 그리기
-				DrawMeshBatches(ShadowMeshBatches, true, true);
-
-				// 섀도우 맵 렌더 종료
-				GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
+				MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
 			}
-		}
-	}
-	else
-	{
-		// Cube Map 모드: 각 라이트당 6번 렌더링 (6개 면)
-		for (UPointLightComponent* PointLight : SceneLocals.PointLights)
-		{
-			// 유효성 및 섀도우 캐스팅 여부 확인
-			if (!PointLight ||
-				!PointLight->IsVisible() ||
-				!PointLight->GetOwner()->IsActorVisible() ||
-				!PointLight->GetIsCastShadows())
-				continue;
 
-			// Shadow Map이 할당되지 않은 라이트는 스킵
-			if (PointLight->GetShadowMapIndex() < 0)
-				continue;
-
-			// 6개 면 렌더링 (+X, -X, +Y, -Y, +Z, -Z)
-			for (uint32 CubeFaceIdx = 0; CubeFaceIdx < 6; CubeFaceIdx++)
+			// 셰이더 오버라이드 (ShadowDepth 셰이더 사용, 비선형 깊이)
+			for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
 			{
-				// ShadowManager에게 섀도우 맵 렌더 시작 요청
-				FShadowRenderContext ShadowContext;
-				if (!GWorld->GetShadowManager()->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, ShadowContext))
-					continue;
-
-				// ViewProj 버퍼 업데이트 (라이트 공간 행렬)
-				ViewProjBufferType ViewProjBuffer;
-				ViewProjBuffer.View = ShadowContext.LightView;
-				ViewProjBuffer.Proj = ShadowContext.LightProjection;
-				ViewProjBuffer.InvView = ShadowContext.LightView.InverseAffine();
-				ViewProjBuffer.InvProj = ShadowContext.LightProjection.InversePerspectiveProjection();  // Cube는 Perspective
-				RHIDevice->SetAndUpdateConstantBuffer(ViewProjBuffer);
-
-				// 메시 수집
-				TArray<FMeshBatchElement> ShadowMeshBatches;
-				for (UMeshComponent* MeshComponent : Proxies.Meshes)
-				{
-					MeshComponent->CollectMeshBatches(ShadowMeshBatches, View);
-				}
-
-				// 셰이더 오버라이드 (ShadowDepth 셰이더 사용, 비선형 깊이)
-				for (FMeshBatchElement& BatchElement : ShadowMeshBatches)
-				{
-					BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
-					BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
-					BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
-				}
-
-				// 그리기
-				DrawMeshBatches(ShadowMeshBatches, true, true);
-
-				// 섀도우 맵 렌더 종료
-				GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
+				BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
+				BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
+				BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
 			}
+
+			// 그리기
+			DrawMeshBatches(ShadowMeshBatches, true, true);
+
+			// 섀도우 맵 렌더 종료
+			GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
 		}
 	}
 

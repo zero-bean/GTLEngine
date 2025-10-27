@@ -42,8 +42,7 @@ struct FPointLightInfo
     uint bCastShadow;       // 4 bytes - 섀도우 캐스팅 여부
     uint ShadowMapIndex;    // 4 bytes - 섀도우 맵 인덱스 (-1이면 섀도우 없음)
 
-    uint bUseParaboloidMap; // 4 bytes - true = Paraboloid Map 사용, false = Cube Map 사용
-    float2 Padding;         // 8 bytes - 64 bytes 정렬을 위한 패딩
+    float3 Padding;         // 12 bytes - 64 bytes 정렬을 위한 패딩
     // Total: 64 bytes
 };
 

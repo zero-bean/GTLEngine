@@ -95,14 +95,6 @@ public:
 	// @return 성공 여부
 	bool BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, FShadowRenderContext& OutContext);
 
-	// Shadow 렌더링 시작 - PointLight (Paraboloid Map용)
-	// @param RHI - D3D11 RHI 디바이스
-	// @param Light - 렌더링할 PointLight
-	// @param bFrontHemisphere - true = 전면 반구, false = 후면 반구
-	// @param OutContext - (출력) Shadow 렌더링 컨텍스트
-	// @return 성공 여부
-	bool BeginShadowRenderParaboloid(D3D11RHI* RHI, UPointLightComponent* Light, bool bFrontHemisphere, FShadowRenderContext& OutContext);
-
 	// Shadow 렌더링 종료
 	// @param RHI - D3D11 RHI 디바이스
 	void EndShadowRender(D3D11RHI* RHI);
@@ -122,10 +114,6 @@ public:
 	const FShadowMap& GetSpotLightShadowMap() const { return SpotLightShadowMap; }
 	FShadowMap& GetPointLightCubeShadowMap() { return PointLightCubeShadowMap; }
 	const FShadowMap& GetPointLightCubeShadowMap() const { return PointLightCubeShadowMap; }
-	FShadowMap& GetPointLightParaboloidShadowMap() { return PointLightParaboloidShadowMap; }
-	const FShadowMap& GetPointLightParaboloidShadowMap() const { return PointLightParaboloidShadowMap; }
-	bool GetUseParaboloidMaps() const { return bUseParaboloidMaps; }
-	void SetUseParaboloidMaps(bool bInUseParaboloidMaps) { bUseParaboloidMaps = bInUseParaboloidMaps; }
 
 private:
 	// RHI 디바이스 참조
@@ -137,12 +125,8 @@ private:
 	// 초기화 플래그
 	bool bIsInitialized = false;
 
-	// PointLight Shadow 모드 (true = Paraboloid, false = Cube)
-	bool bUseParaboloidMaps = false;
-
 	// Shadow Map 리소스
 	FShadowMap SpotLightShadowMap;
 	FShadowMap DirectionalLightShadowMap;
 	FShadowMap PointLightCubeShadowMap;       // PointLight Cube Map (6 faces per light)
-	FShadowMap PointLightParaboloidShadowMap; // PointLight Paraboloid Map (2 hemispheres per light)
 };

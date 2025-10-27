@@ -475,7 +475,6 @@ void UResourceManager::InitShaderILMap()
     // ────────────────────────────────
     layout.Add({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 });
     ShaderToInputLayoutMap["Shaders/Materials/ShadowDepth.hlsl"] = layout;
-    ShaderToInputLayoutMap["Shaders/Materials/ShadowDepthParaboloid.hlsl"] = layout;
     layout.clear();
 
     layout.Add({ "WORLDPOSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 });

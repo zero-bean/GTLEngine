@@ -34,9 +34,6 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 	// Cube Map: ArraySize = MaxPointLights (내부에서 * 6 처리)
 	PointLightCubeShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxPointLights, true);
 
-	// Paraboloid Map: ArraySize = MaxPointLights * 2 (각 라이트당 2개 반구)
-	PointLightParaboloidShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxPointLights * 2, false);
-
 	bIsInitialized = true;
 }
 
@@ -50,7 +47,6 @@ void FShadowManager::Release()
 	SpotLightShadowMap.Release();
 	DirectionalLightShadowMap.Release();
 	PointLightCubeShadowMap.Release();
-	PointLightParaboloidShadowMap.Release();
 
 	bIsInitialized = false;
 }
@@ -273,43 +269,11 @@ bool FShadowManager::BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* 
 	return true;
 }
 
-bool FShadowManager::BeginShadowRenderParaboloid(D3D11RHI* RHI, UPointLightComponent* Light, bool bFrontHemisphere, FShadowRenderContext& OutContext)
-{
-	// 이 라이트가 Shadow Map을 할당받았는지 확인
-	int32 Index = Light->GetShadowMapIndex();
-	if (Index < 0)
-	{
-		return false;
-	}
-
-	// FShadowViewProjection 헬퍼 사용하여 2개 VP 행렬 계산
-	TArray<FShadowViewProjection> ShadowVPs = FShadowViewProjection::CreateForPointLightParaboloid(
-		Light->GetWorldLocation(),
-		Light->GetAttenuationRadius());
-
-	// 전면(0) 또는 후면(1) 반구 선택
-	uint32 HemisphereIndex = bFrontHemisphere ? 0 : 1;
-	FShadowViewProjection& ShadowVP = ShadowVPs[HemisphereIndex];
-
-	// 출력 컨텍스트 설정
-	OutContext.LightView = ShadowVP.View;
-	OutContext.LightProjection = ShadowVP.Projection;
-	OutContext.ShadowMapIndex = Index;
-
-	// Paraboloid Shadow Map 렌더링 시작
-	// ArrayIndex = (LightIndex * 2) + HemisphereIndex
-	uint32 ArrayIndex = (Index * 2) + HemisphereIndex;
-	PointLightParaboloidShadowMap.BeginRender(RHI, ArrayIndex);
-
-	return true;
-}
-
 void FShadowManager::EndShadowRender(D3D11RHI* RHI)
 {
 	SpotLightShadowMap.EndRender(RHI);
 	DirectionalLightShadowMap.EndRender(RHI);
 	PointLightCubeShadowMap.EndRender(RHI);
-	PointLightParaboloidShadowMap.EndRender(RHI);
 }
 
 void FShadowManager::BindShadowResources(D3D11RHI* RHI)
@@ -326,10 +290,6 @@ void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 	ID3D11ShaderResourceView* PointCubeShadowMapSRV = PointLightCubeShadowMap.GetSRV();
 	RHI->GetDeviceContext()->PSSetShaderResources(7, 1, &PointCubeShadowMapSRV);
 
-	// PointLight Paraboloid Shadow Map Texture Array를 셰이더 슬롯 t8에 바인딩
-	ID3D11ShaderResourceView* PointParaboloidShadowMapSRV = PointLightParaboloidShadowMap.GetSRV();
-	RHI->GetDeviceContext()->PSSetShaderResources(8, 1, &PointParaboloidShadowMapSRV);
-
 	// Shadow Comparison Sampler를 슬롯 s2에 바인딩
 	ID3D11SamplerState* ShadowSampler = RHI->GetShadowComparisonSamplerState();
 	RHI->GetDeviceContext()->PSSetSamplers(2, 1, &ShadowSampler);
@@ -337,9 +297,9 @@ void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 
 void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
 {
-	// Shadow Map 언바인딩 (t5, t6, t7, t8 동시 해제)
-	ID3D11ShaderResourceView* NullSRVs[4] = { nullptr, nullptr, nullptr, nullptr };
-	RHI->GetDeviceContext()->PSSetShaderResources(5, 4, NullSRVs);
+	// Shadow Map 언바인딩 (t5, t6, t7 동시 해제)
+	ID3D11ShaderResourceView* NullSRVs[3] = { nullptr, nullptr, nullptr };
+	RHI->GetDeviceContext()->PSSetShaderResources(5, 3, NullSRVs);
 
 	// Shadow Sampler 언바인딩
 	ID3D11SamplerState* NullSampler = nullptr;

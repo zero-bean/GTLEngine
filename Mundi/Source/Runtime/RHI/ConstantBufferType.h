@@ -148,15 +148,6 @@ struct FTileCullingBufferType
     uint32 bUseTileCulling;   // 타일 컬링 활성화 여부 (0=비활성화, 1=활성화)
 };
 
-// b9: Paraboloid Shadow 렌더링용 상수 버퍼
-struct ParaboloidShadowBufferType
-{
-    float AttenuationRadius;  // 라이트 감쇠 반경
-    float NearPlane;          // Near clipping plane
-    uint32 bFrontHemisphere;  // 1 = 전면 반구 (+Z), 0 = 후면 반구 (-Z)
-    float Padding;            // 16바이트 정렬을 위한 패딩
-};
-
 #define CONSTANT_BUFFER_INFO(TYPE, SLOT, VS, PS) \
 constexpr uint32 TYPE##Slot = SLOT;\
 constexpr bool TYPE##IsVS = VS;\
@@ -176,7 +167,6 @@ MACRO(CameraBufferType)             \
 MACRO(FLightBufferType)             \
 MACRO(FViewportConstants)           \
 MACRO(FTileCullingBufferType)       \
-MACRO(ParaboloidShadowBufferType)   \
 
 // 16 바이트 패딩 어썰트
 #define STATIC_ASSERT_CBUFFER_ALIGNMENT(Type) \
@@ -195,6 +185,5 @@ CONSTANT_BUFFER_INFO(FPixelConstBufferType, 4, true, true) // GOURAUD에도 사�
 CONSTANT_BUFFER_INFO(DecalBufferType, 6, true, true)
 CONSTANT_BUFFER_INFO(CameraBufferType, 7, true, true)  // b7, VS+PS (UberLit.hlsl과 일치)
 CONSTANT_BUFFER_INFO(FLightBufferType, 8, true, true)
-CONSTANT_BUFFER_INFO(ParaboloidShadowBufferType, 9, true, false)  // b9, VS only (ShadowDepthParaboloid.hlsl)
 CONSTANT_BUFFER_INFO(FViewportConstants, 10, true, false)   // 뷰 포트 크기에 따라 전체 화면 복사를 보정하기 위해 설정 (10번 고유번호로 사용)
 CONSTANT_BUFFER_INFO(FTileCullingBufferType, 11, false, true)  // b11, PS only (UberLit.hlsl과 일치)
