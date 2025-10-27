@@ -95,6 +95,25 @@ void FShadowMap::Initialize(D3D11RHI* RHI, UINT InWidth, UINT InHeight, UINT InA
 	hr = RHI->GetDevice()->CreateShaderResourceView(ShadowMapTexture, &srvDesc, &ShadowMapSRV);
 	assert(SUCCEEDED(hr), "Failed to create shadow map SRV");
 
+	// 개별 슬라이스 SRV 생성 (ImGui 표시용 - TEXTURE2DARRAY, ArraySize=1)
+	ShadowMapSliceSRVs.clear();
+	for (UINT i = 0; i < ArraySize; i++)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC sliceSrvDesc = {};
+		sliceSrvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		sliceSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		sliceSrvDesc.Texture2DArray.MostDetailedMip = 0;
+		sliceSrvDesc.Texture2DArray.MipLevels = 1;
+		sliceSrvDesc.Texture2DArray.FirstArraySlice = i;
+		sliceSrvDesc.Texture2DArray.ArraySize = 1; // 단일 슬라이스만
+
+		ID3D11ShaderResourceView* SliceSRV = nullptr;
+		hr = RHI->GetDevice()->CreateShaderResourceView(ShadowMapTexture, &sliceSrvDesc, &SliceSRV);
+		assert(SUCCEEDED(hr), "Failed to create shadow map slice SRV");
+
+		ShadowMapSliceSRVs.Add(SliceSRV);
+	}
+
 	// 뷰포트 설정
 	ShadowViewport.TopLeftX = 0.0f;
 	ShadowViewport.TopLeftY = 0.0f;
@@ -111,6 +130,16 @@ void FShadowMap::Release()
 		ShadowMapSRV->Release();
 		ShadowMapSRV = nullptr;
 	}
+
+	for (ID3D11ShaderResourceView* SliceSRV : ShadowMapSliceSRVs)
+	{
+		if (SliceSRV)
+		{
+			SliceSRV->Release();
+			SliceSRV = nullptr;
+		}
+	}
+	ShadowMapSliceSRVs.clear();
 
 	for (ID3D11DepthStencilView* DSV : ShadowMapDSVs)
 	{
