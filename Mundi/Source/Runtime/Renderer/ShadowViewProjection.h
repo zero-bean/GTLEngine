@@ -10,12 +10,16 @@ struct FShadowViewProjection
 	FMatrix Projection;
 	FMatrix ViewProjection;
 
-	// SpotLight용 Shadow VP 행렬 생성
+	// SpotLight용 Shadow VP 행렬 생성 (Reverse-Z)
 	// @param Position - 라이트 월드 위치
 	// @param Direction - 라이트 방향
 	// @param FOV - 전체 원뿔 각도 (OuterConeAngle * 2)
 	// @param AttenuationRadius - 라이트 감쇠 반경 (Far plane으로 사용)
 	// @param NearPlane - Near clipping plane (기본값 0.1f)
+	//
+	// NOTE: Reverse-Z 사용 - Near/Far를 swap하여 depth precision 향상
+	//       Depth range: [1.0 (near) → 0.0 (far)]
+	//       Comparison: GreaterEqual 필요
 	static FShadowViewProjection CreateForSpotLight(
 		const FVector& Position,
 		const FVector& Direction,
@@ -36,12 +40,13 @@ struct FShadowViewProjection
 		Result.View = FMatrix::LookAtLH(Position, Position + Direction, LightUp);
 
 		// Projection 행렬 계산 (정사각형 shadow map 가정)
+		// REVERSE-Z: Near와 Far를 swap!
 		float AspectRatio = 1.0f;
 		Result.Projection = FMatrix::PerspectiveFovLH(
 			DegreesToRadians(FOV),
 			AspectRatio,
-			NearPlane,
-			AttenuationRadius);
+			AttenuationRadius,  // Reversed: Far → Near
+			NearPlane);         // Reversed: Near → Far
 
 		// ViewProjection 행렬 계산
 		Result.ViewProjection = Result.View * Result.Projection;

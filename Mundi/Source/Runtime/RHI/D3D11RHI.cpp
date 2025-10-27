@@ -252,16 +252,17 @@ void D3D11RHI::CreateSamplerState()
 	HR = Device->CreateSamplerState(&PointClampDesc, &PointClampSamplerState);
 
 	// Shadow Comparison Sampler (for shadow mapping with PCF)
+	// REVERSE-Z: Use GREATER_EQUAL comparison and BorderColor = 0.0
 	D3D11_SAMPLER_DESC ShadowComparisonDesc = {};
 	ShadowComparisonDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT; // PCF filtering
 	ShadowComparisonDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
 	ShadowComparisonDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
 	ShadowComparisonDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-	ShadowComparisonDesc.BorderColor[0] = 1.0f; // Outside shadow map = lit
-	ShadowComparisonDesc.BorderColor[1] = 1.0f;
-	ShadowComparisonDesc.BorderColor[2] = 1.0f;
-	ShadowComparisonDesc.BorderColor[3] = 1.0f;
-	ShadowComparisonDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL; // Pass if occluder depth <= sample depth
+	ShadowComparisonDesc.BorderColor[0] = 0.0f; // REVERSE-Z: Outside shadow map = 0.0 (far) = lit
+	ShadowComparisonDesc.BorderColor[1] = 0.0f;
+	ShadowComparisonDesc.BorderColor[2] = 0.0f;
+	ShadowComparisonDesc.BorderColor[3] = 0.0f;
+	ShadowComparisonDesc.ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL; // REVERSE-Z: Pass if fragment depth >= occluder depth
 	ShadowComparisonDesc.MinLOD = 0;
 	ShadowComparisonDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
