@@ -65,6 +65,12 @@ public:
     void ToggleConsole();
     bool IsConsoleVisible() const { return bIsConsoleVisible; }
 
+    // 뷰포트 활성화 관리
+    void SetActiveViewport(SViewportWindow* ActiveViewport);
+
+    // Piloting 관리: 특정 액터를 piloting 중인 모든 뷰포트의 piloting 해제
+    void StopPilotingActor(AActor* TargetActor);
+
 private:
     FRect Rect; // 이전엔 SWindow로부터 상속받던 영역 정보
 

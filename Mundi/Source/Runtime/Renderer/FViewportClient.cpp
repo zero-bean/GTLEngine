@@ -13,6 +13,7 @@
 #include "PrimitiveComponent.h"
 #include "Clipboard/ClipboardManager.h"
 #include "InputManager.h"
+#include "USlateManager.h"
 
 FVector FViewportClient::CameraAddPosition{};
 
@@ -26,18 +27,49 @@ FViewportClient::FViewportClient()
 
 FViewportClient::~FViewportClient()
 {
+	// 소멸 시 piloting 상태만 정리 (카메라 복원은 불필요)
+	bIsPiloting = false;
+	PilotTargetActor = nullptr;
 }
 
 void FViewportClient::Tick(float DeltaTime)
 {
-	if (PerspectiveCameraInput)
+	if (bIsPiloting && PilotTargetActor)
 	{
-		Camera->ProcessEditorCameraInput(DeltaTime);
+		// Piloting 중인 액터가 삭제된 경우 piloting 해제
+		if (PilotTargetActor->IsPendingDestroy())
+		{
+			StopPiloting();
+			return;
+		}
+
+		// Piloting 중이어도 활성화된 뷰포트에서만 입력 처리
+		if (bIsActive)
+		{
+			Camera->ProcessEditorCameraInput(DeltaTime);
+
+			FVector NewLocation = Camera->GetActorLocation();
+			FQuat NewRotation = Camera->GetActorRotation();
+
+			PilotTargetActor->SetActorLocation(NewLocation);
+			PilotTargetActor->SetActorRotation(NewRotation);
+
+			PerspectiveCameraPosition = NewLocation;
+			PerspectiveCameraRotation = NewRotation.ToEulerZYXDeg();
+		}
 	}
+	else
+	{
+		if (PerspectiveCameraInput)
+		{
+			Camera->ProcessEditorCameraInput(DeltaTime);
+		}
+	}
+
 	MouseWheel(DeltaTime);
 	static UClipboardManager* ClipboardManager = NewObject<UClipboardManager>();
 
-	// 키보드 입력 처리 (Ctrl+C/V)
+	// 키보드 입력 처리 (Ctrl+C/V, Ctrl+Shift+P)
 	if (World)
 	{
 		UInputManager& InputManager = UInputManager::GetInstance();
@@ -45,6 +77,31 @@ void FViewportClient::Tick(float DeltaTime)
 
 		// Ctrl 키가 눌려있는지 확인
 		bool bIsCtrlDown = InputManager.IsKeyDown(VK_CONTROL);
+		bool bIsShiftDown = InputManager.IsKeyDown(VK_SHIFT);
+
+		// ========== Ctrl + Shift + P: Piloting 토글 (활성화된 뷰포트에서만) ==========
+		if (bIsActive && bIsCtrlDown && bIsShiftDown && InputManager.IsKeyPressed('P'))
+		{
+			if (bIsPiloting)
+			{
+				StopPiloting();
+			}
+			else if (SelectionManager && SelectionManager->GetSelectedActor())
+			{
+				AActor* SelectedActor = SelectionManager->GetSelectedActor();
+				StartPiloting(SelectedActor);
+			}
+			else
+			{
+				UE_LOG("No actor selected for piloting");
+			}
+		}
+
+		// ========== ESC: Piloting 해제 (활성화된 뷰포트에서만) ==========
+		if (bIsActive && InputManager.IsKeyPressed(VK_ESCAPE) && bIsPiloting)
+		{
+			StopPiloting();
+		}
 
 		// Ctrl + C: 복사
 		if (bIsCtrlDown && InputManager.IsKeyPressed('C'))
@@ -290,5 +347,69 @@ void FViewportClient::MouseWheel(float DeltaSeconds)
 	zoomFactor *= (1.0f - WheelDelta * DeltaSeconds * 100.0f);
 
 	CameraComponent->SetZoomFactor(zoomFactor);
+}
+ 
+
+// ========== Piloting 구현 ==========
+
+void FViewportClient::StartPiloting(AActor* TargetActor)
+{
+	if (!TargetActor)
+	{
+		UE_LOG("StartPiloting: TargetActor is null");
+		return;
+	}
+
+	// 이미 Piloting 중이면 먼저 해제
+	if (bIsPiloting)
+	{
+		StopPiloting();
+	}
+
+	// 다른 뷰포트가 같은 액터를 piloting 중이면 해제
+	// (한 액터는 한 번에 하나의 뷰포트에서만 piloting 가능)
+	USlateManager::GetInstance().StopPilotingActor(TargetActor);
+
+	// 원본 카메라 상태 저장
+	SavedCameraPosition = PerspectiveCameraPosition;
+	SavedCameraRotation = PerspectiveCameraRotation;
+	SavedCameraFov = PerspectiveCameraFov;
+
+	// Piloting 시작
+	PilotTargetActor = TargetActor;
+	bIsPiloting = true;
+
+	// 즉시 타겟 Actor의 Transform 적용
+	FVector TargetLocation = PilotTargetActor->GetActorLocation();
+	FQuat TargetRotation = PilotTargetActor->GetActorRotation();
+
+	Camera->SetActorLocation(TargetLocation);
+	Camera->SetActorRotation(TargetRotation);
+
+	// PerspectiveCamera 변수도 동기화
+	PerspectiveCameraPosition = TargetLocation;
+	PerspectiveCameraRotation = TargetRotation.ToEulerZYXDeg();
+
+	UE_LOG("Piloting started: %c", PilotTargetActor->GetName());
+}
+
+void FViewportClient::StopPiloting()
+{
+	if (!bIsPiloting)
+		return;
+
+	UE_LOG("Piloting stopped: %c", PilotTargetActor ? PilotTargetActor->GetName() : "null");
+
+	// 원본 카메라 상태 복원
+	PerspectiveCameraPosition = SavedCameraPosition;
+	PerspectiveCameraRotation = SavedCameraRotation;
+	PerspectiveCameraFov = SavedCameraFov;
+
+	// 카메라에 원본 상태 적용
+	SetupCameraMode();
+
+	// Piloting 상태 해제
+	bIsPiloting = false;
+	PilotTargetActor = nullptr;
 }
 

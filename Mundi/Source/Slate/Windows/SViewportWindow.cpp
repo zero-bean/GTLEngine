@@ -160,7 +160,10 @@ void SViewportWindow::OnMouseDown(FVector2D MousePos, uint32 Button)
 {
 	if (!Viewport) return;
 
-	// 툴바 영역 아래에서만 마우스 이벤트 처리s
+	// 이 뷰포트를 활성화하고 다른 모든 뷰포트 비활성화
+	USlateManager::GetInstance().SetActiveViewport(this);
+
+	// 툴바 영역 아래에서만 마우스 이벤트 처리
 	bIsMouseDown = true;
 	FVector2D LocalPos = MousePos - FVector2D(Rect.Left, Rect.Top);
 	Viewport->ProcessMouseButtonDown((int32)LocalPos.X, (int32)LocalPos.Y, Button);
