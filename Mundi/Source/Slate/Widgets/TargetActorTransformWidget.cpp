@@ -601,6 +601,65 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 			}
 		}
 	}
+	// DirectionalLightComponent인 경우 ShadowMap 표시
+	else if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(SelectedComponent))
+	{
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Text("[Shadow Map]");
+
+		bool bCastShadows = DirectionalLight->GetIsCastShadows();
+		ImGui::Text("Cast Shadows: %s", bCastShadows ? "True" : "False");
+
+		if (bCastShadows)
+		{
+			FShadowManager* ShadowManager = GWorld->GetShadowManager();
+
+			if (ShadowManager)
+			{
+				const FShadowMap& DirectionalLightShadowMap = ShadowManager->GetDirectionalLightShadowMap();
+				int ShadowMapIndex = DirectionalLight->GetShadowMapIndex();
+				ID3D11ShaderResourceView* ShadowSRV = DirectionalLightShadowMap.GetSliceSRV(ShadowMapIndex);
+
+				UE_LOG("[UI] Getting DirectionalLight ShadowMap Slice SRV: Index=%d, SRV=0x%p, Width=%u, Height=%u",
+					ShadowMapIndex, ShadowSRV, DirectionalLightShadowMap.GetWidth(), DirectionalLightShadowMap.GetHeight());
+
+				ImGui::Text("Shadow Map Index: %d", ShadowMapIndex);
+				ImGui::Text("Resolution: %u x %u", DirectionalLightShadowMap.GetWidth(), DirectionalLightShadowMap.GetHeight());
+				ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
+
+				if (ShadowSRV)
+				{
+					ImGui::Spacing();
+
+					// ShadowMap 크기 조절 (입력 가능한 슬라이더)
+					static float DirectionalShadowMapDisplaySize = 256.0f;
+					ImGui::SetNextItemWidth(200.0f);
+					ImGui::DragFloat("Display Size##Directional", &DirectionalShadowMapDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
+					ImGui::Spacing();
+
+					// ShadowMap 이미지 표시 (R32_FLOAT이므로 빨간색으로 보임)
+					ImGui::Image(
+						(ImTextureID)ShadowSRV,
+						ImVec2(DirectionalShadowMapDisplaySize, DirectionalShadowMapDisplaySize),
+						ImVec2(0, 0),  // uv0
+						ImVec2(1, 1),  // uv1
+						ImVec4(1, 1, 1, 1),  // tint color
+						ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
+					);
+					ImGui::TextWrapped("Note: R32_FLOAT format appears as red channel. Brightness indicates depth.");
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SRV is NULL!");
+				}
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ShadowManager is NULL!");
+			}
+		}
+	}
 	// PointLightComponent인 경우 CubeShadowMap 표시 (6개 면) - SpotLight는 제외
 	else if (UPointLightComponent* PointLight = Cast<UPointLightComponent>(SelectedComponent))
 	{
