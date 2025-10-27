@@ -42,7 +42,7 @@ protected:
 	float Temperature = 6500.0f; // 색온도 (K)
 
 	float ShadowResolutionScale = 1.f;
-	float ShadowBias = 0.1f;
+	float ShadowBias = 0.001f;
 	float ShadowSlopeBias = 0.f;
 	float ShadowSharpen = 1.f;
 };
