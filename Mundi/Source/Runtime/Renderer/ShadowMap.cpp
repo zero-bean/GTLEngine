@@ -129,7 +129,7 @@ void FShadowMap::Release()
 	}
 }
 
-void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex)
+void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex, float DepthBias, float SlopeScaledDepthBias)
 {
 	assert(RHI != nullptr, "RHI is null");
 	assert(ArrayIndex < ArraySize, "Array index out of bounds");
@@ -149,8 +149,19 @@ void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex)
 	// Unbind pixel shader (depth-only rendering)
 	pContext->PSSetShader(nullptr, nullptr, 0);
 
-	// Set rasterizer state to Shadow (proper culling and depth bias for shadow acne prevention)
-	RHI->RSSetState(ERasterizerMode::Shadow);
+	// 동적으로 RasterizerState 생성 (DepthBias와 SlopeScaledDepthBias 적용)
+	D3D11_RASTERIZER_DESC ShadowRasterizerDesc = {};
+	ShadowRasterizerDesc.FillMode = D3D11_FILL_SOLID;
+	ShadowRasterizerDesc.CullMode = D3D11_CULL_BACK;
+	ShadowRasterizerDesc.DepthClipEnable = TRUE;
+	ShadowRasterizerDesc.DepthBias = static_cast<INT>(DepthBias * 100000.0f);
+	ShadowRasterizerDesc.SlopeScaledDepthBias = SlopeScaledDepthBias;
+	ShadowRasterizerDesc.DepthBiasClamp = 0.0f;
+
+	ID3D11RasterizerState* DynamicShadowRasterizerState = nullptr;
+	RHI->GetDevice()->CreateRasterizerState(&ShadowRasterizerDesc, &DynamicShadowRasterizerState);
+	pContext->RSSetState(DynamicShadowRasterizerState);
+	if (DynamicShadowRasterizerState) DynamicShadowRasterizerState->Release();
 
 	// Set depth-stencil state for shadow rendering (depth write enabled, depth test enabled)
 	RHI->OMSetDepthStencilState(EComparisonFunc::LessEqual);
@@ -159,8 +170,11 @@ void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex)
 	ID3D11RenderTargetView* nullRTV = nullptr;
 	pContext->OMSetRenderTargets(1, &nullRTV, DSV);
 
-	// Initialize 함수를 통해 갱신된 뷰포트 멤버 변수로 뷰포트를 설정합니다.
-	pContext->RSSetViewports(1, &ShadowViewport);
+	// 해상도 스케일을 적용한 뷰포트 설정
+	D3D11_VIEWPORT ScaledViewport = ShadowViewport;
+	ScaledViewport.Width = ShadowViewport.Width;
+	ScaledViewport.Height = ShadowViewport.Height;
+	pContext->RSSetViewports(1, &ScaledViewport);
 }
 
 void FShadowMap::EndRender(D3D11RHI* RHI)

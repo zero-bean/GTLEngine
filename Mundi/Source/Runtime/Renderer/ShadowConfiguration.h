@@ -3,10 +3,10 @@
 // Shadow 품질 프리셋 레벨
 enum class EShadowQuality : uint8
 {
-	Low,        // 512x512, 4 lights, bias 0.01
-	Medium,     // 1024x1024, 10 lights, bias 0.005 (현재 기본값)
-	High,       // 2048x2048, 16 lights, bias 0.003
-	Ultra,      // 4096x4096, 32 lights, bias 0.002
+	Low,        // 512x512, 4 lights
+	Medium,     // 1024x1024, 10 lights
+	High,       // 2048x2048, 16 lights
+	Ultra,      // 4096x4096, 32 lights
 	Custom      // 사용자 정의
 };
 
@@ -24,12 +24,7 @@ struct FShadowConfiguration
 	uint32 MaxPointLights = 5;
 
 	// 전체 쉐도우 캐스팅 라이트 수 (통계/검증용)
-	uint32 MaxShadowCastingLights = 10;
-
-	float DefaultShadowBias = 0.005f;
-	float DefaultShadowSlopeBias = 0.0f;
-	bool bEnablePCF = true;
-	uint32 PCFSamples = 4;  // 1, 4, 9, 16
+	uint32 MaxShadowCastingLights = 15;
 
 	// 품질 프리셋으로부터 설정 로드
 	static FShadowConfiguration FromQuality(EShadowQuality InQuality);

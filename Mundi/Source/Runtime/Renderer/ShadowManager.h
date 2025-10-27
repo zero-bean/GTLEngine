@@ -38,11 +38,15 @@ struct FShadowRenderContext
 	FMatrix LightView;
 	FMatrix LightProjection;
 	int32 ShadowMapIndex;
+	float ShadowBias;
+	float ShadowSlopeBias;
 
 	FShadowRenderContext()
 		: LightView(FMatrix::Identity())
 		, LightProjection(FMatrix::Identity())
 		, ShadowMapIndex(-1)
+		, ShadowBias(0.001f)
+		, ShadowSlopeBias(0.0f)
 	{}
 };
 
@@ -106,6 +110,10 @@ public:
 	// Shadow Map 텍스처 언바인딩
 	// @param RHI - D3D11 RHI 디바이스
 	void UnbindShadowResources(D3D11RHI* RHI);
+
+	// 쉐도우 맵 해상도 변경
+	// @param NewResolution - 새로운 해상도
+	void SetShadowMapResolution(uint32 NewResolution);
 
 	// Query 메서드들
 	const FShadowConfiguration& GetShadowConfiguration() const { return Config; }

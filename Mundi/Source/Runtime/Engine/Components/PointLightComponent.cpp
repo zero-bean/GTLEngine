@@ -13,6 +13,10 @@ END_PROPERTIES()
 UPointLightComponent::UPointLightComponent()
 {
 	SourceRadius = 0.0f;
+
+	// PointLight는 6개 큐브맵 면을 렌더링하므로 성능 고려
+	ShadowBias = 0.005f;           // 중간-낮은 bias
+	ShadowSlopeBias = 1.5f;        // 중간-높은 slope bias
 }
 
 UPointLightComponent::~UPointLightComponent()

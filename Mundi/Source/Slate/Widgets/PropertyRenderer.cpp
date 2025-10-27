@@ -298,7 +298,11 @@ bool UPropertyRenderer::RenderFloatProperty(const FProperty& Prop, void* Instanc
 	}
 	else
 	{
-		return ImGui::DragFloat(Prop.Name, Value, 0.01f, Prop.MinValue, Prop.MaxValue);
+		// 범위에 비례하여 speed 자동 계산 (전체 범위의 1/1000)
+		// 작은 범위(예: 0.0~0.01)의 경우 매우 정밀한 조정 가능
+		float Range = Prop.MaxValue - Prop.MinValue;
+		float Speed = FMath::Max(Range / 1000.0f, 0.00001f);  // 최소 speed는 0.00001
+		return ImGui::DragFloat(Prop.Name, Value, Speed, Prop.MinValue, Prop.MaxValue);
 	}
 }
 

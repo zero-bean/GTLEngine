@@ -17,7 +17,9 @@ public:
 	// 특정 배열 슬라이스에 렌더링 시작
 	// RHI - D3D11 디바이스 인터페이스
 	// ArrayIndex - 렌더링할 배열 슬라이스 인덱스 (CubeMap인 경우 CubeIndex * 6 + FaceIndex)
-	void BeginRender(D3D11RHI* RHI, UINT ArrayIndex);
+	// DepthBias - 섀도우 뎁스 바이어스 (기본값 10)
+	// SlopeScaledDepthBias - 섀도우 슬로프 바이어스 (기본값 1.0f)
+	void BeginRender(D3D11RHI* RHI, UINT ArrayIndex, float DepthBias = 10.0f, float SlopeScaledDepthBias = 1.0f);
 	void EndRender(D3D11RHI* RHI);
 
 	ID3D11ShaderResourceView* GetSRV() const { return ShadowMapSRV; }

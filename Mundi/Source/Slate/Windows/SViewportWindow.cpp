@@ -12,6 +12,7 @@
 #include "CameraComponent.h"
 #include "CameraActor.h"
 #include "StatsOverlayD2D.h"
+#include "ShadowManager.h"
 
 extern float CLIENTWIDTH;
 extern float CLIENTHEIGHT;
@@ -76,6 +77,7 @@ SViewportWindow::~SViewportWindow()
 	IconCollision = nullptr;
 	IconAntiAliasing = nullptr;
 	IconTile = nullptr;
+	IconShadowMap = nullptr;
 
 	IconSingleToMultiViewport = nullptr;
 	IconMultiToSingleViewport = nullptr;
@@ -420,6 +422,9 @@ void SViewportWindow::LoadToolbarIcons(ID3D11Device* Device)
 
 	IconTile = NewObject<UTexture>();
 	IconTile->Load(GDataDir + "/Icon/Viewport_Tile.png", Device);
+
+	IconShadowMap = NewObject<UTexture>();
+	IconShadowMap->Load(GDataDir + "/Icon/Viewport_ShadowMap.png", Device);
 
 	// 뷰포트 레이아웃 전환 아이콘 로드
 	IconSingleToMultiViewport = NewObject<UTexture>();
@@ -1808,6 +1813,107 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::SetTooltip("타일 기반 라이트 컬링 설정");
+		}
+
+		// 쉐도우맵 (Shadow Map)
+		if (IconShadowMap && IconShadowMap->GetShaderResourceView())
+		{
+			ImGui::Image((void*)IconShadowMap->GetShaderResourceView(), IconSize);
+			ImGui::SameLine(0, 4);
+		}
+
+		// 서브메뉴
+		if (ImGui::BeginMenu(" 쉐도우맵"))
+		{
+			ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "쉐도우 맵 해상도");
+			ImGui::Separator();
+
+			// 현재 쉐도우 맵 해상도 가져오기
+			UWorld* World = ViewportClient->GetWorld();
+			uint32 CurrentResolution = 1024; // 기본값
+			if (World && World->GetShadowManager())
+			{
+				CurrentResolution = World->GetShadowManager()->GetShadowConfiguration().ShadowMapResolution;
+			}
+
+			// 512x512
+			bool bIs512 = (CurrentResolution == 512);
+			const char* Icon512 = bIs512 ? "●" : "○";
+			char Label512[32];
+			sprintf_s(Label512, "%s 512 x 512", Icon512);
+			if (ImGui::MenuItem(Label512))
+			{
+				if (World && World->GetShadowManager())
+				{
+					World->GetShadowManager()->SetShadowMapResolution(512);
+				}
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("쉐도우 맵 해상도를 512x512로 설정합니다. (낮은 품질, 높은 성능)");
+			}
+
+			// 1024x1024
+			bool bIs1024 = (CurrentResolution == 1024);
+			const char* Icon1024 = bIs1024 ? "●" : "○";
+			char Label1024[32];
+			sprintf_s(Label1024, "%s 1024 x 1024", Icon1024);
+			if (ImGui::MenuItem(Label1024))
+			{
+				if (World && World->GetShadowManager())
+				{
+					World->GetShadowManager()->SetShadowMapResolution(1024);
+				}
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("쉐도우 맵 해상도를 1024x1024로 설정합니다. (중간 품질, 균형잡힌 성능)");
+			}
+
+			// 2048x2048
+			bool bIs2048 = (CurrentResolution == 2048);
+			const char* Icon2048 = bIs2048 ? "●" : "○";
+			char Label2048[32];
+			sprintf_s(Label2048, "%s 2048 x 2048", Icon2048);
+			if (ImGui::MenuItem(Label2048))
+			{
+				if (World && World->GetShadowManager())
+				{
+					World->GetShadowManager()->SetShadowMapResolution(2048);
+				}
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("쉐도우 맵 해상도를 2048x2048로 설정합니다. (높은 품질, 낮은 성능)");
+			}
+
+			// 4096x4096
+			bool bIs4096 = (CurrentResolution == 4096);
+			const char* Icon4096 = bIs4096 ? "●" : "○";
+			char Label4096[32];
+			sprintf_s(Label4096, "%s 4096 x 4096", Icon4096);
+			if (ImGui::MenuItem(Label4096))
+			{
+				if (World && World->GetShadowManager())
+				{
+					World->GetShadowManager()->SetShadowMapResolution(4096);
+				}
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("쉐도우 맵 해상도를 4096x4096로 설정합니다. (최고 품질, 매우 낮은 성능)");
+			}
+
+			ImGui::Separator();
+
+			// 현재 설정값 표시
+			ImGui::Text("현재 해상도: %d x %d", CurrentResolution, CurrentResolution);
+
+			ImGui::EndMenu();
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("쉐도우 맵 해상도 설정");
 		}
 
 		ImGui::PopStyleColor(3);

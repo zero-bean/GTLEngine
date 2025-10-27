@@ -14,10 +14,6 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 		Config.MaxSpotLights = 1;
 		Config.MaxPointLights = 2;
 		Config.MaxShadowCastingLights = 4;
-		Config.DefaultShadowBias = 0.01f;
-		Config.DefaultShadowSlopeBias = 0.0f;
-		Config.bEnablePCF = true;
-		Config.PCFSamples = 1;
 		break;
 
 	case EShadowQuality::Medium:
@@ -26,10 +22,6 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 		Config.MaxSpotLights = 4;
 		Config.MaxPointLights = 5;
 		Config.MaxShadowCastingLights = 10;
-		Config.DefaultShadowBias = 0.005f;
-		Config.DefaultShadowSlopeBias = 0.0f;
-		Config.bEnablePCF = true;
-		Config.PCFSamples = 4;
 		break;
 
 	case EShadowQuality::High:
@@ -38,10 +30,6 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 		Config.MaxSpotLights = 7;
 		Config.MaxPointLights = 8;
 		Config.MaxShadowCastingLights = 16;
-		Config.DefaultShadowBias = 0.003f;
-		Config.DefaultShadowSlopeBias = 0.0f;
-		Config.bEnablePCF = true;
-		Config.PCFSamples = 9;
 		break;
 
 	case EShadowQuality::Ultra:
@@ -50,10 +38,6 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 		Config.MaxSpotLights = 15;
 		Config.MaxPointLights = 16;
 		Config.MaxShadowCastingLights = 32;
-		Config.DefaultShadowBias = 0.002f;
-		Config.DefaultShadowSlopeBias = 0.0f;
-		Config.bEnablePCF = true;
-		Config.PCFSamples = 16;
 		break;
 
 	case EShadowQuality::Custom:
@@ -67,9 +51,7 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 
 FShadowConfiguration FShadowConfiguration::GetPlatformDefault()
 {
-	// 현재는 Medium 품질을 기본값으로 반환
-	// 향후 플랫폼별로 차별화 가능 (PC: High, Console: Medium, Mobile: Low)
-	return FromQuality(EShadowQuality::Medium);
+	return FromQuality(EShadowQuality::Custom);
 }
 
 bool FShadowConfiguration::IsValid() const
@@ -83,15 +65,7 @@ bool FShadowConfiguration::IsValid() const
 		return false;
 
 	// 최대 라이트 수는 적절한 범위 내
-	if (MaxShadowCastingLights < 1 || MaxShadowCastingLights > 64)
-		return false;
-
-	// Bias는 음수가 아니어야 함
-	if (DefaultShadowBias < 0.0f || DefaultShadowSlopeBias < 0.0f)
-		return false;
-
-	// PCF 샘플 수는 유효한 값이어야 함
-	if (PCFSamples != 1 && PCFSamples != 4 && PCFSamples != 9 && PCFSamples != 16)
+	if (MaxShadowCastingLights < 1)
 		return false;
 
 	return true;

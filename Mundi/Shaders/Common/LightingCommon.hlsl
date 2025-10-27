@@ -163,8 +163,8 @@ float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     float currentDepth = projCoords.z;
 
     // Bias to prevent shadow acne
-    float bias = 0.00001f;
-    currentDepth -= bias;
+    //float bias = 0.00001f;
+    //currentDepth -= bias;
     
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
     float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
@@ -202,8 +202,8 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     float currentDepth = projCoords.z;
 
     // Bias to prevent shadow acne (can be adjusted for directional lights)
-    float bias = 0.005f;
-    currentDepth -= bias;
+    //float bias = 0.005f;
+    //currentDepth -= bias;
 
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
     float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
@@ -244,8 +244,8 @@ float SamplePointLightShadowCube(
     float currentDepth = saturate(nonlinearDepth);
 
     // 4. Bias to prevent shadow acne
-    float bias = 0.005f;
-    currentDepth -= bias;
+    //float bias = 0.005f;
+    //currentDepth -= bias;
 
     // 5. TextureCubeArray 샘플링
     // SampleCmpLevelZero: cube direction + array index
