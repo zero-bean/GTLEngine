@@ -274,6 +274,10 @@ void FSceneRenderer::GatherVisibleProxies()
 	const bool bUseAntiAliasing = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_FXAA);
 	const bool bUseBillboard = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Billboard);
 
+	// 현재 뷰포트에서 piloting 중인 액터 확인
+	FViewportClient* ViewportClient = View->Viewport ? View->Viewport->GetViewportClient() : nullptr;
+	AActor* PilotingActor = ViewportClient ? ViewportClient->GetPilotActor() : nullptr;
+
 	// Helper lambda to collect components from an actor
 	auto CollectComponentsFromActor = [&](AActor* Actor, bool bIsEditorActor)
 		{
@@ -306,9 +310,16 @@ void FSceneRenderer::GatherVisibleProxies()
 
 				if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component); PrimitiveComponent)
 				{
-					// 에디터 보조 컴포넌트 (빌보드 등)
+					// 에디터 보조 컴포넌트 (빌보드, 방향 화살표 등)
+					// 현재 뷰포트에서 piloting 중인 액터의 에디터 컴포넌트는 제외
 					if (!PrimitiveComponent->IsEditable())
 					{
+						// Piloting 중인 액터의 에디터 헬퍼는 현재 뷰포트에서 숨김
+						if (PilotingActor && Actor == PilotingActor)
+						{
+							continue;
+						}
+
 						Proxies.EditorPrimitives.Add(PrimitiveComponent);
 						continue;
 					}
@@ -375,8 +386,29 @@ void FSceneRenderer::GatherVisibleProxies()
 		};
 
 	// Collect from Editor Actors (Gizmo, Grid, etc.)
+	// 현재 뷰포트에서 piloting 중인 액터의 기즈모는 숨김
+	AGizmoActor* GizmoActor = World->GetGizmoActor();
+	USelectionManager* SelectionManager = World->GetSelectionManager();
+	bool bHideGizmo = false;
+
+	// 현재 뷰포트가 선택된 액터를 piloting 중이면 기즈모 숨김
+	if (GizmoActor && SelectionManager && PilotingActor)
+	{
+		AActor* SelectedActor = SelectionManager->GetSelectedActor();
+		if (SelectedActor && SelectedActor == PilotingActor)
+		{
+			bHideGizmo = true;
+		}
+	}
+
 	for (AActor* EditorActor : World->GetEditorActors())
 	{
+		// 현재 뷰포트에서 piloting 중이면 Gizmo Actor 수집하지 않음
+		if (bHideGizmo && EditorActor == GizmoActor)
+		{
+			continue;
+		}
+
 		CollectComponentsFromActor(EditorActor, true);
 	}
 
@@ -1118,8 +1150,20 @@ void FSceneRenderer::RenderDebugPass()
 	}
 
 	// 선택된 액터의 디버그 볼륨 렌더링
+	// 현재 뷰포트에서 piloting 중인 액터는 선택 표시 제외
+	// (PilotingActor는 GatherVisibleProxies에서 이미 계산됨)
+	AActor* PilotingActor = View->Viewport && View->Viewport->GetViewportClient()
+		? View->Viewport->GetViewportClient()->GetPilotActor()
+		: nullptr;
+
 	for (AActor* SelectedActor : World->GetSelectionManager()->GetSelectedActors())
 	{
+		// 현재 뷰포트에서 piloting 중인 액터는 선택 표시를 숨김
+		if (PilotingActor && SelectedActor == PilotingActor)
+		{
+			continue;
+		}
+
 		for (USceneComponent* Component : SelectedActor->GetSceneComponents())
 		{
 			// 모든 컴포넌트에서 RenderDebugVolume 호출

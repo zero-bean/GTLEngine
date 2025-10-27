@@ -13,6 +13,9 @@ FSceneView::FSceneView(ACameraActor* InCamera, FViewport* InViewport, EViewModeI
         return;
     }
 
+    // Viewport 저장 (ViewportClient 접근용)
+    Viewport = InViewport;
+
     // --- 이 로직이 FSceneRenderer::PrepareView()에서 이동해 옴 ---
 
     float AspectRatio = 1.0f;

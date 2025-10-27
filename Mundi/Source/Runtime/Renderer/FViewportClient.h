@@ -38,6 +38,10 @@ public:
     void SetCamera(ACameraActor* InCamera) { Camera = InCamera; }
     ACameraActor* GetCamera() const { return Camera; }
 
+    // 뷰포트 활성화 상태
+    void SetActive(bool bInActive) { bIsActive = bInActive; }
+    bool IsActive() const { return bIsActive; }
+
     // 카메라 매트릭스 계산
     FMatrix GetViewMatrix() const;
 
@@ -48,6 +52,11 @@ public:
 
     EViewModeIndex GetViewModeIndex() { return ViewModeIndex;}
 
+    // ========== Piloting (카메라 오버라이드) ==========
+    void StartPiloting(AActor* TargetActor);
+    void StopPiloting();
+    bool IsPiloting() const { return bIsPiloting; }
+    AActor* GetPilotActor() const { return PilotTargetActor; }
 
 protected:
     EViewportType ViewportType = EViewportType::Perspective;
@@ -57,6 +66,7 @@ protected:
     int32 MouseLastY{};
     bool bIsMouseButtonDown = false;
     bool bIsMouseRightButtonDown = false;
+    bool bIsActive = false;  // 뷰포트 활성화 상태
     static FVector CameraAddPosition;
 
 
@@ -72,4 +82,13 @@ protected:
     FVector PerspectiveCameraPosition = FVector(-5.0f, 5.0f, 5.0f);
     FVector PerspectiveCameraRotation = FVector(0.0f, 22.5f, -45.0f);
     float PerspectiveCameraFov=60;
+
+    // ========== Piloting 상태 ==========
+    AActor* PilotTargetActor = nullptr;     // 현재 부착된 Actor
+    bool bIsPiloting = false;               // Piloting 중인지 여부
+
+    // 원본 카메라 상태 저장
+    FVector SavedCameraPosition;
+    FVector SavedCameraRotation;
+    float SavedCameraFov;
 };
