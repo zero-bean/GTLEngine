@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "SceneRenderer.h"
 
 // FSceneRenderer가 사용하는 모든 헤더 포함
@@ -630,7 +630,7 @@ void FSceneRenderer::RenderPointLightShadows(FShaderVariant* ShadowShaderVariant
 		if (PointLight->GetShadowMapIndex() < 0)
 			continue;
 
-		// 라이트당 한 번만 6개 VP 행렬 계산 (중복 계산 제거)
+		// 라이트당 한 번만 6개 VP 행렬 계산
 		TArray<FShadowViewProjection> CubeShadowVPs = FShadowViewProjection::CreateForPointLightCube(
 			PointLight->GetWorldLocation(),
 			PointLight->GetAttenuationRadius(),
@@ -639,7 +639,7 @@ void FSceneRenderer::RenderPointLightShadows(FShaderVariant* ShadowShaderVariant
 		// 6개 면 렌더링 (+X, -X, +Y, -Y, +Z, -Z)
 		for (uint32 CubeFaceIdx = 0; CubeFaceIdx < 6; CubeFaceIdx++)
 		{
-			// ShadowManager에게 섀도우 맵 렌더 시작 요청 (미리 계산된 VP 전달)
+			// ShadowManager에게 섀도우 맵 렌더 시작 요청
 			FShadowRenderContext ShadowContext;
 			if (!GWorld->GetShadowManager()->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, CubeShadowVPs[CubeFaceIdx], ShadowContext))
 				continue;

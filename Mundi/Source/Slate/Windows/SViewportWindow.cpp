@@ -1846,7 +1846,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 			}
 
 			// === Directional Light 서브메뉴 ===
-			if (ImGui::BeginMenu("Directional Light"))
+			if (ImGui::BeginMenu("디렉셔널 라이트"))
 			{
 				ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "해상도");
 				ImGui::Separator();
@@ -1902,7 +1902,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 			}
 
 			// === Spot Light 서브메뉴 ===
-			if (ImGui::BeginMenu("Spot Light"))
+			if (ImGui::BeginMenu("스포트 라이트"))
 			{
 				ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "해상도");
 				ImGui::Separator();
@@ -1958,7 +1958,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 			}
 
 			// === Point Light 서브메뉴 ===
-			if (ImGui::BeginMenu("Point Light"))
+			if (ImGui::BeginMenu("포인트 라이트"))
 			{
 				ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "해상도");
 				ImGui::Separator();
