@@ -319,23 +319,28 @@ void UStatsOverlayD2D::Draw()
 		double PointUsedMB = static_cast<double>(ShadowStats.PointLightUsedBytes) / (1024.0 * 1024.0);
 
 		wchar_t Buf[512];
-		swprintf_s(Buf, L"[Shadow Map Stats]\nResolution:\n  Dir: %ux%u\n  Spot: %ux%u\nMemory:\n  Dir: %u (%.2f / %.2f MB)\n  Spot: %u (%.2f / %.2f MB)\nTotal: %u lights\nTotal Mem: %.2f / %.2f MB",
+		swprintf_s(Buf, L"[Shadow Map Stats]\nResolution:\n  Dir: %ux%u\n  Spot: %ux%u\n  Point: %ux%u\nMemory:\n  Dir: %u (%.2f / %.2f MB)\n  Spot: %u (%.2f / %.2f MB)\n  Point: %u (%.2f / %.2f MB)\nTotal: %u lights\nTotal Mem: %.2f / %.2f MB",
 			ShadowStats.DirectionalLightResolution,
 			ShadowStats.DirectionalLightResolution,
 			ShadowStats.SpotLightResolution,
 			ShadowStats.SpotLightResolution,
+			ShadowStats.PointLightResolution,
+			ShadowStats.PointLightResolution,
 			ShadowStats.DirectionalLightCount,
 			DirUsedMB,
 			DirAllocMB,
 			ShadowStats.SpotLightCount,
 			SpotUsedMB,
 			SpotAllocMB,
+			ShadowStats.PointLightCount,
+			PointUsedMB,
+			PointAllocMB,
 			ShadowStats.GetTotalLightCount(),
 			TotalUsedMB,
 			TotalAllocMB);
 
 		// 4. 텍스트를 여러 줄 표시해야 하므로 패널 높이를 늘립니다.
-		const float shadowPanelHeight = 240.0f;
+		const float shadowPanelHeight = 280.0f;
 		D2D1_RECT_F rc = D2D1::RectF(Margin, NextY, Margin + PanelWidth, NextY + shadowPanelHeight);
 
 		// 5. DrawTextBlock 함수를 호출하여 화면에 그립니다.
