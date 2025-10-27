@@ -39,3 +39,7 @@ bool Intersects(const FPlane& P, const FVector4& Center, const FVector4& Extents
 // Frustum의 절두체 범위를 이루는 8개의 포인트의 월드 공간을 반환합니다.
 // Near: 좌하단 -> 우하단 -> 우상단 -> 좌상단 -> Far: 좌하단 -> 우하단 -> 우상단 -> 좌상단 순서
 void GetFrustumCornersWorldSpace(const FMatrix& InViewProjInverse, TArray<FVector>& OutCorners);
+
+// CSM: Frustum의 절두체 범위를 이루는 8개의 포인트의 월드 공간을 반환합니다.
+void GetFrustumCornersWorldSpace_Partial(const FMatrix& CameraView, const FMatrix& CameraProjection,
+	float NearDistance, float FarDistance, TArray<FVector>& OutCorners);

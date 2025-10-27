@@ -283,7 +283,7 @@ float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos)
 // 통합 조명 계산 함수
 //================================================================================================
 
-// Directional Light 계산 (Diffuse + Specular + Shadow)
+// Directional Light 계산 (Diffuse + Specular + CSM Shadow)
 float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, float3 normal, float3 viewDir, float4 materialColor, bool includeSpecular, float specularPower)
 {
     // Light.Direction이 영벡터인 경우, 정규화 문제 방지
@@ -298,9 +298,27 @@ float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, f
     float shadow = 1.0f;
     if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
     {
-        // Transform world position to light space
-        float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.LightViewProjection);
-        shadow = SampleDirectionalLightShadowMap(light.ShadowMapIndex, lightSpacePos);
+        // CSM: 뷰 공간 깊이 기준으로 캐스케이드 선택
+        // worldPos를 View 공간으로 변환하여 깊이 구하기
+        // 주의: ViewMatrix는 UberLit.hlsl의 ViewProjBuffer에 정의되어 있어야 함
+        float3 viewSpacePos = mul(float4(worldPos, 1.0f), ViewMatrix).xyz;
+        float viewDepth = abs(viewSpacePos.z); // 카메라로부터의 거리
+
+        // 캐스케이드 선택 (split distance와 비교)
+        int cascadeIndex = 0;
+        if (viewDepth > light.CascadeSplitDistances.x)
+            cascadeIndex = 1;
+        if (viewDepth > light.CascadeSplitDistances.y)
+            cascadeIndex = 2;
+        if (viewDepth > light.CascadeSplitDistances.z)
+            cascadeIndex = 3;
+
+        // 선택된 캐스케이드의 VP 행렬로 라이트 공간 변환
+        float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.CascadeViewProjection[cascadeIndex]);
+
+        // 섀도우 맵 배열 인덱스 계산: base + cascadeIndex
+        uint shadowMapIndex = light.ShadowMapIndex + cascadeIndex;
+        shadow = SampleDirectionalLightShadowMap(shadowMapIndex, lightSpacePos);
     }
 
     // Diffuse (light.Color는 이미 Intensity 포함)
