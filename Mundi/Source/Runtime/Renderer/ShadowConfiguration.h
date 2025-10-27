@@ -16,7 +16,10 @@ struct FShadowConfiguration
 {
 	EShadowQuality Quality = EShadowQuality::Medium;
 
-	uint32 ShadowMapResolution = 1024;
+	// 라이트 타입별 쉐도우 맵 해상도
+	uint32 DirectionalLightResolution = 1024;
+	uint32 SpotLightResolution = 1024;
+	uint32 PointLightResolution = 1024;
 
 	// 광원 타입별 최대 쉐도우 캐스팅 라이트 수
 	uint32 MaxDirectionalLights = 1;

@@ -111,9 +111,14 @@ public:
 	// @param RHI - D3D11 RHI 디바이스
 	void UnbindShadowResources(D3D11RHI* RHI);
 
-	// 쉐도우 맵 해상도 변경
-	// @param NewResolution - 새로운 해상도
-	void SetShadowMapResolution(uint32 NewResolution);
+	// 디렉셔널 라이트 쉐도우 맵 해상도 변경
+	void SetDirectionalLightResolution(uint32 NewResolution);
+
+	// 스팟 라이트 쉐도우 맵 해상도 변경
+	void SetSpotLightResolution(uint32 NewResolution);
+
+	// 포인트 라이트 쉐도우 맵 해상도 변경
+	void SetPointLightResolution(uint32 NewResolution);
 
 	// Query 메서드들
 	const FShadowConfiguration& GetShadowConfiguration() const { return Config; }

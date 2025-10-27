@@ -9,7 +9,9 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 	switch (InQuality)
 	{
 	case EShadowQuality::Low:
-		Config.ShadowMapResolution = 512;
+		Config.DirectionalLightResolution = 512;
+		Config.SpotLightResolution = 512;
+		Config.PointLightResolution = 512;
 		Config.MaxDirectionalLights = 1;
 		Config.MaxSpotLights = 1;
 		Config.MaxPointLights = 2;
@@ -17,7 +19,9 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 		break;
 
 	case EShadowQuality::Medium:
-		Config.ShadowMapResolution = 1024;
+		Config.DirectionalLightResolution = 1024;
+		Config.SpotLightResolution = 1024;
+		Config.PointLightResolution = 1024;
 		Config.MaxDirectionalLights = 1;
 		Config.MaxSpotLights = 4;
 		Config.MaxPointLights = 5;
@@ -25,7 +29,9 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 		break;
 
 	case EShadowQuality::High:
-		Config.ShadowMapResolution = 2048;
+		Config.DirectionalLightResolution = 2048;
+		Config.SpotLightResolution = 2048;
+		Config.PointLightResolution = 2048;
 		Config.MaxDirectionalLights = 1;
 		Config.MaxSpotLights = 7;
 		Config.MaxPointLights = 8;
@@ -33,7 +39,9 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 		break;
 
 	case EShadowQuality::Ultra:
-		Config.ShadowMapResolution = 4096;
+		Config.DirectionalLightResolution = 4096;
+		Config.SpotLightResolution = 4096;
+		Config.PointLightResolution = 4096;
 		Config.MaxDirectionalLights = 1;
 		Config.MaxSpotLights = 15;
 		Config.MaxPointLights = 16;
@@ -56,12 +64,22 @@ FShadowConfiguration FShadowConfiguration::GetPlatformDefault()
 
 bool FShadowConfiguration::IsValid() const
 {
-	// Shadow map 해상도는 2의 제곱수이고 적절한 범위 내에 있어야 함
-	if (ShadowMapResolution < 256 || ShadowMapResolution > 8192)
-		return false;
+	// 각 라이트 타입별 Shadow map 해상도는 2의 제곱수이고 적절한 범위 내에 있어야 함
+	auto IsResolutionValid = [](uint32 Resolution) -> bool
+	{
+		if (Resolution < 256 || Resolution > 8192)
+			return false;
+		// 2의 제곱수 확인
+		if ((Resolution & (Resolution - 1)) != 0)
+			return false;
+		return true;
+	};
 
-	// 2의 제곱수 확인
-	if ((ShadowMapResolution & (ShadowMapResolution - 1)) != 0)
+	if (!IsResolutionValid(DirectionalLightResolution))
+		return false;
+	if (!IsResolutionValid(SpotLightResolution))
+		return false;
+	if (!IsResolutionValid(PointLightResolution))
 		return false;
 
 	// 최대 라이트 수는 적절한 범위 내

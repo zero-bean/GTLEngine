@@ -21,10 +21,10 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 	RHIDevice = RHI;
 	Config = InConfig;
 
-	// Shadow Map Array 초기화 (광원 타입별로 적절한 배열 크기 할당)
-	SpotLightShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxSpotLights);
-	DirectionalLightShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxDirectionalLights);
-	PointLightCubeShadowMap.Initialize(RHI, Config.ShadowMapResolution, Config.ShadowMapResolution, Config.MaxPointLights, true);
+	// Shadow Map Array 초기화 (광원 타입별로 각각의 해상도 사용)
+	SpotLightShadowMap.Initialize(RHI, Config.SpotLightResolution, Config.SpotLightResolution, Config.MaxSpotLights);
+	DirectionalLightShadowMap.Initialize(RHI, Config.DirectionalLightResolution, Config.DirectionalLightResolution, Config.MaxDirectionalLights);
+	PointLightCubeShadowMap.Initialize(RHI, Config.PointLightResolution, Config.PointLightResolution, Config.MaxPointLights, true);
 
 	bIsInitialized = true;
 }
@@ -43,17 +43,47 @@ void FShadowManager::Release()
 	bIsInitialized = false;
 }
 
-void FShadowManager::SetShadowMapResolution(uint32 NewResolution)
+void FShadowManager::SetDirectionalLightResolution(uint32 NewResolution)
 {
 	// 초기화되지 않았으면 설정만 변경
 	if (!bIsInitialized)
 	{
-		Config.ShadowMapResolution = NewResolution;
+		Config.DirectionalLightResolution = NewResolution;
 		return;
 	}
 
 	// 이미 초기화된 경우 재초기화
-	Config.ShadowMapResolution = NewResolution;
+	Config.DirectionalLightResolution = NewResolution;
+	Release();
+	Initialize(RHIDevice, Config);
+}
+
+void FShadowManager::SetSpotLightResolution(uint32 NewResolution)
+{
+	// 초기화되지 않았으면 설정만 변경
+	if (!bIsInitialized)
+	{
+		Config.SpotLightResolution = NewResolution;
+		return;
+	}
+
+	// 이미 초기화된 경우 재초기화
+	Config.SpotLightResolution = NewResolution;
+	Release();
+	Initialize(RHIDevice, Config);
+}
+
+void FShadowManager::SetPointLightResolution(uint32 NewResolution)
+{
+	// 초기화되지 않았으면 설정만 변경
+	if (!bIsInitialized)
+	{
+		Config.PointLightResolution = NewResolution;
+		return;
+	}
+
+	// 이미 초기화된 경우 재초기화
+	Config.PointLightResolution = NewResolution;
 	Release();
 	Initialize(RHIDevice, Config);
 }
@@ -150,13 +180,12 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 
 	// 쉐도우 맵 통계 수집 및 업데이트
 	FShadowStats Stats;
-	Stats.ShadowMapResolution = Config.ShadowMapResolution;
 	Stats.MaxShadowCastingLights = Config.MaxShadowCastingLights;
 
 	// 광원별 해상도
 	Stats.DirectionalLightResolution = DirectionalLightShadowMap.GetWidth();
 	Stats.SpotLightResolution = SpotLightShadowMap.GetWidth();
-	Stats.PointLightResolution = 0; // TODO: PointLight 쉐도우 맵 구현 시 추가
+	Stats.PointLightResolution = PointLightCubeShadowMap.GetWidth();
 
 	// 실제 쉐도우 캐스팅 라이트 수
 	Stats.DirectionalLightCount = DirectionalLightCount;

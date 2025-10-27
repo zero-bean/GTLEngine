@@ -33,9 +33,6 @@ struct FShadowStats
 	// 총 사용 중인 메모리 (바이트)
 	uint64 TotalUsedBytes = 0;
 
-	// 쉐도우 맵 해상도
-	uint32 ShadowMapResolution = 0;
-
 	// 최대 쉐도우 캐스팅 라이트 수
 	uint32 MaxShadowCastingLights = 0;
 
@@ -54,7 +51,6 @@ struct FShadowStats
 		, PointLightUsedBytes(0)
 		, TotalAllocatedBytes(0)
 		, TotalUsedBytes(0)
-		, ShadowMapResolution(0)
 		, MaxShadowCastingLights(0)
 	{
 	}
