@@ -70,20 +70,17 @@ public:
 
     /**
     * @brief 매 프레임에 활성화된 라이트 목록을 기반으로 섀도우 맵 인덱스를 할당합니다.
-    * @param RHIDevice - RHI 디바이스
     * @param ShadowLights - 타입별로 그룹화된 섀도우 캐스팅 라이트 구조체
     */
     void AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingLights& InLights);
 
 	// Shadow 렌더링 시작 - SpotLight
-	// @param RHI - D3D11 RHI 디바이스
 	// @param Light - 렌더링할 SpotLight
 	// @param OutContext - (출력) Shadow 렌더링 컨텍스트
 	// @return 성공 여부
 	bool BeginShadowRender(D3D11RHI* RHI, USpotLightComponent* Light, FShadowRenderContext& OutContext);
 
 	// Shadow 렌더링 시작 - DirectionalLight
-	// @param RHI - D3D11 RHI 디바이스
 	// @param Light - 렌더링할 DirectionalLight
 	// @param CameraView - 카메라의 View 행렬
 	// @param CameraProjection - 카메라의 Projection 행렬
@@ -93,21 +90,17 @@ public:
 		const FMatrix& CameraView, const FMatrix& CameraProjection, FShadowRenderContext& OutContext);
 
 	// CSM Shadow 렌더링 시작 - DirectionalLight (Cascaded Shadow Maps)
-	// @param RHI - D3D11 RHI 디바이스
-	// @param Light - 렌더링할 DirectionalLight
-	// @param CameraView - 카메라의 View 행렬
-	// @param CameraProjection - 카메라의 Projection 행렬
 	// @param CascadeIndex - 캐스케이드 인덱스 (0~3)
 	// @param SplitNear - 이 캐스케이드의 Near 거리
 	// @param SplitFar - 이 캐스케이드의 Far 거리
-	// @param OutContext - (출력) Shadow 렌더링 컨텍스트
-	// @return 성공 여부
 	bool BeginShadowRenderCSM(D3D11RHI* RHI, UDirectionalLightComponent* Light,
 		const FMatrix& CameraView, const FMatrix& CameraProjection,
 		int CascadeIndex, float SplitNear, float SplitFar, FShadowRenderContext& OutContext);
 
+	// CSM Split 거리 계산 (PSSM)
+	TArray<float> CalculateCSMSplits(float CameraNear, float CameraFar, int NumCascades, float Lambda) const;
+
 	// Shadow 렌더링 시작 - PointLight (Cube Map용)
-	// @param RHI - D3D11 RHI 디바이스
 	// @param Light - 렌더링할 PointLight
 	// @param CubeFaceIndex - 큐브맵 면 인덱스 (0~5: +X, -X, +Y, -Y, +Z, -Z)
 	// @param ShadowVP - 해당 큐브맵 면의 View-Projection 행렬 (미리 계산된 값)
@@ -116,15 +109,12 @@ public:
 	bool BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, const FShadowViewProjection& ShadowVP, FShadowRenderContext& OutContext);
 
 	// Shadow 렌더링 종료
-	// @param RHI - D3D11 RHI 디바이스
 	void EndShadowRender(D3D11RHI* RHI);
 
 	// Shadow Map 텍스처를 셰이더에 바인딩
-	// @param RHI - D3D11 RHI 디바이스
 	void BindShadowResources(D3D11RHI* RHI);
 
 	// Shadow Map 텍스처 언바인딩
-	// @param RHI - D3D11 RHI 디바이스
 	void UnbindShadowResources(D3D11RHI* RHI);
 
 	// 디렉셔널 라이트 쉐도우 맵 해상도 변경
@@ -141,6 +131,7 @@ public:
 
 	// Query 메서드들
 	const FShadowConfiguration& GetShadowConfiguration() const { return Config; }
+	FShadowConfiguration& GetShadowConfiguration() { return Config; }
 	int32 GetShadowMapIndex(USpotLightComponent* Light) const;
 	FShadowMap& GetSpotLightShadowMap() { return SpotLightShadowMap; }
 	const FShadowMap& GetSpotLightShadowMap() const { return SpotLightShadowMap; }
@@ -153,7 +144,7 @@ public:
 	class UShader* GetShadowPixelShaderForFilterType(EShadowFilterType FilterType) const;
 
 	// CSM Split 거리 계산 (PSSM)
-	TArray<float> CalculateCSMSplits(float CameraNear, float CameraFar, int NumCascades, float Lambda) const;
+	//TArray<float> CalculateCSMSplits(float CameraNear, float CameraFar, int NumCascades, float Lambda) const;
 
 private:
 	// RHI 디바이스 참조

@@ -25,7 +25,9 @@ struct FDirectionalLightInfo
     uint bCastShadow;   // 4 bytes - 섀도우 캐스팅 여부
 
     uint ShadowMapIndex; // 4 bytes - 섀도우 맵 base 인덱스 (CSM의 경우 첫 번째 캐스케이드 인덱스)
-    float3 Padding;      // 12 bytes - 패딩
+    uint bUseCSM;        // 4 bytes - CSM 사용 여부 (true = CSM, false = single shadow map)
+    uint NumCascades;    // 4 bytes - CSM 캐스케이드 수 (3~6)
+    float Padding;       // 4 bytes - 패딩
 
     row_major float4x4 LightViewProjection; // 64 bytes - Legacy: 단일 섀도우 맵용
 
@@ -33,7 +35,7 @@ struct FDirectionalLightInfo
     row_major float4x4 CascadeViewProjection[4]; // 256 bytes (64 bytes × 4) - 각 캐스케이드의 VP 행렬
     float4 CascadeSplitDistances;                // 16 bytes - 각 캐스케이드의 Far 거리 (float4로 패킹)
 
-    // Total: 384 bytes
+    // Total: 388 bytes
 };
 
 struct FPointLightInfo

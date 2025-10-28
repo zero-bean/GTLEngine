@@ -596,18 +596,22 @@ void FSceneRenderer::RenderDirectionalLightShadows(FShaderVariant* ShadowShaderV
 			continue;
 
 		// CSM이 활성화되어 있으면 Cascaded Shadow Maps 렌더링
-		if (ShadowConfig.bEnableCSM)
+		if (DirLight->GetShadowMapType() == EShadowMapType::CSM)
 		{
-			// 1. CSM Split 거리 계산
+			// 1. CSM Split 거리 계산 (DirectionalLight의 설정 사용)
+			const int32 NumCascades = DirLight->GetNumCascades();
+			const float CSMLambda = DirLight->GetCSMLambda();
+			const float MaxShadowDistance = 1000.0f; // TODO: 필요시 DirectionalLight 프로퍼티로 추가
+
 			TArray<float> CascadeSplits = ShadowManager->CalculateCSMSplits(
 				View->ZNear,
-				FMath::Min(View->ZFar, ShadowConfig.MaxShadowDistance),
-				ShadowConfig.NumCascades,
-				ShadowConfig.CSMLambda);
+				FMath::Min(View->ZFar, MaxShadowDistance),
+				NumCascades,
+				CSMLambda);
 
 			// 2. 각 캐스케이드에 대해 섀도우 렌더링
 			float PrevSplit = View->ZNear;
-			for (int CascadeIndex = 0; CascadeIndex < (int)ShadowConfig.NumCascades; ++CascadeIndex)
+			for (int CascadeIndex = 0; CascadeIndex < NumCascades; ++CascadeIndex)
 			{
 				float CurrentSplit = CascadeSplits[CascadeIndex];
 

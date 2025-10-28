@@ -57,7 +57,20 @@ public:
 	 */
 	static uint64_t GetDepthFormatSize(DXGI_FORMAT format);
 
+	/**
+	 * @brief 특정 슬라이스의 깊이 값을 MinDepth~MaxDepth 범위로 리매핑하여 시각화용 SRV를 반환합니다.
+	 * @param RHI - D3D11 RHI 디바이스
+	 * @param ArrayIndex - 렌더링할 배열 슬라이스 인덱스
+	 * @param MinDepth - 리매핑 시작 범위 (예: 0.99)
+	 * @param MaxDepth - 리매핑 끝 범위 (예: 1.0)
+	 * @return 리매핑된 텍스처의 SRV (시각화 전용, 원본 데이터는 변경되지 않음)
+	 */
+	ID3D11ShaderResourceView* GetRemappedSliceSRV(D3D11RHI* RHI, UINT ArrayIndex, float MinDepth, float MaxDepth);
+
 private:
+	// 깊이 리매핑 초기화 (DepthRemap.hlsl 셰이더 컴파일 및 리소스 생성)
+	void InitializeDepthRemapResources(D3D11RHI* RHI);
+	void ReleaseDepthRemapResources();
 	// 섀도우맵 크기
 	UINT Width;
 	UINT Height;
@@ -99,4 +112,15 @@ private:
 
 	// RasterizerState 캐시 (DepthBias 조합별로 재사용)
 	std::map<FRasterizerStateKey, ID3D11RasterizerState*> CachedRasterizerStates;
+
+	// 깊이 리매핑 시각화 리소스 (Editor용)
+	ID3D11Texture2D* RemappedTexture;
+	ID3D11RenderTargetView* RemappedRTV;
+	ID3D11ShaderResourceView* RemappedSRV;
+	ID3D11VertexShader* DepthRemapVS;
+	ID3D11PixelShader* DepthRemapPS;
+	ID3D11Buffer* DepthRemapConstantBuffer;
+	ID3D11Buffer* FullscreenQuadVB;
+	ID3D11InputLayout* DepthRemapInputLayout;
+	ID3D11SamplerState* PointSamplerState;
 };
