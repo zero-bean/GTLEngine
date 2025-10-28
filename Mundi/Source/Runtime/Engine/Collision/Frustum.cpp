@@ -492,14 +492,15 @@ void GetFrustumCornersWorldSpace(const FMatrix& InViewProjInverse, TArray<FVecto
 void GetFrustumCornersWorldSpace_Partial(const FMatrix& CameraView, const FMatrix& CameraProjection,
 	float NearDistance, float FarDistance, TArray<FVector>& OutCorners)
 {
-	// 카메라 Projection 행렬에서 Near/Far 추출
+	// 카메라 Projection 행렬에서 원본 Near/Far 추출
 	// Perspective Projection: [2][2] = far/(far-near), [3][2] = -near*far/(far-near)
-	float CameraNear = -CameraProjection.M[3][2] / CameraProjection.M[2][2];
-	float CameraFar = CameraProjection.M[3][2] / (CameraProjection.M[2][2] - 1.0f);
+	float OriginalNear = -CameraProjection.M[3][2] / CameraProjection.M[2][2];
+	float OriginalFar = -CameraProjection.M[3][2] / (CameraProjection.M[2][2] - 1.0f);
 
-	// View Space Depth를 NDC Z로 변환
-	float NearNDC = DepthToNDC(NearDistance, CameraNear, CameraFar);
-	float FarNDC = DepthToNDC(FarDistance, CameraNear, CameraFar);
+	// CSM을 위해 NearDistance와 FarDistance를 사용하여 NDC Z 계산
+	// 원본 카메라 투영 행렬의 Near/Far가 아닌, 캐스케이드의 Near/Far를 사용
+	float NearNDC = DepthToNDC(NearDistance, OriginalNear, OriginalFar);
+	float FarNDC = DepthToNDC(FarDistance, OriginalNear, OriginalFar);
 
 	// NDC 공간의 Frustum 8개 코너 점 정의 (Z값 수정)
 	FVector4 NDCCorners[8] = {
