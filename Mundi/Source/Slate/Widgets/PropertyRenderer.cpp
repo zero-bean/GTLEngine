@@ -12,6 +12,7 @@
 #include "DecalComponent.h"
 #include "StaticMeshComponent.h"
 #include "LightComponentBase.h"
+#include "DirectionalLightComponent.h"
 
 // 정적 멤버 변수 초기화
 TArray<FString> UPropertyRenderer::CachedStaticMeshPaths;
@@ -89,6 +90,10 @@ bool UPropertyRenderer::RenderProperty(const FProperty& Property, void* ObjectIn
 		}
 		break;
 
+	case EPropertyType::Enum:
+		bChanged = RenderEnumProperty(Property, ObjectInstance);
+		break;
+
 	default:
 		ImGui::Text("%s: [Unknown Type]", Property.Name);
 		break;
@@ -136,8 +141,10 @@ bool UPropertyRenderer::RenderProperty(const FProperty& Property, void* ObjectIn
 				strcmp(Property.Name, "bUseInverseSquareFalloff") == 0 ||
 				strcmp(Property.Name, "FalloffExponent") == 0 ||
 				strcmp(Property.Name, "InnerConeAngle") == 0 ||
-				strcmp(Property.Name, "OuterConeAngle") == 0)
-
+				strcmp(Property.Name, "OuterConeAngle") == 0 ||
+				strcmp(Property.Name, "ShadowMapType") == 0 ||
+				strcmp(Property.Name, "NumCascades") == 0 ||
+				strcmp(Property.Name, "CSMLambda") == 0)
 			{
 				LightComponent->UpdateLightData();
 			}
@@ -179,7 +186,11 @@ void UPropertyRenderer::RenderProperties(const TArray<FProperty>& Properties, UO
 
 		for (const FProperty* Prop : Props)
 		{
-			RenderProperty(*Prop, Object);
+			// 조건부 프로퍼티 표시 로직 (DirectionalLightComponent의 CSM 설정)
+			if (ShouldRenderProperty(*Prop, Object))
+			{
+				RenderProperty(*Prop, Object);
+			}
 		}
 	}
 }
@@ -204,6 +215,26 @@ void UPropertyRenderer::RenderAllPropertiesWithInheritance(UObject* Object)
 	const TArray<FProperty>& AllProperties = Class->GetAllProperties();
 
 	RenderProperties(AllProperties, Object);
+}
+
+// ===== 조건부 프로퍼티 표시 로직 =====
+
+bool UPropertyRenderer::ShouldRenderProperty(const FProperty& Prop, UObject* Object)
+{
+	if (!Object)
+		return true;
+
+	// DirectionalLightComponent의 경우, ShadowMapType에 따라 CSM 설정 프로퍼티를 숨기거나 표시
+	if (UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Object))
+	{
+		// NumCascades와 CSMLambda는 ShadowMapType이 CSM일 때만 표시
+		if (strcmp(Prop.Name, "NumCascades") == 0 || strcmp(Prop.Name, "CSMLambda") == 0)
+		{
+			return DirLight->GetShadowMapType() == EShadowMapType::CSM;
+		}
+	}
+
+	return true;
 }
 
 // ===== 리소스 캐싱 =====
@@ -284,7 +315,25 @@ bool UPropertyRenderer::RenderBoolProperty(const FProperty& Prop, void* Instance
 bool UPropertyRenderer::RenderInt32Property(const FProperty& Prop, void* Instance)
 {
 	int32* Value = Prop.GetValuePtr<int32>(Instance);
-	return ImGui::DragInt(Prop.Name, Value, 1.0f, (int)Prop.MinValue, (int)Prop.MaxValue);
+
+	// Min과 Max가 모두 0이 아니면 범위 제한을 적용
+	if (Prop.MinValue != 0 || Prop.MaxValue != 0)
+	{
+		// InputInt를 사용하여 직접 입력 가능하게 하고, 범위를 제한
+		ImGui::SetNextItemWidth(100.0f);
+		if (ImGui::InputInt(Prop.Name, Value, 1, 1))
+		{
+			// 범위 클램핑
+			*Value = FMath::Clamp(*Value, (int32)Prop.MinValue, (int32)Prop.MaxValue);
+			return true;
+		}
+		return false;
+	}
+	else
+	{
+		// 범위 제한이 없으면 기본 InputInt 사용
+		return ImGui::InputInt(Prop.Name, Value);
+	}
 }
 
 bool UPropertyRenderer::RenderFloatProperty(const FProperty& Prop, void* Instance)
@@ -1149,4 +1198,38 @@ bool UPropertyRenderer::RenderTransformProperty(const FProperty& Prop, void* Ins
 	ImGui::PopID();
 
 	return bAnyChanged;
+}
+
+bool UPropertyRenderer::RenderEnumProperty(const FProperty& Prop, void* Instance)
+{
+	if (!Prop.EnumNames || Prop.EnumCount == 0)
+	{
+		ImGui::Text("%s: [Invalid Enum]", Prop.Name);
+		return false;
+	}
+
+	uint8* Value = Prop.GetValuePtr<uint8>(Instance);
+	int CurrentValue = static_cast<int>(*Value);
+
+	ImGui::Text("%s", Prop.Name);
+	ImGui::SameLine();
+
+	bool bChanged = false;
+
+	// 라디오 버튼을 가로로 나란히 배치
+	for (uint32 i = 0; i < Prop.EnumCount; ++i)
+	{
+		if (i > 0)
+			ImGui::SameLine();
+
+		ImGui::PushID(i);
+		if (ImGui::RadioButton(Prop.EnumNames[i], CurrentValue == static_cast<int>(i)))
+		{
+			*Value = static_cast<uint8>(i);
+			bChanged = true;
+		}
+		ImGui::PopID();
+	}
+
+	return bChanged;
 }

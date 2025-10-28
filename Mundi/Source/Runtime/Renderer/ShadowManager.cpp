@@ -24,10 +24,10 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 	// Shadow Map Array 초기화 (광원 타입별로 각각의 해상도 사용)
 	SpotLightShadowMap.Initialize(RHI, Config.SpotLightResolution, Config.SpotLightResolution, Config.MaxSpotLights);
 
-	// DirectionalLight는 CSM을 사용하면 각 라이트당 NumCascades개의 슬라이스가 필요
-	uint32 DirectionalArraySize = Config.bEnableCSM
-		? (Config.MaxDirectionalLights * Config.NumCascades)
-		: Config.MaxDirectionalLights;
+	// DirectionalLight는 CSM을 사용할 수 있으므로 최대 6개 캐스케이드를 지원하도록 할당
+	// (각 라이트가 CSM을 사용할지는 런타임에 DirectionalLightComponent의 ShadowMapType으로 결정)
+	constexpr uint32 MaxCascadesPerLight = 6;
+	uint32 DirectionalArraySize = Config.MaxDirectionalLights * MaxCascadesPerLight;
 	DirectionalLightShadowMap.Initialize(RHI, Config.DirectionalLightResolution, Config.DirectionalLightResolution, DirectionalArraySize);
 
 	PointLightCubeShadowMap.Initialize(RHI, Config.PointLightResolution, Config.PointLightResolution, Config.MaxPointLights, true);
@@ -284,8 +284,11 @@ bool FShadowManager::BeginShadowRenderCSM(D3D11RHI* RHI, UDirectionalLightCompon
 	const FMatrix& CameraView, const FMatrix& CameraProjection,
 	int CascadeIndex, float SplitNear, float SplitFar, FShadowRenderContext& OutContext)
 {
+	// DirectionalLight의 NumCascades 가져오기
+	const int32 NumCascades = Light->GetNumCascades();
+
 	// 캐스케이드 인덱스 유효성 검사
-	if (CascadeIndex < 0 || CascadeIndex >= (int)Config.NumCascades)
+	if (CascadeIndex < 0 || CascadeIndex >= NumCascades)
 	{
 		return false;
 	}
@@ -311,8 +314,10 @@ bool FShadowManager::BeginShadowRenderCSM(D3D11RHI* RHI, UDirectionalLightCompon
 		Light->GetLightDirection(),
 		CascadeFrustumCorners);
 
-	// 3. Texture Array Index 계산: (LightIndex * NumCascades) + CascadeIndex
-	int32 ArrayIndex = LightShadowIndex * Config.NumCascades + CascadeIndex;
+	// 3. Texture Array Index 계산: (LightIndex * MaxCascades) + CascadeIndex
+	// 최대 6개 캐스케이드를 지원하도록 할당했으므로, MaxCascades = 6 사용
+	constexpr int32 MaxCascades = 6;
+	int32 ArrayIndex = LightShadowIndex * MaxCascades + CascadeIndex;
 
 	// 4. 출력 컨텍스트 설정
 	OutContext.LightView = ShadowVP.View;

@@ -28,12 +28,6 @@ struct FShadowConfiguration
 	// 전체 쉐도우 캐스팅 라이트 수 (통계/검증용)
 	uint32 MaxShadowCastingLights = 16;
 
-	// CSM (Cascaded Shadow Maps) 설정
-	bool bEnableCSM = true;               // CSM 활성화 여부
-	uint32 NumCascades = 4;               // 캐스케이드 수
-	float CSMLambda = 0.5f;               // PSSM 혼합 비율 (0=선형, 1=로그)
-	float MaxShadowDistance = 1000.0f;    // 최대 그림자 거리
-
 	// 품질 프리셋으로부터 설정 로드
 	static FShadowConfiguration FromQuality(EShadowQuality InQuality);
 

@@ -128,6 +128,7 @@ public:
 
 	// Query 메서드들
 	const FShadowConfiguration& GetShadowConfiguration() const { return Config; }
+	FShadowConfiguration& GetShadowConfiguration() { return Config; }
 	int32 GetShadowMapIndex(USpotLightComponent* Light) const;
 	FShadowMap& GetSpotLightShadowMap() { return SpotLightShadowMap; }
 	const FShadowMap& GetSpotLightShadowMap() const { return SpotLightShadowMap; }
