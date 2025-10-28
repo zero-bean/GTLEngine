@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 
 class FShadowMap
 {
@@ -85,6 +86,23 @@ private:
 
 	// 섀도우 렌더링용 뷰포트
 	D3D11_VIEWPORT ShadowViewport;
+
+	// RasterizerState 캐싱용 키 구조체
+	struct FRasterizerStateKey
+	{
+		float DepthBias;
+		float SlopeScaledDepthBias;
+
+		bool operator<(const FRasterizerStateKey& Other) const
+		{
+			if (DepthBias != Other.DepthBias)
+				return DepthBias < Other.DepthBias;
+			return SlopeScaledDepthBias < Other.SlopeScaledDepthBias;
+		}
+	};
+
+	// RasterizerState 캐시 (DepthBias 조합별로 재사용)
+	std::map<FRasterizerStateKey, ID3D11RasterizerState*> CachedRasterizerStates;
 
 	// 깊이 리매핑 시각화 리소스 (Editor용)
 	ID3D11Texture2D* RemappedTexture;

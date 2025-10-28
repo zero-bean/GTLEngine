@@ -49,30 +49,19 @@ struct FShadowViewProjection
 		return Result;
 	}
 
-	// DirectionalLight용 Shadow VP 행렬 생성 (View Frustum 기반)
+private:
+	// DirectionalLight용 Shadow VP 행렬 생성 (내부 공통 로직)
 	// @param Direction - 라이트 방향 (정규화되지 않아도 됨)
-	// @param CameraView - 카메라의 View 행렬
-	// @param CameraProjection - 카메라의 Projection 행렬
-	static FShadowViewProjection CreateForDirectionalLight(
+	// @param FrustumCorners - Frustum의 8개 코너 (World Space)
+	// @param ShadowExtension - 그림자 범위 확장 비율
+	static FShadowViewProjection CreateForDirectionalLight_Internal(
 		const FVector& Direction,
-		const FMatrix& CameraView,
-		const FMatrix& CameraProjection)
+		const TArray<FVector>& FrustumCorners,
+		float ShadowExtension)
 	{
 		FShadowViewProjection Result;
 
-		// === 1. Camera Frustum의 8개 코너를 월드 공간으로 변환 ===
-		TArray<FVector> FrustumCorners;
-
-		// ViewProjection의 역행렬 계산: (V * P)^-1 = P^-1 * V^-1
-		// Projection이 Perspective인지 Orthographic인지 알 수 없으므로
-		// 간단한 방법: ViewProjection을 재계산하고 역행렬 구하기
-		FMatrix InvView = CameraView.InverseAffine();
-		FMatrix InvProj = CameraProjection.InversePerspectiveProjection(); // 일단 Perspective 가정
-		FMatrix InvViewProj = InvProj * InvView;
-
-		GetFrustumCornersWorldSpace(InvViewProj, FrustumCorners);
-
-		// === 2. Light View 행렬 생성 ===
+		// === 1. Light View 행렬 생성 ===
 		FVector LightDir = Direction.GetNormalized();
 
 		// Up vector 선택 (LightDir와 평행하지 않은 벡터)
@@ -89,12 +78,11 @@ struct FShadowViewProjection
 		FrustumCenter /= 8.0f;
 
 		// Light Position: Frustum 중심에서 라이트 방향 반대쪽
-		// (거리는 임의로 설정, Orthographic이므로 위치는 범위에만 영향)
-		FVector LightPos = FrustumCenter - LightDir * 1000.0f;
+		FVector LightPos = FrustumCenter - LightDir;
 
 		Result.View = FMatrix::LookAtLH(LightPos, LightPos + LightDir, Up);
 
-		// === 3. Frustum 코너를 Light Space로 변환하여 AABB 계산 ===
+		// === 2. Frustum 코너를 Light Space로 변환하여 AABB 계산 ===
 		float MinX = FLT_MAX, MaxX = -FLT_MAX;
 		float MinY = FLT_MAX, MaxY = -FLT_MAX;
 		float MinZ = FLT_MAX, MaxZ = -FLT_MAX;
@@ -112,16 +100,30 @@ struct FShadowViewProjection
 			MaxZ = FMath::Max(MaxZ, LightSpaceCorner.Z);
 		}
 
-		// === 4. Orthographic Projection 생성 (AABB 범위 기반) ===
+		// === 3. AABB 확장 및 Orthographic Projection 생성 ===
 		float Width = MaxX - MinX;
 		float Height = MaxY - MinY;
 		float Depth = MaxZ - MinZ;
+
+		// XY 평면 확장
+		float ExtendX = Width * ShadowExtension;
+		float ExtendY = Height * ShadowExtension;
+		MinX -= ExtendX;
+		MaxX += ExtendX;
+		MinY -= ExtendY;
+		MaxY += ExtendY;
+		Width = MaxX - MinX;
+		Height = MaxY - MinY;
+
+		// Near Plane을 뒤로 확장하여 카메라 뒤의 오브젝트 포함
+		float NearExtension = Depth * 2.0f;
+		MinZ -= NearExtension;
+		Depth = MaxZ - MinZ;
 
 		// 중심을 원점으로 맞춘 Orthographic Projection
 		Result.Projection = FMatrix::OrthoLH(Width, Height, 0.0f, Depth);
 
 		// AABB 중심을 원점으로 이동시키기 위한 오프셋 적용
-		// (OrthoLH는 중심 기준이므로, Min/Max가 비대칭이면 보정 필요)
 		float CenterX = (MaxX + MinX) * 0.5f;
 		float CenterY = (MaxY + MinY) * 0.5f;
 
@@ -130,10 +132,48 @@ struct FShadowViewProjection
 		Result.View.M[3][1] -= CenterY;
 		Result.View.M[3][2] -= MinZ;  // Near plane을 0으로 맞춤
 
-		// === 5. ViewProjection 계산 ===
+		// === 4. ViewProjection 계산 ===
 		Result.ViewProjection = Result.View * Result.Projection;
 
 		return Result;
+	}
+
+public:
+	// DirectionalLight용 Shadow VP 행렬 생성 (View Frustum 기반)
+	// @param Direction - 라이트 방향 (정규화되지 않아도 됨)
+	// @param CameraView - 카메라의 View 행렬
+	// @param CameraProjection - 카메라의 Projection 행렬
+	// @param ShadowExtension - 그림자 범위 확장 비율 (기본값 0.2 = 20% 확장)
+	static FShadowViewProjection CreateForDirectionalLight(
+		const FVector& Direction,
+		const FMatrix& CameraView,
+		const FMatrix& CameraProjection,
+		float ShadowExtension = 0.2f)
+	{
+		// Camera Frustum의 8개 코너를 월드 공간으로 변환
+		TArray<FVector> FrustumCorners;
+
+		FMatrix InvView = CameraView.InverseAffine();
+		FMatrix InvProj = CameraProjection.InversePerspectiveProjection();
+		FMatrix InvViewProj = InvProj * InvView;
+
+		GetFrustumCornersWorldSpace(InvViewProj, FrustumCorners);
+
+		// 공통 로직 호출
+		return CreateForDirectionalLight_Internal(Direction, FrustumCorners, ShadowExtension);
+	}
+
+	// DirectionalLight용 Shadow VP 행렬 생성 (CSM용 - Frustum 코너를 직접 받음)
+	// @param Direction - 라이트 방향 (정규화되지 않아도 됨)
+	// @param FrustumCorners - Frustum의 8개 코너 (World Space)
+	// @param ShadowExtension - 그림자 범위 확장 비율 (기본값 0.2 = 20% 확장)
+	static FShadowViewProjection CreateForDirectionalLight_FromCorners(
+		const FVector& Direction,
+		const TArray<FVector>& FrustumCorners,
+		float ShadowExtension = 0.2f)
+	{
+		// 공통 로직 호출
+		return CreateForDirectionalLight_Internal(Direction, FrustumCorners, ShadowExtension);
 	}
 
 	// PointLight용 Cube Map Shadow VP 행렬 6개 생성

@@ -2,6 +2,7 @@
 #include "DirectionalLightComponent.h"
 #include "BillboardComponent.h"
 #include "Gizmo/GizmoArrowComponent.h"
+#include "ShadowManager.h"
 
 UDirectionalLightComponent::UDirectionalLightComponent()
 {
@@ -18,6 +19,25 @@ IMPLEMENT_CLASS(UDirectionalLightComponent)
 
 BEGIN_PROPERTIES(UDirectionalLightComponent)
 	MARK_AS_COMPONENT("디렉셔널 라이트", "방향성 라이트 (태양광 같은 평행광) 컴포넌트입니다.")
+
+	// Shadow Map Type Enum
+	{
+		static const char* ShadowMapTypeNames[] = { "Default", "CSM" };
+		FProperty EnumProp;
+		EnumProp.Name = "ShadowMapType";
+		EnumProp.Type = EPropertyType::Enum;
+		EnumProp.Offset = offsetof(ThisClass_t, ShadowMapType);
+		EnumProp.Category = "Shadow";
+		EnumProp.bIsEditAnywhere = true;
+		EnumProp.Tooltip = "쉐도우맵 타입을 선택합니다.";
+		EnumProp.EnumNames = ShadowMapTypeNames;
+		EnumProp.EnumCount = 2;
+		Class->AddProperty(EnumProp);
+	}
+
+	// CSM Configuration
+	ADD_PROPERTY_RANGE(int32, NumCascades, "Shadow", 3, 6, true, "캐스케이드 수 (3~6)")
+	ADD_PROPERTY_RANGE(float, CSMLambda, "Shadow", 0.0f, 1.0f, true, "PSSM 혼합 비율 (0=선형, 1=로그)")
 END_PROPERTIES()
 
 FVector UDirectionalLightComponent::GetLightDirection() const
@@ -37,12 +57,23 @@ FDirectionalLightInfo UDirectionalLightComponent::GetLightInfo() const
 	// Shadow casting information
 	Info.bCastShadow = GetIsCastShadows() ? 1u : 0u;
 	Info.ShadowMapIndex = static_cast<uint32>(GetShadowMapIndex()); // Cast int32 to uint32 (converts -1 to 0xFFFFFFFF)
-	Info.Padding = FVector::Zero(); // 패딩 초기화
+
+	// CSM mode from this light's ShadowMapType
+	Info.bUseCSM = (GetShadowMapType() == EShadowMapType::CSM) ? 1u : 0u;
+	Info.NumCascades = static_cast<uint32>(GetNumCascades());
 
 	// Use cached LightViewProjection (updated by ShadowManager each frame during shadow pass)
 	// NOTE: Unlike SpotLight which calculates VP matrix here, DirectionalLight needs camera frustum info,
 	// so the matrix is calculated and cached by ShadowManager during RenderShadowPass()
 	Info.LightViewProjection = CachedLightViewProjection;
+
+	// CSM (Cascaded Shadow Maps) Data
+	// Cascade ViewProjection matrices (updated by ShadowManager during shadow pass)
+	for (int i = 0; i < 4; ++i)
+	{
+		Info.CascadeViewProjection[i] = CascadeViewProjections[i];
+		Info.CascadeSplitDistances[i] = CascadeSplitDistances[i];
+	}
 
 	return Info;
 }
@@ -95,6 +126,7 @@ void UDirectionalLightComponent::UpdateLightData()
 	Super::UpdateLightData();
 	// 방향성 라이트 특화 업데이트 로직
 	GWorld->GetLightManager()->UpdateLight(this);
+
 	// Update direction gizmo to reflect any changes
 	UpdateDirectionGizmo();
 }

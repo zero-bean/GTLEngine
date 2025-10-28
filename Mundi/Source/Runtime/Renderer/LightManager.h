@@ -9,6 +9,8 @@ class D3D11RHI;
 class FShadowMap;
 class USceneComponent;
 
+struct FVector2;
+
 enum class ELightType
 {
     AmbientLight,
@@ -27,10 +29,17 @@ struct FDirectionalLightInfo
     FLinearColor Color;     // 16 bytes - Color already includes Intensity and Temperature
     FVector Direction;      // 12 bytes
     uint32 bCastShadow;     // 4 bytes - true = this light casts shadow
-    uint32 ShadowMapIndex;  // 4 bytes - index to shadow map array (-1 if no shadow)
-    FVector Padding;        // 12 bytes - padding
-    FMatrix LightViewProjection; // 64 bytes - Light space transformation matrix
-    // Total: 112 bytes
+    uint32 ShadowMapIndex;  // 4 bytes - index to shadow map array (base index for CSM)
+    uint32 bUseCSM;         // 4 bytes - true = use CSM, false = use single shadow map
+    uint32 NumCascades;     // 4 bytes - CSM 캐스케이드 수 (3~6)
+    float Padding;          // 4 bytes - padding
+    FMatrix LightViewProjection; // 64 bytes - Legacy: 단일 섀도우 맵용 (CSM 비활성화 시 사용)
+
+    // CSM (Cascaded Shadow Maps) Data
+    FMatrix CascadeViewProjection[4];  // 256 bytes (64 bytes × 4) - 각 캐스케이드의 VP 행렬
+    float CascadeSplitDistances[4];    // 16 bytes - 각 캐스케이드의 Far 거리
+
+    // Total: 116 + 256 + 16 = 388 bytes
 };
 
 struct FPointLightInfo

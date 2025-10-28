@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "SceneRenderer.h"
 
 // FSceneRenderer가 사용하는 모든 헤더 포함
@@ -557,33 +557,89 @@ void FSceneRenderer::UpdateViewProjBufferForShadow(const FShadowRenderContext& S
 
 void FSceneRenderer::RenderDirectionalLightShadows(FShaderVariant* ShadowShaderVariant)
 {
+	FShadowManager* ShadowManager = GWorld->GetShadowManager();
+	const FShadowConfiguration& ShadowConfig = ShadowManager->GetShadowConfiguration();
+
 	for (UDirectionalLightComponent* DirLight : SceneGlobals.DirectionalLights)
 	{
 		// 유효성 검사
 		if (!IsLightValidForShadowCasting(DirLight))
 			continue;
 
-		// ShadowManager에게 섀도우 맵 렌더 시작 요청
-		FShadowRenderContext ShadowContext;
-		if (!GWorld->GetShadowManager()->BeginShadowRender(RHIDevice, DirLight,
-			View->ViewMatrix, View->ProjectionMatrix, ShadowContext))
-			continue;
+		// CSM이 활성화되어 있으면 Cascaded Shadow Maps 렌더링
+		if (DirLight->GetShadowMapType() == EShadowMapType::CSM)
+		{
+			// 1. CSM Split 거리 계산 (DirectionalLight의 설정 사용)
+			const int32 NumCascades = DirLight->GetNumCascades();
+			const float CSMLambda = DirLight->GetCSMLambda();
+			const float MaxShadowDistance = 1000.0f; // TODO: 필요시 DirectionalLight 프로퍼티로 추가
 
-		// ViewProj 버퍼 업데이트 (Orthographic)
-		UpdateViewProjBufferForShadow(ShadowContext, true);
+			TArray<float> CascadeSplits = ShadowManager->CalculateCSMSplits(
+				View->ZNear,
+				FMath::Min(View->ZFar, MaxShadowDistance),
+				NumCascades,
+				CSMLambda);
 
-		// 메시 수집
-		TArray<FMeshBatchElement> ShadowMeshBatches;
-		CollectShadowMeshBatches(ShadowMeshBatches);
+			// 2. 각 캐스케이드에 대해 섀도우 렌더링
+			float PrevSplit = View->ZNear;
+			for (int CascadeIndex = 0; CascadeIndex < NumCascades; ++CascadeIndex)
+			{
+				float CurrentSplit = CascadeSplits[CascadeIndex];
 
-		// 셰이더 오버라이드
-		OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
+				// ShadowManager에게 CSM 섀도우 맵 렌더 시작 요청
+				FShadowRenderContext ShadowContext;
+				if (!ShadowManager->BeginShadowRenderCSM(RHIDevice, DirLight,
+					View->ViewMatrix, View->ProjectionMatrix,
+					CascadeIndex, PrevSplit, CurrentSplit, ShadowContext))
+				{
+					PrevSplit = CurrentSplit;
+					continue;
+				}
 
-		// 그리기
-		DrawMeshBatches(ShadowMeshBatches, true, true);
+				// ViewProj 버퍼 업데이트 (Orthographic)
+				UpdateViewProjBufferForShadow(ShadowContext, true);
 
-		// 섀도우 맵 렌더 종료
-		GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
+				// 메시 수집
+				TArray<FMeshBatchElement> ShadowMeshBatches;
+				CollectShadowMeshBatches(ShadowMeshBatches);
+
+				// 셰이더 오버라이드
+				OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
+
+				// 그리기
+				DrawMeshBatches(ShadowMeshBatches, true, true);
+
+				// 섀도우 맵 렌더 종료
+				ShadowManager->EndShadowRender(RHIDevice);
+
+				// 다음 캐스케이드를 위한 준비
+				PrevSplit = CurrentSplit;
+			}
+		}
+		else
+		{
+			// CSM이 비활성화된 경우 기존 단일 섀도우 맵 렌더링
+			FShadowRenderContext ShadowContext;
+			if (!ShadowManager->BeginShadowRender(RHIDevice, DirLight,
+				View->ViewMatrix, View->ProjectionMatrix, ShadowContext))
+				continue;
+
+			// ViewProj 버퍼 업데이트 (Orthographic)
+			UpdateViewProjBufferForShadow(ShadowContext, true);
+
+			// 메시 수집
+			TArray<FMeshBatchElement> ShadowMeshBatches;
+			CollectShadowMeshBatches(ShadowMeshBatches);
+
+			// 셰이더 오버라이드
+			OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
+
+			// 그리기
+			DrawMeshBatches(ShadowMeshBatches, true, true);
+
+			// 섀도우 맵 렌더 종료
+			ShadowManager->EndShadowRender(RHIDevice);
+		}
 	}
 }
 
@@ -630,7 +686,7 @@ void FSceneRenderer::RenderPointLightShadows(FShaderVariant* ShadowShaderVariant
 		if (PointLight->GetShadowMapIndex() < 0)
 			continue;
 
-		// 라이트당 한 번만 6개 VP 행렬 계산 (중복 계산 제거)
+		// 라이트당 한 번만 6개 VP 행렬 계산
 		TArray<FShadowViewProjection> CubeShadowVPs = FShadowViewProjection::CreateForPointLightCube(
 			PointLight->GetWorldLocation(),
 			PointLight->GetAttenuationRadius(),
@@ -639,7 +695,7 @@ void FSceneRenderer::RenderPointLightShadows(FShaderVariant* ShadowShaderVariant
 		// 6개 면 렌더링 (+X, -X, +Y, -Y, +Z, -Z)
 		for (uint32 CubeFaceIdx = 0; CubeFaceIdx < 6; CubeFaceIdx++)
 		{
-			// ShadowManager에게 섀도우 맵 렌더 시작 요청 (미리 계산된 VP 전달)
+			// ShadowManager에게 섀도우 맵 렌더 시작 요청
 			FShadowRenderContext ShadowContext;
 			if (!GWorld->GetShadowManager()->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, CubeShadowVPs[CubeFaceIdx], ShadowContext))
 				continue;

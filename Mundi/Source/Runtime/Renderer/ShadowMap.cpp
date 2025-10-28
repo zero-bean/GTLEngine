@@ -166,6 +166,16 @@ void FShadowMap::Release()
 		ShadowMapTexture = nullptr;
 	}
 
+	// 캐시된 RasterizerState 해제
+	for (auto& Pair : CachedRasterizerStates)
+	{
+		if (Pair.second)
+		{
+			Pair.second->Release();
+		}
+	}
+	CachedRasterizerStates.clear();
+
 	// Release depth remap visualization resources
 	ReleaseDepthRemapResources();
 }
@@ -183,26 +193,40 @@ void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex, float DepthBias, fl
 	// DSV를 초기화합니다.
 	pContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	// Unbind all pixel shader resources (depth-only pass doesn't need textures)
-	ID3D11ShaderResourceView* pNullSRVs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-	pContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNullSRVs);
+	// 섀도우 맵 SRV 언바인딩 (리소스 hazard 방지: t5=SpotLight, t6=DirectionalLight, t7=PointLight)
+	ID3D11ShaderResourceView* pNullSRVs[3] = { nullptr, nullptr, nullptr };
+	pContext->PSSetShaderResources(5, 3, pNullSRVs);
 
 	// Unbind pixel shader (depth-only rendering)
 	pContext->PSSetShader(nullptr, nullptr, 0);
 
-	// 동적으로 RasterizerState 생성 (DepthBias와 SlopeScaledDepthBias 적용)
-	D3D11_RASTERIZER_DESC ShadowRasterizerDesc = {};
-	ShadowRasterizerDesc.FillMode = D3D11_FILL_SOLID;
-	ShadowRasterizerDesc.CullMode = D3D11_CULL_BACK;
-	ShadowRasterizerDesc.DepthClipEnable = TRUE;
-	ShadowRasterizerDesc.DepthBias = static_cast<INT>(DepthBias * 100000.0f);
-	ShadowRasterizerDesc.SlopeScaledDepthBias = SlopeScaledDepthBias;
-	ShadowRasterizerDesc.DepthBiasClamp = 0.0f;
+	// RasterizerState 캐싱 (DepthBias 조합별로 재사용)
+	FRasterizerStateKey Key = { DepthBias, SlopeScaledDepthBias };
+	ID3D11RasterizerState* RasterizerState = nullptr;
 
-	ID3D11RasterizerState* DynamicShadowRasterizerState = nullptr;
-	RHI->GetDevice()->CreateRasterizerState(&ShadowRasterizerDesc, &DynamicShadowRasterizerState);
-	pContext->RSSetState(DynamicShadowRasterizerState);
-	if (DynamicShadowRasterizerState) DynamicShadowRasterizerState->Release();
+	// 캐시에서 찾기
+	auto it = CachedRasterizerStates.find(Key);
+	if (it != CachedRasterizerStates.end())
+	{
+		// 캐시에 있으면 재사용
+		RasterizerState = it->second;
+	}
+	else
+	{
+		// 캐시에 없으면 새로 생성하고 캐시에 저장
+		D3D11_RASTERIZER_DESC ShadowRasterizerDesc = {};
+		ShadowRasterizerDesc.FillMode = D3D11_FILL_SOLID;
+		ShadowRasterizerDesc.CullMode = D3D11_CULL_BACK;
+		ShadowRasterizerDesc.DepthClipEnable = TRUE;
+		ShadowRasterizerDesc.DepthBias = static_cast<INT>(DepthBias * 100000.0f);
+		ShadowRasterizerDesc.SlopeScaledDepthBias = SlopeScaledDepthBias;
+		ShadowRasterizerDesc.DepthBiasClamp = 0.0f;
+
+		RHI->GetDevice()->CreateRasterizerState(&ShadowRasterizerDesc, &RasterizerState);
+		CachedRasterizerStates[Key] = RasterizerState;
+	}
+
+	pContext->RSSetState(RasterizerState);
 
 	// Set depth-stencil state for shadow rendering (depth write enabled, depth test enabled)
 	RHI->OMSetDepthStencilState(EComparisonFunc::LessEqual);

@@ -643,6 +643,8 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 	// DirectionalLightComponent인 경우 ShadowMap 표시
 	else if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(SelectedComponent))
 	{
+		FShadowManager* ShadowManager = GWorld->GetShadowManager();
+
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Text("[Shadow Map]");
@@ -698,15 +700,15 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 
 				ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
 
-				if (ShadowSRV)
-				{
-					ImGui::Spacing();
+			if (ShadowSRV)
+			{
+				ImGui::Spacing();
 
-					// ShadowMap 크기 조절 (입력 가능한 슬라이더)
-					static float DirectionalShadowMapDisplaySize = 256.0f;
-					ImGui::SetNextItemWidth(200.0f);
-					ImGui::DragFloat("Display Size##Directional", &DirectionalShadowMapDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
-					ImGui::Spacing();
+				// ShadowMap 크기 조절 (입력 가능한 슬라이더)
+				static float DirectionalShadowMapDisplaySize = 256.0f;
+				ImGui::SetNextItemWidth(200.0f);
+				ImGui::DragFloat("Display Size##Directional", &DirectionalShadowMapDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
+				ImGui::Spacing();
 
 					// ShadowMap 이미지 표시
 					ImGui::Image(

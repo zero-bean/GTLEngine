@@ -140,8 +140,10 @@ float CalculateExponentFalloff(float distance, float attenuationRadius, float fa
  *
  * @param shadowMapIndex - Index into shadow map array
  * @param lightSpacePos - Position in light's clip space
+ * @param worldNormal - World space normal for slope-scaled bias
+ * @param lightDir - Light direction for slope calculation
  */
-float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
+float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3 worldNormal, float3 lightDir)
 {
     // Perspective divide to get NDC coordinates
     float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
@@ -162,10 +164,13 @@ float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     // Current depth in light space
     float currentDepth = projCoords.z;
 
-    // Bias to prevent shadow acne
-    //float bias = 0.00001f;
-    //currentDepth -= bias;
-    
+    // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
+    // 빛과 평행한 표면(NdotL=1.0): 최소 bias
+    // 빛과 수직에 가까운 표면(NdotL=0.0): 최대 bias
+    float NdotL = saturate(dot(worldNormal, lightDir));
+    float bias = lerp(0.00001f, 0.00005f, NdotL);
+    currentDepth -= bias;
+
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
     float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
     float shadow = g_SpotLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
@@ -179,8 +184,10 @@ float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
  *
  * @param shadowMapIndex - Index into shadow map array
  * @param lightSpacePos - Position in light's clip space
+ * @param worldNormal - World space normal for slope-scaled bias
+ * @param lightDir - Light direction for slope calculation
  */
-float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
+float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3 worldNormal, float3 lightDir)
 {
     // Perspective divide to get NDC coordinates
     float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
@@ -201,9 +208,12 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
     // Current depth in light space
     float currentDepth = projCoords.z;
 
-    // Bias to prevent shadow acne (can be adjusted for directional lights)
-    //float bias = 0.005f;
-    //currentDepth -= bias;
+    // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
+    // 빛과 평행한 표면(NdotL=1.0): 최소 bias
+    // 빛과 수직에 가까운 표면(NdotL=0.0): 최대 bias
+    float NdotL = saturate(dot(worldNormal, lightDir));
+    float bias = lerp(0.00001f, 0.00005f, NdotL);
+    currentDepth -= bias;
 
     // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
     float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
@@ -218,11 +228,13 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos)
  *
  * @param light - Point light information (includes 6 VP matrices)
  * @param worldPos - World position
+ * @param worldNormal - World space normal for slope-scaled bias
  */
-float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos)
+float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos, float3 worldNormal)
 {
     // 1. 라이트에서 픽셀로의 방향 벡터 계산
     float3 lightToPixel = worldPos - light.Position;
+    float3 lightDir = normalize(-lightToPixel); // 픽셀에서 라이트로의 방향
 
     // 2. 방향에 따라 큐브맵 면 선택 (0-5)
     // Cube Map Face 순서: +X(0), -X(1), +Y(2), -Y(3), +Z(4), -Z(5)
@@ -267,9 +279,12 @@ float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos)
     // 7. Current depth in light space
     float currentDepth = projCoords.z;
 
-    // 8. Bias to prevent shadow acne
-    //float bias = 0.005f;
-    //currentDepth -= bias;
+    // 8. Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
+    // 빛과 평행한 표면(NdotL=1.0): 최소 bias
+    // 빛과 수직에 가까운 표면(NdotL=0.0): 최대 bias
+    float NdotL = saturate(dot(worldNormal, lightDir));
+    float bias = lerp(0.00001f, 0.00005f, NdotL);
+    currentDepth -= bias;
 
     // 9. Use comparison sampler for hardware PCF
     // TextureCubeArray 샘플링: direction + array index 사용
@@ -283,7 +298,7 @@ float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos)
 // 통합 조명 계산 함수
 //================================================================================================
 
-// Directional Light 계산 (Diffuse + Specular + Shadow)
+// Directional Light 계산 (Diffuse + Specular + CSM Shadow)
 float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, float3 normal, float3 viewDir, float4 materialColor, bool includeSpecular, float specularPower)
 {
     // Light.Direction이 영벡터인 경우, 정규화 문제 방지
@@ -298,9 +313,33 @@ float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, f
     float shadow = 1.0f;
     if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
     {
-        // Transform world position to light space
-        float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.LightViewProjection);
-        shadow = SampleDirectionalLightShadowMap(light.ShadowMapIndex, lightSpacePos);
+        if (light.bUseCSM)
+        {
+            // CSM: 뷰 공간 깊이 기준으로 캐스케이드 선택
+            float3 viewSpacePos = mul(float4(worldPos, 1.0f), ViewMatrix).xyz;
+            float viewDepth = abs(viewSpacePos.z); // 카메라로부터의 거리
+
+            // 캐스케이드 선택 (NumCascades만큼 동적으로)
+            int cascadeIndex = 0;
+            for (int i = 0; i < (int)light.NumCascades - 1; i++)
+            {
+                if (viewDepth > light.CascadeSplitDistances[i])
+                    cascadeIndex = i + 1;
+            }
+
+            // 선택된 캐스케이드의 VP 행렬로 라이트 공간 변환
+            float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.CascadeViewProjection[cascadeIndex]);
+
+            // 섀도우 맵 배열 인덱스 계산: base + cascadeIndex
+            uint shadowMapIndex = light.ShadowMapIndex + cascadeIndex;
+            shadow = SampleDirectionalLightShadowMap(shadowMapIndex, lightSpacePos, normal, lightDir);
+        }
+        else
+        {
+            // Default: 단일 쉐도우 맵 사용 (카메라 프러스텀 전체)
+            float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.LightViewProjection);
+            shadow = SampleDirectionalLightShadowMap(light.ShadowMapIndex, lightSpacePos, normal, lightDir);
+        }
     }
 
     // Diffuse (light.Color는 이미 Intensity 포함)
@@ -344,7 +383,7 @@ float3 CalculatePointLight(FPointLightInfo light, float3 worldPos, float3 normal
     if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
     {
         // LightViewProjection 기반 Shadow 샘플링
-        shadow = SamplePointLightShadowMap(light, worldPos);
+        shadow = SamplePointLightShadowMap(light, worldPos, normal);
     }
 
     // Diffuse (light.Color는 이미 Intensity 포함)
@@ -402,7 +441,7 @@ float3 CalculateSpotLight(FSpotLightInfo light, float3 worldPos, float3 normal, 
     {
         // Transform world position to light space
         float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.LightViewProjection);
-        shadow = SampleSpotLightShadowMap(light.ShadowMapIndex, lightSpacePos);
+        shadow = SampleSpotLightShadowMap(light.ShadowMapIndex, lightSpacePos, normal, lightDir);
     }
 
     // Diffuse (light.Color는 이미 Intensity 포함)

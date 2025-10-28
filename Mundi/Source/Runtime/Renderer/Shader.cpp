@@ -35,7 +35,9 @@ static bool CompileShaderInternal(
 			// wstring을 UTF-8로 안전하게 변환 (한글 경로 지원)
 			std::string NarrowPath = WideToUTF8(InFilePath);
 
-			UE_LOG("Shader '%s' compile error: %s", NarrowPath.c_str(), Msg);
+			// Msg에 %가 포함될 수 있으므로 직접 출력 (포맷 문자열로 해석되지 않도록)
+			std::string ErrorMessage = "Shader '" + NarrowPath + "' compile error: " + std::string(Msg);
+			UE_LOG("%s", ErrorMessage.c_str());
 			ErrorBlob->Release();
 		}
 		if (*OutBlob) { (*OutBlob)->Release(); }

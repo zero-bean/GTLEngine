@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ShadowManager.h"
 #include "ShadowViewProjection.h"
 #include "SpotLightComponent.h"
@@ -23,7 +23,13 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 
 	// Shadow Map Array 초기화 (광원 타입별로 각각의 해상도 사용)
 	SpotLightShadowMap.Initialize(RHI, Config.SpotLightResolution, Config.SpotLightResolution, Config.MaxSpotLights);
-	DirectionalLightShadowMap.Initialize(RHI, Config.DirectionalLightResolution, Config.DirectionalLightResolution, Config.MaxDirectionalLights);
+
+	// DirectionalLight는 CSM을 사용할 수 있으므로 최대 6개 캐스케이드를 지원하도록 할당
+	// (각 라이트가 CSM을 사용할지는 런타임에 DirectionalLightComponent의 ShadowMapType으로 결정)
+	constexpr uint32 MaxCascadesPerLight = 6;
+	uint32 DirectionalArraySize = Config.MaxDirectionalLights * MaxCascadesPerLight;
+	DirectionalLightShadowMap.Initialize(RHI, Config.DirectionalLightResolution, Config.DirectionalLightResolution, DirectionalArraySize);
+
 	PointLightCubeShadowMap.Initialize(RHI, Config.PointLightResolution, Config.PointLightResolution, Config.MaxPointLights, true);
 
 	bIsInitialized = true;
@@ -186,7 +192,7 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 	// 광원별 해상도
 	Stats.DirectionalLightResolution = DirectionalLightShadowMap.GetWidth();
 	Stats.SpotLightResolution = SpotLightShadowMap.GetWidth();
-	Stats.PointLightResolution = 0; // TODO: PointLight 쉐도우 맵 구현 시 추가
+	Stats.PointLightResolution = PointLightCubeShadowMap.GetWidth();
 
 	// 실제 쉐도우 캐스팅 라이트 수
 	Stats.DirectionalLightCount = DirectionalLightCount;
@@ -201,7 +207,7 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 	// 각 쉐도우 맵의 실제 사용 중인 메모리 계산 (활성 라이트 수 기반)
 	Stats.DirectionalLightUsedBytes = DirectionalLightShadowMap.GetUsedMemoryBytes(DirectionalLightCount);
 	Stats.SpotLightUsedBytes = SpotLightShadowMap.GetUsedMemoryBytes(SpotLightCount);
-	Stats.PointLightUsedBytes = PointLightCubeShadowMap.GetWidth();
+	Stats.PointLightUsedBytes = PointLightCubeShadowMap.GetUsedMemoryBytes(PointLightCount * 6); // 큐브맵이므로 6개 면
 
 	// 총 할당된 메모리
 	Stats.TotalAllocatedBytes = Stats.DirectionalLightAllocatedBytes + Stats.SpotLightAllocatedBytes + Stats.PointLightAllocatedBytes;
@@ -272,6 +278,89 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent
 	DirectionalLightShadowMap.BeginRender(RHI, Index, OutContext.ShadowBias, OutContext.ShadowSlopeBias);
 
 	return true;
+}
+
+bool FShadowManager::BeginShadowRenderCSM(D3D11RHI* RHI, UDirectionalLightComponent* Light,
+	const FMatrix& CameraView, const FMatrix& CameraProjection,
+	int CascadeIndex, float SplitNear, float SplitFar, FShadowRenderContext& OutContext)
+{
+	// DirectionalLight의 NumCascades 가져오기
+	const int32 NumCascades = Light->GetNumCascades();
+
+	// 캐스케이드 인덱스 유효성 검사
+	if (CascadeIndex < 0 || CascadeIndex >= NumCascades)
+	{
+		return false;
+	}
+
+	// 라이트의 Shadow Map Index 확인
+	int32 LightShadowIndex = Light->GetShadowMapIndex();
+	if (LightShadowIndex < 0)
+	{
+		return false;
+	}
+
+	// 1. 부분 Frustum 코너 계산
+	TArray<FVector> CascadeFrustumCorners;
+	GetFrustumCornersWorldSpace_Partial(
+		CameraView,
+		CameraProjection,
+		SplitNear,
+		SplitFar,
+		CascadeFrustumCorners);
+
+	// 2. Light VP 계산 (새로운 FromCorners 버전 사용)
+	FShadowViewProjection ShadowVP = FShadowViewProjection::CreateForDirectionalLight_FromCorners(
+		Light->GetLightDirection(),
+		CascadeFrustumCorners);
+
+	// 3. Texture Array Index 계산: (LightIndex * MaxCascades) + CascadeIndex
+	// 최대 6개 캐스케이드를 지원하도록 할당했으므로, MaxCascades = 6 사용
+	constexpr int32 MaxCascades = 6;
+	int32 ArrayIndex = LightShadowIndex * MaxCascades + CascadeIndex;
+
+	// 4. 출력 컨텍스트 설정
+	OutContext.LightView = ShadowVP.View;
+	OutContext.LightProjection = ShadowVP.Projection;
+	OutContext.ShadowMapIndex = ArrayIndex;
+	OutContext.ShadowBias = Light->GetShadowBias();
+	OutContext.ShadowSlopeBias = Light->GetShadowSlopeBias();
+
+	// 5. Light Component에 VP 저장
+	Light->SetCascadeViewProjection(CascadeIndex, ShadowVP.ViewProjection);
+	Light->SetCascadeSplitDistance(CascadeIndex, SplitFar);
+
+	// 6. Shadow Map 렌더링 시작
+	DirectionalLightShadowMap.BeginRender(
+		RHI,
+		ArrayIndex,
+		OutContext.ShadowBias,
+		OutContext.ShadowSlopeBias);
+
+	return true;
+}
+
+TArray<float> FShadowManager::CalculateCSMSplits(float CameraNear, float CameraFar, int NumCascades, float Lambda) const
+{
+	TArray<float> Splits;
+	Splits.Reserve(NumCascades);
+
+	for (int i = 0; i < NumCascades; ++i)
+	{
+		float p = (i + 1) / (float)NumCascades;
+
+		// 로그 분할
+		float LogSplit = CameraNear * pow(CameraFar / CameraNear, p);
+
+		// 선형 분할
+		float LinearSplit = CameraNear + (CameraFar - CameraNear) * p;
+
+		// PSSM 혼합
+		float Split = Lambda * LogSplit + (1.0f - Lambda) * LinearSplit;
+		Splits.Add(Split);
+	}
+
+	return Splits;
 }
 
 bool FShadowManager::BeginShadowRenderCube(D3D11RHI* RHI, UPointLightComponent* Light, uint32 CubeFaceIndex, const FShadowViewProjection& ShadowVP, FShadowRenderContext& OutContext)

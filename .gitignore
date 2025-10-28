@@ -481,3 +481,4 @@ Document/*
 # Untracked Data Files
 /Mundi/Data/untracked/**
 /Mundi/DerivedDataCache/**
+.claude/agents/project-optimizer.md

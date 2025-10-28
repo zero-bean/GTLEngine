@@ -2,6 +2,13 @@
 #include "LightComponent.h"
 #include "LightManager.h"
 
+// 방향광 쉐도우맵 타입
+enum class EShadowMapType : uint8
+{
+	Default = 0,  // 일반 쉐도우맵
+	CSM = 1       // Cascaded Shadow Maps
+};
+
 // 방향성 라이트 (태양광 같은 평행광)
 class UDirectionalLightComponent : public ULightComponent
 {
@@ -23,6 +30,42 @@ public:
 	void SetLightViewProjection(const FMatrix& InViewProjection) { CachedLightViewProjection = InViewProjection; }
 	const FMatrix& GetLightViewProjection() const { return CachedLightViewProjection; }
 
+	// CSM (Cascaded Shadow Maps) Data
+	void SetCascadeViewProjection(int CascadeIndex, const FMatrix& VP)
+	{
+		if (CascadeIndex >= 0 && CascadeIndex < 4)
+		{
+			CascadeViewProjections[CascadeIndex] = VP;
+		}
+	}
+
+	const FMatrix& GetCascadeViewProjection(int CascadeIndex) const
+	{
+		static FMatrix Identity = FMatrix::Identity();
+		if (CascadeIndex >= 0 && CascadeIndex < 4)
+		{
+			return CascadeViewProjections[CascadeIndex];
+		}
+		return Identity;
+	}
+
+	void SetCascadeSplitDistance(int CascadeIndex, float Distance)
+	{
+		if (CascadeIndex >= 0 && CascadeIndex < 4)
+		{
+			CascadeSplitDistances[CascadeIndex] = Distance;
+		}
+	}
+
+	float GetCascadeSplitDistance(int CascadeIndex) const
+	{
+		if (CascadeIndex >= 0 && CascadeIndex < 4)
+		{
+			return CascadeSplitDistances[CascadeIndex];
+		}
+		return 0.0f;
+	}
+
 	// Virtual Interface
 	void OnRegister(UWorld* InWorld) override;
 	void OnUnregister() override;
@@ -37,10 +80,37 @@ public:
 	// Update Gizmo to match light properties
 	void UpdateDirectionGizmo();
 
+	// Shadow Map Type Getter/Setter
+	EShadowMapType GetShadowMapType() const { return ShadowMapType; }
+	void SetShadowMapType(EShadowMapType Type) { ShadowMapType = Type; }
+
+	// CSM Configuration Getter/Setter
+	int32 GetNumCascades() const { return NumCascades; }
+	void SetNumCascades(int32 Num) { NumCascades = Num; }
+
+	float GetCSMLambda() const { return CSMLambda; }
+	void SetCSMLambda(float Lambda) { CSMLambda = Lambda; }
+
 protected:
 	// Direction Gizmo (shows light direction)
 	class UGizmoArrowComponent* DirectionGizmo = nullptr;
 
 	// Cached LightViewProjection matrix (updated by ShadowManager)
 	FMatrix CachedLightViewProjection = FMatrix::Identity();
+
+	// CSM Data (4 cascades)
+	FMatrix CascadeViewProjections[4] = {
+		FMatrix::Identity(),
+		FMatrix::Identity(),
+		FMatrix::Identity(),
+		FMatrix::Identity()
+	};
+	float CascadeSplitDistances[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// Shadow Map Type (Default or CSM)
+	EShadowMapType ShadowMapType = EShadowMapType::CSM;
+
+	// CSM Configuration (only visible when ShadowMapType == CSM)
+	int32 NumCascades = 3;
+	float CSMLambda = 0.5f;
 };
