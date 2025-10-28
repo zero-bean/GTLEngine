@@ -251,6 +251,9 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 
 	// 통계 매니저에 업데이트
 	FShadowStatManager::GetInstance().UpdateStats(Stats);
+
+	// 활성 라이트들의 평균 ShadowSharpen 계산 및 캐시
+	CachedAverageShadowSharpen = CalculateAverageShadowSharpen(InLights);
 }
 
 bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, USpotLightComponent* Light, FShadowRenderContext& OutContext)
@@ -499,4 +502,82 @@ UShader* FShadowManager::GetShadowPixelShaderForFilterType(EShadowFilterType Fil
 	default:
 		return nullptr;  // Depth-only rendering (픽셀 쉐이더 불필요)
 	}
+}
+
+void FShadowManager::UpdateShadowFilterBuffer(D3D11RHI* RHI)
+{
+	// ShadowSharpen 값으로 VSM 파라미터 동적 계산 (0.0 ~ 4.0 -> 0.0 ~ 1.0)
+	float normalizedSharpen = FMath::Clamp(CachedAverageShadowSharpen / 4.0f, 0.0f, 1.0f);
+
+	// 비선형 매핑: 중간값에서 더 부드러운 조정
+	float adjustedSharpen = pow(normalizedSharpen, 0.8f);
+
+	// VSM 파라미터 계산
+	float dynamicLightBleedingReduction = FMath::Clamp(adjustedSharpen, 0.0f, 1.0f);
+	float dynamicMinVariance = FMath::Lerp(0.001f, 0.00001f, normalizedSharpen);
+
+	// 섀도우 필터링 설정을 상수 버퍼에 업데이트
+	FShadowFilterBufferType ShadowFilterBuffer;
+	ShadowFilterBuffer.FilterType = static_cast<uint32>(Config.FilterType);
+	ShadowFilterBuffer.PCFSampleCount = static_cast<uint32>(Config.PCFSampleCount);
+	ShadowFilterBuffer.PCFCustomSampleCount = Config.PCFCustomSampleCount;
+	ShadowFilterBuffer.DirectionalLightResolution = static_cast<float>(Config.DirectionalLightResolution);
+	ShadowFilterBuffer.SpotLightResolution = static_cast<float>(Config.SpotLightResolution);
+	ShadowFilterBuffer.PointLightResolution = static_cast<float>(Config.PointLightResolution);
+
+	// 동적으로 계산된 VSM 파라미터 사용
+	ShadowFilterBuffer.VSMLightBleedingReduction = dynamicLightBleedingReduction;
+	ShadowFilterBuffer.VSMMinVariance = dynamicMinVariance;
+
+	ShadowFilterBuffer.ESMExponent = Config.ESMExponent;
+	ShadowFilterBuffer.EVSMPositiveExponent = Config.EVSMPositiveExponent;
+	ShadowFilterBuffer.EVSMNegativeExponent = Config.EVSMNegativeExponent;
+	ShadowFilterBuffer.EVSMLightBleedingReduction = Config.EVSMLightBleedingReduction;
+
+	RHI->SetAndUpdateConstantBuffer(ShadowFilterBuffer);
+}
+
+float FShadowManager::CalculateAverageShadowSharpen(const FShadowCastingLights& Lights) const
+{
+	float TotalSharpen = 0.0f;
+	uint32 ValidLightCount = 0;
+
+	// DirectionalLight
+	for (UDirectionalLightComponent* Light : Lights.DirectionalLights)
+	{
+		if (Light && Light->IsVisible() &&
+			Light->GetOwner()->IsActorVisible() &&
+			Light->GetIsCastShadows())
+		{
+			TotalSharpen += Light->GetShadowSharpen();
+			ValidLightCount++;
+		}
+	}
+
+	// SpotLight
+	for (USpotLightComponent* Light : Lights.SpotLights)
+	{
+		if (Light && Light->IsVisible() &&
+			Light->GetOwner()->IsActorVisible() &&
+			Light->GetIsCastShadows())
+		{
+			TotalSharpen += Light->GetShadowSharpen();
+			ValidLightCount++;
+		}
+	}
+
+	// PointLight
+	for (UPointLightComponent* Light : Lights.PointLights)
+	{
+		if (Light && Light->IsVisible() &&
+			Light->GetOwner()->IsActorVisible() &&
+			Light->GetIsCastShadows())
+		{
+			TotalSharpen += Light->GetShadowSharpen();
+			ValidLightCount++;
+		}
+	}
+
+	// 평균값 반환 (라이트가 없으면 기본값 1.0f)
+	return ValidLightCount > 0 ? (TotalSharpen / ValidLightCount) : 1.0f;
 }
