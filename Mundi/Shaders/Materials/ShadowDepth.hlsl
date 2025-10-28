@@ -25,6 +25,7 @@ struct VS_INPUT
 struct PS_INPUT
 {
     float4 Position : SV_POSITION;
+    float Depth : TEXCOORD0;
 };
 
 //-----------------------------------------------------------------------------
@@ -42,7 +43,8 @@ PS_INPUT mainVS(VS_INPUT input)
 
     // Transform to light's clip space
     output.Position = mul(viewPos, ProjectionMatrix);
-
+    output.Depth = output.Position.z / output.Position.w;
+    
     return output;
 }
 

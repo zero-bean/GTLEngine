@@ -89,6 +89,24 @@ void FSceneRenderer::Render()
 		GWorld->GetLightManager()->SetDirtyFlag();
 		GWorld->GetLightManager()->UpdateLightBuffer(RHIDevice);	// 라이트 구조체 버퍼 업데이트, 바인딩
 		GWorld->GetShadowManager()->BindShadowResources(RHIDevice);	// 섀도우 맵 텍스처 바인딩 (t5)
+
+		// 섀도우 필터링 설정 업데이트 (쉐도우 매니저로 옮겨야함)
+		const FShadowConfiguration& ShadowConfig = GWorld->GetShadowManager()->GetShadowConfiguration();
+		FShadowFilterBufferType ShadowFilterBuffer;
+		ShadowFilterBuffer.FilterType = static_cast<uint32>(ShadowConfig.FilterType);
+		ShadowFilterBuffer.PCFSampleCount = static_cast<uint32>(ShadowConfig.PCFSampleCount);
+		ShadowFilterBuffer.PCFCustomSampleCount = ShadowConfig.PCFCustomSampleCount;
+		ShadowFilterBuffer.DirectionalLightResolution = static_cast<float>(ShadowConfig.DirectionalLightResolution);
+		ShadowFilterBuffer.SpotLightResolution = static_cast<float>(ShadowConfig.SpotLightResolution);
+		ShadowFilterBuffer.PointLightResolution = static_cast<float>(ShadowConfig.PointLightResolution);
+		ShadowFilterBuffer.VSMLightBleedingReduction = ShadowConfig.VSMLightBleedingReduction;
+		ShadowFilterBuffer.VSMMinVariance = ShadowConfig.VSMMinVariance;
+		ShadowFilterBuffer.ESMExponent = ShadowConfig.ESMExponent;
+		ShadowFilterBuffer.EVSMPositiveExponent = ShadowConfig.EVSMPositiveExponent;
+		ShadowFilterBuffer.EVSMNegativeExponent = ShadowConfig.EVSMNegativeExponent;
+		ShadowFilterBuffer.EVSMLightBleedingReduction = ShadowConfig.EVSMLightBleedingReduction;
+		RHIDevice->SetAndUpdateConstantBuffer(ShadowFilterBuffer);
+
 		PerformTileLightCulling();	// 타일 기반 라이트 컬링 수행
 
 		// 3. 메인 렌더링
@@ -498,11 +516,14 @@ void FSceneRenderer::RenderShadowPass()
 		return;
 	}
 
-	// Step 3: 렌더 상태 저장 (RAII 패턴)
+	// Step 3: 섀도우 필터 타입 가져오기
+	EShadowFilterType FilterType = GWorld->GetShadowManager()->GetShadowConfiguration().FilterType;
+
+	// Step 4: 렌더 상태 저장 (RAII 패턴)
 	FSavedRenderState SavedState;
 	SavedState.Save(RHIDevice);
 
-	// Step 4: 라이트 타입별 섀도우 렌더링
+	// Step 5: 라이트 타입별 섀도우 렌더링
 	RenderDirectionalLightShadows(ShadowShaderVariant);
 	RenderSpotLightShadows(ShadowShaderVariant);
 	RenderPointLightShadows(ShadowShaderVariant);
@@ -526,13 +547,21 @@ void FSceneRenderer::CollectShadowMeshBatches(TArray<FMeshBatchElement>& OutMesh
 	}
 }
 
-void FSceneRenderer::OverrideShadowShader(TArray<FMeshBatchElement>& MeshBatches, FShaderVariant* ShadowShaderVariant)
+void FSceneRenderer::OverrideShadowShader(TArray<FMeshBatchElement>& MeshBatches, FShaderVariant* ShadowShaderVariant, EShadowFilterType FilterType)
 {
+	// VS는 항상 ShadowDepthShader의 VS 사용
+	ID3D11VertexShader* VS = ShadowShaderVariant->VertexShader;
+	ID3D11InputLayout* IL = ShadowShaderVariant->InputLayout;
+
+	// PS는 필터 타입에 따라 선택
+	UShader* PSShader = GWorld->GetShadowManager()->GetShadowPixelShaderForFilterType(FilterType);
+	ID3D11PixelShader* PS = PSShader ? PSShader->GetPixelShader() : nullptr;  // NONE/PCF는 nullptr
+
 	for (FMeshBatchElement& BatchElement : MeshBatches)
 	{
-		BatchElement.VertexShader = ShadowShaderVariant->VertexShader;
-		BatchElement.PixelShader = ShadowShaderVariant->PixelShader;
-		BatchElement.InputLayout = ShadowShaderVariant->InputLayout;
+		BatchElement.VertexShader = VS;
+		BatchElement.PixelShader = PS;
+		BatchElement.InputLayout = IL;
 	}
 }
 
@@ -604,7 +633,7 @@ void FSceneRenderer::RenderDirectionalLightShadows(FShaderVariant* ShadowShaderV
 				CollectShadowMeshBatches(ShadowMeshBatches);
 
 				// 셰이더 오버라이드
-				OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
+				OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant, ShadowConfig.FilterType);
 
 				// 그리기
 				DrawMeshBatches(ShadowMeshBatches, true, true);
@@ -632,7 +661,7 @@ void FSceneRenderer::RenderDirectionalLightShadows(FShaderVariant* ShadowShaderV
 			CollectShadowMeshBatches(ShadowMeshBatches);
 
 			// 셰이더 오버라이드
-			OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
+			OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant, ShadowConfig.FilterType);
 
 			// 그리기
 			DrawMeshBatches(ShadowMeshBatches, true, true);
@@ -645,6 +674,9 @@ void FSceneRenderer::RenderDirectionalLightShadows(FShaderVariant* ShadowShaderV
 
 void FSceneRenderer::RenderSpotLightShadows(FShaderVariant* ShadowShaderVariant)
 {
+	FShadowManager* ShadowManager = GWorld->GetShadowManager();
+	const FShadowConfiguration& ShadowConfig = ShadowManager->GetShadowConfiguration();
+
 	for (USpotLightComponent* SpotLight : SceneLocals.SpotLights)
 	{
 		// 유효성 검사
@@ -653,7 +685,7 @@ void FSceneRenderer::RenderSpotLightShadows(FShaderVariant* ShadowShaderVariant)
 
 		// ShadowManager에게 섀도우 맵 렌더 시작 요청
 		FShadowRenderContext ShadowContext;
-		if (!GWorld->GetShadowManager()->BeginShadowRender(RHIDevice, SpotLight, ShadowContext))
+		if (!ShadowManager->BeginShadowRender(RHIDevice, SpotLight, ShadowContext))
 			continue;
 
 		// ViewProj 버퍼 업데이트 (Perspective)
@@ -664,7 +696,7 @@ void FSceneRenderer::RenderSpotLightShadows(FShaderVariant* ShadowShaderVariant)
 		CollectShadowMeshBatches(ShadowMeshBatches);
 
 		// 셰이더 오버라이드
-		OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
+		OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant, ShadowConfig.FilterType);
 
 		// 그리기
 		DrawMeshBatches(ShadowMeshBatches, true, true);
@@ -676,6 +708,9 @@ void FSceneRenderer::RenderSpotLightShadows(FShaderVariant* ShadowShaderVariant)
 
 void FSceneRenderer::RenderPointLightShadows(FShaderVariant* ShadowShaderVariant)
 {
+	FShadowManager* ShadowManager = GWorld->GetShadowManager();
+	const FShadowConfiguration& ShadowConfig = ShadowManager->GetShadowConfiguration();
+
 	for (UPointLightComponent* PointLight : SceneLocals.PointLights)
 	{
 		// 유효성 검사
@@ -697,7 +732,7 @@ void FSceneRenderer::RenderPointLightShadows(FShaderVariant* ShadowShaderVariant
 		{
 			// ShadowManager에게 섀도우 맵 렌더 시작 요청
 			FShadowRenderContext ShadowContext;
-			if (!GWorld->GetShadowManager()->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, CubeShadowVPs[CubeFaceIdx], ShadowContext))
+			if (!ShadowManager->BeginShadowRenderCube(RHIDevice, PointLight, CubeFaceIdx, CubeShadowVPs[CubeFaceIdx], ShadowContext))
 				continue;
 
 			// ViewProj 버퍼 업데이트 (Perspective)
@@ -708,7 +743,7 @@ void FSceneRenderer::RenderPointLightShadows(FShaderVariant* ShadowShaderVariant
 			CollectShadowMeshBatches(ShadowMeshBatches);
 
 			// 셰이더 오버라이드
-			OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
+			OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant, ShadowConfig.FilterType);
 
 			// 그리기
 			DrawMeshBatches(ShadowMeshBatches, true, true);

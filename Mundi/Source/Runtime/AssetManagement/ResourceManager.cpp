@@ -477,6 +477,16 @@ void UResourceManager::InitShaderILMap()
     ShaderToInputLayoutMap["Shaders/Materials/ShadowDepth.hlsl"] = layout;
     layout.clear();
 
+    // ────────────────────────────────
+    // VSM/ESM/EVSM Shadow Shaders (POSITION only)
+    // ────────────────────────────────
+    layout.Add({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+    ShaderToInputLayoutMap["Shaders/Common/ShadowVSM_VS.hlsl"] = layout;
+    ShaderToInputLayoutMap["Shaders/Common/ShadowVSM_PS.hlsl"] = layout;
+    ShaderToInputLayoutMap["Shaders/Common/ShadowESM_PS.hlsl"] = layout;
+    ShaderToInputLayoutMap["Shaders/Common/ShadowEVSM_PS.hlsl"] = layout;
+    layout.clear();
+
     layout.Add({ "WORLDPOSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 });
     layout.Add({ "SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 });
     layout.Add({ "UVRECT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 });

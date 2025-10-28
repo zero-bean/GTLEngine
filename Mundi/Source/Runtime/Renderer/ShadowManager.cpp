@@ -5,9 +5,14 @@
 #include "DirectionalLightComponent.h"
 #include "PointLightComponent.h"
 #include "D3D11RHI.h"
+#include "ResourceManager.h"
+#include "Shader.h"
 
 FShadowManager::FShadowManager()
 	: RHIDevice(nullptr)
+	, ShadowVSM_PS(nullptr)
+	, ShadowESM_PS(nullptr)
+	, ShadowEVSM_PS(nullptr)
 {
 }
 
@@ -21,8 +26,8 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 	RHIDevice = RHI;
 	Config = InConfig;
 
-	// Shadow Map Array 초기화 (광원 타입별로 각각의 해상도 사용)
-	SpotLightShadowMap.Initialize(RHI, Config.SpotLightResolution, Config.SpotLightResolution, Config.MaxSpotLights);
+	// Shadow Map Array 초기화 (광원 타입별로 각각의 해상도 사용, 필터 타입 전달)
+	SpotLightShadowMap.Initialize(RHI, Config.SpotLightResolution, Config.SpotLightResolution, Config.MaxSpotLights, false, Config.FilterType);
 
 	// DirectionalLight는 CSM을 사용할 수 있으므로 최대 6개 캐스케이드를 지원하도록 할당
 	// (각 라이트가 CSM을 사용할지는 런타임에 DirectionalLightComponent의 ShadowMapType으로 결정)
@@ -30,7 +35,21 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 	uint32 DirectionalArraySize = Config.MaxDirectionalLights * MaxCascadesPerLight;
 	DirectionalLightShadowMap.Initialize(RHI, Config.DirectionalLightResolution, Config.DirectionalLightResolution, DirectionalArraySize);
 
-	PointLightCubeShadowMap.Initialize(RHI, Config.PointLightResolution, Config.PointLightResolution, Config.MaxPointLights, true);
+	PointLightCubeShadowMap.Initialize(RHI, Config.PointLightResolution, Config.PointLightResolution, Config.MaxPointLights, true, Config.FilterType);
+
+	// VSM/ESM/EVSM용 쉐이더 로드
+	if (!ShadowVSM_PS)
+	{
+		ShadowVSM_PS = UResourceManager::GetInstance().Load<UShader>("Shaders/Common/ShadowVSM_PS.hlsl");
+	}
+	if (!ShadowESM_PS)
+	{
+		ShadowESM_PS = UResourceManager::GetInstance().Load<UShader>("Shaders/Common/ShadowESM_PS.hlsl");
+	}
+	if (!ShadowEVSM_PS)
+	{
+		ShadowEVSM_PS = UResourceManager::GetInstance().Load<UShader>("Shaders/Common/ShadowEVSM_PS.hlsl");
+	}
 
 	bIsInitialized = true;
 }
@@ -90,6 +109,21 @@ void FShadowManager::SetPointLightResolution(uint32 NewResolution)
 
 	// 이미 초기화된 경우 재초기화
 	Config.PointLightResolution = NewResolution;
+	Release();
+	Initialize(RHIDevice, Config);
+}
+
+void FShadowManager::SetFilterType(EShadowFilterType NewFilterType)
+{
+	// 초기화되지 않았으면 설정만 변경
+	if (!bIsInitialized)
+	{
+		Config.FilterType = NewFilterType;
+		return;
+	}
+
+	// 이미 초기화된 경우 재초기화
+	Config.FilterType = NewFilterType;
 	Release();
 	Initialize(RHIDevice, Config);
 }
@@ -403,28 +437,42 @@ void FShadowManager::EndShadowRender(D3D11RHI* RHI)
 
 void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 {
-	// SpotLight Shadow Map Texture Array를 셰이더 슬롯 t5에 바인딩
 	ID3D11ShaderResourceView* SpotShadowMapSRV = SpotLightShadowMap.GetSRV();
-	RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &SpotShadowMapSRV);
-
-	// DirectionalLight Shadow Map Texture Array를 셰이더 슬롯 t6에 바인딩
 	ID3D11ShaderResourceView* DirShadowMapSRV = DirectionalLightShadowMap.GetSRV();
-	RHI->GetDeviceContext()->PSSetShaderResources(6, 1, &DirShadowMapSRV);
-
-	// PointLight Cube Shadow Map Texture Cube Array를 셰이더 슬롯 t7에 바인딩
 	ID3D11ShaderResourceView* PointCubeShadowMapSRV = PointLightCubeShadowMap.GetSRV();
-	RHI->GetDeviceContext()->PSSetShaderResources(7, 1, &PointCubeShadowMapSRV);
+
+	// FilterType에 따라 다른 슬롯에 바인딩
+	if (Config.FilterType == EShadowFilterType::NONE || Config.FilterType == EShadowFilterType::PCF)
+	{
+		// NONE/PCF: Depth 포맷 텍스처를 t5, t6, t7에 바인딩
+		RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &SpotShadowMapSRV);
+		RHI->GetDeviceContext()->PSSetShaderResources(6, 1, &DirShadowMapSRV);
+		RHI->GetDeviceContext()->PSSetShaderResources(7, 1, &PointCubeShadowMapSRV);
+	}
+	else // VSM, ESM, EVSM
+	{
+		// VSM/ESM/EVSM: Float 포맷 텍스처를 t8, t9, t10에 바인딩
+		RHI->GetDeviceContext()->PSSetShaderResources(8, 1, &SpotShadowMapSRV);
+		RHI->GetDeviceContext()->PSSetShaderResources(9, 1, &DirShadowMapSRV);
+		RHI->GetDeviceContext()->PSSetShaderResources(10, 1, &PointCubeShadowMapSRV);
+	}
 
 	// Shadow Comparison Sampler를 슬롯 s2에 바인딩
 	ID3D11SamplerState* ShadowSampler = RHI->GetShadowComparisonSamplerState();
 	RHI->GetDeviceContext()->PSSetSamplers(2, 1, &ShadowSampler);
+
+	// Linear Sampler를 슬롯 s3에 바인딩 (VSM/ESM/EVSM용)
+	ID3D11SamplerState* LinearSampler = RHI->GetLinearSamplerState();
+	RHI->GetDeviceContext()->PSSetSamplers(3, 1, &LinearSampler);
 }
 
 void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
 {
-	// Shadow Map 언바인딩 (t5, t6, t7 동시 해제)
-	ID3D11ShaderResourceView* NullSRVs[3] = { nullptr, nullptr, nullptr };
-	RHI->GetDeviceContext()->PSSetShaderResources(5, 3, NullSRVs);
+	// Shadow Map 언바인딩 (모든 슬롯 해제)
+	ID3D11ShaderResourceView* NullSRVs[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+	// t5~t10 모두 언바인딩 (NONE/PCF: t5,t6,t7 / VSM/ESM/EVSM: t8,t9,t10)
+	RHI->GetDeviceContext()->PSSetShaderResources(5, 6, NullSRVs);
 
 	// Shadow Sampler 언바인딩
 	ID3D11SamplerState* NullSampler = nullptr;
@@ -434,4 +482,21 @@ void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
 int32 FShadowManager::GetShadowMapIndex(USpotLightComponent* Light) const
 {
 	return Light ? Light->GetShadowMapIndex() : -1;
+}
+
+UShader* FShadowManager::GetShadowPixelShaderForFilterType(EShadowFilterType FilterType) const
+{
+	switch (FilterType)
+	{
+	case EShadowFilterType::VSM:
+		return ShadowVSM_PS;
+	case EShadowFilterType::ESM:
+		return ShadowESM_PS;
+	case EShadowFilterType::EVSM:
+		return ShadowEVSM_PS;
+	case EShadowFilterType::NONE:
+	case EShadowFilterType::PCF:
+	default:
+		return nullptr;  // Depth-only rendering (픽셀 쉐이더 불필요)
+	}
 }

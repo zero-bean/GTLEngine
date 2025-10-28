@@ -13,6 +13,7 @@
 #include "CameraActor.h"
 #include "StatsOverlayD2D.h"
 #include "ShadowManager.h"
+#include "ShadowConfiguration.h"
 
 extern float CLIENTWIDTH;
 extern float CLIENTHEIGHT;
@@ -2011,6 +2012,174 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 				ImGui::Text("현재: %d x %d", PointResolution, PointResolution);
 
 				ImGui::EndMenu();
+			}
+
+			// === 필터링 서브메뉴 ===
+			ImGui::Separator();
+			if (ImGui::BeginMenu("필터링"))
+			{
+				ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "필터링 타입");
+				ImGui::Separator();
+
+				if (World && World->GetShadowManager())
+				{
+					FShadowConfiguration& Config = const_cast<FShadowConfiguration&>(World->GetShadowManager()->GetShadowConfiguration());
+
+					// 필터링 타입 선택 (라디오 버튼)
+					int currentFilterType = static_cast<int>(Config.FilterType);
+
+					if (ImGui::RadioButton("NONE (필터링 없음)", &currentFilterType, static_cast<int>(EShadowFilterType::NONE)))
+					{
+						World->GetShadowManager()->SetFilterType(EShadowFilterType::NONE);
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("하드웨어 기본 비교 샘플링\n필터링 없음");
+					}
+
+					if (ImGui::RadioButton("PCF", &currentFilterType, static_cast<int>(EShadowFilterType::PCF)))
+					{
+						World->GetShadowManager()->SetFilterType(EShadowFilterType::PCF);
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Percentage Closer Filtering\n소프트웨어 기반 다중 샘플링");
+					}
+
+					if (ImGui::RadioButton("VSM", &currentFilterType, static_cast<int>(EShadowFilterType::VSM)))
+					{
+						World->GetShadowManager()->SetFilterType(EShadowFilterType::VSM);
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Variance Shadow Maps\n분산 기반 부드러운 그림자");
+					}
+
+					if (ImGui::RadioButton("ESM", &currentFilterType, static_cast<int>(EShadowFilterType::ESM)))
+					{
+						World->GetShadowManager()->SetFilterType(EShadowFilterType::ESM);
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Exponential Shadow Maps\n지수 기반 부드러운 그림자");
+					}
+
+					if (ImGui::RadioButton("EVSM", &currentFilterType, static_cast<int>(EShadowFilterType::EVSM)))
+					{
+						World->GetShadowManager()->SetFilterType(EShadowFilterType::EVSM);
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Exponential Variance Shadow Maps\nVSM + ESM 결합, 최고 품질");
+					}
+
+					// PCF 설정
+					if (Config.FilterType == EShadowFilterType::PCF)
+					{
+						ImGui::Separator();
+						ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "PCF 샘플 수");
+						ImGui::Separator();
+
+						int currentPCFSample = static_cast<int>(Config.PCFSampleCount);
+
+						if (ImGui::RadioButton("3x3 (9 샘플)", &currentPCFSample, static_cast<int>(EPCFSampleCount::PCF_3x3)))
+						{
+							Config.PCFSampleCount = EPCFSampleCount::PCF_3x3;
+						}
+
+						if (ImGui::RadioButton("4x4 (16 샘플)", &currentPCFSample, static_cast<int>(EPCFSampleCount::PCF_4x4)))
+						{
+							Config.PCFSampleCount = EPCFSampleCount::PCF_4x4;
+						}
+
+						if (ImGui::RadioButton("5x5 (25 샘플)", &currentPCFSample, static_cast<int>(EPCFSampleCount::PCF_5x5)))
+						{
+							Config.PCFSampleCount = EPCFSampleCount::PCF_5x5;
+						}
+
+						if (ImGui::RadioButton("Custom", &currentPCFSample, static_cast<int>(EPCFSampleCount::Custom)))
+						{
+							Config.PCFSampleCount = EPCFSampleCount::Custom;
+						}
+
+						// Custom 샘플 수 조절
+						if (Config.PCFSampleCount == EPCFSampleCount::Custom)
+						{
+							ImGui::Indent(20.0f);
+							ImGui::Text("샘플 수:");
+							int customSample = static_cast<int>(Config.PCFCustomSampleCount);
+							if (ImGui::SliderInt("##CustomPCFSample", &customSample, 2, 8))
+							{
+								Config.PCFCustomSampleCount = static_cast<uint32>(customSample);
+							}
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::SetTooltip("%dx%d (%d 샘플)", customSample, customSample, customSample * customSample);
+							}
+							ImGui::Unindent(20.0f);
+						}
+					}
+
+					// VSM 설정
+					if (Config.FilterType == EShadowFilterType::VSM)
+					{
+						ImGui::Separator();
+						ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "VSM 파라미터");
+						ImGui::Separator();
+
+						ImGui::Text("Light Bleeding Reduction");
+						ImGui::SliderFloat("##VSMLightBleed", &Config.VSMLightBleedingReduction, 0.0f, 1.0f, "%.2f");
+						if (ImGui::IsItemHovered())
+						{
+							ImGui::SetTooltip("Light bleeding 현상 감소 (0.0 ~ 1.0)");
+						}
+
+						ImGui::Text("Min Variance");
+						ImGui::SliderFloat("##VSMMinVar", &Config.VSMMinVariance, 0.00001f, 0.001f, "%.5f");
+						if (ImGui::IsItemHovered())
+						{
+							ImGui::SetTooltip("최소 분산 값");
+						}
+					}
+
+					// ESM 설정
+					if (Config.FilterType == EShadowFilterType::ESM)
+					{
+						ImGui::Separator();
+						ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "ESM 파라미터");
+						ImGui::Separator();
+
+						ImGui::Text("Exponent");
+						ImGui::SliderFloat("##ESMExp", &Config.ESMExponent, 40.0f, 100.0f, "%.1f");
+						if (ImGui::IsItemHovered())
+						{
+							ImGui::SetTooltip("ESM 지수 계수 (40.0 ~ 100.0)");
+						}
+					}
+
+					// EVSM 설정
+					if (Config.FilterType == EShadowFilterType::EVSM)
+					{
+						ImGui::Separator();
+						ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "EVSM 파라미터");
+						ImGui::Separator();
+
+						ImGui::Text("Positive Exponent");
+						ImGui::SliderFloat("##EVSMPosExp", &Config.EVSMPositiveExponent, 20.0f, 80.0f, "%.1f");
+
+						ImGui::Text("Negative Exponent");
+						ImGui::SliderFloat("##EVSMNegExp", &Config.EVSMNegativeExponent, 20.0f, 80.0f, "%.1f");
+
+						ImGui::Text("Light Bleeding Reduction");
+						ImGui::SliderFloat("##EVSMLightBleed", &Config.EVSMLightBleedingReduction, 0.0f, 1.0f, "%.2f");
+					}
+				}
+
+				ImGui::EndMenu();
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("섀도우 필터링 타입 및 파라미터 설정");
 			}
 
 			ImGui::EndMenu();

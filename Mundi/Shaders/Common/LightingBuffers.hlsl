@@ -41,8 +41,21 @@ Texture2DArray g_DirectionalLightShadowMaps : register(t6);
 // t7: PointLight Cube Shadow map texture cube array
 TextureCubeArray g_PointLightShadowCubeMaps : register(t7);
 
-// Shadow map sampler - comparison sampler for PCF
+  // VSM/ESM/EVSM용 (Float 포맷 R32_FLOAT/R32G32_FLOAT)
+  // t8: SpotLight Shadow map texture array (Float)
+Texture2DArray g_SpotLightShadowMaps_Float : register(t8);
+
+  // t9: DirectionalLight Shadow map texture array (Float)
+Texture2DArray g_DirectionalLightShadowMaps_Float : register(t9);
+
+  // t10: PointLight Cube Shadow map texture cube array (Float)
+TextureCubeArray g_PointLightShadowCubeMaps_Float : register(t10);
+
+// Shadow map sampler - comparison sampler for NONE, PCF
 SamplerComparisonState g_ShadowSampler : register(s2);
+
+// Linear sampler for VSM/ESM/EVSM
+SamplerState g_LinearSampler : register(s3);
 
 // b11: 타일 컬링 설정 상수 버퍼
 cbuffer TileCullingBuffer : register(b11)
@@ -51,4 +64,23 @@ cbuffer TileCullingBuffer : register(b11)
     uint TileCountX;        // 가로 타일 개수
     uint TileCountY;        // 세로 타일 개수
     uint bUseTileCulling;   // 타일 컬링 활성화 여부 (0=비활성화, 1=활성화)
+};
+
+// b12: 섀도우 필터링 설정 상수 버퍼
+cbuffer ShadowFilterBuffer : register(b12)
+{
+    uint FilterType;                  // 필터링 타입 (0=NONE, 1=PCF, 2=VSM, 3=ESM, 4=EVSM)
+    uint PCFSampleCount;              // PCF 샘플 수 (3, 4, 5)
+    uint PCFCustomSampleCount;        // PCF Custom 샘플 수
+    float DirectionalLightResolution; // Directional Light 섀도우 맵 해상도
+
+    float SpotLightResolution;        // Spot Light 섀도우 맵 해상도
+    float PointLightResolution;       // Point Light 섀도우 맵 해상도
+    float VSMLightBleedingReduction;  // VSM Light bleeding 감소 (0.0 ~ 1.0)
+    float VSMMinVariance;             // VSM 최소 분산 값
+
+    float ESMExponent;                // ESM Exponential 계수
+    float EVSMPositiveExponent;       // EVSM Positive exponent
+    float EVSMNegativeExponent;       // EVSM Negative exponent
+    float EVSMLightBleedingReduction; // EVSM Light bleeding 감소
 };
