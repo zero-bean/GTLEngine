@@ -8,6 +8,15 @@ FShadowMap::FShadowMap()
 	, bIsCubeMap(false)
 	, ShadowMapTexture(nullptr)
 	, ShadowMapSRV(nullptr)
+	, RemappedTexture(nullptr)
+	, RemappedRTV(nullptr)
+	, RemappedSRV(nullptr)
+	, DepthRemapVS(nullptr)
+	, DepthRemapPS(nullptr)
+	, DepthRemapConstantBuffer(nullptr)
+	, FullscreenQuadVB(nullptr)
+	, DepthRemapInputLayout(nullptr)
+	, PointSamplerState(nullptr)
 {
 	ZeroMemory(&ShadowViewport, sizeof(D3D11_VIEWPORT));
 }
@@ -166,6 +175,9 @@ void FShadowMap::Release()
 		}
 	}
 	CachedRasterizerStates.clear();
+
+	// Release depth remap visualization resources
+	ReleaseDepthRemapResources();
 }
 
 void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex, float DepthBias, float SlopeScaledDepthBias)
@@ -308,4 +320,312 @@ uint64_t FShadowMap::GetDepthFormatSize(DXGI_FORMAT format)
 		default:
 			return 4;
 	}
+}
+
+void FShadowMap::ReleaseDepthRemapResources()
+{
+	if (PointSamplerState)
+	{
+		PointSamplerState->Release();
+		PointSamplerState = nullptr;
+	}
+
+	if (DepthRemapInputLayout)
+	{
+		DepthRemapInputLayout->Release();
+		DepthRemapInputLayout = nullptr;
+	}
+
+	if (FullscreenQuadVB)
+	{
+		FullscreenQuadVB->Release();
+		FullscreenQuadVB = nullptr;
+	}
+
+	if (DepthRemapConstantBuffer)
+	{
+		DepthRemapConstantBuffer->Release();
+		DepthRemapConstantBuffer = nullptr;
+	}
+
+	if (DepthRemapPS)
+	{
+		DepthRemapPS->Release();
+		DepthRemapPS = nullptr;
+	}
+
+	if (DepthRemapVS)
+	{
+		DepthRemapVS->Release();
+		DepthRemapVS = nullptr;
+	}
+
+	if (RemappedSRV)
+	{
+		RemappedSRV->Release();
+		RemappedSRV = nullptr;
+	}
+
+	if (RemappedRTV)
+	{
+		RemappedRTV->Release();
+		RemappedRTV = nullptr;
+	}
+
+	if (RemappedTexture)
+	{
+		RemappedTexture->Release();
+		RemappedTexture = nullptr;
+	}
+}
+
+void FShadowMap::InitializeDepthRemapResources(D3D11RHI* RHI)
+{
+	// 이미 초기화되었으면 스킵
+	if (DepthRemapVS != nullptr)
+	{
+		return;
+	}
+
+	ID3D11Device* device = RHI->GetDevice();
+	HRESULT hr;
+
+	// 1. Compile shaders from DepthRemap.hlsl
+	ID3DBlob* vsBlob = nullptr;
+	ID3DBlob* psBlob = nullptr;
+	ID3DBlob* errorBlob = nullptr;
+
+	UINT compileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef _DEBUG
+	compileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+	// Vertex Shader
+	hr = D3DCompileFromFile(
+		L"Shaders/Utility/DepthRemap.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"VS",
+		"vs_5_0",
+		compileFlags,
+		0,
+		&vsBlob,
+		&errorBlob);
+
+	if (FAILED(hr))
+	{
+		if (errorBlob)
+		{
+			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+			errorBlob->Release();
+		}
+		assert(false, "Failed to compile DepthRemap vertex shader");
+		return;
+	}
+
+	hr = device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &DepthRemapVS);
+	assert(SUCCEEDED(hr), "Failed to create DepthRemap vertex shader");
+
+	// Pixel Shader
+	hr = D3DCompileFromFile(
+		L"Shaders/Utility/DepthRemap.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"PS",
+		"ps_5_0",
+		compileFlags,
+		0,
+		&psBlob,
+		&errorBlob);
+
+	if (FAILED(hr))
+	{
+		if (errorBlob)
+		{
+			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+			errorBlob->Release();
+		}
+		assert(false, "Failed to compile DepthRemap pixel shader");
+		vsBlob->Release();
+		return;
+	}
+
+	hr = device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &DepthRemapPS);
+	assert(SUCCEEDED(hr), "Failed to create DepthRemap pixel shader");
+
+	// 2. Create Input Layout
+	D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	hr = device->CreateInputLayout(inputDesc, 2, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &DepthRemapInputLayout);
+	assert(SUCCEEDED(hr), "Failed to create DepthRemap input layout");
+
+	vsBlob->Release();
+	psBlob->Release();
+
+	// 3. Create Fullscreen Quad Vertex Buffer
+	struct Vertex
+	{
+		float Position[3];
+		float TexCoord[2];
+	};
+
+	// 시계방향 90도 회전된 텍스처 좌표
+	Vertex quadVertices[] = {
+		{ { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f } }, // Top-left
+		{ {  1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f } }, // Top-right
+		{ { -1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f } }, // Bottom-left
+		{ {  1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f } }  // Bottom-right
+	};
+
+	D3D11_BUFFER_DESC vbDesc = {};
+	vbDesc.Usage = D3D11_USAGE_DEFAULT;
+	vbDesc.ByteWidth = sizeof(quadVertices);
+	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbDesc.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA vbData = {};
+	vbData.pSysMem = quadVertices;
+
+	hr = device->CreateBuffer(&vbDesc, &vbData, &FullscreenQuadVB);
+	assert(SUCCEEDED(hr), "Failed to create fullscreen quad vertex buffer");
+
+	// 4. Create Constant Buffer
+	D3D11_BUFFER_DESC cbDesc = {};
+	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+	cbDesc.ByteWidth = 16; // float MinDepth, float MaxDepth, float2 Padding
+	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	hr = device->CreateBuffer(&cbDesc, nullptr, &DepthRemapConstantBuffer);
+	assert(SUCCEEDED(hr), "Failed to create DepthRemap constant buffer");
+
+	// 5. Create Point Sampler
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	hr = device->CreateSamplerState(&samplerDesc, &PointSamplerState);
+	assert(SUCCEEDED(hr), "Failed to create point sampler state");
+
+	// 6. Create Remapped Render Target
+	D3D11_TEXTURE2D_DESC rtDesc = {};
+	rtDesc.Width = Width;
+	rtDesc.Height = Height;
+	rtDesc.MipLevels = 1;
+	rtDesc.ArraySize = 1;
+	rtDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	rtDesc.SampleDesc.Count = 1;
+	rtDesc.SampleDesc.Quality = 0;
+	rtDesc.Usage = D3D11_USAGE_DEFAULT;
+	rtDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	rtDesc.CPUAccessFlags = 0;
+	rtDesc.MiscFlags = 0;
+
+	hr = device->CreateTexture2D(&rtDesc, nullptr, &RemappedTexture);
+	assert(SUCCEEDED(hr), "Failed to create remapped render target texture");
+
+	hr = device->CreateRenderTargetView(RemappedTexture, nullptr, &RemappedRTV);
+	assert(SUCCEEDED(hr), "Failed to create remapped render target view");
+
+	hr = device->CreateShaderResourceView(RemappedTexture, nullptr, &RemappedSRV);
+	assert(SUCCEEDED(hr), "Failed to create remapped shader resource view");
+}
+
+ID3D11ShaderResourceView* FShadowMap::GetRemappedSliceSRV(D3D11RHI* RHI, UINT ArrayIndex, float MinDepth, float MaxDepth)
+{
+	// 초기화되지 않았거나 인덱스가 범위를 벗어나면 nullptr 반환
+	if (ArrayIndex >= ArraySize || !ShadowMapTexture)
+	{
+		return nullptr;
+	}
+
+	// Depth remap 리소스 초기화 (최초 1회만)
+	InitializeDepthRemapResources(RHI);
+
+	ID3D11DeviceContext* context = RHI->GetDeviceContext();
+
+	// 0. Save current render state
+	ID3D11RenderTargetView* oldRTVs[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = { nullptr };
+	ID3D11DepthStencilView* oldDSV = nullptr;
+	context->OMGetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, oldRTVs, &oldDSV);
+
+	UINT numViewports = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+	D3D11_VIEWPORT oldViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+	context->RSGetViewports(&numViewports, oldViewports);
+
+	// 1. Update Constant Buffer
+	struct DepthRemapParams
+	{
+		float MinDepth;
+		float MaxDepth;
+		float Padding[2];
+	};
+
+	DepthRemapParams params = { MinDepth, MaxDepth, { 0.0f, 0.0f } };
+
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	HRESULT hr = context->Map(DepthRemapConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (SUCCEEDED(hr))
+	{
+		memcpy(mappedResource.pData, &params, sizeof(DepthRemapParams));
+		context->Unmap(DepthRemapConstantBuffer, 0);
+	}
+
+	// 2. Set Render Target
+	context->OMSetRenderTargets(1, &RemappedRTV, nullptr);
+
+	// 3. Set Viewport
+	D3D11_VIEWPORT viewport = {};
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.Width = static_cast<float>(Width);
+	viewport.Height = static_cast<float>(Height);
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &viewport);
+
+	// 4. Set Shaders and Resources
+	context->VSSetShader(DepthRemapVS, nullptr, 0);
+	context->PSSetShader(DepthRemapPS, nullptr, 0);
+	context->IASetInputLayout(DepthRemapInputLayout);
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	// 5. Bind Source Depth Texture (specific slice)
+	ID3D11ShaderResourceView* sourceSRV = GetSliceSRV(ArrayIndex);
+	context->PSSetShaderResources(0, 1, &sourceSRV);
+	context->PSSetSamplers(0, 1, &PointSamplerState);
+	context->VSSetConstantBuffers(0, 1, &DepthRemapConstantBuffer);
+	context->PSSetConstantBuffers(0, 1, &DepthRemapConstantBuffer);
+
+	// 6. Draw Fullscreen Quad
+	UINT stride = sizeof(float) * 5; // 3 pos + 2 uv
+	UINT offset = 0;
+	context->IASetVertexBuffers(0, 1, &FullscreenQuadVB, &stride, &offset);
+	context->Draw(4, 0);
+
+	// 7. Unbind Resources
+	ID3D11ShaderResourceView* nullSRV = nullptr;
+	context->PSSetShaderResources(0, 1, &nullSRV);
+
+	// 8. Restore previous render state
+	context->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, oldRTVs, oldDSV);
+	context->RSSetViewports(numViewports, oldViewports);
+
+	// Release references
+	for (int i = 0; i < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
+	{
+		if (oldRTVs[i]) oldRTVs[i]->Release();
+	}
+	if (oldDSV) oldDSV->Release();
+
+	// 9. Return the remapped SRV
+	return RemappedSRV;
 }
