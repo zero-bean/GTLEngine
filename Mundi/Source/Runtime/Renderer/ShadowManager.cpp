@@ -33,7 +33,7 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 	// (각 라이트가 CSM을 사용할지는 런타임에 DirectionalLightComponent의 ShadowMapType으로 결정)
 	constexpr uint32 MaxCascadesPerLight = 6;
 	uint32 DirectionalArraySize = Config.MaxDirectionalLights * MaxCascadesPerLight;
-	DirectionalLightShadowMap.Initialize(RHI, Config.DirectionalLightResolution, Config.DirectionalLightResolution, DirectionalArraySize);
+	DirectionalLightShadowMap.Initialize(RHI, Config.DirectionalLightResolution, Config.DirectionalLightResolution, DirectionalArraySize, false, Config.FilterType);
 
 	PointLightCubeShadowMap.Initialize(RHI, Config.PointLightResolution, Config.PointLightResolution, Config.MaxPointLights, true, Config.FilterType);
 

@@ -261,20 +261,11 @@ void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex, float DepthBias, fl
 
 	ID3D11DeviceContext* pContext = RHI->GetDeviceContext();
 
-	// 섀도우 맵 SRV 언바인딩 (리소스 hazard 방지: t5=SpotLight, t6=DirectionalLight, t7=PointLight)
-	ID3D11ShaderResourceView* pNullSRVs[3] = { nullptr, nullptr, nullptr };
-
-	// FilterType에 따라 올바른 슬롯 언바인딩
-	if (FilterType == EShadowFilterType::NONE || FilterType == EShadowFilterType::PCF)
-	{
-		// NONE/PCF: t5, t6, t7 언바인딩
-		pContext->PSSetShaderResources(5, 3, pNullSRVs);
-	}
-	else // VSM, ESM, EVSM
-	{
-		// VSM/ESM/EVSM: t8, t9, t10 언바인딩
-		pContext->PSSetShaderResources(8, 3, pNullSRVs);
-	}
+	// 섀도우 맵 SRV 언바인딩 (리소스 hazard 방지)
+	// NONE/PCF: t5, t6, t7 / VSM/ESM/EVSM: t8, t9, t10
+	// 이전 프레임의 바인딩을 모두 정리하기 위해 양쪽 범위 모두 언바인딩
+	ID3D11ShaderResourceView* pNullSRVs[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	pContext->PSSetShaderResources(5, 6, pNullSRVs);
 
 
 	// RasterizerState 캐싱 (DepthBias 조합별로 재사용)
@@ -358,10 +349,17 @@ void FShadowMap::EndRender(D3D11RHI* RHI)
 {
 	assert(RHI != nullptr, "RHI is null");
 
+	ID3D11DeviceContext* pContext = RHI->GetDeviceContext();
+
 	// Unbind render targets
 	ID3D11RenderTargetView* nullRTV = nullptr;
 	ID3D11DepthStencilView* nullDSV = nullptr;
-	RHI->GetDeviceContext()->OMSetRenderTargets(1, &nullRTV, nullDSV);
+	pContext->OMSetRenderTargets(1, &nullRTV, nullDSV);
+
+	// 섀도우 맵 SRV 언바인딩 (리소스 hazard 방지)
+	// 모든 가능한 슬롯을 언바인딩 (t5~t10)
+	ID3D11ShaderResourceView* pNullSRVs[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	pContext->PSSetShaderResources(5, 6, pNullSRVs);
 }
 
 uint64_t FShadowMap::GetAllocatedMemoryBytes() const

@@ -528,10 +528,10 @@ void FSceneRenderer::RenderShadowPass()
 	RenderSpotLightShadows(ShadowShaderVariant);
 	RenderPointLightShadows(ShadowShaderVariant);
 
-	// Step 5: 렌더 상태 복구
+	// Step 6: 렌더 상태 복구
 	SavedState.Restore(RHIDevice);
 
-	// Step 6: 카메라 ViewProj 버퍼 복구
+	// Step 7: 카메라 ViewProj 버퍼 복구
 	RestoreCameraViewProj();
 }
 
