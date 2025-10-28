@@ -558,15 +558,46 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 
 			if (ShadowManager)
 			{
-				const FShadowMap& SpotLightShadowMap = ShadowManager->GetSpotLightShadowMap();
+				FShadowMap& SpotLightShadowMap = ShadowManager->GetSpotLightShadowMap();
 				int ShadowMapIndex = SpotLight->GetShadowMapIndex();
-				ID3D11ShaderResourceView* ShadowSRV = SpotLightShadowMap.GetSliceSRV(ShadowMapIndex);
-
-				UE_LOG("[UI] Getting ShadowMap Slice SRV: Index=%d, SRV=0x%p, Width=%u, Height=%u",
-					ShadowMapIndex, ShadowSRV, SpotLightShadowMap.GetWidth(), SpotLightShadowMap.GetHeight());
 
 				ImGui::Text("Shadow Map Index: %d", ShadowMapIndex);
 				ImGui::Text("Resolution: %u x %u", SpotLightShadowMap.GetWidth(), SpotLightShadowMap.GetHeight());
+
+				// Depth 범위 조절 슬라이더
+				static float SpotLightDepthBegin = 0.0f;
+				static float SpotLightDepthEnd = 1.0f;
+
+				ImGui::Spacing();
+				ImGui::Text("Depth Visualization Range:");
+				ImGui::SetNextItemWidth(200.0f);
+				ImGui::DragFloat("Begin##SpotDepth", &SpotLightDepthBegin, 0.001f, 0.0f, 1.0f, "%.4f");
+				ImGui::SetNextItemWidth(200.0f);
+				ImGui::DragFloat("End##SpotDepth", &SpotLightDepthEnd, 0.001f, 0.0f, 1.0f, "%.4f");
+
+				// Begin이 End보다 크면 자동 조정
+				if (SpotLightDepthBegin > SpotLightDepthEnd)
+				{
+					SpotLightDepthEnd = SpotLightDepthBegin;
+				}
+
+				// 범위가 커스텀되었으면 리매핑된 SRV 사용, 아니면 원본 SRV 사용
+				bool bUseRemap = (SpotLightDepthBegin != 0.0f || SpotLightDepthEnd != 1.0f);
+				ID3D11ShaderResourceView* ShadowSRV = nullptr;
+
+				if (bUseRemap)
+				{
+					ShadowSRV = SpotLightShadowMap.GetRemappedSliceSRV(
+						GEngine.GetRenderer()->GetRHIDevice(),
+						ShadowMapIndex,
+						SpotLightDepthBegin,
+						SpotLightDepthEnd);
+				}
+				else
+				{
+					ShadowSRV = SpotLightShadowMap.GetSliceSRV(ShadowMapIndex);
+				}
+
 				ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
 
 				if (ShadowSRV)
@@ -579,7 +610,7 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 					ImGui::DragFloat("Display Size", &ShadowMapDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
 					ImGui::Spacing();
 
-					// ShadowMap 이미지 표시 (R32_FLOAT이므로 빨간색으로 보임)
+					// ShadowMap 이미지 표시
 					ImGui::Image(
 						(ImTextureID)ShadowSRV,
 						ImVec2(ShadowMapDisplaySize, ShadowMapDisplaySize),
@@ -588,7 +619,15 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 						ImVec4(1, 1, 1, 1),  // tint color
 						ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
 					);
-					ImGui::TextWrapped("Note: R32_FLOAT format appears as red channel. Brightness indicates depth.");
+
+					if (bUseRemap)
+					{
+						ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", SpotLightDepthBegin, SpotLightDepthEnd);
+					}
+					else
+					{
+						ImGui::TextWrapped("Showing full depth range [0.0, 1.0].");
+					}
 				}
 				else
 				{
@@ -613,15 +652,53 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 		bool bCastShadows = DirectionalLight->GetIsCastShadows();
 		ImGui::Text("Cast Shadows: %s", bCastShadows ? "True" : "False");
 
-		if (bCastShadows && ShadowManager)
+		if (bCastShadows)
 		{
-			const FShadowMap& DirectionalLightShadowMap = ShadowManager->GetDirectionalLightShadowMap();
-			int ShadowMapIndex = DirectionalLight->GetShadowMapIndex();
-			ID3D11ShaderResourceView* ShadowSRV = DirectionalLightShadowMap.GetSliceSRV(ShadowMapIndex);
+			FShadowManager* ShadowManager = GWorld->GetShadowManager();
 
-			ImGui::Text("Shadow Map Index: %d", ShadowMapIndex);
-			ImGui::Text("Resolution: %u x %u", DirectionalLightShadowMap.GetWidth(), DirectionalLightShadowMap.GetHeight());
-			ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
+			if (ShadowManager)
+			{
+				FShadowMap& DirectionalLightShadowMap = ShadowManager->GetDirectionalLightShadowMap();
+				int ShadowMapIndex = DirectionalLight->GetShadowMapIndex();
+
+				ImGui::Text("Shadow Map Index: %d", ShadowMapIndex);
+				ImGui::Text("Resolution: %u x %u", DirectionalLightShadowMap.GetWidth(), DirectionalLightShadowMap.GetHeight());
+
+				// Depth 범위 조절 슬라이더
+				static float DirectionalLightDepthBegin = 0.0f;
+				static float DirectionalLightDepthEnd = 1.0f;
+
+				ImGui::Spacing();
+				ImGui::Text("Depth Visualization Range:");
+				ImGui::SetNextItemWidth(200.0f);
+				ImGui::DragFloat("Begin##DirectionalDepth", &DirectionalLightDepthBegin, 0.001f, 0.0f, 1.0f, "%.4f");
+				ImGui::SetNextItemWidth(200.0f);
+				ImGui::DragFloat("End##DirectionalDepth", &DirectionalLightDepthEnd, 0.001f, 0.0f, 1.0f, "%.4f");
+
+				// Begin이 End보다 크면 자동 조정
+				if (DirectionalLightDepthBegin > DirectionalLightDepthEnd)
+				{
+					DirectionalLightDepthEnd = DirectionalLightDepthBegin;
+				}
+
+				// 범위가 커스텀되었으면 리매핑된 SRV 사용, 아니면 원본 SRV 사용
+				bool bUseRemap = (DirectionalLightDepthBegin != 0.0f || DirectionalLightDepthEnd != 1.0f);
+				ID3D11ShaderResourceView* ShadowSRV = nullptr;
+
+				if (bUseRemap)
+				{
+					ShadowSRV = DirectionalLightShadowMap.GetRemappedSliceSRV(
+						GEngine.GetRenderer()->GetRHIDevice(),
+						ShadowMapIndex,
+						DirectionalLightDepthBegin,
+						DirectionalLightDepthEnd);
+				}
+				else
+				{
+					ShadowSRV = DirectionalLightShadowMap.GetSliceSRV(ShadowMapIndex);
+				}
+
+				ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
 
 			if (ShadowSRV)
 			{
@@ -633,25 +710,34 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 				ImGui::DragFloat("Display Size##Directional", &DirectionalShadowMapDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
 				ImGui::Spacing();
 
-				// ShadowMap 이미지 표시 (R32_FLOAT이므로 빨간색으로 보임)
-				ImGui::Image(
-					(ImTextureID)ShadowSRV,
-					ImVec2(DirectionalShadowMapDisplaySize, DirectionalShadowMapDisplaySize),
-					ImVec2(0, 0),  // uv0
-					ImVec2(1, 1),  // uv1
-					ImVec4(1, 1, 1, 1),  // tint color
-					ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
-				);
-				ImGui::TextWrapped("Note: R32_FLOAT format appears as red channel. Brightness indicates depth.");
+					// ShadowMap 이미지 표시
+					ImGui::Image(
+						(ImTextureID)ShadowSRV,
+						ImVec2(DirectionalShadowMapDisplaySize, DirectionalShadowMapDisplaySize),
+						ImVec2(0, 0),  // uv0
+						ImVec2(1, 1),  // uv1
+						ImVec4(1, 1, 1, 1),  // tint color
+						ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
+					);
+
+					if (bUseRemap)
+					{
+						ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", DirectionalLightDepthBegin, DirectionalLightDepthEnd);
+					}
+					else
+					{
+						ImGui::TextWrapped("Showing full depth range [0.0, 1.0].");
+					}
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SRV is NULL!");
+				}
 			}
 			else
 			{
-				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SRV is NULL!");
+				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ShadowManager is NULL!");
 			}
-		}
-		else if (!ShadowManager)
-		{
-			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ShadowManager is NULL!");
 		}
 	}
 	// PointLightComponent인 경우 CubeShadowMap 표시 (6개 면) - SpotLight는 제외
@@ -670,7 +756,7 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 
 			if (ShadowManager)
 			{
-				const FShadowMap& PointLightCubeShadowMap = ShadowManager->GetPointLightCubeShadowMap();
+				FShadowMap& PointLightCubeShadowMap = ShadowManager->GetPointLightCubeShadowMap();
 				int ShadowMapIndex = PointLight->GetShadowMapIndex();
 
 				ImGui::Text("Shadow Map Index: %d", ShadowMapIndex);
@@ -679,6 +765,26 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 
 				if (ShadowMapIndex >= 0 && ShadowMapIndex < (int)PointLightCubeShadowMap.GetArraySize() / 6)
 				{
+					// Depth 범위 조절 슬라이더
+					static float PointLightDepthBegin = 0.0f;
+					static float PointLightDepthEnd = 1.0f;
+
+					ImGui::Spacing();
+					ImGui::Text("Depth Visualization Range:");
+					ImGui::SetNextItemWidth(200.0f);
+					ImGui::DragFloat("Begin##PointDepth", &PointLightDepthBegin, 0.001f, 0.0f, 1.0f, "%.4f");
+					ImGui::SetNextItemWidth(200.0f);
+					ImGui::DragFloat("End##PointDepth", &PointLightDepthEnd, 0.001f, 0.0f, 1.0f, "%.4f");
+
+					// Begin이 End보다 크면 자동 조정
+					if (PointLightDepthBegin > PointLightDepthEnd)
+					{
+						PointLightDepthEnd = PointLightDepthBegin;
+					}
+
+					// 범위가 커스텀되었으면 리매핑 사용
+					bool bUseRemap = (PointLightDepthBegin != 0.0f || PointLightDepthEnd != 1.0f);
+
 					// CubeShadowMap 크기 조절
 					static float CubeShadowMapDisplaySize = 128.0f;
 					ImGui::SetNextItemWidth(200.0f);
@@ -703,7 +809,20 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 							int faceIndex = row * 3 + col;
 							uint32 ArrayIndex = (ShadowMapIndex * 6) + faceIndex;
 
-							ID3D11ShaderResourceView* FaceSRV = PointLightCubeShadowMap.GetSliceSRV(ArrayIndex);
+							ID3D11ShaderResourceView* FaceSRV = nullptr;
+
+							if (bUseRemap)
+							{
+								FaceSRV = PointLightCubeShadowMap.GetRemappedSliceSRV(
+									GEngine.GetRenderer()->GetRHIDevice(),
+									ArrayIndex,
+									PointLightDepthBegin,
+									PointLightDepthEnd);
+							}
+							else
+							{
+								FaceSRV = PointLightCubeShadowMap.GetSliceSRV(ArrayIndex);
+							}
 
 							if (col > 0) ImGui::SameLine();
 
@@ -730,7 +849,14 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 						}
 					}
 
-					ImGui::TextWrapped("Note: R32_FLOAT format appears as red channel. Brightness indicates depth.");
+					if (bUseRemap)
+					{
+						ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", PointLightDepthBegin, PointLightDepthEnd);
+					}
+					else
+					{
+						ImGui::TextWrapped("Showing full depth range [0.0, 1.0].");
+					}
 				}
 				else
 				{
