@@ -53,10 +53,12 @@ struct FShadowViewProjection
 	// @param Direction - 라이트 방향 (정규화되지 않아도 됨)
 	// @param CameraView - 카메라의 View 행렬
 	// @param CameraProjection - 카메라의 Projection 행렬
+	// @param ShadowExtension - 그림자 범위 확장 비율 (기본값 0.2 = 20% 확장)
 	static FShadowViewProjection CreateForDirectionalLight(
 		const FVector& Direction,
 		const FMatrix& CameraView,
-		const FMatrix& CameraProjection)
+		const FMatrix& CameraProjection,
+		float ShadowExtension = 0.2f)
 	{
 		FShadowViewProjection Result;
 
@@ -89,8 +91,8 @@ struct FShadowViewProjection
 		FrustumCenter /= 8.0f;
 
 		// Light Position: Frustum 중심에서 라이트 방향 반대쪽
-		// (거리는 임의로 설정, Orthographic이므로 위치는 범위에만 영향)
-		FVector LightPos = FrustumCenter - LightDir * 1000.0f;
+		// 충분히 멀리 배치하여 카메라 프러스텀 뒤쪽의 그림자 캐스터도 포함
+		FVector LightPos = FrustumCenter - LightDir;
 
 		Result.View = FMatrix::LookAtLH(LightPos, LightPos + LightDir, Up);
 
@@ -112,16 +114,30 @@ struct FShadowViewProjection
 			MaxZ = FMath::Max(MaxZ, LightSpaceCorner.Z);
 		}
 
-		// === 4. Orthographic Projection 생성 (AABB 범위 기반) ===
+		// === 4. AABB 확장 및 Orthographic Projection 생성 ===
 		float Width = MaxX - MinX;
 		float Height = MaxY - MinY;
 		float Depth = MaxZ - MinZ;
+
+		// XY 평면 확장 (기본 20%)
+		float ExtendX = Width * ShadowExtension;
+		float ExtendY = Height * ShadowExtension;
+		MinX -= ExtendX;
+		MaxX += ExtendX;
+		MinY -= ExtendY;
+		MaxY += ExtendY;
+		Width = MaxX - MinX;
+		Height = MaxY - MinY;
+
+		// Near Plane을 뒤로 확장하여 카메라 뒤의 오브젝트 포함
+		float NearExtension = Depth * 2.0f;
+		MinZ -= NearExtension;
+		Depth = MaxZ - MinZ;
 
 		// 중심을 원점으로 맞춘 Orthographic Projection
 		Result.Projection = FMatrix::OrthoLH(Width, Height, 0.0f, Depth);
 
 		// AABB 중심을 원점으로 이동시키기 위한 오프셋 적용
-		// (OrthoLH는 중심 기준이므로, Min/Max가 비대칭이면 보정 필요)
 		float CenterX = (MaxX + MinX) * 0.5f;
 		float CenterY = (MaxY + MinY) * 0.5f;
 
@@ -131,6 +147,94 @@ struct FShadowViewProjection
 		Result.View.M[3][2] -= MinZ;  // Near plane을 0으로 맞춤
 
 		// === 5. ViewProjection 계산 ===
+		Result.ViewProjection = Result.View * Result.Projection;
+
+		return Result;
+	}
+
+	// DirectionalLight용 Shadow VP 행렬 생성 (CSM용 - Frustum 코너를 직접 받음)
+	// @param Direction - 라이트 방향 (정규화되지 않아도 됨)
+	// @param FrustumCorners - Frustum의 8개 코너 (World Space)
+	// @param ShadowExtension - 그림자 범위 확장 비율 (기본값 0.2 = 20% 확장)
+	static FShadowViewProjection CreateForDirectionalLight_FromCorners(
+		const FVector& Direction,
+		const TArray<FVector>& FrustumCorners,
+		float ShadowExtension = 0.2f)
+	{
+		FShadowViewProjection Result;
+
+		// === Light View 행렬 생성 ===
+		FVector LightDir = Direction.GetNormalized();
+
+		// Up vector 선택 (LightDir와 평행하지 않은 벡터)
+		FVector Up = (FMath::Abs(LightDir.Y) < 0.99f)
+			? FVector(0, 1, 0)
+			: FVector(1, 0, 0);
+
+		// Frustum 중심점 계산 (8개 코너의 평균)
+		FVector FrustumCenter = FVector::Zero();
+		for (int i = 0; i < 8; ++i)
+		{
+			FrustumCenter += FrustumCorners[i];
+		}
+		FrustumCenter /= 8.0f;
+
+		FVector LightPos = FrustumCenter - LightDir;
+
+		Result.View = FMatrix::LookAtLH(LightPos, LightPos + LightDir, Up);
+
+		// === Frustum 코너를 Light Space로 변환하여 AABB 계산 ===
+		float MinX = FLT_MAX, MaxX = -FLT_MAX;
+		float MinY = FLT_MAX, MaxY = -FLT_MAX;
+		float MinZ = FLT_MAX, MaxZ = -FLT_MAX;
+
+		for (int i = 0; i < 8; ++i)
+		{
+			// World Space 코너를 Light View Space로 변환
+			FVector LightSpaceCorner = FrustumCorners[i] * Result.View;
+
+			MinX = FMath::Min(MinX, LightSpaceCorner.X);
+			MaxX = FMath::Max(MaxX, LightSpaceCorner.X);
+			MinY = FMath::Min(MinY, LightSpaceCorner.Y);
+			MaxY = FMath::Max(MaxY, LightSpaceCorner.Y);
+			MinZ = FMath::Min(MinZ, LightSpaceCorner.Z);
+			MaxZ = FMath::Max(MaxZ, LightSpaceCorner.Z);
+		}
+
+		// 해결책 2: AABB를 확장하여 프러스텀 밖의 그림자 캐스터 포함
+		float Width = MaxX - MinX;
+		float Height = MaxY - MinY;
+		float Depth = MaxZ - MinZ;
+
+		// XY 평면 확장 (기본 20%)
+		float ExtendX = Width * ShadowExtension;
+		float ExtendY = Height * ShadowExtension;
+		MinX -= ExtendX;
+		MaxX += ExtendX;
+		MinY -= ExtendY;
+		MaxY += ExtendY;
+		Width = MaxX - MinX;
+		Height = MaxY - MinY;
+
+		// 해결책 3: Near Plane을 뒤로 확장하여 카메라 뒤의 오브젝트 포함
+		float NearExtension = Depth * 2.0f; // Depth의 2배만큼 뒤로 확장
+		MinZ -= NearExtension;
+		Depth = MaxZ - MinZ;
+
+		// === Orthographic Projection 생성 (확장된 AABB 범위 기반) ===
+		// 중심을 원점으로 맞춘 Orthographic Projection
+		Result.Projection = FMatrix::OrthoLH(Width, Height, 0.0f, Depth);
+
+		// AABB 중심을 원점으로 이동시키기 위한 오프셋 적용
+		float CenterX = (MaxX + MinX) * 0.5f;
+		float CenterY = (MaxY + MinY) * 0.5f;
+
+		// View 행렬에 오프셋 추가 (Translation 조정)
+		Result.View.M[3][0] -= CenterX;
+		Result.View.M[3][1] -= CenterY;
+		Result.View.M[3][2] -= MinZ;  // Near plane을 0으로 맞춤
+
+		// === ViewProjection 계산 ===
 		Result.ViewProjection = Result.View * Result.Projection;
 
 		return Result;

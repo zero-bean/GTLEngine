@@ -92,6 +92,20 @@ public:
 	bool BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent* Light,
 		const FMatrix& CameraView, const FMatrix& CameraProjection, FShadowRenderContext& OutContext);
 
+	// CSM Shadow 렌더링 시작 - DirectionalLight (Cascaded Shadow Maps)
+	// @param RHI - D3D11 RHI 디바이스
+	// @param Light - 렌더링할 DirectionalLight
+	// @param CameraView - 카메라의 View 행렬
+	// @param CameraProjection - 카메라의 Projection 행렬
+	// @param CascadeIndex - 캐스케이드 인덱스 (0~3)
+	// @param SplitNear - 이 캐스케이드의 Near 거리
+	// @param SplitFar - 이 캐스케이드의 Far 거리
+	// @param OutContext - (출력) Shadow 렌더링 컨텍스트
+	// @return 성공 여부
+	bool BeginShadowRenderCSM(D3D11RHI* RHI, UDirectionalLightComponent* Light,
+		const FMatrix& CameraView, const FMatrix& CameraProjection,
+		int CascadeIndex, float SplitNear, float SplitFar, FShadowRenderContext& OutContext);
+
 	// Shadow 렌더링 시작 - PointLight (Cube Map용)
 	// @param RHI - D3D11 RHI 디바이스
 	// @param Light - 렌더링할 PointLight
@@ -131,6 +145,9 @@ public:
 	const FShadowMap& GetDirectionalLightShadowMap() const { return DirectionalLightShadowMap; }
 	FShadowMap& GetPointLightCubeShadowMap() { return PointLightCubeShadowMap; }
 	const FShadowMap& GetPointLightCubeShadowMap() const { return PointLightCubeShadowMap; }
+
+	// CSM Split 거리 계산 (PSSM)
+	TArray<float> CalculateCSMSplits(float CameraNear, float CameraFar, int NumCascades, float Lambda) const;
 
 private:
 	// RHI 디바이스 참조

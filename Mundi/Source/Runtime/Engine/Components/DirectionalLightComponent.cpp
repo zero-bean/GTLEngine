@@ -44,6 +44,14 @@ FDirectionalLightInfo UDirectionalLightComponent::GetLightInfo() const
 	// so the matrix is calculated and cached by ShadowManager during RenderShadowPass()
 	Info.LightViewProjection = CachedLightViewProjection;
 
+	// CSM (Cascaded Shadow Maps) Data
+	// Cascade ViewProjection matrices (updated by ShadowManager during shadow pass)
+	for (int i = 0; i < 4; ++i)
+	{
+		Info.CascadeViewProjection[i] = CascadeViewProjections[i];
+		Info.CascadeSplitDistances[i] = CascadeSplitDistances[i];
+	}
+
 	return Info;
 }
 

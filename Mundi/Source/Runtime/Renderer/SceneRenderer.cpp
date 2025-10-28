@@ -557,33 +557,85 @@ void FSceneRenderer::UpdateViewProjBufferForShadow(const FShadowRenderContext& S
 
 void FSceneRenderer::RenderDirectionalLightShadows(FShaderVariant* ShadowShaderVariant)
 {
+	FShadowManager* ShadowManager = GWorld->GetShadowManager();
+	const FShadowConfiguration& ShadowConfig = ShadowManager->GetShadowConfiguration();
+
 	for (UDirectionalLightComponent* DirLight : SceneGlobals.DirectionalLights)
 	{
 		// 유효성 검사
 		if (!IsLightValidForShadowCasting(DirLight))
 			continue;
 
-		// ShadowManager에게 섀도우 맵 렌더 시작 요청
-		FShadowRenderContext ShadowContext;
-		if (!GWorld->GetShadowManager()->BeginShadowRender(RHIDevice, DirLight,
-			View->ViewMatrix, View->ProjectionMatrix, ShadowContext))
-			continue;
+		// CSM이 활성화되어 있으면 Cascaded Shadow Maps 렌더링
+		if (ShadowConfig.bEnableCSM)
+		{
+			// 1. CSM Split 거리 계산
+			TArray<float> CascadeSplits = ShadowManager->CalculateCSMSplits(
+				View->ZNear,
+				FMath::Min(View->ZFar, ShadowConfig.MaxShadowDistance),
+				ShadowConfig.NumCascades,
+				ShadowConfig.CSMLambda);
 
-		// ViewProj 버퍼 업데이트 (Orthographic)
-		UpdateViewProjBufferForShadow(ShadowContext, true);
+			// 2. 각 캐스케이드에 대해 섀도우 렌더링
+			float PrevSplit = View->ZNear;
+			for (int CascadeIndex = 0; CascadeIndex < (int)ShadowConfig.NumCascades; ++CascadeIndex)
+			{
+				float CurrentSplit = CascadeSplits[CascadeIndex];
 
-		// 메시 수집
-		TArray<FMeshBatchElement> ShadowMeshBatches;
-		CollectShadowMeshBatches(ShadowMeshBatches);
+				// ShadowManager에게 CSM 섀도우 맵 렌더 시작 요청
+				FShadowRenderContext ShadowContext;
+				if (!ShadowManager->BeginShadowRenderCSM(RHIDevice, DirLight,
+					View->ViewMatrix, View->ProjectionMatrix,
+					CascadeIndex, PrevSplit, CurrentSplit, ShadowContext))
+				{
+					PrevSplit = CurrentSplit;
+					continue;
+				}
 
-		// 셰이더 오버라이드
-		OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
+				// ViewProj 버퍼 업데이트 (Orthographic)
+				UpdateViewProjBufferForShadow(ShadowContext, true);
 
-		// 그리기
-		DrawMeshBatches(ShadowMeshBatches, true, true);
+				// 메시 수집
+				TArray<FMeshBatchElement> ShadowMeshBatches;
+				CollectShadowMeshBatches(ShadowMeshBatches);
 
-		// 섀도우 맵 렌더 종료
-		GWorld->GetShadowManager()->EndShadowRender(RHIDevice);
+				// 셰이더 오버라이드
+				OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
+
+				// 그리기
+				DrawMeshBatches(ShadowMeshBatches, true, true);
+
+				// 섀도우 맵 렌더 종료
+				ShadowManager->EndShadowRender(RHIDevice);
+
+				// 다음 캐스케이드를 위한 준비
+				PrevSplit = CurrentSplit;
+			}
+		}
+		else
+		{
+			// CSM이 비활성화된 경우 기존 단일 섀도우 맵 렌더링
+			FShadowRenderContext ShadowContext;
+			if (!ShadowManager->BeginShadowRender(RHIDevice, DirLight,
+				View->ViewMatrix, View->ProjectionMatrix, ShadowContext))
+				continue;
+
+			// ViewProj 버퍼 업데이트 (Orthographic)
+			UpdateViewProjBufferForShadow(ShadowContext, true);
+
+			// 메시 수집
+			TArray<FMeshBatchElement> ShadowMeshBatches;
+			CollectShadowMeshBatches(ShadowMeshBatches);
+
+			// 셰이더 오버라이드
+			OverrideShadowShader(ShadowMeshBatches, ShadowShaderVariant);
+
+			// 그리기
+			DrawMeshBatches(ShadowMeshBatches, true, true);
+
+			// 섀도우 맵 렌더 종료
+			ShadowManager->EndShadowRender(RHIDevice);
+		}
 	}
 }
 

@@ -23,6 +23,42 @@ public:
 	void SetLightViewProjection(const FMatrix& InViewProjection) { CachedLightViewProjection = InViewProjection; }
 	const FMatrix& GetLightViewProjection() const { return CachedLightViewProjection; }
 
+	// CSM (Cascaded Shadow Maps) Data
+	void SetCascadeViewProjection(int CascadeIndex, const FMatrix& VP)
+	{
+		if (CascadeIndex >= 0 && CascadeIndex < 4)
+		{
+			CascadeViewProjections[CascadeIndex] = VP;
+		}
+	}
+
+	const FMatrix& GetCascadeViewProjection(int CascadeIndex) const
+	{
+		static FMatrix Identity = FMatrix::Identity();
+		if (CascadeIndex >= 0 && CascadeIndex < 4)
+		{
+			return CascadeViewProjections[CascadeIndex];
+		}
+		return Identity;
+	}
+
+	void SetCascadeSplitDistance(int CascadeIndex, float Distance)
+	{
+		if (CascadeIndex >= 0 && CascadeIndex < 4)
+		{
+			CascadeSplitDistances[CascadeIndex] = Distance;
+		}
+	}
+
+	float GetCascadeSplitDistance(int CascadeIndex) const
+	{
+		if (CascadeIndex >= 0 && CascadeIndex < 4)
+		{
+			return CascadeSplitDistances[CascadeIndex];
+		}
+		return 0.0f;
+	}
+
 	// Virtual Interface
 	void OnRegister(UWorld* InWorld) override;
 	void OnUnregister() override;
@@ -43,4 +79,13 @@ protected:
 
 	// Cached LightViewProjection matrix (updated by ShadowManager)
 	FMatrix CachedLightViewProjection = FMatrix::Identity();
+
+	// CSM Data (4 cascades)
+	FMatrix CascadeViewProjections[4] = {
+		FMatrix::Identity(),
+		FMatrix::Identity(),
+		FMatrix::Identity(),
+		FMatrix::Identity()
+	};
+	float CascadeSplitDistances[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 };
