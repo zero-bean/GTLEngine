@@ -176,6 +176,184 @@ public:
 		return CreateForDirectionalLight_Internal(Direction, FrustumCorners, ShadowExtension);
 	}
 
+	// Trapezoid Shadow Map (TSM) for DirectionalLight
+	//
+	// TSM improves shadow map quality by focusing resolution toward the camera using
+	// a trapezoid-shaped frustum instead of a uniform orthographic projection. This
+	// achieves similar benefits to LiSPSM with simpler, more robust mathematics.
+	//
+	// KEY DIFFERENCE FROM LVP:
+	// - LVP: Uniform orthographic projection (rectangle in light space)
+	// - TSM: Non-uniform frustum (trapezoid in light space) - narrower near camera
+	//
+	// Algorithm:
+	// 1. Transform frustum corners to light space
+	// 2. Find camera position in light space
+	// 3. Weight the AABB based on distance from camera
+	//    - Near camera: Tighter bounds (more texels per unit)
+	//    - Far from camera: Wider bounds (fewer texels per unit)
+	// 4. Use standard orthographic projection with adjusted bounds
+	//
+	// @param Direction - Light direction (normalized or not)
+	// @param FrustumCorners - 8 world-space corners of the view frustum
+	// @param CameraView - Camera's view matrix (used to find camera position)
+	// @param CameraProjection - Camera's projection matrix (unused)
+	// @param ShadowExtension - Percentage to extend shadow bounds (default 0.2 = 20%)
+	//
+	// References:
+	// - "Trapezoidal Shadow Maps" by Martin Tobias (2006)
+	// - Simplified alternative to LiSPSM with better stability
+	static FShadowViewProjection CreateForDirectionalLight_LiSPSM(
+		const FVector& Direction,
+		const TArray<FVector>& FrustumCorners,
+		const FMatrix& CameraView,
+		const FMatrix& CameraProjection,
+		float ShadowExtension = 0.2f)
+	{
+		FShadowViewProjection Result;
+
+		// === Step 1: Setup Light Space Coordinate System ===
+
+		FVector LightDir = Direction.GetNormalized();
+
+		// Select up vector (avoid parallel vectors)
+		FVector Up = (FMath::Abs(LightDir.Y) < 0.99f)
+			? FVector(0, 1, 0)
+			: FVector(1, 0, 0);
+
+		// Calculate frustum center
+		FVector FrustumCenter = FVector::Zero();
+		for (int i = 0; i < 8; ++i)
+		{
+			FrustumCenter += FrustumCorners[i];
+		}
+		FrustumCenter /= 8.0f;
+
+		// Position light behind frustum
+		FVector LightPos = FrustumCenter - LightDir * 100.0f;
+
+		// Build light view matrix
+		Result.View = FMatrix::LookAtLH(LightPos, LightPos + LightDir, Up);
+
+		// === Step 2: Transform to Light Space ===
+
+		TArray<FVector> LightSpaceCorners;
+		LightSpaceCorners.Reserve(8);
+
+		for (int i = 0; i < 8; ++i)
+		{
+			FVector LSCorner = FrustumCorners[i] * Result.View;
+			LightSpaceCorners.Add(LSCorner);
+		}
+
+		// === Step 3: Get Camera Position in Light Space ===
+		// Extract camera world position from inverse view matrix (translation component)
+		FMatrix InvCameraView = CameraView.InverseAffine();
+		FVector CameraWorldPos = FVector(InvCameraView.M[3][0], InvCameraView.M[3][1], InvCameraView.M[3][2]);
+		FVector CameraLightSpace = CameraWorldPos * Result.View;
+
+		// === Step 4: Split Frustum into Near/Far Halves ===
+		// We'll focus more resolution on the near 4 corners (closer to camera)
+		// by computing weighted AABB bounds
+
+		// Near plane corners (indices 0-3), Far plane corners (indices 4-7)
+		// Standard frustum corner ordering
+
+		// Calculate AABB for near plane corners
+		float NearMinX = FLT_MAX, NearMaxX = -FLT_MAX;
+		float NearMinY = FLT_MAX, NearMaxY = -FLT_MAX;
+		float NearMinZ = FLT_MAX, NearMaxZ = -FLT_MAX;
+
+		for (int i = 0; i < 4; ++i)
+		{
+			NearMinX = FMath::Min(NearMinX, LightSpaceCorners[i].X);
+			NearMaxX = FMath::Max(NearMaxX, LightSpaceCorners[i].X);
+			NearMinY = FMath::Min(NearMinY, LightSpaceCorners[i].Y);
+			NearMaxY = FMath::Max(NearMaxY, LightSpaceCorners[i].Y);
+			NearMinZ = FMath::Min(NearMinZ, LightSpaceCorners[i].Z);
+			NearMaxZ = FMath::Max(NearMaxZ, LightSpaceCorners[i].Z);
+		}
+
+		// Calculate AABB for far plane corners
+		float FarMinX = FLT_MAX, FarMaxX = -FLT_MAX;
+		float FarMinY = FLT_MAX, FarMaxY = -FLT_MAX;
+		float FarMinZ = FLT_MAX, FarMaxZ = -FLT_MAX;
+
+		for (int i = 4; i < 8; ++i)
+		{
+			FarMinX = FMath::Min(FarMinX, LightSpaceCorners[i].X);
+			FarMaxX = FMath::Max(FarMaxX, LightSpaceCorners[i].X);
+			FarMinY = FMath::Min(FarMinY, LightSpaceCorners[i].Y);
+			FarMaxY = FMath::Max(FarMaxY, LightSpaceCorners[i].Y);
+			FarMinZ = FMath::Min(FarMinZ, LightSpaceCorners[i].Z);
+			FarMaxZ = FMath::Max(FarMaxZ, LightSpaceCorners[i].Z);
+		}
+
+		// === Step 5: Calculate camera direction and angle ===
+		FVector CameraDir = FVector(InvCameraView.M[2][0], InvCameraView.M[2][1], InvCameraView.M[2][2]).GetNormalized();
+
+		float CosGamma = FVector::Dot(CameraDir, LightDir);
+		CosGamma = FMath::Clamp(CosGamma, -1.0f, 1.0f);
+		float SinGamma = std::sqrt(1.0f - CosGamma * CosGamma);
+
+		// Calculate full AABB first
+		float MinZ = FMath::Min(NearMinZ, FarMinZ);
+		float MaxZ = FMath::Max(NearMaxZ, FarMaxZ);
+
+		// If angle is too small, fallback to equal weighting (LVP-like)
+		float AngleFactor = FMath::Clamp(SinGamma * 3.0f, 0.0f, 1.0f);
+
+		// Weighted blend based on viewing angle
+		// High angle = more difference between near/far weighting
+		// Low angle = more uniform (like LVP)
+		float NearWeight = 0.5f + AngleFactor * 0.35f;  // 0.5 to 0.85
+		float FarWeight = 1.0f - NearWeight;             // 0.5 to 0.15
+
+		float MinX = NearMinX * NearWeight + FarMinX * FarWeight;
+		float MaxX = NearMaxX * NearWeight + FarMaxX * FarWeight;
+		float MinY = NearMinY * NearWeight + FarMinY * FarWeight;
+		float MaxY = NearMaxY * NearWeight + FarMaxY * FarWeight;
+
+		// === Step 6: Apply Shadow Extension ===
+
+		float Width = MaxX - MinX;
+		float Height = MaxY - MinY;
+		float Depth = MaxZ - MinZ;
+
+		float ExtendX = Width * ShadowExtension;
+		float ExtendY = Height * ShadowExtension;
+		MinX -= ExtendX;
+		MaxX += ExtendX;
+		MinY -= ExtendY;
+		MaxY += ExtendY;
+		Width = MaxX - MinX;
+		Height = MaxY - MinY;
+
+		// Extend near plane to catch occluders behind camera
+		float NearExtension = Depth * 2.0f;
+		MinZ -= NearExtension;
+		Depth = MaxZ - MinZ;
+
+		// === Step 7: Create Orthographic Projection ===
+
+		Result.Projection = FMatrix::OrthoLH(Width, Height, 0.0f, Depth);
+
+		// === Step 8: Apply AABB Centering ===
+
+		float CenterX = (MaxX + MinX) * 0.5f;
+		float CenterY = (MaxY + MinY) * 0.5f;
+
+		Result.View.M[3][0] -= CenterX;
+		Result.View.M[3][1] -= CenterY;
+		Result.View.M[3][2] -= MinZ;
+
+		// === Step 9: Finalize ===
+
+		Result.ViewProjection = Result.View * Result.Projection;
+
+		return Result;
+	}
+
 	// PointLight용 Cube Map Shadow VP 행렬 6개 생성
 	// @param Position - 라이트 월드 위치
 	// @param AttenuationRadius - 라이트 감쇠 반경 (Far plane으로 사용)

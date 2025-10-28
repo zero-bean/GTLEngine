@@ -292,11 +292,33 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent
 		return false;
 	}
 
-	// FShadowViewProjection 헬퍼 사용하여 VP 행렬 계산 (Frustum 기반)
-	FShadowViewProjection ShadowVP = FShadowViewProjection::CreateForDirectionalLight(
-		Light->GetLightDirection(),
-		CameraView,
-		CameraProjection);
+	FShadowViewProjection ShadowVP;
+
+	// ShadowProjectionType에 따라 LVP 또는 LiSPSM 사용
+	if (Light->GetShadowProjectionType() == EShadowProjectionType::LiSPSM)
+	{
+		// LiSPSM: Camera Frustum의 8개 코너를 월드 공간으로 변환
+		TArray<FVector> FrustumCorners;
+		FMatrix InvView = CameraView.InverseAffine();
+		FMatrix InvProj = CameraProjection.InversePerspectiveProjection();
+		FMatrix InvViewProj = InvProj * InvView;
+		GetFrustumCornersWorldSpace(InvViewProj, FrustumCorners);
+
+		// LiSPSM VP 행렬 계산
+		ShadowVP = FShadowViewProjection::CreateForDirectionalLight_LiSPSM(
+			Light->GetLightDirection(),
+			FrustumCorners,
+			CameraView,
+			CameraProjection);
+	}
+	else
+	{
+		// LVP (기본): 표준 직교 투영
+		ShadowVP = FShadowViewProjection::CreateForDirectionalLight(
+			Light->GetLightDirection(),
+			CameraView,
+			CameraProjection);
+	}
 
 	// 출력 컨텍스트 설정
 	OutContext.LightView = ShadowVP.View;
@@ -343,10 +365,24 @@ bool FShadowManager::BeginShadowRenderCSM(D3D11RHI* RHI, UDirectionalLightCompon
 		SplitFar,
 		CascadeFrustumCorners);
 
-	// 2. Light VP 계산 (새로운 FromCorners 버전 사용)
-	FShadowViewProjection ShadowVP = FShadowViewProjection::CreateForDirectionalLight_FromCorners(
-		Light->GetLightDirection(),
-		CascadeFrustumCorners);
+	// 2. Light VP 계산 (ShadowProjectionType에 따라 LVP 또는 LiSPSM)
+	FShadowViewProjection ShadowVP;
+	if (Light->GetShadowProjectionType() == EShadowProjectionType::LiSPSM)
+	{
+		// LiSPSM VP 행렬 계산
+		ShadowVP = FShadowViewProjection::CreateForDirectionalLight_LiSPSM(
+			Light->GetLightDirection(),
+			CascadeFrustumCorners,
+			CameraView,
+			CameraProjection);
+	}
+	else
+	{
+		// LVP (기본): 표준 직교 투영
+		ShadowVP = FShadowViewProjection::CreateForDirectionalLight_FromCorners(
+			Light->GetLightDirection(),
+			CascadeFrustumCorners);
+	}
 
 	// 3. Texture Array Index 계산: (LightIndex * MaxCascades) + CascadeIndex
 	// 최대 6개 캐스케이드를 지원하도록 할당했으므로, MaxCascades = 6 사용

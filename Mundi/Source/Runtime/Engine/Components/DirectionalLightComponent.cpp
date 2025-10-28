@@ -35,6 +35,21 @@ BEGIN_PROPERTIES(UDirectionalLightComponent)
 		Class->AddProperty(EnumProp);
 	}
 
+	// Shadow Projection Type Enum
+	{
+		static const char* ShadowProjectionTypeNames[] = { "LVP", "LiSPSM" };
+		FProperty EnumProp;
+		EnumProp.Name = "ShadowProjectionType";
+		EnumProp.Type = EPropertyType::Enum;
+		EnumProp.Offset = offsetof(ThisClass_t, ShadowProjectionType);
+		EnumProp.Category = "Shadow";
+		EnumProp.bIsEditAnywhere = true;
+		EnumProp.Tooltip = "쉐도우 프로젝션 타입 (LVP: 표준 직교 투영, LiSPSM: 관점 공간 쉐도우 맵)";
+		EnumProp.EnumNames = ShadowProjectionTypeNames;
+		EnumProp.EnumCount = 2;
+		Class->AddProperty(EnumProp);
+	}
+
 	// CSM Configuration
 	ADD_PROPERTY_RANGE(int32, NumCascades, "Shadow", 3, 6, true, "캐스케이드 수 (3~6)")
 	ADD_PROPERTY_RANGE(float, CSMLambda, "Shadow", 0.0f, 1.0f, true, "PSSM 혼합 비율 (0=선형, 1=로그)")
