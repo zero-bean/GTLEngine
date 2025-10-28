@@ -10,7 +10,6 @@
 
 FShadowManager::FShadowManager()
 	: RHIDevice(nullptr)
-	, ShadowVSMShader(nullptr)
 	, ShadowVSM_PS(nullptr)
 	, ShadowESM_PS(nullptr)
 	, ShadowEVSM_PS(nullptr)
@@ -39,10 +38,6 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 	PointLightCubeShadowMap.Initialize(RHI, Config.PointLightResolution, Config.PointLightResolution, Config.MaxPointLights, true, Config.FilterType);
 
 	// VSM/ESM/EVSM용 쉐이더 로드
-	if (!ShadowVSMShader)
-	{
-		ShadowVSMShader = UResourceManager::GetInstance().Load<UShader>("Shaders/Common/ShadowVSM_VS.hlsl");
-	}
 	if (!ShadowVSM_PS)
 	{
 		ShadowVSM_PS = UResourceManager::GetInstance().Load<UShader>("Shaders/Common/ShadowVSM_PS.hlsl");

@@ -171,7 +171,6 @@ private:
 	FShadowMap PointLightCubeShadowMap;       // PointLight Cube Map (6 faces per light)
 
 	// VSM/ESM/EVSM용 쉐이더 (필터 타입에 따라 사용)
-	class UShader* ShadowVSMShader;   // VS는 공통
 	class UShader* ShadowVSM_PS;      // VSM 픽셀 쉐이더
 	class UShader* ShadowESM_PS;      // ESM 픽셀 쉐이더
 	class UShader* ShadowEVSM_PS;     // EVSM 픽셀 쉐이더
