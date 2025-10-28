@@ -577,26 +577,14 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 
 				// Begin이 End보다 크면 자동 조정
 				if (SpotLightDepthBegin > SpotLightDepthEnd)
-				{
 					SpotLightDepthEnd = SpotLightDepthBegin;
-				}
 
-				// 범위가 커스텀되었으면 리매핑된 SRV 사용, 아니면 원본 SRV 사용
-				bool bUseRemap = (SpotLightDepthBegin != 0.0f || SpotLightDepthEnd != 1.0f);
-				ID3D11ShaderResourceView* ShadowSRV = nullptr;
+				ID3D11ShaderResourceView* ShadowSRV = SpotLightShadowMap.GetRemappedSliceSRV(
+					GEngine.GetRenderer()->GetRHIDevice(),
+					ShadowMapIndex,
+					SpotLightDepthBegin,
+					SpotLightDepthEnd);
 
-				if (bUseRemap)
-				{
-					ShadowSRV = SpotLightShadowMap.GetRemappedSliceSRV(
-						GEngine.GetRenderer()->GetRHIDevice(),
-						ShadowMapIndex,
-						SpotLightDepthBegin,
-						SpotLightDepthEnd);
-				}
-				else
-				{
-					ShadowSRV = SpotLightShadowMap.GetSliceSRV(ShadowMapIndex);
-				}
 
 				ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
 
@@ -619,15 +607,8 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 						ImVec4(1, 1, 1, 1),  // tint color
 						ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
 					);
+					ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", SpotLightDepthBegin, SpotLightDepthEnd);
 
-					if (bUseRemap)
-					{
-						ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", SpotLightDepthBegin, SpotLightDepthEnd);
-					}
-					else
-					{
-						ImGui::TextWrapped("Showing full depth range [0.0, 1.0].");
-					}
 				}
 				else
 				{
@@ -643,8 +624,6 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 	// DirectionalLightComponent인 경우 ShadowMap 표시
 	else if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(SelectedComponent))
 	{
-		FShadowManager* ShadowManager = GWorld->GetShadowManager();
-
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Text("[Shadow Map]");
@@ -676,39 +655,25 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 				ImGui::DragFloat("End##DirectionalDepth", &DirectionalLightDepthEnd, 0.001f, 0.0f, 1.0f, "%.4f");
 
 				// Begin이 End보다 크면 자동 조정
-				if (DirectionalLightDepthBegin > DirectionalLightDepthEnd)
-				{
-					DirectionalLightDepthEnd = DirectionalLightDepthBegin;
-				}
+				DirectionalLightDepthEnd = std::max(DirectionalLightDepthBegin, DirectionalLightDepthEnd);
 
-				// 범위가 커스텀되었으면 리매핑된 SRV 사용, 아니면 원본 SRV 사용
-				bool bUseRemap = (DirectionalLightDepthBegin != 0.0f || DirectionalLightDepthEnd != 1.0f);
-				ID3D11ShaderResourceView* ShadowSRV = nullptr;
-
-				if (bUseRemap)
-				{
-					ShadowSRV = DirectionalLightShadowMap.GetRemappedSliceSRV(
-						GEngine.GetRenderer()->GetRHIDevice(),
-						ShadowMapIndex,
-						DirectionalLightDepthBegin,
-						DirectionalLightDepthEnd);
-				}
-				else
-				{
-					ShadowSRV = DirectionalLightShadowMap.GetSliceSRV(ShadowMapIndex);
-				}
+				ID3D11ShaderResourceView* ShadowSRV = DirectionalLightShadowMap.GetRemappedSliceSRV(
+					GEngine.GetRenderer()->GetRHIDevice(),
+					ShadowMapIndex,
+					DirectionalLightDepthBegin,
+					DirectionalLightDepthEnd);
 
 				ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
 
-			if (ShadowSRV)
-			{
-				ImGui::Spacing();
+				if (ShadowSRV)
+				{
+					ImGui::Spacing();
 
-				// ShadowMap 크기 조절 (입력 가능한 슬라이더)
-				static float DirectionalShadowMapDisplaySize = 256.0f;
-				ImGui::SetNextItemWidth(200.0f);
-				ImGui::DragFloat("Display Size##Directional", &DirectionalShadowMapDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
-				ImGui::Spacing();
+					// ShadowMap 크기 조절 (입력 가능한 슬라이더)
+					static float DirectionalShadowMapDisplaySize = 256.0f;
+					ImGui::SetNextItemWidth(200.0f);
+					ImGui::DragFloat("Display Size##Directional", &DirectionalShadowMapDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
+					ImGui::Spacing();
 
 					// ShadowMap 이미지 표시
 					ImGui::Image(
@@ -720,14 +685,7 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 						ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
 					);
 
-					if (bUseRemap)
-					{
-						ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", DirectionalLightDepthBegin, DirectionalLightDepthEnd);
-					}
-					else
-					{
-						ImGui::TextWrapped("Showing full depth range [0.0, 1.0].");
-					}
+					ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", DirectionalLightDepthBegin, DirectionalLightDepthEnd);
 				}
 				else
 				{
@@ -777,14 +735,8 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 					ImGui::DragFloat("End##PointDepth", &PointLightDepthEnd, 0.001f, 0.0f, 1.0f, "%.4f");
 
 					// Begin이 End보다 크면 자동 조정
-					if (PointLightDepthBegin > PointLightDepthEnd)
-					{
-						PointLightDepthEnd = PointLightDepthBegin;
-					}
-
-					// 범위가 커스텀되었으면 리매핑 사용
-					bool bUseRemap = (PointLightDepthBegin != 0.0f || PointLightDepthEnd != 1.0f);
-
+					PointLightDepthEnd = std::max(PointLightDepthBegin, PointLightDepthEnd);
+					
 					// CubeShadowMap 크기 조절
 					static float CubeShadowMapDisplaySize = 128.0f;
 					ImGui::SetNextItemWidth(200.0f);
@@ -809,20 +761,11 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 							int faceIndex = row * 3 + col;
 							uint32 ArrayIndex = (ShadowMapIndex * 6) + faceIndex;
 
-							ID3D11ShaderResourceView* FaceSRV = nullptr;
-
-							if (bUseRemap)
-							{
-								FaceSRV = PointLightCubeShadowMap.GetRemappedSliceSRV(
-									GEngine.GetRenderer()->GetRHIDevice(),
-									ArrayIndex,
-									PointLightDepthBegin,
-									PointLightDepthEnd);
-							}
-							else
-							{
-								FaceSRV = PointLightCubeShadowMap.GetSliceSRV(ArrayIndex);
-							}
+							ID3D11ShaderResourceView* FaceSRV = PointLightCubeShadowMap.GetRemappedSliceSRV(
+								GEngine.GetRenderer()->GetRHIDevice(),
+								ArrayIndex,
+								PointLightDepthBegin,
+								PointLightDepthEnd);
 
 							if (col > 0) ImGui::SameLine();
 
@@ -848,15 +791,7 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 							ImGui::EndGroup();
 						}
 					}
-
-					if (bUseRemap)
-					{
-						ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", PointLightDepthBegin, PointLightDepthEnd);
-					}
-					else
-					{
-						ImGui::TextWrapped("Showing full depth range [0.0, 1.0].");
-					}
+					ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", PointLightDepthBegin, PointLightDepthEnd);
 				}
 				else
 				{
