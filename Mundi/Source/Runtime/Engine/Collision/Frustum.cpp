@@ -5,9 +5,6 @@
 #include "CameraComponent.h"
 #include <immintrin.h> // For SSE, AVX, FMA instructions
 
-
-
-
 inline float     Dot3(const FVector4& A, const FVector4& B)
 {
     // Use SSE4.1's dot product instruction. It's faster than manual shuffling.
@@ -19,7 +16,6 @@ inline float     Dot3(const FVector4& A, const FVector4& B)
     _mm_store_ss(&result, dp);
     return result;
 }
-
 inline FVector4  Cross3(const FVector4& A, const FVector4& B)
 {
     // Use shuffles and FMA (Fused Multiply-Add) for an efficient cross product.
@@ -99,16 +95,6 @@ namespace
         }
     }
     */
-}
-
-// Helper function for converting View Space depth to NDC Z
-namespace
-{
-    float DepthToNDC(float Depth, float NearPlane, float FarPlane)
-    {
-        // NDC Z = (far / (far - near)) * (1 - near / z)
-        return (FarPlane / (FarPlane - NearPlane)) * (1.0f - NearPlane / Depth);
-    }
 }
 
 FFrustum CreateFrustumFromCamera(const UCameraComponent& Camera, float OverrideAspect)
@@ -436,6 +422,53 @@ uint8_t AreAABBsVisible_8_AVX(const FFrustum& Frustum, const FAABB Bounds[8])
     return static_cast<uint8_t>(all_visible_mask);
 }
 
+/* *
+* @brief 해당 namespace로 래핑된 함수들은 "카메라 프러스텀 월드 공간"을 추출하는데 관련된 영역입니다.
+*/
+namespace
+{
+    // Z Near ~ Z Far의 뎁스값을 "비선형적"으로 변환합니다.
+    float DepthToNDC(float Depth, float NearZ, float FarZ) { return (FarZ / (FarZ - NearZ)) * (1.0f - NearZ / Depth); }
+
+    // NDC 코너를 월드 공간으로 변환하는 공통 로직
+    // @param NDCCorners - NDC 공간의 8개 코너 점
+    // @param InvViewProj - ViewProjection의 역행렬
+    // @param OutCorners - 월드 공간 코너 출력
+    void TransformNDCCornersToWorldSpace(const FVector4 NDCCorners[8], const FMatrix& InvViewProj, TArray<FVector>& OutCorners)
+    {
+        // 출력 배열 크기 확보
+        OutCorners.Empty();
+        OutCorners.Reserve(8);
+
+        // 각 NDC 코너를 월드 공간으로 변환
+        for (int i = 0; i < 8; ++i)
+        {
+            // Row-vector 방식: v' = v * M
+            FVector4 WorldPosHomogeneous = NDCCorners[i] * InvViewProj;
+
+            // Perspective divide (동차 좌표 → 데카르트 좌표)
+            if (WorldPosHomogeneous.W != 0.0f)
+            {
+                float InvW = 1.0f / WorldPosHomogeneous.W;
+                OutCorners.Add(FVector(
+                    WorldPosHomogeneous.X * InvW,
+                    WorldPosHomogeneous.Y * InvW,
+                    WorldPosHomogeneous.Z * InvW
+                ));
+            }
+            else
+            {
+                // W=0인 경우 (방향 벡터) - 일반적으로 발생하지 않지만 안전장치
+                OutCorners.Add(FVector(
+                    WorldPosHomogeneous.X,
+                    WorldPosHomogeneous.Y,
+                    WorldPosHomogeneous.Z
+                ));
+            }
+        }
+    }
+}
+
 void GetFrustumCornersWorldSpace(const FMatrix& InViewProjInverse, TArray<FVector>& OutCorners)
 {
     // NDC 공간의 Frustum 8개 코너 점 정의
@@ -453,37 +486,7 @@ void GetFrustumCornersWorldSpace(const FMatrix& InViewProjInverse, TArray<FVecto
         { -1,  1, 1, 1 }   // Left-Top-Far
     };
 
-    // 출력 배열 크기 확보
-    OutCorners.Empty();
-    OutCorners.Reserve(8);
-
-    // 각 NDC 코너를 월드 공간으로 변환
-    for (int i = 0; i < 8; ++i)
-    {
-        // Row-vector 방식: v' = v * M
-        // NDC 코너를 InvViewProj 행렬로 곱하여 월드 공간으로 변환
-        FVector4 WorldPosHomogeneous = NDCCorners[i] * InViewProjInverse;
-
-        // Perspective divide (동차 좌표 → 데카르트 좌표)
-        if (WorldPosHomogeneous.W != 0.0f)
-        {
-            float InvW = 1.0f / WorldPosHomogeneous.W;
-            OutCorners.Add(FVector(
-                WorldPosHomogeneous.X * InvW,
-                WorldPosHomogeneous.Y * InvW,
-                WorldPosHomogeneous.Z * InvW
-            ));
-        }
-        else
-        {
-            // W=0인 경우 (방향 벡터) - 일반적으로 발생하지 않지만 안전장치
-            OutCorners.Add(FVector(
-                WorldPosHomogeneous.X,
-                WorldPosHomogeneous.Y,
-                WorldPosHomogeneous.Z
-            ));
-        }
-    }
+    TransformNDCCornersToWorldSpace(NDCCorners, InViewProjInverse, OutCorners);
 }
 
 void GetFrustumCornersWorldSpace_Partial(const FMatrix& CameraView, const FMatrix& CameraProjection,
@@ -498,69 +501,24 @@ void GetFrustumCornersWorldSpace_Partial(const FMatrix& CameraView, const FMatri
 	float NearNDC = DepthToNDC(NearDistance, CameraNear, CameraFar);
 	float FarNDC = DepthToNDC(FarDistance, CameraNear, CameraFar);
 
-	// NDC 공간의 Frustum 8개 코너 점 정의 (Z값만 수정됨)
-	static const FVector4 NDCCornersTemplate[8] = {
+	// NDC 공간의 Frustum 8개 코너 점 정의 (Z값 수정)
+	FVector4 NDCCorners[8] = {
 		// Near plane
-		{ -1, -1, 0, 1 },  // Left-Bottom-Near
-		{  1, -1, 0, 1 },  // Right-Bottom-Near
-		{  1,  1, 0, 1 },  // Right-Top-Near
-		{ -1,  1, 0, 1 },  // Left-Top-Near
+		{ -1, -1, NearNDC, 1 },  // Left-Bottom-Near
+		{  1, -1, NearNDC, 1 },  // Right-Bottom-Near
+		{  1,  1, NearNDC, 1 },  // Right-Top-Near
+		{ -1,  1, NearNDC, 1 },  // Left-Top-Near
 		// Far plane
-		{ -1, -1, 1, 1 },  // Left-Bottom-Far
-		{  1, -1, 1, 1 },  // Right-Bottom-Far
-		{  1,  1, 1, 1 },  // Right-Top-Far
-		{ -1,  1, 1, 1 }   // Left-Top-Far
+		{ -1, -1, FarNDC, 1 },  // Left-Bottom-Far
+		{  1, -1, FarNDC, 1 },  // Right-Bottom-Far
+		{  1,  1, FarNDC, 1 },  // Right-Top-Far
+		{ -1,  1, FarNDC, 1 }   // Left-Top-Far
 	};
-
-	// Z값을 부분 Frustum에 맞게 수정
-	FVector4 NDCCorners[8];
-	for (int i = 0; i < 8; ++i)
-	{
-		NDCCorners[i] = NDCCornersTemplate[i];
-		if (i < 4)
-		{
-			// Near plane
-			NDCCorners[i].Z = NearNDC;
-		}
-		else
-		{
-			// Far plane
-			NDCCorners[i].Z = FarNDC;
-		}
-	}
 
 	// ViewProjection 역행렬 계산
 	FMatrix InvView = CameraView.InverseAffine();
 	FMatrix InvProj = CameraProjection.InversePerspectiveProjection();
 	FMatrix InvViewProj = InvProj * InvView;
 
-	// 출력 배열 크기 확보
-	OutCorners.Empty();
-	OutCorners.Reserve(8);
-
-	// 각 NDC 코너를 월드 공간으로 변환
-	for (int i = 0; i < 8; ++i)
-	{
-		// Row-vector 방식: v' = v * M
-		FVector4 WorldPosHomogeneous = NDCCorners[i] * InvViewProj;
-
-		// Perspective divide
-		if (WorldPosHomogeneous.W != 0.0f)
-		{
-			float InvW = 1.0f / WorldPosHomogeneous.W;
-			OutCorners.Add(FVector(
-				WorldPosHomogeneous.X * InvW,
-				WorldPosHomogeneous.Y * InvW,
-				WorldPosHomogeneous.Z * InvW
-			));
-		}
-		else
-		{
-			OutCorners.Add(FVector(
-				WorldPosHomogeneous.X,
-				WorldPosHomogeneous.Y,
-				WorldPosHomogeneous.Z
-			));
-		}
-	}
+	TransformNDCCornersToWorldSpace(NDCCorners, InvViewProj, OutCorners);
 }
