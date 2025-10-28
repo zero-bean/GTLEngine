@@ -2,6 +2,13 @@
 #include "LightComponent.h"
 #include "LightManager.h"
 
+// 방향광 쉐도우맵 타입
+enum class EShadowMapType : uint8
+{
+	Default = 0,  // 일반 쉐도우맵
+	CSM = 1       // Cascaded Shadow Maps
+};
+
 // 방향성 라이트 (태양광 같은 평행광)
 class UDirectionalLightComponent : public ULightComponent
 {
@@ -73,6 +80,17 @@ public:
 	// Update Gizmo to match light properties
 	void UpdateDirectionGizmo();
 
+	// Shadow Map Type Getter/Setter
+	EShadowMapType GetShadowMapType() const { return ShadowMapType; }
+	void SetShadowMapType(EShadowMapType Type) { ShadowMapType = Type; }
+
+	// CSM Configuration Getter/Setter
+	int32 GetNumCascades() const { return NumCascades; }
+	void SetNumCascades(int32 Num) { NumCascades = Num; }
+
+	float GetCSMLambda() const { return CSMLambda; }
+	void SetCSMLambda(float Lambda) { CSMLambda = Lambda; }
+
 protected:
 	// Direction Gizmo (shows light direction)
 	class UGizmoArrowComponent* DirectionGizmo = nullptr;
@@ -88,4 +106,11 @@ protected:
 		FMatrix::Identity()
 	};
 	float CascadeSplitDistances[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// Shadow Map Type (Default or CSM)
+	EShadowMapType ShadowMapType = EShadowMapType::CSM;
+
+	// CSM Configuration (only visible when ShadowMapType == CSM)
+	int32 NumCascades = 3;
+	float CSMLambda = 0.5f;
 };

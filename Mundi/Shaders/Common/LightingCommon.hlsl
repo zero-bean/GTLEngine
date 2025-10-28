@@ -313,28 +313,33 @@ float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, f
     float shadow = 1.0f;
     if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
     {
-        // CSM: 뷰 공간 깊이 기준으로 캐스케이드 선택
-        // worldPos를 View 공간으로 변환하여 깊이 구하기
-        // 주의: ViewMatrix는 UberLit.hlsl의 ViewProjBuffer에 정의되어 있어야 함
-        float3 viewSpacePos = mul(float4(worldPos, 1.0f), ViewMatrix).xyz;
-        float viewDepth = abs(viewSpacePos.z); // 카메라로부터의 거리
+        if (light.bUseCSM)
+        {
+            // CSM: 뷰 공간 깊이 기준으로 캐스케이드 선택
+            float3 viewSpacePos = mul(float4(worldPos, 1.0f), ViewMatrix).xyz;
+            float viewDepth = abs(viewSpacePos.z); // 카메라로부터의 거리
 
-        // 캐스케이드 선택 (split distance와 비교)
-        int cascadeIndex = 0;
-        if (viewDepth > light.CascadeSplitDistances.x)
-            cascadeIndex = 1;
-        if (viewDepth > light.CascadeSplitDistances.y)
-            cascadeIndex = 2;
-        if (viewDepth > light.CascadeSplitDistances.z)
-            cascadeIndex = 3;
+            // 캐스케이드 선택 (NumCascades만큼 동적으로)
+            int cascadeIndex = 0;
+            for (int i = 0; i < (int)light.NumCascades - 1; i++)
+            {
+                if (viewDepth > light.CascadeSplitDistances[i])
+                    cascadeIndex = i + 1;
+            }
 
-        // 선택된 캐스케이드의 VP 행렬로 라이트 공간 변환
-        float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.CascadeViewProjection[cascadeIndex]);
+            // 선택된 캐스케이드의 VP 행렬로 라이트 공간 변환
+            float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.CascadeViewProjection[cascadeIndex]);
 
-        // 섀도우 맵 배열 인덱스 계산: base + cascadeIndex
-        uint shadowMapIndex = light.ShadowMapIndex + cascadeIndex;
-        //shadow = SampleDirectionalLightShadowMap(shadowMapIndex, lightSpacePos);
-        shadow = SampleDirectionalLightShadowMap(light.ShadowMapIndex, lightSpacePos, normal, lightDir);
+            // 섀도우 맵 배열 인덱스 계산: base + cascadeIndex
+            uint shadowMapIndex = light.ShadowMapIndex + cascadeIndex;
+            shadow = SampleDirectionalLightShadowMap(shadowMapIndex, lightSpacePos, normal, lightDir);
+        }
+        else
+        {
+            // Default: 단일 쉐도우 맵 사용 (카메라 프러스텀 전체)
+            float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.LightViewProjection);
+            shadow = SampleDirectionalLightShadowMap(light.ShadowMapIndex, lightSpacePos, normal, lightDir);
+        }
     }
 
     // Diffuse (light.Color는 이미 Intensity 포함)
