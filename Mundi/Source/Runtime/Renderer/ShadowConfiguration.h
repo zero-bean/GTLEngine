@@ -9,6 +9,25 @@ enum class EShadowQuality : uint8
 	Custom      // 사용자 정의
 };
 
+// 섀도우 필터링 타입
+enum class EShadowFilterType : uint8
+{
+	NONE,       // 필터링 없음 (하드웨어 기본 비교 샘플링)
+	PCF,        // Percentage Closer Filtering (소프트웨어)
+	VSM,        // Variance Shadow Maps
+	ESM,        // Exponential Shadow Maps
+	EVSM        // Exponential Variance Shadow Maps
+};
+
+// PCF 샘플 수
+enum class EPCFSampleCount : uint8
+{
+	PCF_3x3 = 3,    // 9 샘플
+	PCF_4x4 = 4,    // 16 샘플
+	PCF_5x5 = 5,    // 25 샘플
+	Custom = 0      // 사용자 정의
+};
+
 // Shadow 시스템 설정
 // 모든 shadow 관련 설정을 중앙화하여 magic number 제거
 struct FShadowConfiguration
@@ -33,6 +52,25 @@ struct FShadowConfiguration
 	uint32 NumCascades = 4;               // 캐스케이드 수
 	float CSMLambda = 0.5f;               // PSSM 혼합 비율 (0=선형, 1=로그)
 	float MaxShadowDistance = 1000.0f;    // 최대 그림자 거리
+
+	// 섀도우 필터링 설정
+	EShadowFilterType FilterType = EShadowFilterType::NONE;   // 필터링 타입
+
+	// PCF 설정
+	EPCFSampleCount PCFSampleCount = EPCFSampleCount::PCF_3x3;  // PCF 샘플 수
+	uint32 PCFCustomSampleCount = 3;                             // Custom 샘플 수 (PCFSampleCount가 Custom일 때)
+
+	// VSM 설정
+	float VSMLightBleedingReduction = 0.3f;   // Light bleeding 감소 (0.0 ~ 1.0)
+	float VSMMinVariance = 0.00001f;          // 최소 분산 값
+
+	// ESM 설정
+	float ESMExponent = 80.0f;                // Exponential 계수 (40.0 ~ 100.0 권장)
+
+	// EVSM 설정
+	float EVSMPositiveExponent = 40.0f;       // Positive exponent
+	float EVSMNegativeExponent = 40.0f;       // Negative exponent
+	float EVSMLightBleedingReduction = 0.3f;  // Light bleeding 감소
 
 	// 품질 프리셋으로부터 설정 로드
 	static FShadowConfiguration FromQuality(EShadowQuality InQuality);

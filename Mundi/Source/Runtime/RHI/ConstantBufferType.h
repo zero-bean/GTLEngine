@@ -148,6 +148,20 @@ struct FTileCullingBufferType
     uint32 bUseTileCulling;   // 타일 컬링 활성화 여부 (0=비활성화, 1=활성화)
 };
 
+// b12: 섀도우 필터링 상수 버퍼
+struct FShadowFilterBufferType
+{
+    uint32 FilterType;               // 필터링 타입 (0=PCF, 1=VSM, 2=ESM, 3=EVSM)
+    uint32 PCFSampleCount;           // PCF 샘플 수 (3, 4, 5)
+    float VSMLightBleedingReduction; // VSM Light bleeding 감소 (0.0 ~ 1.0)
+    float VSMMinVariance;            // VSM 최소 분산 값
+
+    float ESMExponent;               // ESM Exponential 계수
+    float EVSMPositiveExponent;      // EVSM Positive exponent
+    float EVSMNegativeExponent;      // EVSM Negative exponent
+    float EVSMLightBleedingReduction;// EVSM Light bleeding 감소
+};
+
 #define CONSTANT_BUFFER_INFO(TYPE, SLOT, VS, PS) \
 constexpr uint32 TYPE##Slot = SLOT;\
 constexpr bool TYPE##IsVS = VS;\
@@ -167,6 +181,7 @@ MACRO(CameraBufferType)             \
 MACRO(FLightBufferType)             \
 MACRO(FViewportConstants)           \
 MACRO(FTileCullingBufferType)       \
+MACRO(FShadowFilterBufferType)      \
 
 // 16 바이트 패딩 어썰트
 #define STATIC_ASSERT_CBUFFER_ALIGNMENT(Type) \
@@ -187,3 +202,4 @@ CONSTANT_BUFFER_INFO(CameraBufferType, 7, true, true)  // b7, VS+PS (UberLit.hls
 CONSTANT_BUFFER_INFO(FLightBufferType, 8, true, true)
 CONSTANT_BUFFER_INFO(FViewportConstants, 10, true, false)   // 뷰 포트 크기에 따라 전체 화면 복사를 보정하기 위해 설정 (10번 고유번호로 사용)
 CONSTANT_BUFFER_INFO(FTileCullingBufferType, 11, false, true)  // b11, PS only (UberLit.hlsl과 일치)
+CONSTANT_BUFFER_INFO(FShadowFilterBufferType, 12, false, true) // b12, PS only (Shadow filtering)

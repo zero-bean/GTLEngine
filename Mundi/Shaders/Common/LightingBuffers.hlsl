@@ -52,3 +52,17 @@ cbuffer TileCullingBuffer : register(b11)
     uint TileCountY;        // 세로 타일 개수
     uint bUseTileCulling;   // 타일 컬링 활성화 여부 (0=비활성화, 1=활성화)
 };
+
+// b12: 섀도우 필터링 설정 상수 버퍼
+cbuffer ShadowFilterBuffer : register(b12)
+{
+    uint FilterType;                  // 필터링 타입 (0=PCF, 1=VSM, 2=ESM, 3=EVSM)
+    uint PCFSampleCount;              // PCF 샘플 수 (3, 4, 5)
+    float VSMLightBleedingReduction;  // VSM Light bleeding 감소 (0.0 ~ 1.0)
+    float VSMMinVariance;             // VSM 최소 분산 값
+
+    float ESMExponent;                // ESM Exponential 계수
+    float EVSMPositiveExponent;       // EVSM Positive exponent
+    float EVSMNegativeExponent;       // EVSM Negative exponent
+    float EVSMLightBleedingReduction; // EVSM Light bleeding 감소
+};
