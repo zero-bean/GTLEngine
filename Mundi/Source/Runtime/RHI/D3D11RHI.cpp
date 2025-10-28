@@ -266,6 +266,24 @@ void D3D11RHI::CreateSamplerState()
 	ShadowComparisonDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	HR = Device->CreateSamplerState(&ShadowComparisonDesc, &ShadowComparisonSamplerState);
+
+	// Linear Sampler State (VSM/ESM/EVSM용)
+	D3D11_SAMPLER_DESC LinearDesc = {};
+	LinearDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	LinearDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	LinearDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	LinearDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	LinearDesc.MipLODBias = 0.0f;
+	LinearDesc.MaxAnisotropy = 1;
+	LinearDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	LinearDesc.BorderColor[0] = 1.0f; // Outside shadow map = lit
+	LinearDesc.BorderColor[1] = 1.0f;
+	LinearDesc.BorderColor[2] = 1.0f;
+	LinearDesc.BorderColor[3] = 1.0f;
+	LinearDesc.MinLOD = 0;
+	LinearDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	HR = Device->CreateSamplerState(&LinearDesc, &LinearSamplerState);
 }
 
 HRESULT D3D11RHI::CreateIndexBuffer(ID3D11Device* device, const FMeshData* meshData, ID3D11Buffer** outBuffer)

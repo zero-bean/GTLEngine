@@ -136,6 +136,9 @@ public:
 	// 포인트 라이트 쉐도우 맵 해상도 변경
 	void SetPointLightResolution(uint32 NewResolution);
 
+	// 섀도우 필터 타입 변경
+	void SetFilterType(EShadowFilterType NewFilterType);
+
 	// Query 메서드들
 	const FShadowConfiguration& GetShadowConfiguration() const { return Config; }
 	int32 GetShadowMapIndex(USpotLightComponent* Light) const;
@@ -145,6 +148,9 @@ public:
 	const FShadowMap& GetDirectionalLightShadowMap() const { return DirectionalLightShadowMap; }
 	FShadowMap& GetPointLightCubeShadowMap() { return PointLightCubeShadowMap; }
 	const FShadowMap& GetPointLightCubeShadowMap() const { return PointLightCubeShadowMap; }
+
+	// 필터 타입에 따라 적절한 픽셀 셰이더 반환
+	class UShader* GetShadowPixelShaderForFilterType(EShadowFilterType FilterType) const;
 
 	// CSM Split 거리 계산 (PSSM)
 	TArray<float> CalculateCSMSplits(float CameraNear, float CameraFar, int NumCascades, float Lambda) const;
@@ -163,4 +169,10 @@ private:
 	FShadowMap SpotLightShadowMap;
 	FShadowMap DirectionalLightShadowMap;
 	FShadowMap PointLightCubeShadowMap;       // PointLight Cube Map (6 faces per light)
+
+	// VSM/ESM/EVSM용 쉐이더 (필터 타입에 따라 사용)
+	class UShader* ShadowVSMShader;   // VS는 공통
+	class UShader* ShadowVSM_PS;      // VSM 픽셀 쉐이더
+	class UShader* ShadowESM_PS;      // ESM 픽셀 쉐이더
+	class UShader* ShadowEVSM_PS;     // EVSM 픽셀 쉐이더
 };

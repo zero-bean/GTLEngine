@@ -41,8 +41,11 @@ Texture2DArray g_DirectionalLightShadowMaps : register(t6);
 // t7: PointLight Cube Shadow map texture cube array
 TextureCubeArray g_PointLightShadowCubeMaps : register(t7);
 
-// Shadow map sampler - comparison sampler for PCF
+// Shadow map sampler - comparison sampler for NONE, PCF
 SamplerComparisonState g_ShadowSampler : register(s2);
+
+// Linear sampler for VSM/ESM/EVSM
+SamplerState g_LinearSampler : register(s3);
 
 // b11: 타일 컬링 설정 상수 버퍼
 cbuffer TileCullingBuffer : register(b11)

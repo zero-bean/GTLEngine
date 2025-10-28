@@ -179,6 +179,7 @@ public:
 
     // Sampler State Getters
     ID3D11SamplerState* GetShadowComparisonSamplerState() const { return ShadowComparisonSamplerState; }
+    ID3D11SamplerState* GetLinearSamplerState() const { return LinearSamplerState; }
 
 private:
 	void CreateDeviceAndSwapChain(HWND hWindow); // 여기서 디바이스, 디바이스 컨택스트, 스왑체인, 뷰포트를 초기화한다
@@ -259,6 +260,7 @@ private:
 	ID3D11SamplerState* LinearClampSamplerState = nullptr;
 	ID3D11SamplerState* PointClampSamplerState = nullptr;
 	ID3D11SamplerState* ShadowComparisonSamplerState = nullptr;
+	ID3D11SamplerState* LinearSamplerState = nullptr;  // VSM/ESM/EVSM용 Linear 샘플러
 
 	UShader* PreShader = nullptr; // Shaders, Inputlayout
 

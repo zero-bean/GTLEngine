@@ -2030,7 +2030,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 
 					if (ImGui::RadioButton("NONE (필터링 없음)", &currentFilterType, static_cast<int>(EShadowFilterType::NONE)))
 					{
-						Config.FilterType = EShadowFilterType::NONE;
+						World->GetShadowManager()->SetFilterType(EShadowFilterType::NONE);
 					}
 					if (ImGui::IsItemHovered())
 					{
@@ -2039,7 +2039,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 
 					if (ImGui::RadioButton("PCF", &currentFilterType, static_cast<int>(EShadowFilterType::PCF)))
 					{
-						Config.FilterType = EShadowFilterType::PCF;
+						World->GetShadowManager()->SetFilterType(EShadowFilterType::PCF);
 					}
 					if (ImGui::IsItemHovered())
 					{
@@ -2048,7 +2048,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 
 					if (ImGui::RadioButton("VSM", &currentFilterType, static_cast<int>(EShadowFilterType::VSM)))
 					{
-						Config.FilterType = EShadowFilterType::VSM;
+						World->GetShadowManager()->SetFilterType(EShadowFilterType::VSM);
 					}
 					if (ImGui::IsItemHovered())
 					{
@@ -2057,7 +2057,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 
 					if (ImGui::RadioButton("ESM", &currentFilterType, static_cast<int>(EShadowFilterType::ESM)))
 					{
-						Config.FilterType = EShadowFilterType::ESM;
+						World->GetShadowManager()->SetFilterType(EShadowFilterType::ESM);
 					}
 					if (ImGui::IsItemHovered())
 					{
@@ -2066,7 +2066,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 
 					if (ImGui::RadioButton("EVSM", &currentFilterType, static_cast<int>(EShadowFilterType::EVSM)))
 					{
-						Config.FilterType = EShadowFilterType::EVSM;
+						World->GetShadowManager()->SetFilterType(EShadowFilterType::EVSM);
 					}
 					if (ImGui::IsItemHovered())
 					{

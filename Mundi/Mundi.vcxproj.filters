@@ -50,6 +50,18 @@
     <FxCompile Include="Shaders\Materials\ShadowDepth.hlsl">
       <Filter>Shaders\Materials</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\ShadowESM_PS.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\ShadowEVSM_PS.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\ShadowVSM_PS.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\ShadowVSM_VS.hlsl">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
   </ItemGroup>
   <!-- Root Files -->
   <ItemGroup>

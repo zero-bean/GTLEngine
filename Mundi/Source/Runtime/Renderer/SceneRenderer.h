@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Frustum.h"
+#include "ShadowConfiguration.h"
 
 // 전방 선언 (헤더 파일 의존성 최소화)
 class UWorld;
@@ -141,8 +142,12 @@ private:
 	/** @brief 섀도우 패스용 메시 배치를 수집합니다. */
 	void CollectShadowMeshBatches(TArray<FMeshBatchElement>& OutMeshBatches) const;
 
-	/** @brief 메시 배치의 셰이더를 섀도우 뎁스 셰이더로 오버라이드합니다. */
-	void OverrideShadowShader(TArray<FMeshBatchElement>& MeshBatches, FShaderVariant* ShadowShaderVariant);
+	/** @brief 메시 배치의 셰이더를 섀도우 뎁스 셰이더로 오버라이드합니다.
+	 *  @param MeshBatches 오버라이드할 메시 배치
+	 *  @param ShadowShaderVariant 섀도우 뎁스 VS 셰이더 (VS와 InputLayout 사용)
+	 *  @param FilterType 섀도우 필터 타입 (PS 선택에 사용)
+	 */
+	void OverrideShadowShader(TArray<FMeshBatchElement>& MeshBatches, FShaderVariant* ShadowShaderVariant, EShadowFilterType FilterType);
 
 	/** @brief 섀도우 렌더링을 위한 ViewProj 상수 버퍼를 업데이트합니다. */
 	void UpdateViewProjBufferForShadow(const FShadowRenderContext& ShadowContext, bool bIsOrthographic);
