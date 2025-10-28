@@ -151,8 +151,13 @@ struct FTileCullingBufferType
 // b12: 섀도우 필터링 상수 버퍼
 struct FShadowFilterBufferType
 {
-    uint32 FilterType;               // 필터링 타입 (0=PCF, 1=VSM, 2=ESM, 3=EVSM)
+    uint32 FilterType;               // 필터링 타입 (0=NONE, 1=PCF, 2=VSM, 3=ESM, 4=EVSM)
     uint32 PCFSampleCount;           // PCF 샘플 수 (3, 4, 5)
+    uint32 PCFCustomSampleCount;     // PCF Custom 샘플 수
+    float DirectionalLightResolution;// Directional Light 섀도우 맵 해상도
+
+    float SpotLightResolution;       // Spot Light 섀도우 맵 해상도
+    float PointLightResolution;      // Point Light 섀도우 맵 해상도
     float VSMLightBleedingReduction; // VSM Light bleeding 감소 (0.0 ~ 1.0)
     float VSMMinVariance;            // VSM 최소 분산 값
 

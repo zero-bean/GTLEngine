@@ -134,6 +134,119 @@ float CalculateExponentFalloff(float distance, float attenuationRadius, float fa
 // Shadow Mapping Functions
 //================================================================================================
 
+// Poisson Disk 샘플링 패턴 (8x8 = 64 샘플)
+// 고품질 PCF를 위한 랜덤 분포 패턴
+static const float2 PoissonDisk64[64] =
+{
+    float2(-0.613392f, 0.617481f), float2(0.170019f, -0.040254f), float2(-0.299417f, 0.791925f), float2(0.645680f, 0.493210f),
+    float2(-0.651784f, 0.717887f), float2(0.421003f, 0.027070f), float2(-0.817194f, -0.271096f), float2(-0.705374f, -0.668203f),
+    float2(0.977050f, -0.108615f), float2(0.063326f, 0.142369f), float2(0.203528f, 0.214331f), float2(-0.667531f, 0.326090f),
+    float2(-0.098422f, -0.295755f), float2(-0.885922f, 0.215369f), float2(0.566637f, 0.605213f), float2(0.039766f, -0.396100f),
+    float2(0.751946f, 0.453352f), float2(0.078707f, -0.715323f), float2(-0.075838f, -0.529344f), float2(0.724479f, -0.580798f),
+    float2(0.222999f, -0.215125f), float2(-0.467574f, -0.405438f), float2(-0.248268f, -0.814753f), float2(0.354411f, -0.887570f),
+    float2(0.175817f, 0.382366f), float2(0.487472f, -0.063082f), float2(-0.084078f, 0.898312f), float2(0.488876f, -0.783441f),
+    float2(0.470016f, 0.217933f), float2(-0.696890f, -0.549791f), float2(-0.149693f, 0.605762f), float2(0.034211f, 0.979980f),
+    float2(0.503098f, -0.308878f), float2(-0.016205f, -0.872921f), float2(0.385784f, -0.393902f), float2(-0.146886f, -0.859249f),
+    float2(0.643361f, 0.164098f), float2(0.634388f, -0.049471f), float2(-0.688894f, 0.007843f), float2(0.464034f, -0.188818f),
+    float2(-0.440840f, 0.137486f), float2(0.364483f, 0.511704f), float2(0.034028f, 0.325968f), float2(0.099094f, -0.308023f),
+    float2(0.693960f, -0.366253f), float2(0.678884f, -0.204688f), float2(0.001801f, 0.780328f), float2(0.145177f, -0.898984f),
+    float2(0.062655f, -0.611866f), float2(0.315226f, -0.604297f), float2(-0.780145f, 0.486251f), float2(-0.371868f, 0.882138f),
+    float2(0.200476f, 0.494430f), float2(-0.494552f, -0.711051f), float2(0.612476f, 0.705252f), float2(-0.578845f, -0.768792f),
+    float2(-0.772454f, -0.090976f), float2(0.504440f, 0.372295f), float2(0.155736f, 0.065157f), float2(0.391522f, 0.849605f),
+    float2(-0.620106f, -0.328104f), float2(0.789239f, -0.419965f), float2(-0.545396f, 0.538133f), float2(-0.178564f, -0.596057f)
+};
+
+/**
+ * PCF (Percentage Closer Filtering) 샘플링
+ * 소프트웨어 기반 다중 샘플링으로 부드러운 그림자 생성
+ *
+ * @param shadowMap - 샘플링할 섀도우 맵
+ * @param shadowTexCoord - 섀도우 맵 텍스처 좌표
+ * @param shadowMapIndex - 섀도우 맵 배열 인덱스
+ * @param currentDepth - 현재 깊이 값
+ * @param sampleCount - PCF 샘플 수 (3, 4, 5 등)
+ * @param texelSize - 섀도우 맵의 텍셀 크기 (1.0 / resolution)
+ * @return 섀도우 값 (0.0 = 완전한 그림자, 1.0 = 완전히 밝음)
+ */
+float SamplePCF_2DArray(Texture2DArray shadowMap, float2 shadowTexCoord, uint shadowMapIndex, float currentDepth, uint sampleCount, float texelSize)
+{
+    float shadow = 0.0f;
+    uint totalSamples = sampleCount * sampleCount;
+    float halfSample = float(sampleCount) * 0.5f;
+
+    // Poisson disk 인덱스 오프셋 (sampleCount에 따라 다른 패턴 사용)
+    uint poissonStart = min(sampleCount * sampleCount, 64) % 64;
+
+    for (uint i = 0; i < totalSamples; ++i)
+    {
+        // Poisson disk 샘플 가져오기
+        uint poissonIndex = (poissonStart + i) % 64;
+        float2 offset = PoissonDisk64[poissonIndex] * texelSize * halfSample;
+
+        float2 sampleCoord = shadowTexCoord + offset;
+        float3 samplePos = float3(sampleCoord, shadowMapIndex);
+
+        // Comparison sampler를 사용하여 깊이 비교
+        shadow += shadowMap.SampleCmpLevelZero(g_ShadowSampler, samplePos, currentDepth);
+    }
+
+    return shadow / float(totalSamples);
+}
+
+/**
+ * PCF (Percentage Closer Filtering) 샘플링 - TextureCubeArray용
+ *
+ * @param shadowCubeMap - 샘플링할 큐브 섀도우 맵
+ * @param direction - 샘플링 방향
+ * @param shadowMapIndex - 섀도우 맵 배열 인덱스
+ * @param currentDepth - 현재 깊이 값
+ * @param sampleCount - PCF 샘플 수
+ * @param texelSize - 섀도우 맵의 텍셀 크기
+ * @return 섀도우 값
+ */
+float SamplePCF_CubeArray(TextureCubeArray shadowCubeMap, float3 direction, uint shadowMapIndex, float currentDepth, uint sampleCount, float texelSize)
+{
+    float shadow = 0.0f;
+    uint totalSamples = sampleCount * sampleCount;
+    float halfSample = float(sampleCount) * 0.5f;
+
+    // 큐브맵 샘플링을 위한 tangent/bitangent 계산
+    float3 absDir = abs(direction);
+    float3 tangent, bitangent;
+
+    if (absDir.x > absDir.y && absDir.x > absDir.z)
+    {
+        tangent = float3(0.0f, 1.0f, 0.0f);
+    }
+    else if (absDir.y > absDir.z)
+    {
+        tangent = float3(1.0f, 0.0f, 0.0f);
+    }
+    else
+    {
+        tangent = float3(1.0f, 0.0f, 0.0f);
+    }
+
+    bitangent = normalize(cross(direction, tangent));
+    tangent = normalize(cross(bitangent, direction));
+
+    uint poissonStart = min(sampleCount * sampleCount, 64) % 64;
+
+    for (uint i = 0; i < totalSamples; ++i)
+    {
+        uint poissonIndex = (poissonStart + i) % 64;
+        float2 diskOffset = PoissonDisk64[poissonIndex] * texelSize * halfSample;
+
+        // 큐브맵 방향 오프셋 적용
+        float3 sampleDir = normalize(direction + tangent * diskOffset.x + bitangent * diskOffset.y);
+        float4 samplePos = float4(sampleDir, shadowMapIndex);
+
+        shadow += shadowCubeMap.SampleCmpLevelZero(g_ShadowSampler, samplePos, currentDepth);
+    }
+
+    return shadow / float(totalSamples);
+}
+
 /**
  * Sample SpotLight shadow map
  * Returns 0.0 if in shadow, 1.0 if lit
@@ -142,8 +255,9 @@ float CalculateExponentFalloff(float distance, float attenuationRadius, float fa
  * @param lightSpacePos - Position in light's clip space
  * @param worldNormal - World space normal for slope-scaled bias
  * @param lightDir - Light direction for slope calculation
+ * @param shadowMapResolution - 섀도우 맵 해상도 (PCF texelSize 계산용)
  */
-float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3 worldNormal, float3 lightDir)
+float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3 worldNormal, float3 lightDir, float shadowMapResolution)
 {
     // Perspective divide to get NDC coordinates
     float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
@@ -165,15 +279,26 @@ float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3
     float currentDepth = projCoords.z;
 
     // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
-    // 빛과 평행한 표면(NdotL=1.0): 최소 bias
-    // 빛과 수직에 가까운 표면(NdotL=0.0): 최대 bias
     float NdotL = saturate(dot(worldNormal, lightDir));
     float bias = lerp(0.00001f, 0.00005f, NdotL);
     currentDepth -= bias;
 
-    // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
-    float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-    float shadow = g_SpotLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+    // 필터링 타입에 따라 분기
+    float shadow = 1.0f;
+
+    if (FilterType == 0) // NONE
+    {
+        // 하드웨어 기본 비교 샘플링
+        float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
+        shadow = g_SpotLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+    }
+    else if (FilterType == 1) // PCF
+    {
+        // 소프트웨어 PCF
+        uint sampleCount = (PCFSampleCount == 0) ? PCFCustomSampleCount : PCFSampleCount;
+        float texelSize = 1.0f / shadowMapResolution;
+        shadow = SamplePCF_2DArray(g_SpotLightShadowMaps, shadowTexCoord, shadowMapIndex, currentDepth, sampleCount, texelSize);
+    }
 
     return shadow;
 }
@@ -186,8 +311,9 @@ float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3
  * @param lightSpacePos - Position in light's clip space
  * @param worldNormal - World space normal for slope-scaled bias
  * @param lightDir - Light direction for slope calculation
+ * @param shadowMapResolution - 섀도우 맵 해상도 (PCF texelSize 계산용)
  */
-float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3 worldNormal, float3 lightDir)
+float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3 worldNormal, float3 lightDir, float shadowMapResolution)
 {
     // Perspective divide to get NDC coordinates
     float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
@@ -209,15 +335,26 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos,
     float currentDepth = projCoords.z;
 
     // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
-    // 빛과 평행한 표면(NdotL=1.0): 최소 bias
-    // 빛과 수직에 가까운 표면(NdotL=0.0): 최대 bias
     float NdotL = saturate(dot(worldNormal, lightDir));
     float bias = lerp(0.00001f, 0.00005f, NdotL);
     currentDepth -= bias;
 
-    // Use comparison sampler for hardware PCF (Percentage Closer Filtering)
-    float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-    float shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+    // 필터링 타입에 따라 분기
+    float shadow = 1.0f;
+
+    if (FilterType == 0) // NONE
+    {
+        // 하드웨어 기본 비교 샘플링
+        float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
+        shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+    }
+    else if (FilterType == 1) // PCF
+    {
+        // 소프트웨어 PCF
+        uint sampleCount = (PCFSampleCount == 0) ? PCFCustomSampleCount : PCFSampleCount;
+        float texelSize = 1.0f / shadowMapResolution;
+        shadow = SamplePCF_2DArray(g_DirectionalLightShadowMaps, shadowTexCoord, shadowMapIndex, currentDepth, sampleCount, texelSize);
+    }
 
     return shadow;
 }
@@ -229,8 +366,9 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos,
  * @param light - Point light information (includes 6 VP matrices)
  * @param worldPos - World position
  * @param worldNormal - World space normal for slope-scaled bias
+ * @param shadowMapResolution - 섀도우 맵 해상도 (PCF texelSize 계산용)
  */
-float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos, float3 worldNormal)
+float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos, float3 worldNormal, float shadowMapResolution)
 {
     // 1. 라이트에서 픽셀로의 방향 벡터 계산
     float3 lightToPixel = worldPos - light.Position;
@@ -280,16 +418,26 @@ float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos, float3 w
     float currentDepth = projCoords.z;
 
     // 8. Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
-    // 빛과 평행한 표면(NdotL=1.0): 최소 bias
-    // 빛과 수직에 가까운 표면(NdotL=0.0): 최대 bias
     float NdotL = saturate(dot(worldNormal, lightDir));
     float bias = lerp(0.00001f, 0.00005f, NdotL);
     currentDepth -= bias;
 
-    // 9. Use comparison sampler for hardware PCF
-    // TextureCubeArray 샘플링: direction + array index 사용
-    float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
-    float shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, cubeSampleCoord, currentDepth);
+    // 9. 필터링 타입에 따라 분기
+    float shadow = 1.0f;
+
+    if (FilterType == 0) // NONE
+    {
+        // 하드웨어 기본 비교 샘플링
+        float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
+        shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, cubeSampleCoord, currentDepth);
+    }
+    else if (FilterType == 1) // PCF
+    {
+        // 소프트웨어 PCF
+        uint sampleCount = (PCFSampleCount == 0) ? PCFCustomSampleCount : PCFSampleCount;
+        float texelSize = 1.0f / shadowMapResolution;
+        shadow = SamplePCF_CubeArray(g_PointLightShadowCubeMaps, lightToPixel, light.ShadowMapIndex, currentDepth, sampleCount, texelSize);
+    }
 
     return shadow;
 }
@@ -334,7 +482,7 @@ float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, f
         // 섀도우 맵 배열 인덱스 계산: base + cascadeIndex
         uint shadowMapIndex = light.ShadowMapIndex + cascadeIndex;
         //shadow = SampleDirectionalLightShadowMap(shadowMapIndex, lightSpacePos);
-        shadow = SampleDirectionalLightShadowMap(light.ShadowMapIndex, lightSpacePos, normal, lightDir);
+        shadow = SampleDirectionalLightShadowMap(light.ShadowMapIndex, lightSpacePos, normal, lightDir, DirectionalLightResolution);
     }
 
     // Diffuse (light.Color는 이미 Intensity 포함)
@@ -378,7 +526,7 @@ float3 CalculatePointLight(FPointLightInfo light, float3 worldPos, float3 normal
     if (light.bCastShadow && light.ShadowMapIndex != 0xFFFFFFFF)
     {
         // LightViewProjection 기반 Shadow 샘플링
-        shadow = SamplePointLightShadowMap(light, worldPos, normal);
+        shadow = SamplePointLightShadowMap(light, worldPos, normal, PointLightResolution);
     }
 
     // Diffuse (light.Color는 이미 Intensity 포함)
@@ -436,7 +584,7 @@ float3 CalculateSpotLight(FSpotLightInfo light, float3 worldPos, float3 normal, 
     {
         // Transform world position to light space
         float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.LightViewProjection);
-        shadow = SampleSpotLightShadowMap(light.ShadowMapIndex, lightSpacePos, normal, lightDir);
+        shadow = SampleSpotLightShadowMap(light.ShadowMapIndex, lightSpacePos, normal, lightDir, SpotLightResolution);
     }
 
     // Diffuse (light.Color는 이미 Intensity 포함)
