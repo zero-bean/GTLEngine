@@ -251,7 +251,19 @@ void FShadowMap::BeginRender(D3D11RHI* RHI, UINT ArrayIndex, float DepthBias, fl
 
 	// 섀도우 맵 SRV 언바인딩 (리소스 hazard 방지: t5=SpotLight, t6=DirectionalLight, t7=PointLight)
 	ID3D11ShaderResourceView* pNullSRVs[3] = { nullptr, nullptr, nullptr };
-	pContext->PSSetShaderResources(5, 3, pNullSRVs);
+
+	// FilterType에 따라 올바른 슬롯 언바인딩
+	if (FilterType == EShadowFilterType::NONE || FilterType == EShadowFilterType::PCF)
+	{
+		// NONE/PCF: t5, t6, t7 언바인딩
+		pContext->PSSetShaderResources(5, 3, pNullSRVs);
+	}
+	else // VSM, ESM, EVSM
+	{
+		// VSM/ESM/EVSM: t8, t9, t10 언바인딩
+		pContext->PSSetShaderResources(8, 3, pNullSRVs);
+	}
+
 
 	// RasterizerState 캐싱 (DepthBias 조합별로 재사용)
 	FRasterizerStateKey Key = { DepthBias, SlopeScaledDepthBias };

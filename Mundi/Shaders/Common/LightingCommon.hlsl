@@ -382,21 +382,21 @@ float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3
     {
         // VSM: float2(depth, depth^2) 샘플링
         float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float2 moments = g_SpotLightShadowMaps.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
+        float2 moments = g_SpotLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
         shadow = ChebyshevUpperBound(moments, currentDepth, VSMMinVariance, VSMLightBleedingReduction);
     }
     else if (FilterType == 3) // ESM
     {
         // ESM: exp(c * depth) 샘플링
         float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float expDepth = g_SpotLightShadowMaps.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).r;
+        float expDepth = g_SpotLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).r;
         shadow = SampleESM(expDepth, currentDepth, ESMExponent);
     }
     else if (FilterType == 4) // EVSM
     {
         // EVSM: float2(exp(c+ * depth), exp(-c- * depth)) 샘플링
         float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float2 moments = g_SpotLightShadowMaps.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
+        float2 moments = g_SpotLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
         shadow = SampleEVSM(moments, currentDepth, EVSMPositiveExponent, EVSMNegativeExponent, EVSMLightBleedingReduction);
     }
 
@@ -460,21 +460,21 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos,
     {
         // VSM: float2(depth, depth^2) 샘플링
         float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float2 moments = g_DirectionalLightShadowMaps.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
+        float2 moments = g_DirectionalLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
         shadow = ChebyshevUpperBound(moments, currentDepth, VSMMinVariance, VSMLightBleedingReduction);
     }
     else if (FilterType == 3) // ESM
     {
         // ESM: exp(c * depth) 샘플링
         float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float expDepth = g_DirectionalLightShadowMaps.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).r;
+        float expDepth = g_DirectionalLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).r;
         shadow = SampleESM(expDepth, currentDepth, ESMExponent);
     }
     else if (FilterType == 4) // EVSM
     {
         // EVSM: float2(exp(c+ * depth), exp(-c- * depth)) 샘플링
         float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float2 moments = g_DirectionalLightShadowMaps.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
+        float2 moments = g_DirectionalLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
         shadow = SampleEVSM(moments, currentDepth, EVSMPositiveExponent, EVSMNegativeExponent, EVSMLightBleedingReduction);
     }
 
@@ -565,21 +565,21 @@ float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos, float3 w
     {
         // VSM: float2(depth, depth^2) 샘플링
         float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
-        float2 moments = g_PointLightShadowCubeMaps.SampleLevel(g_LinearSampler, cubeSampleCoord, 0).rg;
+        float2 moments = g_PointLightShadowCubeMaps_Float.SampleLevel(g_LinearSampler, cubeSampleCoord, 0).rg;
         shadow = ChebyshevUpperBound(moments, currentDepth, VSMMinVariance, VSMLightBleedingReduction);
     }
     else if (FilterType == 3) // ESM
     {
         // ESM: exp(c * depth) 샘플링
         float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
-        float expDepth = g_PointLightShadowCubeMaps.SampleLevel(g_LinearSampler, cubeSampleCoord, 0).r;
+        float expDepth = g_PointLightShadowCubeMaps_Float.SampleLevel(g_LinearSampler, cubeSampleCoord, 0).r;
         shadow = SampleESM(expDepth, currentDepth, ESMExponent);
     }
     else if (FilterType == 4) // EVSM
     {
         // EVSM: float2(exp(c+ * depth), exp(-c- * depth)) 샘플링
         float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
-        float2 moments = g_PointLightShadowCubeMaps.SampleLevel(g_LinearSampler, cubeSampleCoord, 0).rg;
+        float2 moments = g_PointLightShadowCubeMaps_Float.SampleLevel(g_LinearSampler, cubeSampleCoord, 0).rg;
         shadow = SampleEVSM(moments, currentDepth, EVSMPositiveExponent, EVSMNegativeExponent, EVSMLightBleedingReduction);
     }
 

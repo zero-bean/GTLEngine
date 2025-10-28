@@ -359,17 +359,25 @@ void FShadowManager::EndShadowRender(D3D11RHI* RHI)
 
 void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 {
-	// SpotLight Shadow Map Texture Array를 셰이더 슬롯 t5에 바인딩
 	ID3D11ShaderResourceView* SpotShadowMapSRV = SpotLightShadowMap.GetSRV();
-	RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &SpotShadowMapSRV);
-
-	// DirectionalLight Shadow Map Texture Array를 셰이더 슬롯 t6에 바인딩
 	ID3D11ShaderResourceView* DirShadowMapSRV = DirectionalLightShadowMap.GetSRV();
-	RHI->GetDeviceContext()->PSSetShaderResources(6, 1, &DirShadowMapSRV);
-
-	// PointLight Cube Shadow Map Texture Cube Array를 셰이더 슬롯 t7에 바인딩
 	ID3D11ShaderResourceView* PointCubeShadowMapSRV = PointLightCubeShadowMap.GetSRV();
-	RHI->GetDeviceContext()->PSSetShaderResources(7, 1, &PointCubeShadowMapSRV);
+
+	// FilterType에 따라 다른 슬롯에 바인딩
+	if (Config.FilterType == EShadowFilterType::NONE || Config.FilterType == EShadowFilterType::PCF)
+	{
+		// NONE/PCF: Depth 포맷 텍스처를 t5, t6, t7에 바인딩
+		RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &SpotShadowMapSRV);
+		RHI->GetDeviceContext()->PSSetShaderResources(6, 1, &DirShadowMapSRV);
+		RHI->GetDeviceContext()->PSSetShaderResources(7, 1, &PointCubeShadowMapSRV);
+	}
+	else // VSM, ESM, EVSM
+	{
+		// VSM/ESM/EVSM: Float 포맷 텍스처를 t8, t9, t10에 바인딩
+		RHI->GetDeviceContext()->PSSetShaderResources(8, 1, &SpotShadowMapSRV);
+		RHI->GetDeviceContext()->PSSetShaderResources(9, 1, &DirShadowMapSRV);
+		RHI->GetDeviceContext()->PSSetShaderResources(10, 1, &PointCubeShadowMapSRV);
+	}
 
 	// Shadow Comparison Sampler를 슬롯 s2에 바인딩
 	ID3D11SamplerState* ShadowSampler = RHI->GetShadowComparisonSamplerState();
@@ -382,9 +390,11 @@ void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 
 void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
 {
-	// Shadow Map 언바인딩 (t5, t6, t7 동시 해제)
-	ID3D11ShaderResourceView* NullSRVs[3] = { nullptr, nullptr, nullptr };
-	RHI->GetDeviceContext()->PSSetShaderResources(5, 3, NullSRVs);
+	// Shadow Map 언바인딩 (모든 슬롯 해제)
+	ID3D11ShaderResourceView* NullSRVs[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+
+	// t5~t10 모두 언바인딩 (NONE/PCF: t5,t6,t7 / VSM/ESM/EVSM: t8,t9,t10)
+	RHI->GetDeviceContext()->PSSetShaderResources(5, 6, NullSRVs);
 
 	// Shadow Sampler 언바인딩
 	ID3D11SamplerState* NullSampler = nullptr;

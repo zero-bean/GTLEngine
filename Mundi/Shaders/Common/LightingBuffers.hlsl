@@ -41,6 +41,16 @@ Texture2DArray g_DirectionalLightShadowMaps : register(t6);
 // t7: PointLight Cube Shadow map texture cube array
 TextureCubeArray g_PointLightShadowCubeMaps : register(t7);
 
+  // VSM/ESM/EVSM용 (Float 포맷 R32_FLOAT/R32G32_FLOAT)
+  // t8: SpotLight Shadow map texture array (Float)
+Texture2DArray g_SpotLightShadowMaps_Float : register(t8);
+
+  // t9: DirectionalLight Shadow map texture array (Float)
+Texture2DArray g_DirectionalLightShadowMaps_Float : register(t9);
+
+  // t10: PointLight Cube Shadow map texture cube array (Float)
+TextureCubeArray g_PointLightShadowCubeMaps_Float : register(t10);
+
 // Shadow map sampler - comparison sampler for NONE, PCF
 SamplerComparisonState g_ShadowSampler : register(s2);
 
