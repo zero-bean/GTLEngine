@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "StatsOverlayD2D.h"
 #include "Color.h"
 
@@ -71,6 +71,8 @@ void D3D11RHI::Release()
     if (WireFrameRasterizerState) { WireFrameRasterizerState->Release();   WireFrameRasterizerState = nullptr; }
     if (DecalRasterizerState) { DecalRasterizerState->Release();   DecalRasterizerState = nullptr; }
     if (NoCullRasterizerState) { NoCullRasterizerState->Release();   NoCullRasterizerState = nullptr; }
+
+    ReleaseRasterizerState();
 
     ReleaseBlendState();
     // RTV/DSV/FrameBuffer
@@ -720,6 +722,11 @@ void D3D11RHI::ReleaseSamplerState()
     {
         LinearClampSamplerState->Release();
         LinearClampSamplerState = nullptr;
+    }
+    if (LinearSamplerState)
+    {
+        LinearSamplerState->Release();
+        LinearSamplerState = nullptr;
     }
     if (PointClampSamplerState)
     {
