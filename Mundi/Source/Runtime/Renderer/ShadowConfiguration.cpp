@@ -16,6 +16,10 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 		Config.MaxSpotLights = 100;
 		Config.MaxPointLights = 50;
 		Config.MaxShadowCastingLights = 151;
+		// CSM Tiers (Low Quality)
+		Config.CSMTierLow = FCSMTierConfig(256, 16);
+		Config.CSMTierMedium = FCSMTierConfig(512, 12);
+		Config.CSMTierHigh = FCSMTierConfig(1024, 8);
 		break;
 
 	case EShadowQuality::Medium:
@@ -26,6 +30,10 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 		Config.MaxSpotLights = 200;
 		Config.MaxPointLights = 100;
 		Config.MaxShadowCastingLights = 301;
+		// CSM Tiers (Medium Quality)
+		Config.CSMTierLow = FCSMTierConfig(512, 16);
+		Config.CSMTierMedium = FCSMTierConfig(1024, 12);
+		Config.CSMTierHigh = FCSMTierConfig(2048, 8);
 		break;
 
 	case EShadowQuality::High:
@@ -36,6 +44,10 @@ FShadowConfiguration FShadowConfiguration::FromQuality(EShadowQuality InQuality)
 		Config.MaxSpotLights = 300;
 		Config.MaxPointLights = 150;
 		Config.MaxShadowCastingLights = 451;
+		// CSM Tiers (High Quality)
+		Config.CSMTierLow = FCSMTierConfig(512, 16);
+		Config.CSMTierMedium = FCSMTierConfig(2048, 12);
+		Config.CSMTierHigh = FCSMTierConfig(4096, 8);
 		break;
 
 	case EShadowQuality::Custom:

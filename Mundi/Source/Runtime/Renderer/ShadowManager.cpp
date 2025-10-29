@@ -29,13 +29,24 @@ void FShadowManager::Initialize(D3D11RHI* RHI, const FShadowConfiguration& InCon
 	// Shadow Map Array 초기화 (광원 타입별로 각각의 해상도 사용, 필터 타입 전달)
 	SpotLightShadowMap.Initialize(RHI, Config.SpotLightResolution, Config.SpotLightResolution, Config.MaxSpotLights, false, Config.FilterType);
 
-	// DirectionalLight는 CSM을 사용할 수 있으므로 최대 6개 캐스케이드를 지원하도록 할당
-	// (각 라이트가 CSM을 사용할지는 런타임에 DirectionalLightComponent의 ShadowMapType으로 결정)
+	// DirectionalLight Non-CSM (legacy, Default ShadowMapType)
 	constexpr uint32 MaxCascadesPerLight = 6;
 	uint32 DirectionalArraySize = Config.MaxDirectionalLights * MaxCascadesPerLight;
 	DirectionalLightShadowMap.Initialize(RHI, Config.DirectionalLightResolution, Config.DirectionalLightResolution, DirectionalArraySize, false, Config.FilterType);
 
+	// DirectionalLight CSM 3-Tier Arrays
+	DirectionalLightShadowMapTiers[0].Initialize(RHI, Config.CSMTierLow.Resolution, Config.CSMTierLow.Resolution, Config.CSMTierLow.MaxSlices, false, Config.FilterType);
+	DirectionalLightShadowMapTiers[1].Initialize(RHI, Config.CSMTierMedium.Resolution, Config.CSMTierMedium.Resolution, Config.CSMTierMedium.MaxSlices, false, Config.FilterType);
+	DirectionalLightShadowMapTiers[2].Initialize(RHI, Config.CSMTierHigh.Resolution, Config.CSMTierHigh.Resolution, Config.CSMTierHigh.MaxSlices, false, Config.FilterType);
+
 	PointLightCubeShadowMap.Initialize(RHI, Config.PointLightResolution, Config.PointLightResolution, Config.MaxPointLights, true, Config.FilterType);
+
+	// CSM Cascade Allocation 초기화
+	uint32 MaxGlobalCascades = Config.MaxDirectionalLights * MaxCascadesPerLight;
+	CascadeAllocations.SetNum(MaxGlobalCascades);
+	TierSlotUsage[0] = 0;
+	TierSlotUsage[1] = 0;
+	TierSlotUsage[2] = 0;
 
 	// VSM/ESM/EVSM용 쉐이더 로드
 	if (!ShadowVSM_PS)
@@ -63,6 +74,9 @@ void FShadowManager::Release()
 
 	SpotLightShadowMap.Release();
 	DirectionalLightShadowMap.Release();
+	DirectionalLightShadowMapTiers[0].Release();
+	DirectionalLightShadowMapTiers[1].Release();
+	DirectionalLightShadowMapTiers[2].Release();
 	PointLightCubeShadowMap.Release();
 
 	bIsInitialized = false;
@@ -136,6 +150,11 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 		Initialize(RHI, FShadowConfiguration::GetPlatformDefault());
 	}
 
+	// CSM Tier 슬롯 사용량 초기화
+	TierSlotUsage[0] = 0;
+	TierSlotUsage[1] = 0;
+	TierSlotUsage[2] = 0;
+
 	// 매 프레임 초기화 (Dynamic 환경) - 광원별로 독립적인 인덱스 사용
 	uint32 DirectionalLightIndex = 0;
 	uint32 SpotLightIndex = 0;
@@ -162,7 +181,58 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 			continue;
 		}
 
-		DirLight->SetShadowMapIndex(DirectionalLightIndex);
+		// CSM 사용 여부에 따라 Base Index 할당
+		if (DirLight->GetShadowMapType() == EShadowMapType::CSM)
+		{
+			// CSM: 캐스케이드별로 티어 할당 (Base Index는 전역 캐스케이드 인덱스)
+			constexpr uint32 MaxCascadesPerLight = 5;
+			uint32 baseCascadeIndex = DirectionalLightIndex * MaxCascadesPerLight;
+			DirLight->SetShadowMapIndex(baseCascadeIndex);
+
+			// 각 캐스케이드를 티어에 할당
+			int32 numCascades = DirLight->GetNumCascades();
+			for (int32 cascadeIdx = 0; cascadeIdx < numCascades; ++cascadeIdx)
+			{
+				uint32 globalCascadeIdx = baseCascadeIndex + cascadeIdx;
+
+				// 캐스케이드 거리 비율로 티어 결정 (0=가까움, 1=멀음)
+				float ratio = (numCascades > 1) ? (float)cascadeIdx / (float)(numCascades - 1) : 0.0f;
+
+				uint32 tierIndex = 0;
+				if (ratio < 0.33f)
+					tierIndex = 2;  // High Tier (가까운 캐스케이드)
+				else if (ratio < 0.67f)
+					tierIndex = 1;  // Medium Tier (중간 캐스케이드)
+				else
+					tierIndex = 0;  // Low Tier (먼 캐스케이드)
+
+				// 티어 슬롯 할당
+				uint32 sliceIndex = TierSlotUsage[tierIndex];
+				TierSlotUsage[tierIndex]++;
+
+				// 할당 정보 저장 (내부 배열)
+				if (globalCascadeIdx < CascadeAllocations.Num())
+				{
+					CascadeAllocations[globalCascadeIdx].TierIndex = tierIndex;
+					CascadeAllocations[globalCascadeIdx].SliceIndex = sliceIndex;
+					CascadeAllocations[globalCascadeIdx].Resolution = DirectionalLightShadowMapTiers[tierIndex].GetWidth();
+				}
+
+				// DirectionalLightComponent에 티어 정보 캐싱 (GPU 업데이트용)
+				DirLight->SetCascadeTierInfo(
+					cascadeIdx,
+					tierIndex,
+					sliceIndex,
+					(float)DirectionalLightShadowMapTiers[tierIndex].GetWidth()
+				);
+			}
+		}
+		else
+		{
+			// Non-CSM (Default): 기존 방식 유지
+			DirLight->SetShadowMapIndex(DirectionalLightIndex);
+		}
+
 		DirectionalLightIndex++;
 		DirectionalLightCount++;
 	}
@@ -223,6 +293,18 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 	//Stats.ShadowMapResolution = Config.ShadowMapResolution;
 	Stats.MaxShadowCastingLights = Config.MaxShadowCastingLights;
 
+	// CSM 사용 여부 확인 (DirectionalLight 중 하나라도 CSM을 사용하면 true)
+	bool bAnyCSM = false;
+	for (UDirectionalLightComponent* DirLight : InLights.DirectionalLights)
+	{
+		if (DirLight && DirLight->GetShadowMapType() == EShadowMapType::CSM)
+		{
+			bAnyCSM = true;
+			break;
+		}
+	}
+	Stats.bUsingCSM = bAnyCSM;
+
 	// 광원별 해상도
 	Stats.DirectionalLightResolution = DirectionalLightShadowMap.GetWidth();
 	Stats.SpotLightResolution = SpotLightShadowMap.GetWidth();
@@ -243,11 +325,37 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 	Stats.SpotLightUsedBytes = SpotLightShadowMap.GetUsedMemoryBytes(SpotLightCount);
 	Stats.PointLightUsedBytes = PointLightCubeShadowMap.GetUsedMemoryBytes(PointLightCount * 6); // 큐브맵이므로 6개 면
 
+	// CSM 티어별 통계 수집
+	if (bAnyCSM)
+	{
+		for (int i = 0; i < 3; ++i)
+		{
+			Stats.CSMTierResolutions[i] = DirectionalLightShadowMapTiers[i].GetWidth();
+			Stats.CSMTierCascadeCounts[i] = TierSlotUsage[i];  // 현재 사용 중인 슬롯 수
+			Stats.CSMTierAllocatedBytes[i] = DirectionalLightShadowMapTiers[i].GetAllocatedMemoryBytes();
+			Stats.CSMTierUsedBytes[i] = DirectionalLightShadowMapTiers[i].GetUsedMemoryBytes(TierSlotUsage[i]);
+		}
+	}
+
 	// 총 할당된 메모리
 	Stats.TotalAllocatedBytes = Stats.DirectionalLightAllocatedBytes + Stats.SpotLightAllocatedBytes + Stats.PointLightAllocatedBytes;
+	if (bAnyCSM)
+	{
+		for (int i = 0; i < 3; ++i)
+		{
+			Stats.TotalAllocatedBytes += Stats.CSMTierAllocatedBytes[i];
+		}
+	}
 
 	// 총 사용 중인 메모리
 	Stats.TotalUsedBytes = Stats.DirectionalLightUsedBytes + Stats.SpotLightUsedBytes + Stats.PointLightUsedBytes;
+	if (bAnyCSM)
+	{
+		for (int i = 0; i < 3; ++i)
+		{
+			Stats.TotalUsedBytes += Stats.CSMTierUsedBytes[i];
+		}
+	}
 
 	// 통계 매니저에 업데이트
 	FShadowStatManager::GetInstance().UpdateStats(Stats);
@@ -351,26 +459,32 @@ bool FShadowManager::BeginShadowRenderCSM(D3D11RHI* RHI, UDirectionalLightCompon
 		Light->GetLightDirection(),
 		CascadeFrustumCorners);
 
-	// 3. Texture Array Index 계산: (LightIndex * MaxCascades) + CascadeIndex
-	// 최대 6개 캐스케이드를 지원하도록 할당했으므로, MaxCascades = 6 사용
+	// 3. 전역 캐스케이드 인덱스 계산
 	constexpr int32 MaxCascades = 6;
-	int32 ArrayIndex = LightShadowIndex * MaxCascades + CascadeIndex;
+	uint32 GlobalCascadeIndex = LightShadowIndex + CascadeIndex;
 
-	// 4. 출력 컨텍스트 설정
+	// 4. 티어 할당 정보 가져오기
+	if (GlobalCascadeIndex >= CascadeAllocations.Num())
+	{
+		return false;
+	}
+	const FCascadeAllocation& allocation = CascadeAllocations[GlobalCascadeIndex];
+
+	// 5. 출력 컨텍스트 설정
 	OutContext.LightView = ShadowVP.View;
 	OutContext.LightProjection = ShadowVP.Projection;
-	OutContext.ShadowMapIndex = ArrayIndex;
+	OutContext.ShadowMapIndex = allocation.SliceIndex;  // 티어 내 슬라이스 인덱스
 	OutContext.ShadowBias = Light->GetShadowBias();
 	OutContext.ShadowSlopeBias = Light->GetShadowSlopeBias();
 
-	// 5. Light Component에 VP 저장
+	// 6. Light Component에 VP 저장
 	Light->SetCascadeViewProjection(CascadeIndex, ShadowVP.ViewProjection);
 	Light->SetCascadeSplitDistance(CascadeIndex, SplitFar);
 
-	// 6. Shadow Map 렌더링 시작
-	DirectionalLightShadowMap.BeginRender(
+	// 7. 해당 티어의 Shadow Map 렌더링 시작
+	DirectionalLightShadowMapTiers[allocation.TierIndex].BeginRender(
 		RHI,
-		ArrayIndex,
+		allocation.SliceIndex,
 		OutContext.ShadowBias,
 		OutContext.ShadowSlopeBias);
 
@@ -435,6 +549,9 @@ void FShadowManager::EndShadowRender(D3D11RHI* RHI)
 {
 	SpotLightShadowMap.EndRender(RHI);
 	DirectionalLightShadowMap.EndRender(RHI);
+	DirectionalLightShadowMapTiers[0].EndRender(RHI);
+	DirectionalLightShadowMapTiers[1].EndRender(RHI);
+	DirectionalLightShadowMapTiers[2].EndRender(RHI);
 	PointLightCubeShadowMap.EndRender(RHI);
 }
 
@@ -444,20 +561,33 @@ void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 	ID3D11ShaderResourceView* DirShadowMapSRV = DirectionalLightShadowMap.GetSRV();
 	ID3D11ShaderResourceView* PointCubeShadowMapSRV = PointLightCubeShadowMap.GetSRV();
 
+	// CSM 3-Tier Arrays
+	ID3D11ShaderResourceView* CSMTierLowSRV = DirectionalLightShadowMapTiers[0].GetSRV();
+	ID3D11ShaderResourceView* CSMTierMediumSRV = DirectionalLightShadowMapTiers[1].GetSRV();
+	ID3D11ShaderResourceView* CSMTierHighSRV = DirectionalLightShadowMapTiers[2].GetSRV();
+
 	// FilterType에 따라 다른 슬롯에 바인딩
 	if (Config.FilterType == EShadowFilterType::NONE || Config.FilterType == EShadowFilterType::PCF)
 	{
-		// NONE/PCF: Depth 포맷 텍스처를 t5, t6, t7에 바인딩
-		RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &SpotShadowMapSRV);
-		RHI->GetDeviceContext()->PSSetShaderResources(6, 1, &DirShadowMapSRV);
-		RHI->GetDeviceContext()->PSSetShaderResources(7, 1, &PointCubeShadowMapSRV);
+		// NONE/PCF: Depth 포맷 텍스처
+		RHI->GetDeviceContext()->PSSetShaderResources(5, 1, &SpotShadowMapSRV);              // t5: SpotLight
+		RHI->GetDeviceContext()->PSSetShaderResources(6, 1, &DirShadowMapSRV);               // t6: DirectionalLight (Non-CSM)
+		RHI->GetDeviceContext()->PSSetShaderResources(7, 1, &PointCubeShadowMapSRV);         // t7: PointLight
+		// CSM 3-Tier (t16, t17, t18)
+		RHI->GetDeviceContext()->PSSetShaderResources(16, 1, &CSMTierLowSRV);                // t16: CSM Low Tier
+		RHI->GetDeviceContext()->PSSetShaderResources(17, 1, &CSMTierMediumSRV);             // t17: CSM Medium Tier
+		RHI->GetDeviceContext()->PSSetShaderResources(18, 1, &CSMTierHighSRV);               // t18: CSM High Tier
 	}
 	else // VSM, ESM, EVSM
 	{
-		// VSM/ESM/EVSM: Float 포맷 텍스처를 t8, t9, t10에 바인딩
-		RHI->GetDeviceContext()->PSSetShaderResources(8, 1, &SpotShadowMapSRV);
-		RHI->GetDeviceContext()->PSSetShaderResources(9, 1, &DirShadowMapSRV);
-		RHI->GetDeviceContext()->PSSetShaderResources(10, 1, &PointCubeShadowMapSRV);
+		// VSM/ESM/EVSM: Float 포맷 텍스처
+		RHI->GetDeviceContext()->PSSetShaderResources(8, 1, &SpotShadowMapSRV);              // t8: SpotLight
+		RHI->GetDeviceContext()->PSSetShaderResources(9, 1, &DirShadowMapSRV);               // t9: DirectionalLight (Non-CSM)
+		RHI->GetDeviceContext()->PSSetShaderResources(10, 1, &PointCubeShadowMapSRV);        // t10: PointLight
+		// CSM 3-Tier (t19, t20, t21)
+		RHI->GetDeviceContext()->PSSetShaderResources(19, 1, &CSMTierLowSRV);                // t19: CSM Low Tier
+		RHI->GetDeviceContext()->PSSetShaderResources(20, 1, &CSMTierMediumSRV);             // t20: CSM Medium Tier
+		RHI->GetDeviceContext()->PSSetShaderResources(21, 1, &CSMTierHighSRV);               // t21: CSM High Tier
 	}
 
 	// Shadow Comparison Sampler를 슬롯 s2에 바인딩
@@ -472,10 +602,14 @@ void FShadowManager::BindShadowResources(D3D11RHI* RHI)
 void FShadowManager::UnbindShadowResources(D3D11RHI* RHI)
 {
 	// Shadow Map 언바인딩 (모든 슬롯 해제)
-	ID3D11ShaderResourceView* NullSRVs[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	ID3D11ShaderResourceView* NullSRVs[17] = { nullptr };
 
-	// t5~t10 모두 언바인딩 (NONE/PCF: t5,t6,t7 / VSM/ESM/EVSM: t8,t9,t10)
-	RHI->GetDeviceContext()->PSSetShaderResources(5, 6, NullSRVs);
+	// t5~t21 모두 언바인딩
+	// t5-7: SpotLight, DirectionalLight(Non-CSM), PointLight
+	// t8-10: VSM/ESM/EVSM Float 버전
+	// t16-18: CSM 3-Tier (NONE/PCF)
+	// t19-21: CSM 3-Tier (VSM/ESM/EVSM)
+	RHI->GetDeviceContext()->PSSetShaderResources(5, 17, NullSRVs);
 
 	// Shadow Sampler 언바인딩
 	ID3D11SamplerState* NullSampler = nullptr;

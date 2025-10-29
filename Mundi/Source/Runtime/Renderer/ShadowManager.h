@@ -161,8 +161,19 @@ private:
 
 	// Shadow Map 리소스
 	FShadowMap SpotLightShadowMap;
-	FShadowMap DirectionalLightShadowMap;
+	FShadowMap DirectionalLightShadowMap;      // Non-CSM용 (legacy, Default ShadowMapType)
+	FShadowMap DirectionalLightShadowMapTiers[3]; // CSM 3-Tier Arrays (Low, Medium, High)
 	FShadowMap PointLightCubeShadowMap;       // PointLight Cube Map (6 faces per light)
+
+	// CSM Cascade Allocation Tracking
+	struct FCascadeAllocation
+	{
+		uint32 TierIndex;        // 0=Low, 1=Medium, 2=High
+		uint32 SliceIndex;       // 해당 티어 내 슬라이스 인덱스
+		uint32 Resolution;       // 실제 해상도
+	};
+	TArray<FCascadeAllocation> CascadeAllocations; // 전역 캐스케이드 인덱스 → 할당 정보
+	uint32 TierSlotUsage[3];  // 티어별 사용 중인 슬롯 수
 
 	// VSM/ESM/EVSM용 쉐이더 (필터 타입에 따라 사용)
 	class UShader* ShadowVSM_PS;      // VSM 픽셀 쉐이더
