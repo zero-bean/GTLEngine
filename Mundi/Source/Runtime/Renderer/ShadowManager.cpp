@@ -323,11 +323,6 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 	Stats.SpotLightCount = SpotLightCount;
 	Stats.PointLightCount = PointLightCount;
 
-	// 각 쉐도우 맵의 할당된 메모리 계산 (전체 텍스처 배열 크기)
-	Stats.DirectionalLightAllocatedBytes = DirectionalLightShadowMap.GetAllocatedMemoryBytes();
-	Stats.SpotLightAllocatedBytes = SpotLightShadowMap.GetAllocatedMemoryBytes();
-	Stats.PointLightAllocatedBytes = PointLightCubeShadowMap.GetAllocatedMemoryBytes();
-
 	// 각 쉐도우 맵의 실제 사용 중인 메모리 계산 (활성 라이트 수 기반)
 	Stats.DirectionalLightUsedBytes = DirectionalLightShadowMap.GetUsedMemoryBytes(DirectionalLightCount);
 	Stats.SpotLightUsedBytes = SpotLightShadowMap.GetUsedMemoryBytes(SpotLightCount);
@@ -340,18 +335,7 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 		{
 			Stats.CSMTierResolutions[i] = DirectionalLightShadowMapTiers[i].GetWidth();
 			Stats.CSMTierCascadeCounts[i] = TierSlotUsage[i];  // 현재 사용 중인 슬롯 수
-			Stats.CSMTierAllocatedBytes[i] = DirectionalLightShadowMapTiers[i].GetAllocatedMemoryBytes();
 			Stats.CSMTierUsedBytes[i] = DirectionalLightShadowMapTiers[i].GetUsedMemoryBytes(TierSlotUsage[i]);
-		}
-	}
-
-	// 총 할당된 메모리
-	Stats.TotalAllocatedBytes = Stats.DirectionalLightAllocatedBytes + Stats.SpotLightAllocatedBytes + Stats.PointLightAllocatedBytes;
-	if (bAnyCSM)
-	{
-		for (int i = 0; i < 3; ++i)
-		{
-			Stats.TotalAllocatedBytes += Stats.CSMTierAllocatedBytes[i];
 		}
 	}
 
