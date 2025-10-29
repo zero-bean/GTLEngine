@@ -657,11 +657,25 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 				// Begin이 End보다 크면 자동 조정
 				DirectionalLightDepthEnd = std::max(DirectionalLightDepthBegin, DirectionalLightDepthEnd);
 
+				// Projection type 확인
+				EShadowProjectionType ProjectionType = DirectionalLight->GetShadowProjectionType();
+				bool bRotate = (ProjectionType == EShadowProjectionType::LVP);
+
+				// LiSPSM hybrid인 경우, 실제 사용된 알고리즘 확인
+				// TSM: U 반전 없음, OpenGL LiSPSM: U 반전 필요
+				bool bFlipU = false;
+				if (ProjectionType == EShadowProjectionType::LiSPSM)
+				{
+					bFlipU = !DirectionalLight->IsActuallyUsingTSM();  // TSM이 아니면 OpenGL LiSPSM이므로 U 반전
+				}
+
 				ID3D11ShaderResourceView* ShadowSRV = DirectionalLightShadowMap.GetRemappedSliceSRV(
 					GEngine.GetRenderer()->GetRHIDevice(),
 					ShadowMapIndex,
 					DirectionalLightDepthBegin,
-					DirectionalLightDepthEnd);
+					DirectionalLightDepthEnd,
+					bRotate,
+					bFlipU);
 
 				ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
 

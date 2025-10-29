@@ -50,6 +50,12 @@ namespace FMath
 	{
 		return A + (B - A) * Alpha;
 	}
+
+	template<typename T>
+	static T Sqrt(T Value)
+	{
+		return std::sqrt(Value);
+	}
 }
 // 각도를 -180 ~ 180 범위로 정규화 (모듈러 연산)
 inline float NormalizeAngleDeg(float angleDeg)
