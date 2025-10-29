@@ -63,9 +63,11 @@ public:
 	 * @param ArrayIndex - 렌더링할 배열 슬라이스 인덱스
 	 * @param MinDepth - 리매핑 시작 범위 (예: 0.99)
 	 * @param MaxDepth - 리매핑 끝 범위 (예: 1.0)
+	 * @param bRotate - true면 시계방향 90도 회전, false면 회전 없음 (기본값 true)
+	 * @param bFlipU - true면 U 좌표 반전 (OpenGL LiSPSM용), false면 반전 없음 (기본값 false)
 	 * @return 리매핑된 텍스처의 SRV (시각화 전용, 원본 데이터는 변경되지 않음)
 	 */
-	ID3D11ShaderResourceView* GetRemappedSliceSRV(D3D11RHI* RHI, UINT ArrayIndex, float MinDepth, float MaxDepth);
+	ID3D11ShaderResourceView* GetRemappedSliceSRV(D3D11RHI* RHI, UINT ArrayIndex, float MinDepth, float MaxDepth, bool bRotate = true, bool bFlipU = false);
 
 private:
 	// 깊이 리매핑 초기화 (DepthRemap.hlsl 셰이더 컴파일 및 리소스 생성)
@@ -120,7 +122,9 @@ private:
 	ID3D11VertexShader* DepthRemapVS;
 	ID3D11PixelShader* DepthRemapPS;
 	ID3D11Buffer* DepthRemapConstantBuffer;
-	ID3D11Buffer* FullscreenQuadVB;
+	ID3D11Buffer* FullscreenQuadVB_Rotated;        // 시계방향 90도 회전된 텍스처 좌표 (LVP용)
+	ID3D11Buffer* FullscreenQuadVB_NoRotation;     // 회전 없는 텍스처 좌표 (TSM용)
+	ID3D11Buffer* FullscreenQuadVB_NoRotation_FlipU;  // 회전 없음 + U 반전 (OpenGL LiSPSM용)
 	ID3D11InputLayout* DepthRemapInputLayout;
 	ID3D11SamplerState* PointSamplerState;
 };

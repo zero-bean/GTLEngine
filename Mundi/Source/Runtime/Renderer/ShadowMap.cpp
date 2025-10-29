@@ -15,7 +15,9 @@ FShadowMap::FShadowMap()
 	, DepthRemapVS(nullptr)
 	, DepthRemapPS(nullptr)
 	, DepthRemapConstantBuffer(nullptr)
-	, FullscreenQuadVB(nullptr)
+	, FullscreenQuadVB_Rotated(nullptr)
+	, FullscreenQuadVB_NoRotation(nullptr)
+	, FullscreenQuadVB_NoRotation_FlipU(nullptr)
 	, DepthRemapInputLayout(nullptr)
 	, PointSamplerState(nullptr)
 {
@@ -453,10 +455,22 @@ void FShadowMap::ReleaseDepthRemapResources()
 		DepthRemapInputLayout = nullptr;
 	}
 
-	if (FullscreenQuadVB)
+	if (FullscreenQuadVB_Rotated)
 	{
-		FullscreenQuadVB->Release();
-		FullscreenQuadVB = nullptr;
+		FullscreenQuadVB_Rotated->Release();
+		FullscreenQuadVB_Rotated = nullptr;
+	}
+
+	if (FullscreenQuadVB_NoRotation)
+	{
+		FullscreenQuadVB_NoRotation->Release();
+		FullscreenQuadVB_NoRotation = nullptr;
+	}
+
+	if (FullscreenQuadVB_NoRotation_FlipU)
+	{
+		FullscreenQuadVB_NoRotation_FlipU->Release();
+		FullscreenQuadVB_NoRotation_FlipU = nullptr;
 	}
 
 	if (DepthRemapConstantBuffer)
@@ -582,15 +596,15 @@ void FShadowMap::InitializeDepthRemapResources(D3D11RHI* RHI)
 	vsBlob->Release();
 	psBlob->Release();
 
-	// 3. Create Fullscreen Quad Vertex Buffer
+	// 3. Create Fullscreen Quad Vertex Buffers
 	struct Vertex
 	{
 		float Position[3];
 		float TexCoord[2];
 	};
 
-	// 시계방향 90도 회전된 텍스처 좌표
-	Vertex quadVertices[] = {
+	// 3-1. 시계방향 90도 회전된 텍스처 좌표 (기본)
+	Vertex quadVertices_Rotated[] = {
 		{ { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f } }, // Top-left
 		{ {  1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f } }, // Top-right
 		{ { -1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f } }, // Bottom-left
@@ -599,15 +613,41 @@ void FShadowMap::InitializeDepthRemapResources(D3D11RHI* RHI)
 
 	D3D11_BUFFER_DESC vbDesc = {};
 	vbDesc.Usage = D3D11_USAGE_DEFAULT;
-	vbDesc.ByteWidth = sizeof(quadVertices);
+	vbDesc.ByteWidth = sizeof(quadVertices_Rotated);
 	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbDesc.CPUAccessFlags = 0;
 
 	D3D11_SUBRESOURCE_DATA vbData = {};
-	vbData.pSysMem = quadVertices;
+	vbData.pSysMem = quadVertices_Rotated;
 
-	hr = device->CreateBuffer(&vbDesc, &vbData, &FullscreenQuadVB);
-	assert(SUCCEEDED(hr), "Failed to create fullscreen quad vertex buffer");
+	hr = device->CreateBuffer(&vbDesc, &vbData, &FullscreenQuadVB_Rotated);
+	assert(SUCCEEDED(hr), "Failed to create fullscreen quad vertex buffer (rotated)");
+
+	// 3-2. 회전 없는 텍스처 좌표 (TSM용)
+	Vertex quadVertices_NoRotation[] = {
+		{ { -1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f } }, // Top-left
+		{ {  1.0f,  1.0f, 0.0f }, { 1.0f, 0.0f } }, // Top-right
+		{ { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f } }, // Bottom-left
+		{ {  1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f } }  // Bottom-right
+	};
+
+	vbData.pSysMem = quadVertices_NoRotation;
+
+	hr = device->CreateBuffer(&vbDesc, &vbData, &FullscreenQuadVB_NoRotation);
+	assert(SUCCEEDED(hr), "Failed to create fullscreen quad vertex buffer (no rotation)");
+
+	// 3-3. 회전 없음 + U 반전 텍스처 좌표 (OpenGL LiSPSM용)
+	Vertex quadVertices_NoRotation_FlipU[] = {
+		{ { -1.0f,  1.0f, 0.0f }, { 1.0f, 0.0f } }, // Top-left (U 반전)
+		{ {  1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f } }, // Top-right (U 반전)
+		{ { -1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f } }, // Bottom-left (U 반전)
+		{ {  1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f } }  // Bottom-right (U 반전)
+	};
+
+	vbData.pSysMem = quadVertices_NoRotation_FlipU;
+
+	hr = device->CreateBuffer(&vbDesc, &vbData, &FullscreenQuadVB_NoRotation_FlipU);
+	assert(SUCCEEDED(hr), "Failed to create fullscreen quad vertex buffer (no rotation + flip U)");
 
 	// 4. Create Constant Buffer
 	D3D11_BUFFER_DESC cbDesc = {};
@@ -656,7 +696,7 @@ void FShadowMap::InitializeDepthRemapResources(D3D11RHI* RHI)
 	assert(SUCCEEDED(hr), "Failed to create remapped shader resource view");
 }
 
-ID3D11ShaderResourceView* FShadowMap::GetRemappedSliceSRV(D3D11RHI* RHI, UINT ArrayIndex, float MinDepth, float MaxDepth)
+ID3D11ShaderResourceView* FShadowMap::GetRemappedSliceSRV(D3D11RHI* RHI, UINT ArrayIndex, float MinDepth, float MaxDepth, bool bRotate, bool bFlipU)
 {
 	// 초기화되지 않았거나 인덱스가 범위를 벗어나면 nullptr 반환
 	if (ArrayIndex >= ArraySize || !ShadowMapTexture)
@@ -725,7 +765,26 @@ ID3D11ShaderResourceView* FShadowMap::GetRemappedSliceSRV(D3D11RHI* RHI, UINT Ar
 	// 6. Draw Fullscreen Quad
 	UINT stride = sizeof(float) * 5; // 3 pos + 2 uv
 	UINT offset = 0;
-	context->IASetVertexBuffers(0, 1, &FullscreenQuadVB, &stride, &offset);
+
+	// Vertex buffer 선택:
+	// - LVP: 회전 (bRotate = true)
+	// - TSM: 회전 없음 (bRotate = false, bFlipU = false)
+	// - OpenGL LiSPSM: 회전 없음 + U 반전 (bRotate = false, bFlipU = true)
+	ID3D11Buffer* SelectedVB;
+	if (bRotate)
+	{
+		SelectedVB = FullscreenQuadVB_Rotated;  // LVP
+	}
+	else if (bFlipU)
+	{
+		SelectedVB = FullscreenQuadVB_NoRotation_FlipU;  // OpenGL LiSPSM
+	}
+	else
+	{
+		SelectedVB = FullscreenQuadVB_NoRotation;  // TSM
+	}
+
+	context->IASetVertexBuffers(0, 1, &SelectedVB, &stride, &offset);
 	context->Draw(4, 0);
 
 	// 7. Unbind Resources

@@ -9,6 +9,13 @@ enum class EShadowMapType : uint8
 	CSM = 1       // Cascaded Shadow Maps
 };
 
+// 쉐도우 프로젝션 타입 (LVP, LiSPSM)
+enum class EShadowProjectionType : uint8
+{
+	LVP = 0,      // Light View Projection (기본 Orthographic)
+	LiSPSM = 1    // Light-space Perspective Shadow Map (Hybrid: TSM + OpenGL LiSPSM)
+};
+
 // 방향성 라이트 (태양광 같은 평행광)
 class UDirectionalLightComponent : public ULightComponent
 {
@@ -84,6 +91,15 @@ public:
 	EShadowMapType GetShadowMapType() const { return ShadowMapType; }
 	void SetShadowMapType(EShadowMapType Type) { ShadowMapType = Type; }
 
+	// Shadow Projection Type Getter/Setter
+	EShadowProjectionType GetShadowProjectionType() const { return ShadowProjectionType; }
+	void SetShadowProjectionType(EShadowProjectionType Type) { ShadowProjectionType = Type; }
+
+	// Actual algorithm used (for LiSPSM hybrid: TSM or OpenGL LiSPSM)
+	// Updated by ShadowManager each frame
+	void SetActualUsedTSM(bool bUsedTSM) { bActuallyUsedTSM = bUsedTSM; }
+	bool IsActuallyUsingTSM() const { return bActuallyUsedTSM; }
+
 	// CSM Configuration Getter/Setter
 	int32 GetNumCascades() const { return NumCascades; }
 	void SetNumCascades(int32 Num) { NumCascades = Num; }
@@ -109,6 +125,13 @@ protected:
 
 	// Shadow Map Type (Default or CSM)
 	EShadowMapType ShadowMapType = EShadowMapType::CSM;
+
+	// Shadow Projection Type (LVP or LiSPSM)
+	EShadowProjectionType ShadowProjectionType = EShadowProjectionType::LVP;
+
+	// Actual algorithm used in LiSPSM hybrid (updated by ShadowManager)
+	// true = TSM, false = OpenGL LiSPSM
+	bool bActuallyUsedTSM = false;
 
 	// CSM Configuration (only visible when ShadowMapType == CSM)
 	int32 NumCascades = 3;
