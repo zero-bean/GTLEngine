@@ -155,6 +155,14 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 	TierSlotUsage[1] = 0;
 	TierSlotUsage[2] = 0;
 
+	// RemappedSliceSRV 캐시 클리어 (매 프레임 Shadow Map이 갱신되므로 캐시도 무효화)
+	SpotLightShadowMap.ClearRemappedSliceCache();
+	DirectionalLightShadowMap.ClearRemappedSliceCache();
+	DirectionalLightShadowMapTiers[0].ClearRemappedSliceCache();
+	DirectionalLightShadowMapTiers[1].ClearRemappedSliceCache();
+	DirectionalLightShadowMapTiers[2].ClearRemappedSliceCache();
+	PointLightCubeShadowMap.ClearRemappedSliceCache();
+
 	// 매 프레임 초기화 (Dynamic 환경) - 광원별로 독립적인 인덱스 사용
 	uint32 DirectionalLightIndex = 0;
 	uint32 SpotLightIndex = 0;
@@ -199,9 +207,9 @@ void FShadowManager::AssignShadowMapIndices(D3D11RHI* RHI, const FShadowCastingL
 				float ratio = (numCascades > 1) ? (float)cascadeIdx / (float)(numCascades - 1) : 0.0f;
 
 				uint32 tierIndex = 0;
-				if (ratio < 0.33f)
+				if (ratio <= 0.33f)
 					tierIndex = 2;  // High Tier (가까운 캐스케이드)
-				else if (ratio < 0.67f)
+				else if (ratio <= 0.67f)
 					tierIndex = 1;  // Medium Tier (중간 캐스케이드)
 				else
 					tierIndex = 0;  // Low Tier (먼 캐스케이드)

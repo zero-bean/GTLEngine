@@ -431,7 +431,11 @@ private:
 		LSLightView.M[3][2] = -FVector::Dot(LightDir, EyePos);
 
 		// === Step 3: Transform frustum corners to Light Space and calculate AABB ===
-		float viewnear = 1.0f;  // Default value from OpenGL code
+		// CRITICAL: viewnear must be large enough to prevent clipping!
+		// Too small = near plane too close = geometry clipped (shows as red/far in depth view)
+		// Original OpenGL code uses camera's actual near plane, but that's too small for shadows
+		// Use a reasonable value based on scene scale
+		float viewnear = 10.0f;  // Increased from 1.0f to prevent clipping
 
 		TArray<FVector> LSCorners;
 		LSCorners.Reserve(8);

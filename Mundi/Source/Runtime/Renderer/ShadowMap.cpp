@@ -508,6 +508,15 @@ void FShadowMap::ReleaseDepthRemapResources()
 		RemappedTexture->Release();
 		RemappedTexture = nullptr;
 	}
+
+	// RemappedSliceSRV 캐시 해제
+	for (auto& Pair : RemappedSliceSRVCache)
+	{
+		if (Pair.second.SRV) Pair.second.SRV->Release();
+		if (Pair.second.RTV) Pair.second.RTV->Release();
+		if (Pair.second.Texture) Pair.second.Texture->Release();
+	}
+	RemappedSliceSRVCache.clear();
 }
 
 void FShadowMap::InitializeDepthRemapResources(D3D11RHI* RHI)
@@ -707,7 +716,59 @@ ID3D11ShaderResourceView* FShadowMap::GetRemappedSliceSRV(D3D11RHI* RHI, UINT Ar
 	// Depth remap 리소스 초기화 (최초 1회만)
 	InitializeDepthRemapResources(RHI);
 
+	// 캐시 키 생성
+	FRemappedSliceKey cacheKey;
+	cacheKey.ArrayIndex = ArrayIndex;
+	cacheKey.MinDepth = MinDepth;
+	cacheKey.MaxDepth = MaxDepth;
+	cacheKey.bRotate = bRotate;
+	cacheKey.bFlipU = bFlipU;
+
+	// 캐시에 있는지 확인
+	auto it = RemappedSliceSRVCache.find(cacheKey);
+	if (it != RemappedSliceSRVCache.end())
+	{
+		// 캐시된 SRV 반환
+		return it->second.SRV;
+	}
+
+	// 캐시에 없으면 새로 생성
+	ID3D11Device* device = RHI->GetDevice();
 	ID3D11DeviceContext* context = RHI->GetDeviceContext();
+
+	// 새 RemappedTexture 생성
+	FRemappedSliceResource newResource = {};
+
+	D3D11_TEXTURE2D_DESC rtDesc = {};
+	rtDesc.Width = Width;
+	rtDesc.Height = Height;
+	rtDesc.MipLevels = 1;
+	rtDesc.ArraySize = 1;
+	rtDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	rtDesc.SampleDesc.Count = 1;
+	rtDesc.SampleDesc.Quality = 0;
+	rtDesc.Usage = D3D11_USAGE_DEFAULT;
+	rtDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	rtDesc.CPUAccessFlags = 0;
+	rtDesc.MiscFlags = 0;
+
+	HRESULT hr = device->CreateTexture2D(&rtDesc, nullptr, &newResource.Texture);
+	if (FAILED(hr)) return nullptr;
+
+	hr = device->CreateRenderTargetView(newResource.Texture, nullptr, &newResource.RTV);
+	if (FAILED(hr))
+	{
+		newResource.Texture->Release();
+		return nullptr;
+	}
+
+	hr = device->CreateShaderResourceView(newResource.Texture, nullptr, &newResource.SRV);
+	if (FAILED(hr))
+	{
+		newResource.RTV->Release();
+		newResource.Texture->Release();
+		return nullptr;
+	}
 
 	// 0. Save current render state
 	ID3D11RenderTargetView* oldRTVs[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = { nullptr };
@@ -729,15 +790,15 @@ ID3D11ShaderResourceView* FShadowMap::GetRemappedSliceSRV(D3D11RHI* RHI, UINT Ar
 	DepthRemapParams params = { MinDepth, MaxDepth, { 0.0f, 0.0f } };
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	HRESULT hr = context->Map(DepthRemapConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	hr = context->Map(DepthRemapConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (SUCCEEDED(hr))
 	{
 		memcpy(mappedResource.pData, &params, sizeof(DepthRemapParams));
 		context->Unmap(DepthRemapConstantBuffer, 0);
 	}
 
-	// 2. Set Render Target
-	context->OMSetRenderTargets(1, &RemappedRTV, nullptr);
+	// 2. Set Render Target (use new resource for caching)
+	context->OMSetRenderTargets(1, &newResource.RTV, nullptr);
 
 	// 3. Set Viewport
 	D3D11_VIEWPORT viewport = {};
@@ -802,6 +863,21 @@ ID3D11ShaderResourceView* FShadowMap::GetRemappedSliceSRV(D3D11RHI* RHI, UINT Ar
 	}
 	if (oldDSV) oldDSV->Release();
 
-	// 9. Return the remapped SRV
-	return RemappedSRV;
+	// 9. 캐시에 저장
+	RemappedSliceSRVCache[cacheKey] = newResource;
+
+	// 10. Return the remapped SRV
+	return newResource.SRV;
+}
+
+void FShadowMap::ClearRemappedSliceCache()
+{
+	// 캐시된 모든 리소스 해제
+	for (auto& Pair : RemappedSliceSRVCache)
+	{
+		if (Pair.second.SRV) Pair.second.SRV->Release();
+		if (Pair.second.RTV) Pair.second.RTV->Release();
+		if (Pair.second.Texture) Pair.second.Texture->Release();
+	}
+	RemappedSliceSRVCache.clear();
 }

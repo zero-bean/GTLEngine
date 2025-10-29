@@ -107,6 +107,14 @@ public:
 	float GetCSMLambda() const { return CSMLambda; }
 	void SetCSMLambda(float Lambda) { CSMLambda = Lambda; }
 
+	// CSM Tier Info Cache 구조체 (Public access for Shadow Map View)
+	struct FCascadeTierInfoCache
+	{
+		uint32 TierIndex = 0;
+		uint32 SliceIndex = 0;
+		float Resolution = 0.0f;
+	};
+
 	// CSM Tier Info Setter (ShadowManager가 업데이트)
 	void SetCascadeTierInfo(int CascadeIndex, uint32 TierIndex, uint32 SliceIndex, float Resolution)
 	{
@@ -116,6 +124,17 @@ public:
 			CascadeTierInfos[CascadeIndex].SliceIndex = SliceIndex;
 			CascadeTierInfos[CascadeIndex].Resolution = Resolution;
 		}
+	}
+
+	// CSM Tier Info Getter (Shadow Map View에서 사용)
+	const FCascadeTierInfoCache& GetCascadeTierInfo(int CascadeIndex) const
+	{
+		static FCascadeTierInfoCache EmptyCache;
+		if (CascadeIndex >= 0 && CascadeIndex < 4)
+		{
+			return CascadeTierInfos[CascadeIndex];
+		}
+		return EmptyCache;
 	}
 
 protected:
@@ -135,12 +154,6 @@ protected:
 	float CascadeSplitDistances[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 	// CSM Tier Info (updated by ShadowManager)
-	struct FCascadeTierInfoCache
-	{
-		uint32 TierIndex = 0;
-		uint32 SliceIndex = 0;
-		float Resolution = 0.0f;
-	};
 	FCascadeTierInfoCache CascadeTierInfos[4];
 
 	// Shadow Map Type (Default or CSM)

@@ -143,6 +143,16 @@ public:
 	FShadowMap& GetPointLightCubeShadowMap() { return PointLightCubeShadowMap; }
 	const FShadowMap& GetPointLightCubeShadowMap() const { return PointLightCubeShadowMap; }
 
+	// CSM Tier 접근 메서드 (0=Low 512, 1=Medium 1024, 2=High 2048)
+	FShadowMap& GetDirectionalLightShadowMapTier(uint32 TierIndex)
+	{
+		return DirectionalLightShadowMapTiers[TierIndex];
+	}
+	const FShadowMap& GetDirectionalLightShadowMapTier(uint32 TierIndex) const
+	{
+		return DirectionalLightShadowMapTiers[TierIndex];
+	}
+
 	// 필터 타입에 따라 적절한 픽셀 셰이더 반환
 	class UShader* GetShadowPixelShaderForFilterType(EShadowFilterType FilterType) const;
 
