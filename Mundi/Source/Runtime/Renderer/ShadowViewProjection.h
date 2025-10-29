@@ -10,6 +10,9 @@ struct FShadowViewProjection
 	FMatrix Projection;
 	FMatrix ViewProjection;
 
+	// LiSPSM hybrid에서 실제로 사용된 알고리즘 (true = TSM, false = OpenGL LiSPSM)
+	bool bUsedTSM = false;
+
 	// SpotLight용 Shadow VP 행렬 생성
 	// @param Position - 라이트 월드 위치
 	// @param Direction - 라이트 방향
@@ -176,34 +179,10 @@ public:
 		return CreateForDirectionalLight_Internal(Direction, FrustumCorners, ShadowExtension);
 	}
 
-	// Trapezoid Shadow Map (TSM) for DirectionalLight
-	//
-	// TSM improves shadow map quality by focusing resolution toward the camera using
-	// a trapezoid-shaped frustum instead of a uniform orthographic projection. This
-	// achieves similar benefits to LiSPSM with simpler, more robust mathematics.
-	//
-	// KEY DIFFERENCE FROM LVP:
-	// - LVP: Uniform orthographic projection (rectangle in light space)
-	// - TSM: Non-uniform frustum (trapezoid in light space) - narrower near camera
-	//
-	// Algorithm:
-	// 1. Transform frustum corners to light space
-	// 2. Find camera position in light space
-	// 3. Weight the AABB based on distance from camera
-	//    - Near camera: Tighter bounds (more texels per unit)
-	//    - Far from camera: Wider bounds (fewer texels per unit)
-	// 4. Use standard orthographic projection with adjusted bounds
-	//
-	// @param Direction - Light direction (normalized or not)
-	// @param FrustumCorners - 8 world-space corners of the view frustum
-	// @param CameraView - Camera's view matrix (used to find camera position)
-	// @param CameraProjection - Camera's projection matrix (unused)
-	// @param ShadowExtension - Percentage to extend shadow bounds (default 0.2 = 20%)
-	//
-	// References:
-	// - "Trapezoidal Shadow Maps" by Martin Tobias (2006)
-	// - Simplified alternative to LiSPSM with better stability
-	static FShadowViewProjection CreateForDirectionalLight_LiSPSM(
+private:
+	// Internal: Trapezoid Shadow Map (TSM) implementation
+	// Best for parallel light/camera angles (수평)
+	static FShadowViewProjection CreateForDirectionalLight_TSM_Internal(
 		const FVector& Direction,
 		const TArray<FVector>& FrustumCorners,
 		const FMatrix& CameraView,
@@ -229,7 +208,9 @@ public:
 		}
 		FrustumCenter /= 8.0f;
 
-		// Position light behind frustum
+		// Position light far behind frustum to ensure coverage of all occluders
+		// TSM Recipe: Light must be positioned to capture all potential shadow casters
+		// Increased distance for dueling frusta stability
 		FVector LightPos = FrustumCenter - LightDir * 100.0f;
 
 		// Build light view matrix
@@ -306,8 +287,9 @@ public:
 		// Weighted blend based on viewing angle
 		// High angle = more difference between near/far weighting
 		// Low angle = more uniform (like LVP)
-		float NearWeight = 0.5f + AngleFactor * 0.35f;  // 0.5 to 0.85
-		float FarWeight = 1.0f - NearWeight;             // 0.5 to 0.15
+		// Increased base weight to prevent flickering in dueling frusta
+		float NearWeight = 0.5f + AngleFactor * 0.4f;  // 0.6 to 0.9 (increased from 0.5-0.85)
+		float FarWeight = 1.0f - NearWeight;           // 0.4 to 0.1 (decreased from 0.5-0.15)
 
 		float MinX = NearMinX * NearWeight + FarMinX * FarWeight;
 		float MaxX = NearMaxX * NearWeight + FarMaxX * FarWeight;
@@ -329,9 +311,19 @@ public:
 		Width = MaxX - MinX;
 		Height = MaxY - MinY;
 
-		// Extend near plane to catch occluders behind camera
-		float NearExtension = Depth * 2.0f;
+		// TSM Recipe: Extend near plane aggressively to catch occluders behind camera
+		// This prevents light leaking from objects that cast shadows from behind
+		// Reference: TSM paper - "Addressing the Polygon Offset Problem"
+		//
+		// Dueling Frusta: When view and light are nearly parallel, we need even more extension
+		// to prevent flickering/shimmering on surfaces parallel to light direction
+		float NearExtension = Depth * 10.0f;  // Increased from 5.0f to prevent flickering in dueling frusta
 		MinZ -= NearExtension;
+
+		// Also extend far plane slightly to avoid clipping distant occluders
+		float FarExtension = Depth * 1.0f;  // Increased from 0.5f
+		MaxZ += FarExtension;
+
 		Depth = MaxZ - MinZ;
 
 		// === Step 7: Create Orthographic Projection ===
@@ -354,7 +346,8 @@ public:
 		return Result;
 	}
 
-	// OpenGL-style Light-space Perspective Shadow Map (LiSPSM) for DirectionalLight
+	// Internal: OpenGL-style Light-space Perspective Shadow Map (LiSPSM) implementation
+	// Best for perpendicular light/camera angles (수직)
 	//
 	// This is a direct port of the OpenGL LiSPSM algorithm from the shader tutorial
 	// (Document/LisPSM/ShaderTutors/43_LightSpacePerspectiveSM/main.cpp:547-607).
@@ -389,7 +382,7 @@ public:
 	// References:
 	// - "Light Space Perspective Shadow Maps" by Michael Wimmer et al. (2004)
 	// - Original OpenGL implementation in shader tutorial
-	static FShadowViewProjection CreateForDirectionalLight_OpenGLLiSPSM(
+	static FShadowViewProjection CreateForDirectionalLight_OpenGLLiSPSM_Internal(
 		const FVector& Direction,
 		const TArray<FVector>& FrustumCorners,
 		const FMatrix& CameraView,
@@ -540,6 +533,120 @@ public:
 		Result.View = LSLightView;
 		Result.Projection = LiSPSMProj * FitToUnitCube;
 		Result.ViewProjection = Result.View * Result.Projection;
+
+		return Result;
+	}
+
+public:
+	// Hybrid Light-space Perspective Shadow Map (TSM + OpenGL LiSPSM)
+	// Adaptively chooses the best algorithm based on light/camera angle:
+	// - Parallel angles (수평): Uses TSM (weighted AABB) - better when light and camera are aligned
+	// - Perpendicular angles (수직): Uses OpenGL LiSPSM (perspective warping) - better at oblique angles
+	//
+	// This hybrid approach combines the strengths of both methods to provide
+	// robust shadow quality across all viewing angles.
+	//
+	// @param Direction - Light direction (normalized or not)
+	// @param FrustumCorners - 8 world-space corners of the view frustum
+	// @param CameraView - Camera's view matrix
+	// @param CameraProjection - Camera's projection matrix
+	// @param ShadowExtension - Shadow range extension ratio (used by TSM only, default 0.2 = 20%)
+	// @return Shadow view-projection matrices
+	static FShadowViewProjection CreateForDirectionalLight_LiSPSM(
+		const FVector& Direction,
+		const FMatrix& CameraView,
+		const FMatrix& CameraProjection,
+		float ShadowExtension = 0.2f)
+	{
+		// Extract camera frustum corners
+		TArray<FVector> FrustumCorners;
+		FMatrix InvView = CameraView.InverseAffine();
+		FMatrix InvProj = CameraProjection.InversePerspectiveProjection();
+		FMatrix InvViewProj = InvProj * InvView;
+		GetFrustumCornersWorldSpace(InvViewProj, FrustumCorners);
+
+		// Calculate view direction from camera
+		// DirectX row-major: view matrix's 3rd row is the forward direction
+		FVector ViewDir = FVector(-CameraView.M[0][2], -CameraView.M[1][2], -CameraView.M[2][2]);
+		ViewDir.Normalize();
+
+		FVector LightDir = Direction.GetNormalized();
+
+		// Calculate angle between view and light direction
+		// AbsCosAngle close to 1 = parallel (수평), close to 0 = perpendicular (수직)
+		float AbsCosAngle = FMath::Abs(FVector::Dot(ViewDir, LightDir));
+
+		// Threshold decision:
+		// AbsCosAngle < threshold: use OpenGL LiSPSM (perpendicular, 수직)
+		// AbsCosAngle >= threshold: use TSM (parallel, 수평)
+		// Higher threshold = use PSM more often (better quality)
+		const float ParallelThreshold = 0.8f;  // ~37 degree angle
+
+		FShadowViewProjection Result;
+
+		if (AbsCosAngle < ParallelThreshold)
+		{
+			// More perpendicular (수직, AbsCosAngle → 0.0) - use OpenGL LiSPSM for better quality
+			Result = CreateForDirectionalLight_OpenGLLiSPSM_Internal(Direction, FrustumCorners, CameraView, CameraProjection);
+			Result.bUsedTSM = false;  // OpenGL LiSPSM 사용
+		}
+		else
+		{
+			// More parallel (수평, AbsCosAngle → 1.0) - use TSM for better stability
+			// Prevents flickering in dueling frusta situations
+			Result = CreateForDirectionalLight_TSM_Internal(Direction, FrustumCorners, CameraView, CameraProjection, ShadowExtension);
+			Result.bUsedTSM = true;  // TSM 사용
+		}
+
+		return Result;
+	}
+
+	// Hybrid Light-space Perspective Shadow Map (TSM + OpenGL LiSPSM) - CSM variant
+	// Same as above but accepts frustum corners directly (for CSM cascades)
+	//
+	// @param Direction - Light direction (normalized or not)
+	// @param FrustumCorners - 8 world-space corners of the view frustum (or cascade)
+	// @param CameraView - Camera's view matrix
+	// @param CameraProjection - Camera's projection matrix
+	// @param ShadowExtension - Shadow range extension ratio (used by TSM only, default 0.2 = 20%)
+	// @return Shadow view-projection matrices
+	static FShadowViewProjection CreateForDirectionalLight_LiSPSM_FromCorners(
+		const FVector& Direction,
+		const TArray<FVector>& FrustumCorners,
+		const FMatrix& CameraView,
+		const FMatrix& CameraProjection,
+		float ShadowExtension = 0.2f)
+	{
+		// Calculate view direction from camera
+		FVector ViewDir = FVector(-CameraView.M[0][2], -CameraView.M[1][2], -CameraView.M[2][2]);
+		ViewDir.Normalize();
+
+		FVector LightDir = Direction.GetNormalized();
+
+		// Calculate angle between view and light direction
+		float AbsCosAngle = FMath::Abs(FVector::Dot(ViewDir, LightDir));
+
+		// Threshold decision
+		// AbsCosAngle < threshold: use OpenGL LiSPSM (perpendicular, 수직)
+		// AbsCosAngle >= threshold: use TSM (parallel, 수평)
+		// Higher threshold = use PSM more often (better quality)
+		const float ParallelThreshold = 0.85f;  // ~37 degree angle
+
+		FShadowViewProjection Result;
+
+		if (AbsCosAngle < ParallelThreshold)
+		{
+			// More perpendicular (수직, AbsCosAngle → 0.0) - use OpenGL LiSPSM for better quality
+			Result = CreateForDirectionalLight_OpenGLLiSPSM_Internal(Direction, FrustumCorners, CameraView, CameraProjection);
+			Result.bUsedTSM = false;  // OpenGL LiSPSM 사용
+		}
+		else
+		{
+			// More parallel (수평, AbsCosAngle → 1.0) - use TSM for better stability
+			// Prevents flickering in dueling frusta situations
+			Result = CreateForDirectionalLight_TSM_Internal(Direction, FrustumCorners, CameraView, CameraProjection, ShadowExtension);
+			Result.bUsedTSM = true;  // TSM 사용
+		}
 
 		return Result;
 	}

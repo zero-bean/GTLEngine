@@ -297,36 +297,18 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent
 
 	FShadowViewProjection ShadowVP;
 
-	// ShadowProjectionType에 따라 LVP, LiSPSM, 또는 OpenGLLiSPSM 사용
+	// ShadowProjectionType에 따라 LVP 또는 LiSPSM (Hybrid: TSM + OpenGL LiSPSM) 사용
 	EShadowProjectionType ProjectionType = Light->GetShadowProjectionType();
 
-	if (ProjectionType == EShadowProjectionType::LiSPSM || ProjectionType == EShadowProjectionType::OpenGLLiSPSM)
+	if (ProjectionType == EShadowProjectionType::LiSPSM)
 	{
-		// LiSPSM 또는 OpenGLLiSPSM: Camera Frustum의 8개 코너를 월드 공간으로 변환
-		TArray<FVector> FrustumCorners;
-		FMatrix InvView = CameraView.InverseAffine();
-		FMatrix InvProj = CameraProjection.InversePerspectiveProjection();
-		FMatrix InvViewProj = InvProj * InvView;
-		GetFrustumCornersWorldSpace(InvViewProj, FrustumCorners);
-
-		if (ProjectionType == EShadowProjectionType::LiSPSM)
-		{
-			// LiSPSM (현재 구현): Trapezoid-based VP 행렬 계산
-			ShadowVP = FShadowViewProjection::CreateForDirectionalLight_LiSPSM(
-				Light->GetLightDirection(),
-				FrustumCorners,
-				CameraView,
-				CameraProjection);
-		}
-		else // OpenGLLiSPSM
-		{
-			// OpenGL-style LiSPSM (논문 구현): Light-Space basis VP 행렬 계산
-			ShadowVP = FShadowViewProjection::CreateForDirectionalLight_OpenGLLiSPSM(
-				Light->GetLightDirection(),
-				FrustumCorners,
-				CameraView,
-				CameraProjection);
-		}
+		// LiSPSM (Hybrid): 각도에 따라 TSM과 OpenGL LiSPSM을 자동 선택
+		// - 수평(parallel): TSM 사용
+		// - 수직(perpendicular): OpenGL LiSPSM 사용
+		ShadowVP = FShadowViewProjection::CreateForDirectionalLight_LiSPSM(
+			Light->GetLightDirection(),
+			CameraView,
+			CameraProjection);
 	}
 	else
 	{
@@ -342,10 +324,26 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent
 	OutContext.LightProjection = ShadowVP.Projection;
 	OutContext.ShadowMapIndex = Index;
 	OutContext.ShadowBias = Light->GetShadowBias();
-	OutContext.ShadowSlopeBias = Light->GetShadowSlopeBias();
+
+	// LiSPSM은 perspective warping으로 인해 slope가 변하므로 SlopeBias를 0으로 설정
+	// LVP는 일반 orthographic이므로 원래 SlopeBias 사용
+	if (ProjectionType == EShadowProjectionType::LiSPSM)
+	{
+		OutContext.ShadowSlopeBias = 0.0f;  // LiSPSM: SlopeBias 비활성화
+	}
+	else
+	{
+		OutContext.ShadowSlopeBias = Light->GetShadowSlopeBias();  // LVP: 원래 값 사용
+	}
 
 	// Light Component에 계산된 ViewProjection 저장 (Light Buffer 업데이트 시 사용)
 	Light->SetLightViewProjection(ShadowVP.ViewProjection);
+
+	// LiSPSM hybrid에서 실제 사용된 알고리즘 정보 저장 (Depth view 표시용)
+	if (ProjectionType == EShadowProjectionType::LiSPSM)
+	{
+		Light->SetActualUsedTSM(ShadowVP.bUsedTSM);
+	}
 
 	// DirectionalLight Shadow Map 렌더링 시작 (DSV 바인딩, Viewport 설정)
 	DirectionalLightShadowMap.BeginRender(RHI, Index, OutContext.ShadowBias, OutContext.ShadowSlopeBias);
@@ -382,23 +380,16 @@ bool FShadowManager::BeginShadowRenderCSM(D3D11RHI* RHI, UDirectionalLightCompon
 		SplitFar,
 		CascadeFrustumCorners);
 
-	// 2. Light VP 계산 (ShadowProjectionType에 따라 LVP, LiSPSM, 또는 OpenGLLiSPSM)
+	// 2. Light VP 계산 (ShadowProjectionType에 따라 LVP 또는 LiSPSM (Hybrid: TSM + OpenGL LiSPSM))
 	FShadowViewProjection ShadowVP;
 	EShadowProjectionType ProjectionType = Light->GetShadowProjectionType();
 
 	if (ProjectionType == EShadowProjectionType::LiSPSM)
 	{
-		// LiSPSM (현재 구현): Trapezoid-based VP 행렬 계산
-		ShadowVP = FShadowViewProjection::CreateForDirectionalLight_LiSPSM(
-			Light->GetLightDirection(),
-			CascadeFrustumCorners,
-			CameraView,
-			CameraProjection);
-	}
-	else if (ProjectionType == EShadowProjectionType::OpenGLLiSPSM)
-	{
-		// OpenGL-style LiSPSM (논문 구현): Light-Space basis VP 행렬 계산
-		ShadowVP = FShadowViewProjection::CreateForDirectionalLight_OpenGLLiSPSM(
+		// LiSPSM (Hybrid): 각도에 따라 TSM과 OpenGL LiSPSM을 자동 선택
+		// - 수평(parallel): TSM 사용
+		// - 수직(perpendicular): OpenGL LiSPSM 사용
+		ShadowVP = FShadowViewProjection::CreateForDirectionalLight_LiSPSM_FromCorners(
 			Light->GetLightDirection(),
 			CascadeFrustumCorners,
 			CameraView,
@@ -422,11 +413,26 @@ bool FShadowManager::BeginShadowRenderCSM(D3D11RHI* RHI, UDirectionalLightCompon
 	OutContext.LightProjection = ShadowVP.Projection;
 	OutContext.ShadowMapIndex = ArrayIndex;
 	OutContext.ShadowBias = Light->GetShadowBias();
-	OutContext.ShadowSlopeBias = Light->GetShadowSlopeBias();
+
+	// LiSPSM은 perspective warping으로 인해 slope가 변하므로 SlopeBias를 0으로 설정
+	if (ProjectionType == EShadowProjectionType::LiSPSM)
+	{
+		OutContext.ShadowSlopeBias = 0.0f;  // LiSPSM: SlopeBias 비활성화
+	}
+	else
+	{
+		OutContext.ShadowSlopeBias = Light->GetShadowSlopeBias();  // LVP: 원래 값 사용
+	}
 
 	// 5. Light Component에 VP 저장
 	Light->SetCascadeViewProjection(CascadeIndex, ShadowVP.ViewProjection);
 	Light->SetCascadeSplitDistance(CascadeIndex, SplitFar);
+
+	// LiSPSM hybrid에서 실제 사용된 알고리즘 정보 저장 (Depth view 표시용)
+	if (ProjectionType == EShadowProjectionType::LiSPSM)
+	{
+		Light->SetActualUsedTSM(ShadowVP.bUsedTSM);
+	}
 
 	// 6. Shadow Map 렌더링 시작
 	DirectionalLightShadowMap.BeginRender(
