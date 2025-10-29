@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "RHIDevice.h"
 #include "ResourceManager.h"
 #include "VertexData.h"
