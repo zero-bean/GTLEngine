@@ -526,8 +526,8 @@ void FShadowManager::UpdateShadowFilterBuffer(D3D11RHI* RHI)
 	ShadowFilterBuffer.PointLightResolution = static_cast<float>(Config.PointLightResolution);
 
 	// 동적으로 계산된 VSM 파라미터 사용
-	ShadowFilterBuffer.VSMLightBleedingReduction = Config.VSMLightBleedingReduction * dynamicLightBleedingReduction;
-	ShadowFilterBuffer.VSMMinVariance = Config.VSMMinVariance + dynamicMinVariance;
+	ShadowFilterBuffer.VSMLightBleedingReduction = dynamicLightBleedingReduction;
+	ShadowFilterBuffer.VSMMinVariance = dynamicMinVariance;
 
 	ShadowFilterBuffer.ESMExponent = Config.ESMExponent;
 	ShadowFilterBuffer.EVSMPositiveExponent = Config.EVSMPositiveExponent;
