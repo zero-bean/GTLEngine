@@ -307,11 +307,8 @@ void UStatsOverlayD2D::Draw()
 		const FShadowStats& ShadowStats = FShadowStatManager::GetInstance().GetStats();
 
 		// 2. 메모리를 MB 단위로 변환
-		double SpotAllocMB = static_cast<double>(ShadowStats.SpotLightAllocatedBytes) / (1024.0 * 1024.0);
 		double SpotUsedMB = static_cast<double>(ShadowStats.SpotLightUsedBytes) / (1024.0 * 1024.0);
-		double PointAllocMB = static_cast<double>(ShadowStats.PointLightAllocatedBytes) / (1024.0 * 1024.0);
 		double PointUsedMB = static_cast<double>(ShadowStats.PointLightUsedBytes) / (1024.0 * 1024.0);
-		double TotalAllocMB = static_cast<double>(ShadowStats.TotalAllocatedBytes) / (1024.0 * 1024.0);
 		double TotalUsedMB = static_cast<double>(ShadowStats.TotalUsedBytes) / (1024.0 * 1024.0);
 
 		// 3. 출력할 문자열 버퍼를 만듭니다.
@@ -320,37 +317,33 @@ void UStatsOverlayD2D::Draw()
 		if (ShadowStats.bUsingCSM)
 		{
 			// CSM 사용 시: Low/Medium/High 티어별로 표시
-			double CSMLowAllocMB = static_cast<double>(ShadowStats.CSMTierAllocatedBytes[0]) / (1024.0 * 1024.0);
 			double CSMLowUsedMB = static_cast<double>(ShadowStats.CSMTierUsedBytes[0]) / (1024.0 * 1024.0);
-			double CSMMediumAllocMB = static_cast<double>(ShadowStats.CSMTierAllocatedBytes[1]) / (1024.0 * 1024.0);
 			double CSMMediumUsedMB = static_cast<double>(ShadowStats.CSMTierUsedBytes[1]) / (1024.0 * 1024.0);
-			double CSMHighAllocMB = static_cast<double>(ShadowStats.CSMTierAllocatedBytes[2]) / (1024.0 * 1024.0);
 			double CSMHighUsedMB = static_cast<double>(ShadowStats.CSMTierUsedBytes[2]) / (1024.0 * 1024.0);
 
-			swprintf_s(Buf, L"[Shadow Map Stats]\n해상도:\n  Dir (CSM):\n    Low: %ux%u (%u개)\n    Med: %ux%u (%u개)\n    High: %ux%u (%u개)\n  Spot: %ux%u\n  Point: %ux%u\n메모리 (사용/할당):\n  Dir CSM (%.2f / %.2f MB):\n    Low: %.2f / %.2f MB\n    Med: %.2f / %.2f MB\n    High: %.2f / %.2f MB\n  Spot: %u개 (%.2f / %.2f MB)\n  Point: %u개 (%.2f / %.2f MB)\n전체: %u개\n전체 메모리: %.2f / %.2f MB",
+			swprintf_s(Buf, L"[Shadow Map Stats]\n해상도:\n  Dir (CSM):\n    Low: %ux%u (%u개)\n    Med: %ux%u (%u개)\n    High: %ux%u (%u개)\n  Spot: %ux%u\n  Point: %ux%u\n메모리:\n  Dir CSM: %.2f MB\n    Low: %.2f MB\n    Med: %.2f MB\n    High: %.2f MB\n  Spot: %u개 (%.2f MB)\n  Point: %u개 (%.2f MB)\n전체: %u개\n전체 메모리: %.2f MB",
 				ShadowStats.CSMTierResolutions[0], ShadowStats.CSMTierResolutions[0], ShadowStats.CSMTierCascadeCounts[0],
 				ShadowStats.CSMTierResolutions[1], ShadowStats.CSMTierResolutions[1], ShadowStats.CSMTierCascadeCounts[1],
 				ShadowStats.CSMTierResolutions[2], ShadowStats.CSMTierResolutions[2], ShadowStats.CSMTierCascadeCounts[2],
 				ShadowStats.SpotLightResolution, ShadowStats.SpotLightResolution,
 				ShadowStats.PointLightResolution, ShadowStats.PointLightResolution,
-				CSMLowUsedMB + CSMMediumUsedMB + CSMHighUsedMB, CSMLowAllocMB + CSMMediumAllocMB + CSMHighAllocMB,
-				CSMLowUsedMB, CSMLowAllocMB,
-				CSMMediumUsedMB, CSMMediumAllocMB,
-				CSMHighUsedMB, CSMHighAllocMB,
+				CSMLowUsedMB + CSMMediumUsedMB + CSMHighUsedMB,
+				CSMLowUsedMB,
+				CSMMediumUsedMB,
+				CSMHighUsedMB,
 				ShadowStats.SpotLightCount,
-				SpotUsedMB, SpotAllocMB,
+				SpotUsedMB,
 				ShadowStats.PointLightCount,
-				PointUsedMB, PointAllocMB,
+				PointUsedMB,
 				ShadowStats.GetTotalLightCount(),
-				TotalUsedMB, TotalAllocMB);
+				TotalUsedMB);
 		}
 		else
 		{
 			// Non-CSM: 기존 방식 유지
-			double DirAllocMB = static_cast<double>(ShadowStats.DirectionalLightAllocatedBytes) / (1024.0 * 1024.0);
 			double DirUsedMB = static_cast<double>(ShadowStats.DirectionalLightUsedBytes) / (1024.0 * 1024.0);
 
-			swprintf_s(Buf, L"[Shadow Map Stats]\n해상도:\n  Dir: %ux%u\n  Spot: %ux%u\n  Point: %ux%u\n메모리 (사용/할당):\n  Dir: %u개 (%.2f / %.2f MB)\n  Spot: %u개 (%.2f / %.2f MB)\n  Point: %u개 (%.2f / %.2f MB)\n전체: %u개\n전체 메모리: %.2f / %.2f MB",
+			swprintf_s(Buf, L"[Shadow Map Stats]\n해상도:\n  Dir: %ux%u\n  Spot: %ux%u\n  Point: %ux%u\n메모리:\n  Dir: %u개 (%.2f MB)\n  Spot: %u개 (%.2f MB)\n  Point: %u개 (%.2f MB)\n전체: %u개\n전체 메모리: %.2f MB",
 				ShadowStats.DirectionalLightResolution,
 				ShadowStats.DirectionalLightResolution,
 				ShadowStats.SpotLightResolution,
@@ -359,16 +352,12 @@ void UStatsOverlayD2D::Draw()
 				ShadowStats.PointLightResolution,
 				ShadowStats.DirectionalLightCount,
 				DirUsedMB,
-				DirAllocMB,
 				ShadowStats.SpotLightCount,
 				SpotUsedMB,
-				SpotAllocMB,
 				ShadowStats.PointLightCount,
 				PointUsedMB,
-				PointAllocMB,
 				ShadowStats.GetTotalLightCount(),
-				TotalUsedMB,
-				TotalAllocMB);
+				TotalUsedMB);
 		}
 
 		// 4. 텍스트를 여러 줄 표시해야 하므로 패널 크기를 늘립니다.

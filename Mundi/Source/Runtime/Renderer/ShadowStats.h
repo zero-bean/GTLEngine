@@ -17,18 +17,10 @@ struct FShadowStats
 	uint32 SpotLightCount = 0;
 	uint32 PointLightCount = 0;
 
-	// 광원별 할당된 메모리 (바이트) - GPU에 실제 할당된 전체 텍스처 배열 크기
-	uint64 DirectionalLightAllocatedBytes = 0;
-	uint64 SpotLightAllocatedBytes = 0;
-	uint64 PointLightAllocatedBytes = 0;
-
 	// 광원별 사용 중인 메모리 (바이트) - 실제 활성화된 라이트 수에 해당하는 크기
 	uint64 DirectionalLightUsedBytes = 0;
 	uint64 SpotLightUsedBytes = 0;
 	uint64 PointLightUsedBytes = 0;
-
-	// 총 할당된 메모리 (바이트)
-	uint64 TotalAllocatedBytes = 0;
 
 	// 총 사용 중인 메모리 (바이트)
 	uint64 TotalUsedBytes = 0;
@@ -42,7 +34,6 @@ struct FShadowStats
 	// CSM 티어별 정보 (Low, Medium, High)
 	uint32 CSMTierResolutions[3] = { 0, 0, 0 };      // 각 티어의 해상도
 	uint32 CSMTierCascadeCounts[3] = { 0, 0, 0 };    // 각 티어에 할당된 캐스케이드 수
-	uint64 CSMTierAllocatedBytes[3] = { 0, 0, 0 };   // 각 티어의 할당된 메모리
 	uint64 CSMTierUsedBytes[3] = { 0, 0, 0 };        // 각 티어의 사용 중인 메모리
 
 	FShadowStats()
@@ -52,13 +43,9 @@ struct FShadowStats
 		, DirectionalLightCount(0)
 		, SpotLightCount(0)
 		, PointLightCount(0)
-		, DirectionalLightAllocatedBytes(0)
-		, SpotLightAllocatedBytes(0)
-		, PointLightAllocatedBytes(0)
 		, DirectionalLightUsedBytes(0)
 		, SpotLightUsedBytes(0)
 		, PointLightUsedBytes(0)
-		, TotalAllocatedBytes(0)
 		, TotalUsedBytes(0)
 		, MaxShadowCastingLights(0)
 		, bUsingCSM(false)
@@ -76,20 +63,15 @@ struct FShadowStats
 		DirectionalLightCount = 0;
 		SpotLightCount = 0;
 		PointLightCount = 0;
-		DirectionalLightAllocatedBytes = 0;
-		SpotLightAllocatedBytes = 0;
-		PointLightAllocatedBytes = 0;
 		DirectionalLightUsedBytes = 0;
 		SpotLightUsedBytes = 0;
 		PointLightUsedBytes = 0;
-		TotalAllocatedBytes = 0;
 		TotalUsedBytes = 0;
 		bUsingCSM = false;
 		for (int i = 0; i < 3; ++i)
 		{
 			CSMTierResolutions[i] = 0;
 			CSMTierCascadeCounts[i] = 0;
-			CSMTierAllocatedBytes[i] = 0;
 			CSMTierUsedBytes[i] = 0;
 		}
 	}
