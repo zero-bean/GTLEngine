@@ -32,7 +32,8 @@ struct PS_INPUT
 // EVSM 출력: (exp(c+ * depth), exp(-c- * depth))
 float2 mainPS(PS_INPUT input) : SV_TARGET
 {
-    float depth = input.Depth;
+    float depth = input.Position.z;
+    depth = saturate(depth);
 
     // Positive와 Negative exponential depth 계산
     float posExp = exp(EVSMPositiveExponent * depth);

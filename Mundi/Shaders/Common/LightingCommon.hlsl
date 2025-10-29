@@ -308,16 +308,19 @@ float SampleEVSM(float2 moments, float depth, float positiveExponent, float nega
     // Positive와 Negative 두 가지 exponential depth 사용
     float pos = exp(positiveExponent * depth);
     float neg = exp(-negativeExponent * depth);
+    
+    // Occluder moments 구성 (섀도우 맵에서 읽은 exp 값으로 moments 생성)
+    // blur 없이는 variance = 0이지만, 필터링 후에는 유효한 분산 생성
+    float2 posOccluderMoments = float2(moments.x, moments.x * moments.x);
+    float2 negOccluderMoments = float2(moments.y, moments.y * moments.y);
 
-    // Chebyshev for positive
-    float2 posWarpedDepth = float2(pos, pos * pos);
-    float posContrib = ChebyshevUpperBound(posWarpedDepth, moments.x, 0.0001f, lightBleedingReduction);
-
-    // Chebyshev for negative
-    float2 negWarpedDepth = float2(neg, neg * neg);
-    float negContrib = ChebyshevUpperBound(negWarpedDepth, moments.y, 0.0001f, lightBleedingReduction);
-
-    // 두 결과의 평균
+    // Chebyshev for positive (인자 순서 수정: occluder moments, receiver depth)
+    float posContrib = ChebyshevUpperBound(posOccluderMoments, pos, 0.0001f, lightBleedingReduction);
+   
+    // Chebyshev for negative (인자 순서 수정: occluder moments, receiver depth)
+    float negContrib = ChebyshevUpperBound(negOccluderMoments, neg, 0.0001f, lightBleedingReduction);
+   
+    // 두 결과의 최솟값
     return min(posContrib, negContrib);
 }
 
@@ -356,27 +359,32 @@ float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3
     // Current depth in light space
     float currentDepth = projCoords.z;
 
-    // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
-    float NdotL = saturate(dot(worldNormal, lightDir));
-    float bias = lerp(0.00001f, 0.00005f, NdotL);
-    currentDepth -= bias;
-
     // 필터링 타입에 따라 분기
     float shadow = 1.0f;
 
     [branch]
     if (FilterType == 0) // NONE
     {
+        // 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 하드웨어 기본 비교 샘플링
         float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        shadow = g_SpotLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+        shadow = g_SpotLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, biasedDepth);
     }
     else if (FilterType == 1) // PCF
     {
+        // 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 소프트웨어 PCF
         uint sampleCount = (PCFSampleCount == 0) ? PCFCustomSampleCount : PCFSampleCount;
         float texelSize = 1.0f / shadowMapResolution;
-        shadow = SamplePCF_2DArray(g_SpotLightShadowMaps, shadowTexCoord, shadowMapIndex, currentDepth, sampleCount, texelSize);
+        shadow = SamplePCF_2DArray(g_SpotLightShadowMaps, shadowTexCoord, shadowMapIndex, biasedDepth, sampleCount, texelSize);
     }
     else if (FilterType == 2) // VSM
     {
@@ -434,27 +442,32 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos,
     // Current depth in light space
     float currentDepth = projCoords.z;
 
-    // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
-    float NdotL = saturate(dot(worldNormal, lightDir));
-    float bias = lerp(0.00001f, 0.00005f, NdotL);
-    currentDepth -= bias;
-
     // 필터링 타입에 따라 분기
     float shadow = 1.0f;
 
     [branch]
     if (FilterType == 0) // NONE
     {
+        // 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 하드웨어 기본 비교 샘플링
         float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+        shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, biasedDepth);
     }
     else if (FilterType == 1) // PCF
     {
+        // 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 소프트웨어 PCF
         uint sampleCount = (PCFSampleCount == 0) ? PCFCustomSampleCount : PCFSampleCount;
         float texelSize = 1.0f / shadowMapResolution;
-        shadow = SamplePCF_2DArray(g_DirectionalLightShadowMaps, shadowTexCoord, shadowMapIndex, currentDepth, sampleCount, texelSize);
+        shadow = SamplePCF_2DArray(g_DirectionalLightShadowMaps, shadowTexCoord, shadowMapIndex, biasedDepth, sampleCount, texelSize);
     }
     else if (FilterType == 2) // VSM
     {
@@ -539,27 +552,32 @@ float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos, float3 w
     // 7. Current depth in light space
     float currentDepth = projCoords.z;
 
-    // 8. Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
-    float NdotL = saturate(dot(worldNormal, lightDir));
-    float bias = lerp(0.00001f, 0.00005f, NdotL);
-    currentDepth -= bias;
-
     // 9. 필터링 타입에 따라 분기
     float shadow = 1.0f;
 
     [branch]
     if (FilterType == 0) // NONE
     {
+        // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 하드웨어 기본 비교 샘플링
         float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
-        shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, cubeSampleCoord, currentDepth);
+        shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, cubeSampleCoord, biasedDepth);
     }
     else if (FilterType == 1) // PCF
     {
+        // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 소프트웨어 PCF
         uint sampleCount = (PCFSampleCount == 0) ? PCFCustomSampleCount : PCFSampleCount;
         float texelSize = 1.0f / shadowMapResolution;
-        shadow = SamplePCF_CubeArray(g_PointLightShadowCubeMaps, lightToPixel, light.ShadowMapIndex, currentDepth, sampleCount, texelSize);
+        shadow = SamplePCF_CubeArray(g_PointLightShadowCubeMaps, lightToPixel, light.ShadowMapIndex, biasedDepth, sampleCount, texelSize);
     }
     else if (FilterType == 2) // VSM
     {
