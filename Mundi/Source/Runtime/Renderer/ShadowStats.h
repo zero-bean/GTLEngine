@@ -36,6 +36,15 @@ struct FShadowStats
 	// 최대 쉐도우 캐스팅 라이트 수
 	uint32 MaxShadowCastingLights = 0;
 
+	// CSM 사용 여부
+	bool bUsingCSM = false;
+
+	// CSM 티어별 정보 (Low, Medium, High)
+	uint32 CSMTierResolutions[3] = { 0, 0, 0 };      // 각 티어의 해상도
+	uint32 CSMTierCascadeCounts[3] = { 0, 0, 0 };    // 각 티어에 할당된 캐스케이드 수
+	uint64 CSMTierAllocatedBytes[3] = { 0, 0, 0 };   // 각 티어의 할당된 메모리
+	uint64 CSMTierUsedBytes[3] = { 0, 0, 0 };        // 각 티어의 사용 중인 메모리
+
 	FShadowStats()
 		: DirectionalLightResolution(0)
 		, SpotLightResolution(0)
@@ -52,6 +61,7 @@ struct FShadowStats
 		, TotalAllocatedBytes(0)
 		, TotalUsedBytes(0)
 		, MaxShadowCastingLights(0)
+		, bUsingCSM(false)
 	{
 	}
 
@@ -74,6 +84,14 @@ struct FShadowStats
 		PointLightUsedBytes = 0;
 		TotalAllocatedBytes = 0;
 		TotalUsedBytes = 0;
+		bUsingCSM = false;
+		for (int i = 0; i < 3; ++i)
+		{
+			CSMTierResolutions[i] = 0;
+			CSMTierCascadeCounts[i] = 0;
+			CSMTierAllocatedBytes[i] = 0;
+			CSMTierUsedBytes[i] = 0;
+		}
 	}
 
 	/**

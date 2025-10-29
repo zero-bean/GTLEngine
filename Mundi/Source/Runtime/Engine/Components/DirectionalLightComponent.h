@@ -107,6 +107,17 @@ public:
 	float GetCSMLambda() const { return CSMLambda; }
 	void SetCSMLambda(float Lambda) { CSMLambda = Lambda; }
 
+	// CSM Tier Info Setter (ShadowManager가 업데이트)
+	void SetCascadeTierInfo(int CascadeIndex, uint32 TierIndex, uint32 SliceIndex, float Resolution)
+	{
+		if (CascadeIndex >= 0 && CascadeIndex < 4)
+		{
+			CascadeTierInfos[CascadeIndex].TierIndex = TierIndex;
+			CascadeTierInfos[CascadeIndex].SliceIndex = SliceIndex;
+			CascadeTierInfos[CascadeIndex].Resolution = Resolution;
+		}
+	}
+
 protected:
 	// Direction Gizmo (shows light direction)
 	class UGizmoArrowComponent* DirectionGizmo = nullptr;
@@ -122,6 +133,15 @@ protected:
 		FMatrix::Identity()
 	};
 	float CascadeSplitDistances[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// CSM Tier Info (updated by ShadowManager)
+	struct FCascadeTierInfoCache
+	{
+		uint32 TierIndex = 0;
+		uint32 SliceIndex = 0;
+		float Resolution = 0.0f;
+	};
+	FCascadeTierInfoCache CascadeTierInfos[4];
 
 	// Shadow Map Type (Default or CSM)
 	EShadowMapType ShadowMapType = EShadowMapType::CSM;
