@@ -69,6 +69,11 @@ public:
 	 */
 	ID3D11ShaderResourceView* GetRemappedSliceSRV(D3D11RHI* RHI, UINT ArrayIndex, float MinDepth, float MaxDepth, bool bRotate = true, bool bFlipU = false);
 
+	/**
+	 * @brief RemappedSliceSRV 캐시를 무효화합니다. (매 프레임 호출 필요)
+	 */
+	void ClearRemappedSliceCache();
+
 private:
 	// 깊이 리매핑 초기화 (DepthRemap.hlsl 셰이더 컴파일 및 리소스 생성)
 	void InitializeDepthRemapResources(D3D11RHI* RHI);
@@ -115,10 +120,38 @@ private:
 	// RasterizerState 캐시 (DepthBias 조합별로 재사용)
 	std::map<FRasterizerStateKey, ID3D11RasterizerState*> CachedRasterizerStates;
 
-	// 깊이 리매핑 시각화 리소스 (Editor용)
-	ID3D11Texture2D* RemappedTexture;
-	ID3D11RenderTargetView* RemappedRTV;
-	ID3D11ShaderResourceView* RemappedSRV;
+	// RemappedSliceSRV 캐싱 키 구조체
+	struct FRemappedSliceKey
+	{
+		UINT ArrayIndex;
+		float MinDepth;
+		float MaxDepth;
+		bool bRotate;
+		bool bFlipU;
+
+		bool operator<(const FRemappedSliceKey& Other) const
+		{
+			if (ArrayIndex != Other.ArrayIndex) return ArrayIndex < Other.ArrayIndex;
+			if (MinDepth != Other.MinDepth) return MinDepth < Other.MinDepth;
+			if (MaxDepth != Other.MaxDepth) return MaxDepth < Other.MaxDepth;
+			if (bRotate != Other.bRotate) return bRotate < Other.bRotate;
+			return bFlipU < Other.bFlipU;
+		}
+	};
+
+	// RemappedSliceSRV 캐시 (각 slice + depth range + rotation/flip 조합마다 별도 텍스처)
+	struct FRemappedSliceResource
+	{
+		ID3D11Texture2D* Texture;
+		ID3D11RenderTargetView* RTV;
+		ID3D11ShaderResourceView* SRV;
+	};
+	std::map<FRemappedSliceKey, FRemappedSliceResource> RemappedSliceSRVCache;
+
+	// 깊이 리매핑 시각화 리소스 (Editor용, 공용 셰이더 리소스)
+	ID3D11Texture2D* RemappedTexture; // Legacy, 이제 캐시 사용
+	ID3D11RenderTargetView* RemappedRTV; // Legacy
+	ID3D11ShaderResourceView* RemappedSRV; // Legacy
 	ID3D11VertexShader* DepthRemapVS;
 	ID3D11PixelShader* DepthRemapPS;
 	ID3D11Buffer* DepthRemapConstantBuffer;
