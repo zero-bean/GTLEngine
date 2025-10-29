@@ -89,23 +89,7 @@ void FSceneRenderer::Render()
 		GWorld->GetLightManager()->SetDirtyFlag();
 		GWorld->GetLightManager()->UpdateLightBuffer(RHIDevice);	// 라이트 구조체 버퍼 업데이트, 바인딩
 		GWorld->GetShadowManager()->BindShadowResources(RHIDevice);	// 섀도우 맵 텍스처 바인딩 (t5)
-
-		// 섀도우 필터링 설정 업데이트 (쉐도우 매니저로 옮겨야함)
-		const FShadowConfiguration& ShadowConfig = GWorld->GetShadowManager()->GetShadowConfiguration();
-		FShadowFilterBufferType ShadowFilterBuffer;
-		ShadowFilterBuffer.FilterType = static_cast<uint32>(ShadowConfig.FilterType);
-		ShadowFilterBuffer.PCFSampleCount = static_cast<uint32>(ShadowConfig.PCFSampleCount);
-		ShadowFilterBuffer.PCFCustomSampleCount = ShadowConfig.PCFCustomSampleCount;
-		ShadowFilterBuffer.DirectionalLightResolution = static_cast<float>(ShadowConfig.DirectionalLightResolution);
-		ShadowFilterBuffer.SpotLightResolution = static_cast<float>(ShadowConfig.SpotLightResolution);
-		ShadowFilterBuffer.PointLightResolution = static_cast<float>(ShadowConfig.PointLightResolution);
-		ShadowFilterBuffer.VSMLightBleedingReduction = ShadowConfig.VSMLightBleedingReduction;
-		ShadowFilterBuffer.VSMMinVariance = ShadowConfig.VSMMinVariance;
-		ShadowFilterBuffer.ESMExponent = ShadowConfig.ESMExponent;
-		ShadowFilterBuffer.EVSMPositiveExponent = ShadowConfig.EVSMPositiveExponent;
-		ShadowFilterBuffer.EVSMNegativeExponent = ShadowConfig.EVSMNegativeExponent;
-		ShadowFilterBuffer.EVSMLightBleedingReduction = ShadowConfig.EVSMLightBleedingReduction;
-		RHIDevice->SetAndUpdateConstantBuffer(ShadowFilterBuffer);
+		GWorld->GetShadowManager()->UpdateShadowFilterBuffer(RHIDevice);	// 섀도우 필터링 설정 업데이트
 
 		PerformTileLightCulling();	// 타일 기반 라이트 컬링 수행
 

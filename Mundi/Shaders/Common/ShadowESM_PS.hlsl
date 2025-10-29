@@ -32,9 +32,9 @@ struct PS_INPUT
 // ESM 출력: exp(c * depth)
 float mainPS(PS_INPUT input) : SV_TARGET
 {
-    float depth = input.Depth;
+    float depth = input.Position.z;
 
-    // Exponential depth 계산
+    depth = saturate(depth);
     float expDepth = exp(ESMExponent * depth);
 
     return expDepth;

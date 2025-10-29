@@ -117,6 +117,9 @@ public:
 	// Shadow Map 텍스처 언바인딩
 	void UnbindShadowResources(D3D11RHI* RHI);
 
+	// 섀도우 필터링 설정을 상수 버퍼에 업데이트
+	void UpdateShadowFilterBuffer(D3D11RHI* RHI);
+
 	// 디렉셔널 라이트 쉐도우 맵 해상도 변경
 	void SetDirectionalLightResolution(uint32 NewResolution);
 
@@ -165,4 +168,10 @@ private:
 	class UShader* ShadowVSM_PS;      // VSM 픽셀 쉐이더
 	class UShader* ShadowESM_PS;      // ESM 픽셀 쉐이더
 	class UShader* ShadowEVSM_PS;     // EVSM 픽셀 쉐이더
+
+	// 캐시된 평균 ShadowSharpen 값 (활성 라이트들의 평균)
+	float CachedAverageShadowSharpen = 1.0f;
+
+	// 활성 라이트들의 평균 ShadowSharpen 값 계산
+	float CalculateAverageShadowSharpen(const FShadowCastingLights& Lights) const;
 };

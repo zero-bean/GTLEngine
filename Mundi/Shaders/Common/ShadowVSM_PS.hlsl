@@ -13,7 +13,8 @@ struct PS_INPUT
 // VSM 출력: (depth, depth^2)
 float2 mainPS(PS_INPUT input) : SV_TARGET
 {
-    float depth = input.Depth;
+    float depth = input.Position.z;
+    depth = saturate(depth);
     float depth2 = depth * depth;
 
     return float2(depth, depth2);

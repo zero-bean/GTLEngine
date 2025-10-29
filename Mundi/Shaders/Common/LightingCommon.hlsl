@@ -252,6 +252,18 @@ float SamplePCF_CubeArray(TextureCubeArray shadowCubeMap, float3 direction, uint
 //================================================================================================
 
 /**
+ * Gaussian 가중치 계산
+ * @param distance - 중심으로부터의 거리
+ * @param sigma - Gaussian 분포의 표준편차
+ * @return Gaussian 가중치 값
+ */
+float GaussianWeight(float distance, float sigma)
+{
+    float variance = sigma * sigma;
+    return exp(-(distance * distance) / (2.0f * variance));
+}
+
+/**
  * VSM (Variance Shadow Maps) 샘플링
  * Chebyshev 부등식을 사용하여 섀도우 확률 계산
  * @param moments - float2(mean, variance) 또는 float2(depth, depth^2)
@@ -308,17 +320,260 @@ float SampleEVSM(float2 moments, float depth, float positiveExponent, float nega
     // Positive와 Negative 두 가지 exponential depth 사용
     float pos = exp(positiveExponent * depth);
     float neg = exp(-negativeExponent * depth);
+    
+    // Occluder moments 구성 (섀도우 맵에서 읽은 exp 값으로 moments 생성)
+    // blur 없이는 variance = 0이지만, 필터링 후에는 유효한 분산 생성
+    float2 posOccluderMoments = float2(moments.x, moments.x * moments.x);
+    float2 negOccluderMoments = float2(moments.y, moments.y * moments.y);
 
-    // Chebyshev for positive
-    float2 posWarpedDepth = float2(pos, pos * pos);
-    float posContrib = ChebyshevUpperBound(posWarpedDepth, moments.x, 0.0001f, lightBleedingReduction);
+    // Chebyshev for positive (minVariance 증가로 테두리 부드럽게)
+    float posContrib = ChebyshevUpperBound(posOccluderMoments, pos, 0.001f, lightBleedingReduction);
 
-    // Chebyshev for negative
-    float2 negWarpedDepth = float2(neg, neg * neg);
-    float negContrib = ChebyshevUpperBound(negWarpedDepth, moments.y, 0.0001f, lightBleedingReduction);
+    // Chebyshev for negative (minVariance 증가로 테두리 부드럽게)
+    float negContrib = ChebyshevUpperBound(negOccluderMoments, neg, 0.001f, lightBleedingReduction);
 
-    // 두 결과의 평균
+    // 두 결과의 최솟값
     return min(posContrib, negContrib);
+}
+
+/**
+ * Gaussian Multi-tap 샘플링 (Texture2DArray용)
+ * 주변 픽셀들을 Gaussian 가중치로 샘플링하여 평균화
+ * VSM, ESM, EVSM 모두에 사용 가능
+ *
+ * @param shadowMap - 섀도우 맵 (R32_FLOAT 또는 R32G32_FLOAT)
+ * @param shadowTexCoord - 기본 텍스처 좌표
+ * @param shadowMapIndex - 배열 인덱스
+ * @param texelSize - 1.0 / shadowMapResolution
+ * @param sampleRadius - 샘플링 반경 (픽셀 단위, 기본 2.0)
+ * @param sigma - Gaussian 표준편차 (기본 1.5)
+ * @return float2 - 가중 평균된 moments
+ */
+float2 SampleGaussian_2DArray(Texture2DArray shadowMap, float2 shadowTexCoord, uint shadowMapIndex, float texelSize, float sampleRadius, float sigma)
+{
+    float2 moments = float2(0.0f, 0.0f);
+    float totalWeight = 0.0f;
+
+    const uint sampleCount = 32;
+
+    for (uint i = 0; i < sampleCount; ++i)
+    {
+        // Poisson Disk 오프셋 가져오기
+        float2 offset = PoissonDisk64[i] * texelSize * sampleRadius;
+
+        // 오프셋 거리 계산
+        float distance = length(offset / texelSize);
+
+        // Gaussian 가중치 계산
+        float weight = GaussianWeight(distance, sigma);
+
+        // 샘플 좌표 계산
+        float2 sampleCoord = shadowTexCoord + offset;
+        float3 samplePos = float3(sampleCoord, shadowMapIndex);
+
+        // VSM moments 샘플링
+        float2 sampleMoments = shadowMap.SampleLevel(g_LinearSampler, samplePos, 0).rg;
+
+        // 가중치 적용하여 누적
+        moments += sampleMoments * weight;
+        totalWeight += weight;
+    }
+
+    // 정규화 (총 가중치로 나누기)
+    moments /= totalWeight;
+
+    return moments;
+}
+
+/**
+ * PCF-like Multi-tap EVSM 샘플링 (Texture2DArray용)
+ * 그림자 경계를 부드럽게 만들기 위해 여러 위치에서 EVSM을 계산하고 평균화
+ *
+ * @param shadowMap - EVSM 섀도우 맵
+ * @param shadowTexCoord - 텍스처 좌표
+ * @param shadowMapIndex - 배열 인덱스
+ * @param currentDepth - 현재 깊이
+ * @param positiveExponent - EVSM positive exponent
+ * @param negativeExponent - EVSM negative exponent
+ * @param lightBleedingReduction - Light bleeding 감소 파라미터
+ * @param texelSize - 1.0 / resolution
+ * @param sampleRadius - 샘플링 반경 (픽셀 단위)
+ * @return 평균화된 섀도우 값
+ */
+float SampleEVSM_PCF_2DArray(
+    Texture2DArray shadowMap,
+    float2 shadowTexCoord,
+    uint shadowMapIndex,
+    float currentDepth,
+    float positiveExponent,
+    float negativeExponent,
+    float lightBleedingReduction,
+    float texelSize,
+    float sampleRadius)
+{
+    float shadowSum = 0.0f;
+    const uint sampleCount = 32;
+
+    for (uint i = 0; i < sampleCount; ++i)
+    {
+        // Poisson Disk 패턴으로 오프셋 계산
+        float2 offset = PoissonDisk64[i] * texelSize * sampleRadius;
+        float2 sampleCoord = shadowTexCoord + offset;
+        float3 samplePos = float3(sampleCoord, shadowMapIndex);
+
+        // 해당 위치의 EVSM moments 샘플링
+        float2 moments = shadowMap.SampleLevel(g_LinearSampler, samplePos, 0).rg;
+
+        // 각 샘플 위치에서 EVSM 계산
+        float sampleShadow = SampleEVSM(moments, currentDepth, positiveExponent, negativeExponent, lightBleedingReduction);
+
+        // 누적
+        shadowSum += sampleShadow;
+    }
+
+    // 평균 반환
+    return shadowSum / float(sampleCount);
+}
+
+/**
+ * Gaussian Multi-tap 샘플링 (TextureCubeArray용)
+ * 주변 픽셀들을 Gaussian 가중치로 샘플링하여 평균화
+ * VSM, ESM, EVSM 모두에 사용 가능
+ *
+ * @param shadowCubeMap - 섀도우 큐브맵 (R32_FLOAT 또는 R32G32_FLOAT)
+ * @param direction - 샘플링 방향
+ * @param shadowMapIndex - 배열 인덱스
+ * @param texelSize - 1.0 / shadowMapResolution
+ * @param sampleRadius - 샘플링 반경 (픽셀 단위, 기본 2.0)
+ * @param sigma - Gaussian 표준편차 (기본 1.5)
+ * @return float2 - 가중 평균된 moments
+ */
+float2 SampleGaussian_CubeArray(TextureCubeArray shadowCubeMap, float3 direction, uint shadowMapIndex, float texelSize, float sampleRadius, float sigma)
+{
+    float2 moments = float2(0.0f, 0.0f);
+    float totalWeight = 0.0f;
+
+    // 큐브맵 샘플링을 위한 tangent/bitangent 계산
+    float3 absDir = abs(direction);
+    float3 tangent, bitangent;
+
+    if (absDir.x > absDir.y && absDir.x > absDir.z)
+    {
+        tangent = float3(0.0f, 1.0f, 0.0f);
+    }
+    else if (absDir.y > absDir.z)
+    {
+        tangent = float3(1.0f, 0.0f, 0.0f);
+    }
+    else
+    {
+        tangent = float3(1.0f, 0.0f, 0.0f);
+    }
+
+    bitangent = normalize(cross(direction, tangent));
+    tangent = normalize(cross(bitangent, direction));
+
+    const uint sampleCount = 32;
+
+    for (uint i = 0; i < sampleCount; ++i)
+    {
+        // Poisson Disk 오프셋 가져오기
+        float2 diskOffset = PoissonDisk64[i] * texelSize * sampleRadius;
+
+        // 오프셋 거리 계산
+        float distance = length(diskOffset);
+
+        // Gaussian 가중치 계산
+        float weight = GaussianWeight(distance, sigma);
+
+        // 큐브맵 방향 오프셋 적용
+        float3 sampleDir = normalize(direction + tangent * diskOffset.x + bitangent * diskOffset.y);
+        float4 samplePos = float4(sampleDir, shadowMapIndex);
+
+        // VSM moments 샘플링
+        float2 sampleMoments = shadowCubeMap.SampleLevel(g_LinearSampler, samplePos, 0).rg;
+
+        // 가중치 적용하여 누적
+        moments += sampleMoments * weight;
+        totalWeight += weight;
+    }
+
+    // 정규화 (총 가중치로 나누기)
+    moments /= totalWeight;
+
+    return moments;
+}
+
+/**
+ * PCF-like Multi-tap EVSM 샘플링 (TextureCubeArray용)
+ * 그림자 경계를 부드럽게 만들기 위해 여러 위치에서 EVSM을 계산하고 평균화
+ *
+ * @param shadowCubeMap - EVSM 섀도우 큐브맵
+ * @param direction - 샘플링 방향
+ * @param shadowMapIndex - 배열 인덱스
+ * @param currentDepth - 현재 깊이
+ * @param positiveExponent - EVSM positive exponent
+ * @param negativeExponent - EVSM negative exponent
+ * @param lightBleedingReduction - Light bleeding 감소 파라미터
+ * @param texelSize - 1.0 / resolution
+ * @param sampleRadius - 샘플링 반경 (픽셀 단위)
+ * @return 평균화된 섀도우 값
+ */
+float SampleEVSM_PCF_CubeArray(
+    TextureCubeArray shadowCubeMap,
+    float3 direction,
+    uint shadowMapIndex,
+    float currentDepth,
+    float positiveExponent,
+    float negativeExponent,
+    float lightBleedingReduction,
+    float texelSize,
+    float sampleRadius)
+{
+    float shadowSum = 0.0f;
+    const uint sampleCount = 32; // 16개 샘플로 부드러운 경계 생성
+
+    // 큐브맵 샘플링을 위한 tangent/bitangent 계산
+    float3 absDir = abs(direction);
+    float3 tangent, bitangent;
+
+    if (absDir.x > absDir.y && absDir.x > absDir.z)
+    {
+        tangent = float3(0.0f, 1.0f, 0.0f);
+    }
+    else if (absDir.y > absDir.z)
+    {
+        tangent = float3(1.0f, 0.0f, 0.0f);
+    }
+    else
+    {
+        tangent = float3(1.0f, 0.0f, 0.0f);
+    }
+
+    bitangent = normalize(cross(direction, tangent));
+    tangent = normalize(cross(bitangent, direction));
+
+    for (uint i = 0; i < sampleCount; ++i)
+    {
+        // Poisson Disk 패턴으로 오프셋 계산
+        float2 diskOffset = PoissonDisk64[i] * texelSize * sampleRadius;
+
+        // 큐브맵 방향 오프셋 적용
+        float3 sampleDir = normalize(direction + tangent * diskOffset.x + bitangent * diskOffset.y);
+        float4 samplePos = float4(sampleDir, shadowMapIndex);
+
+        // 해당 위치의 EVSM moments 샘플링
+        float2 moments = shadowCubeMap.SampleLevel(g_LinearSampler, samplePos, 0).rg;
+
+        // 각 샘플 위치에서 EVSM 계산
+        float sampleShadow = SampleEVSM(moments, currentDepth, positiveExponent, negativeExponent, lightBleedingReduction);
+
+        // 누적
+        shadowSum += sampleShadow;
+    }
+
+    // 평균 반환
+    return shadowSum / float(sampleCount);
 }
 
 //================================================================================================
@@ -356,48 +611,82 @@ float SampleSpotLightShadowMap(uint shadowMapIndex, float4 lightSpacePos, float3
     // Current depth in light space
     float currentDepth = projCoords.z;
 
-    // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
-    float NdotL = saturate(dot(worldNormal, lightDir));
-    float bias = lerp(0.00001f, 0.00005f, NdotL);
-    currentDepth -= bias;
-
     // 필터링 타입에 따라 분기
     float shadow = 1.0f;
 
     [branch]
     if (FilterType == 0) // NONE
     {
+        // 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 하드웨어 기본 비교 샘플링
         float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        shadow = g_SpotLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+        shadow = g_SpotLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, biasedDepth);
     }
     else if (FilterType == 1) // PCF
     {
+        // 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 소프트웨어 PCF
         uint sampleCount = (PCFSampleCount == 0) ? PCFCustomSampleCount : PCFSampleCount;
         float texelSize = 1.0f / shadowMapResolution;
-        shadow = SamplePCF_2DArray(g_SpotLightShadowMaps, shadowTexCoord, shadowMapIndex, currentDepth, sampleCount, texelSize);
+        shadow = SamplePCF_2DArray(g_SpotLightShadowMaps, shadowTexCoord, shadowMapIndex, biasedDepth, sampleCount, texelSize);
     }
     else if (FilterType == 2) // VSM
     {
-        // VSM: float2(depth, depth^2) 샘플링
-        float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float2 moments = g_SpotLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
+        // VSM: Gaussian Multi-tap 샘플링
+        float texelSize = 1.0f / shadowMapResolution;
+        float2 moments = SampleGaussian_2DArray(
+            g_SpotLightShadowMaps_Float,
+            shadowTexCoord,
+            shadowMapIndex,
+            texelSize,
+            5.1f,  // sampleRadius
+            2.0f   // sigma
+        );
         shadow = ChebyshevUpperBound(moments, currentDepth, VSMMinVariance, VSMLightBleedingReduction);
     }
     else if (FilterType == 3) // ESM
     {
-        // ESM: exp(c * depth) 샘플링
-        float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float expDepth = g_SpotLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).r;
-        shadow = SampleESM(expDepth, currentDepth, ESMExponent);
+        // ESM: Gaussian Multi-tap 샘플링
+        float texelSize = 1.0f / shadowMapResolution;
+        float2 moments = SampleGaussian_2DArray(
+            g_SpotLightShadowMaps_Float,
+            shadowTexCoord,
+            shadowMapIndex,
+            texelSize,
+            5.1f,  // sampleRadius
+            2.0f   // sigma
+        );
+        // moments.r에 exp(c * depth)가 저장되어 있음
+        shadow = SampleESM(moments.r, currentDepth, ESMExponent);
     }
     else if (FilterType == 4) // EVSM
     {
-        // EVSM: float2(exp(c+ * depth), exp(-c- * depth)) 샘플링
-        float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float2 moments = g_SpotLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
-        shadow = SampleEVSM(moments, currentDepth, EVSMPositiveExponent, EVSMNegativeExponent, EVSMLightBleedingReduction);
+        // 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.0001f, 0.0005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+
+        // EVSM: PCF-like Multi-tap 샘플링으로 테두리 부드럽게
+        float texelSize = 1.0f / shadowMapResolution;
+        shadow = SampleEVSM_PCF_2DArray(
+            g_SpotLightShadowMaps_Float,
+            shadowTexCoord,
+            shadowMapIndex,
+            biasedDepth,
+            EVSMPositiveExponent,
+            EVSMNegativeExponent,
+            EVSMLightBleedingReduction,
+            texelSize,
+            2.5f  // sampleRadius: 부드러운 경계를 위한 반경
+        );
     }
 
     return shadow;
@@ -434,48 +723,76 @@ float SampleDirectionalLightShadowMap(uint shadowMapIndex, float4 lightSpacePos,
     // Current depth in light space
     float currentDepth = projCoords.z;
 
-    // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
-    float NdotL = saturate(dot(worldNormal, lightDir));
-    float bias = lerp(0.00001f, 0.00005f, NdotL);
-    currentDepth -= bias;
-
     // 필터링 타입에 따라 분기
     float shadow = 1.0f;
 
     [branch]
     if (FilterType == 0) // NONE
     {
+        // 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 하드웨어 기본 비교 샘플링
         float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, currentDepth);
+        shadow = g_DirectionalLightShadowMaps.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, biasedDepth);
     }
     else if (FilterType == 1) // PCF
     {
+        // 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 소프트웨어 PCF
         uint sampleCount = (PCFSampleCount == 0) ? PCFCustomSampleCount : PCFSampleCount;
         float texelSize = 1.0f / shadowMapResolution;
-        shadow = SamplePCF_2DArray(g_DirectionalLightShadowMaps, shadowTexCoord, shadowMapIndex, currentDepth, sampleCount, texelSize);
+        shadow = SamplePCF_2DArray(g_DirectionalLightShadowMaps, shadowTexCoord, shadowMapIndex, biasedDepth, sampleCount, texelSize);
     }
     else if (FilterType == 2) // VSM
     {
-        // VSM: float2(depth, depth^2) 샘플링
-        float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float2 moments = g_DirectionalLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
+        // VSM: Gaussian Multi-tap 샘플링
+        float texelSize = 1.0f / shadowMapResolution;
+        float2 moments = SampleGaussian_2DArray(
+            g_DirectionalLightShadowMaps_Float,
+            shadowTexCoord,
+            shadowMapIndex,
+            texelSize,
+            5.1f,  // sampleRadius
+            2.0f   // sigma
+        );
         shadow = ChebyshevUpperBound(moments, currentDepth, VSMMinVariance, VSMLightBleedingReduction);
     }
     else if (FilterType == 3) // ESM
     {
-        // ESM: exp(c * depth) 샘플링
-        float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float expDepth = g_DirectionalLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).r;
-        shadow = SampleESM(expDepth, currentDepth, ESMExponent);
+        // ESM: Gaussian Multi-tap 샘플링
+        float texelSize = 1.0f / shadowMapResolution;
+        float2 moments = SampleGaussian_2DArray(
+            g_DirectionalLightShadowMaps_Float,
+            shadowTexCoord,
+            shadowMapIndex,
+            texelSize,
+            5.1f,  // sampleRadius
+            2.0f   // sigma
+        );
+        shadow = SampleESM(moments.r, currentDepth, ESMExponent);
     }
     else if (FilterType == 4) // EVSM
     {
-        // EVSM: float2(exp(c+ * depth), exp(-c- * depth)) 샘플링
-        float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
-        float2 moments = g_DirectionalLightShadowMaps_Float.SampleLevel(g_LinearSampler, shadowSampleCoord, 0).rg;
-        shadow = SampleEVSM(moments, currentDepth, EVSMPositiveExponent, EVSMNegativeExponent, EVSMLightBleedingReduction);
+        // EVSM: PCF-like Multi-tap 샘플링으로 테두리 부드럽게
+        float texelSize = 1.0f / shadowMapResolution;
+        shadow = SampleEVSM_PCF_2DArray(
+            g_DirectionalLightShadowMaps_Float,
+            shadowTexCoord,
+            shadowMapIndex,
+            currentDepth,
+            EVSMPositiveExponent,
+            EVSMNegativeExponent,
+            EVSMLightBleedingReduction,
+            texelSize,
+            2.5f  // sampleRadius: 부드러운 경계를 위한 반경
+        );
     }
 
     return shadow;
@@ -539,48 +856,76 @@ float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos, float3 w
     // 7. Current depth in light space
     float currentDepth = projCoords.z;
 
-    // 8. Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
-    float NdotL = saturate(dot(worldNormal, lightDir));
-    float bias = lerp(0.00001f, 0.00005f, NdotL);
-    currentDepth -= bias;
-
     // 9. 필터링 타입에 따라 분기
     float shadow = 1.0f;
 
     [branch]
     if (FilterType == 0) // NONE
     {
+        // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 하드웨어 기본 비교 샘플링
         float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
-        shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, cubeSampleCoord, currentDepth);
+        shadow = g_PointLightShadowCubeMaps.SampleCmpLevelZero(g_ShadowSampler, cubeSampleCoord, biasedDepth);
     }
     else if (FilterType == 1) // PCF
     {
+        // Slope-scaled bias: 표면 기울기에 따라 bias 자동 조절
+        float NdotL = saturate(dot(worldNormal, lightDir));
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+        
         // 소프트웨어 PCF
         uint sampleCount = (PCFSampleCount == 0) ? PCFCustomSampleCount : PCFSampleCount;
         float texelSize = 1.0f / shadowMapResolution;
-        shadow = SamplePCF_CubeArray(g_PointLightShadowCubeMaps, lightToPixel, light.ShadowMapIndex, currentDepth, sampleCount, texelSize);
+        shadow = SamplePCF_CubeArray(g_PointLightShadowCubeMaps, lightToPixel, light.ShadowMapIndex, biasedDepth, sampleCount, texelSize);
     }
     else if (FilterType == 2) // VSM
     {
-        // VSM: float2(depth, depth^2) 샘플링
-        float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
-        float2 moments = g_PointLightShadowCubeMaps_Float.SampleLevel(g_LinearSampler, cubeSampleCoord, 0).rg;
+        // VSM: Gaussian Multi-tap 샘플링
+        float texelSize = 1.0f / shadowMapResolution;
+        float2 moments = SampleGaussian_CubeArray(
+            g_PointLightShadowCubeMaps_Float,
+            lightToPixel,
+            light.ShadowMapIndex,
+            texelSize,
+            5.1f,  // sampleRadius
+            2.0f   // sigma
+        );
         shadow = ChebyshevUpperBound(moments, currentDepth, VSMMinVariance, VSMLightBleedingReduction);
     }
     else if (FilterType == 3) // ESM
     {
-        // ESM: exp(c * depth) 샘플링
-        float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
-        float expDepth = g_PointLightShadowCubeMaps_Float.SampleLevel(g_LinearSampler, cubeSampleCoord, 0).r;
-        shadow = SampleESM(expDepth, currentDepth, ESMExponent);
+        // ESM: Gaussian Multi-tap 샘플링
+        float texelSize = 1.0f / shadowMapResolution;
+        float2 moments = SampleGaussian_CubeArray(
+            g_PointLightShadowCubeMaps_Float,
+            lightToPixel,
+            light.ShadowMapIndex,
+            texelSize,
+            5.1f,  // sampleRadius
+            2.0f   // sigma
+        );
+        shadow = SampleESM(moments.r, currentDepth, ESMExponent);
     }
     else if (FilterType == 4) // EVSM
     {
-        // EVSM: float2(exp(c+ * depth), exp(-c- * depth)) 샘플링
-        float4 cubeSampleCoord = float4(lightToPixel, light.ShadowMapIndex);
-        float2 moments = g_PointLightShadowCubeMaps_Float.SampleLevel(g_LinearSampler, cubeSampleCoord, 0).rg;
-        shadow = SampleEVSM(moments, currentDepth, EVSMPositiveExponent, EVSMNegativeExponent, EVSMLightBleedingReduction);
+        // EVSM: PCF-like Multi-tap 샘플링으로 테두리 부드럽게
+        float texelSize = 1.0f / shadowMapResolution;
+        shadow = SampleEVSM_PCF_CubeArray(
+            g_PointLightShadowCubeMaps_Float,
+            lightToPixel,
+            light.ShadowMapIndex,
+            currentDepth,
+            EVSMPositiveExponent,
+            EVSMNegativeExponent,
+            EVSMLightBleedingReduction,
+            texelSize,
+            2.5f  // sampleRadius: 부드러운 경계를 위한 반경
+        );
     }
 
     return shadow;

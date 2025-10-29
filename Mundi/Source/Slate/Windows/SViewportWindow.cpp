@@ -2070,7 +2070,7 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 					}
 					if (ImGui::IsItemHovered())
 					{
-						ImGui::SetTooltip("Exponential Variance Shadow Maps\nVSM + ESM 결합, 최고 품질");
+						ImGui::SetTooltip("Exponential Variance Shadow Maps\nVSM + ESM 결합");
 					}
 
 					// PCF 설정
@@ -2117,28 +2117,6 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 								ImGui::SetTooltip("%dx%d (%d 샘플)", customSample, customSample, customSample * customSample);
 							}
 							ImGui::Unindent(20.0f);
-						}
-					}
-
-					// VSM 설정
-					if (Config.FilterType == EShadowFilterType::VSM)
-					{
-						ImGui::Separator();
-						ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "VSM 파라미터");
-						ImGui::Separator();
-
-						ImGui::Text("Light Bleeding Reduction");
-						ImGui::SliderFloat("##VSMLightBleed", &Config.VSMLightBleedingReduction, 0.0f, 1.0f, "%.2f");
-						if (ImGui::IsItemHovered())
-						{
-							ImGui::SetTooltip("Light bleeding 현상 감소 (0.0 ~ 1.0)");
-						}
-
-						ImGui::Text("Min Variance");
-						ImGui::SliderFloat("##VSMMinVar", &Config.VSMMinVariance, 0.00001f, 0.001f, "%.5f");
-						if (ImGui::IsItemHovered())
-						{
-							ImGui::SetTooltip("최소 분산 값");
 						}
 					}
 
