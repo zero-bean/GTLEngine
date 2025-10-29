@@ -584,10 +584,7 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 					ShadowMapIndex,
 					SpotLightDepthBegin,
 					SpotLightDepthEnd);
-
-
-				ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
-
+				
 				if (ShadowSRV)
 				{
 					ImGui::Spacing();
@@ -637,11 +634,11 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 
 			if (ShadowManager)
 			{
-				FShadowMap& DirectionalLightShadowMap = ShadowManager->GetDirectionalLightShadowMap();
 				int ShadowMapIndex = DirectionalLight->GetShadowMapIndex();
+				EShadowMapType ShadowMapType = DirectionalLight->GetShadowMapType();
 
 				ImGui::Text("Shadow Map Index: %d", ShadowMapIndex);
-				ImGui::Text("Resolution: %u x %u", DirectionalLightShadowMap.GetWidth(), DirectionalLightShadowMap.GetHeight());
+				ImGui::Text("Shadow Map Type: %s", ShadowMapType == EShadowMapType::CSM ? "CSM" : "Default");
 
 				// Depth 범위 조절 슬라이더
 				static float DirectionalLightDepthBegin = 0.0f;
@@ -657,7 +654,7 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 				// Begin이 End보다 크면 자동 조정
 				DirectionalLightDepthEnd = std::max(DirectionalLightDepthBegin, DirectionalLightDepthEnd);
 
-				// Projection type 확인
+				// Projection type 확인 (회전/반전 로직)
 				EShadowProjectionType ProjectionType = DirectionalLight->GetShadowProjectionType();
 				bool bRotate = (ProjectionType == EShadowProjectionType::LVP);
 
@@ -669,41 +666,121 @@ void UTargetActorTransformWidget::RenderSelectedComponentDetails(UActorComponent
 					bFlipU = !DirectionalLight->IsActuallyUsingTSM();  // TSM이 아니면 OpenGL LiSPSM이므로 U 반전
 				}
 
-				ID3D11ShaderResourceView* ShadowSRV = DirectionalLightShadowMap.GetRemappedSliceSRV(
-					GEngine.GetRenderer()->GetRHIDevice(),
-					ShadowMapIndex,
-					DirectionalLightDepthBegin,
-					DirectionalLightDepthEnd,
+				ImGui::Spacing();
+				ImGui::Text("Shadow Projection: %s", ProjectionType == EShadowProjectionType::LVP ? "LVP" : "LiSPSM");
+				if (ProjectionType == EShadowProjectionType::LiSPSM)
+				{
+					ImGui::SameLine();
+					ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "(Using: %s)", bFlipU ? "LiSPSM" : "LiSPSM");
+				}
+				// CSM 모드인 경우 Cascade별로 표시
+				if (ShadowMapType == EShadowMapType::CSM)
+				{
+					int32 NumCascades = DirectionalLight->GetNumCascades();
+					ImGui::Text("Cascades: %d", NumCascades);
+
+					// ShadowMap 크기 조절
+					static float CSMDisplaySize = 200.0f;
+					ImGui::SetNextItemWidth(200.0f);
+					ImGui::DragFloat("Display Size##CSM", &CSMDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
+					ImGui::Spacing();
+
+					// Cascade별로 표시 (2열 그리드)
+					for (int CascadeIndex = 0; CascadeIndex < NumCascades; ++CascadeIndex)
+					{
+						// 2열 그리드 레이아웃
+						if (CascadeIndex > 0 && CascadeIndex % 2 != 0)
+						{
+							ImGui::SameLine();
+						}
+
+						ImGui::BeginGroup();
+
+						// Cascade Tier 정보 가져오기
+						const UDirectionalLightComponent::FCascadeTierInfoCache& TierInfo = DirectionalLight->GetCascadeTierInfo(CascadeIndex);
+						float SplitDistance = DirectionalLight->GetCascadeSplitDistance(CascadeIndex);
+
+						// Cascade 정보 표시
+						ImGui::Text("Cascade %d", CascadeIndex);
+						ImGui::Text("Tier %d, Slice %d", TierInfo.TierIndex, TierInfo.SliceIndex);
+						ImGui::Text("Res: %.0fx%.0f", TierInfo.Resolution, TierInfo.Resolution);
+						ImGui::Text("Split: %.1fm", SplitDistance);
+
+						// 해당 Tier의 Shadow Map 가져오기
+						FShadowMap& TierShadowMap = ShadowManager->GetDirectionalLightShadowMapTier(TierInfo.TierIndex);
+
+						// Remapped SRV 가져오기 (SliceIndex 사용, Projection Type 적용)
+						ID3D11ShaderResourceView* CascadeSRV = TierShadowMap.GetRemappedSliceSRV(
+							GEngine.GetRenderer()->GetRHIDevice(),
+							TierInfo.SliceIndex,
+							DirectionalLightDepthBegin,
+							DirectionalLightDepthEnd,
+							bRotate,
+							bFlipU);
+
+						if (CascadeSRV)
+						{
+							ImGui::Image(
+								(ImTextureID)CascadeSRV,
+								ImVec2(CSMDisplaySize, CSMDisplaySize),
+								ImVec2(0, 0),  // uv0
+								ImVec2(1, 1),  // uv1
+								ImVec4(1, 1, 1, 1),  // tint color
+								ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
+							);
+						}
+						else
+						{
+							ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SRV NULL!");
+						}
+
+						ImGui::EndGroup();
+					}
+
+					ImGui::Spacing();
+					ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", DirectionalLightDepthBegin, DirectionalLightDepthEnd);
+				}
+				// Default 모드인 경우 단일 Shadow Map 표시
+				else
+				{
+					FShadowMap& DirectionalLightShadowMap = ShadowManager->GetDirectionalLightShadowMap();
+
+					ImGui::Text("Resolution: %u x %u", DirectionalLightShadowMap.GetWidth(), DirectionalLightShadowMap.GetHeight());
+
+					ID3D11ShaderResourceView* ShadowSRV = DirectionalLightShadowMap.GetRemappedSliceSRV(
+						GEngine.GetRenderer()->GetRHIDevice(),
+						ShadowMapIndex,
+						DirectionalLightDepthBegin,
+						DirectionalLightDepthEnd,
 					bRotate,
 					bFlipU);
 
-				ImGui::Text("SRV Pointer: 0x%p", ShadowSRV);
+					if (ShadowSRV)
+					{
+						ImGui::Spacing();
 
-				if (ShadowSRV)
-				{
-					ImGui::Spacing();
+						// ShadowMap 크기 조절
+						static float DirectionalShadowMapDisplaySize = 256.0f;
+						ImGui::SetNextItemWidth(200.0f);
+						ImGui::DragFloat("Display Size##Directional", &DirectionalShadowMapDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
+						ImGui::Spacing();
 
-					// ShadowMap 크기 조절 (입력 가능한 슬라이더)
-					static float DirectionalShadowMapDisplaySize = 256.0f;
-					ImGui::SetNextItemWidth(200.0f);
-					ImGui::DragFloat("Display Size##Directional", &DirectionalShadowMapDisplaySize, 1.0f, 64.0f, 512.0f, "%.0f");
-					ImGui::Spacing();
+						// ShadowMap 이미지 표시
+						ImGui::Image(
+							(ImTextureID)ShadowSRV,
+							ImVec2(DirectionalShadowMapDisplaySize, DirectionalShadowMapDisplaySize),
+							ImVec2(0, 0),  // uv0
+							ImVec2(1, 1),  // uv1
+							ImVec4(1, 1, 1, 1),  // tint color
+							ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
+						);
 
-					// ShadowMap 이미지 표시
-					ImGui::Image(
-						(ImTextureID)ShadowSRV,
-						ImVec2(DirectionalShadowMapDisplaySize, DirectionalShadowMapDisplaySize),
-						ImVec2(0, 0),  // uv0
-						ImVec2(1, 1),  // uv1
-						ImVec4(1, 1, 1, 1),  // tint color
-						ImVec4(0.5f, 0.5f, 0.5f, 1.0f)  // border color
-					);
-
-					ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", DirectionalLightDepthBegin, DirectionalLightDepthEnd);
-				}
-				else
-				{
-					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SRV is NULL!");
+						ImGui::TextWrapped("Depth remapped to [%.4f, %.4f] range for better visibility.", DirectionalLightDepthBegin, DirectionalLightDepthEnd);
+					}
+					else
+					{
+						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SRV is NULL!");
+					}
 				}
 			}
 			else

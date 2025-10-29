@@ -44,7 +44,7 @@ BEGIN_PROPERTIES(UDirectionalLightComponent)
 		EnumProp.Offset = offsetof(ThisClass_t, ShadowProjectionType);
 		EnumProp.Category = "Shadow";
 		EnumProp.bIsEditAnywhere = true;
-		EnumProp.Tooltip = "쉐도우 프로젝션 타입 (LVP: 표준 직교 투영, LiSPSM: 적응형 하이브리드 - TSM + OpenGL LiSPSM)";
+		EnumProp.Tooltip = "쉐도우 프로젝션 타입 (LVP: 표준 직교 투영, LiSPSM: Light-space Perspective Shadow Map)을 선택합니다.";
 		EnumProp.EnumNames = ShadowProjectionTypeNames;
 		EnumProp.EnumCount = 2;
 		Class->AddProperty(EnumProp);
