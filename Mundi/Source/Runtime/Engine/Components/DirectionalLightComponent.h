@@ -9,11 +9,12 @@ enum class EShadowMapType : uint8
 	CSM = 1       // Cascaded Shadow Maps
 };
 
-// 쉐도우 프로젝션 타입 (LVP, LiSPSM)
+// 쉐도우 프로젝션 타입 (LVP, LiSPSM, OpenGLLiSPSM)
 enum class EShadowProjectionType : uint8
 {
-	LVP = 0,      // Light View Projection (기본 Orthographic)
-	LiSPSM = 1    // Light-space Perspective Shadow Map
+	LVP = 0,           // Light View Projection (기본 Orthographic)
+	LiSPSM = 1,        // Light-space Perspective Shadow Map (현재 구현)
+	OpenGLLiSPSM = 2   // OpenGL-style Light-space Perspective Shadow Map (논문 구현)
 };
 
 // 방향성 라이트 (태양광 같은 평행광)

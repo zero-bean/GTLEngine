@@ -37,16 +37,16 @@ BEGIN_PROPERTIES(UDirectionalLightComponent)
 
 	// Shadow Projection Type Enum
 	{
-		static const char* ShadowProjectionTypeNames[] = { "LVP", "LiSPSM" };
+		static const char* ShadowProjectionTypeNames[] = { "LVP", "LiSPSM", "OpenGLLiSPSM" };
 		FProperty EnumProp;
 		EnumProp.Name = "ShadowProjectionType";
 		EnumProp.Type = EPropertyType::Enum;
 		EnumProp.Offset = offsetof(ThisClass_t, ShadowProjectionType);
 		EnumProp.Category = "Shadow";
 		EnumProp.bIsEditAnywhere = true;
-		EnumProp.Tooltip = "쉐도우 프로젝션 타입 (LVP: 표준 직교 투영, LiSPSM: 관점 공간 쉐도우 맵)";
+		EnumProp.Tooltip = "쉐도우 프로젝션 타입 (LVP: 표준 직교 투영, LiSPSM: 현재 구현, OpenGLLiSPSM: 논문 구현)";
 		EnumProp.EnumNames = ShadowProjectionTypeNames;
-		EnumProp.EnumCount = 2;
+		EnumProp.EnumCount = 3;
 		Class->AddProperty(EnumProp);
 	}
 

@@ -297,22 +297,36 @@ bool FShadowManager::BeginShadowRender(D3D11RHI* RHI, UDirectionalLightComponent
 
 	FShadowViewProjection ShadowVP;
 
-	// ShadowProjectionType에 따라 LVP 또는 LiSPSM 사용
-	if (Light->GetShadowProjectionType() == EShadowProjectionType::LiSPSM)
+	// ShadowProjectionType에 따라 LVP, LiSPSM, 또는 OpenGLLiSPSM 사용
+	EShadowProjectionType ProjectionType = Light->GetShadowProjectionType();
+
+	if (ProjectionType == EShadowProjectionType::LiSPSM || ProjectionType == EShadowProjectionType::OpenGLLiSPSM)
 	{
-		// LiSPSM: Camera Frustum의 8개 코너를 월드 공간으로 변환
+		// LiSPSM 또는 OpenGLLiSPSM: Camera Frustum의 8개 코너를 월드 공간으로 변환
 		TArray<FVector> FrustumCorners;
 		FMatrix InvView = CameraView.InverseAffine();
 		FMatrix InvProj = CameraProjection.InversePerspectiveProjection();
 		FMatrix InvViewProj = InvProj * InvView;
 		GetFrustumCornersWorldSpace(InvViewProj, FrustumCorners);
 
-		// LiSPSM VP 행렬 계산
-		ShadowVP = FShadowViewProjection::CreateForDirectionalLight_LiSPSM(
-			Light->GetLightDirection(),
-			FrustumCorners,
-			CameraView,
-			CameraProjection);
+		if (ProjectionType == EShadowProjectionType::LiSPSM)
+		{
+			// LiSPSM (현재 구현): Trapezoid-based VP 행렬 계산
+			ShadowVP = FShadowViewProjection::CreateForDirectionalLight_LiSPSM(
+				Light->GetLightDirection(),
+				FrustumCorners,
+				CameraView,
+				CameraProjection);
+		}
+		else // OpenGLLiSPSM
+		{
+			// OpenGL-style LiSPSM (논문 구현): Light-Space basis VP 행렬 계산
+			ShadowVP = FShadowViewProjection::CreateForDirectionalLight_OpenGLLiSPSM(
+				Light->GetLightDirection(),
+				FrustumCorners,
+				CameraView,
+				CameraProjection);
+		}
 	}
 	else
 	{
@@ -368,12 +382,23 @@ bool FShadowManager::BeginShadowRenderCSM(D3D11RHI* RHI, UDirectionalLightCompon
 		SplitFar,
 		CascadeFrustumCorners);
 
-	// 2. Light VP 계산 (ShadowProjectionType에 따라 LVP 또는 LiSPSM)
+	// 2. Light VP 계산 (ShadowProjectionType에 따라 LVP, LiSPSM, 또는 OpenGLLiSPSM)
 	FShadowViewProjection ShadowVP;
-	if (Light->GetShadowProjectionType() == EShadowProjectionType::LiSPSM)
+	EShadowProjectionType ProjectionType = Light->GetShadowProjectionType();
+
+	if (ProjectionType == EShadowProjectionType::LiSPSM)
 	{
-		// LiSPSM VP 행렬 계산
+		// LiSPSM (현재 구현): Trapezoid-based VP 행렬 계산
 		ShadowVP = FShadowViewProjection::CreateForDirectionalLight_LiSPSM(
+			Light->GetLightDirection(),
+			CascadeFrustumCorners,
+			CameraView,
+			CameraProjection);
+	}
+	else if (ProjectionType == EShadowProjectionType::OpenGLLiSPSM)
+	{
+		// OpenGL-style LiSPSM (논문 구현): Light-Space basis VP 행렬 계산
+		ShadowVP = FShadowViewProjection::CreateForDirectionalLight_OpenGLLiSPSM(
 			Light->GetLightDirection(),
 			CascadeFrustumCorners,
 			CameraView,

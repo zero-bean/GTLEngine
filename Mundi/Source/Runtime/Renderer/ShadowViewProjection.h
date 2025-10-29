@@ -354,6 +354,196 @@ public:
 		return Result;
 	}
 
+	// OpenGL-style Light-space Perspective Shadow Map (LiSPSM) for DirectionalLight
+	//
+	// This is a direct port of the OpenGL LiSPSM algorithm from the shader tutorial
+	// (Document/LisPSM/ShaderTutors/43_LightSpacePerspectiveSM/main.cpp:547-607).
+	//
+	// Key differences from the existing LiSPSM implementation:
+	// - Uses Light-Space basis vectors (left, up, lightdir) instead of standard LookAt
+	// - Applies perspective warping along the up-axis (Y in light space)
+	// - Corrects eye position along the up-axis by (n - viewnear)
+	// - More faithful to the original LiSPSM paper
+	//
+	// Algorithm (OpenGL version):
+	// 1. Build Light-Space coordinate system using light direction and view direction
+	// 2. Transform frustum corners to Light Space and calculate AABB
+	// 3. Calculate LiSPSM parameters:
+	//    - cosgamma: dot(viewdir, lightdir)
+	//    - singamma: sqrt(1 - cosgamma^2)
+	//    - znear: viewnear / singamma
+	//    - d: AABB height in light space
+	//    - zfar: znear + d * singamma
+	//    - n: (znear + sqrt(zfar * znear)) / singamma
+	//    - f: n + d
+	// 4. Build perspective projection matrix (warps along Y-axis)
+	// 5. Correct eye position: eyepos - up * (n - viewnear)
+	// 6. Fit to unit cube using orthographic projection
+	//
+	// @param Direction - Light direction (normalized or not)
+	// @param FrustumCorners - 8 world-space corners of the view frustum
+	// @param CameraView - Camera's view matrix
+	// @param CameraProjection - Camera's projection matrix
+	// @return Shadow view-projection matrices
+	//
+	// References:
+	// - "Light Space Perspective Shadow Maps" by Michael Wimmer et al. (2004)
+	// - Original OpenGL implementation in shader tutorial
+	static FShadowViewProjection CreateForDirectionalLight_OpenGLLiSPSM(
+		const FVector& Direction,
+		const TArray<FVector>& FrustumCorners,
+		const FMatrix& CameraView,
+		const FMatrix& CameraProjection)
+	{
+		FShadowViewProjection Result;
+
+		// === Step 1: Extract view direction from camera ===
+		// DirectX row-major: view matrix's 3rd row is the forward direction
+		// Negate because we want the direction the camera is looking
+		FVector ViewDir = FVector(-CameraView.M[0][2], -CameraView.M[1][2], -CameraView.M[2][2]);
+		ViewDir.Normalize();
+
+		FVector LightDir = Direction.GetNormalized();
+
+		// Extract camera world position from inverse view matrix
+		FMatrix InvCameraView = CameraView.InverseAffine();
+		FVector EyePos = FVector(InvCameraView.M[3][0], InvCameraView.M[3][1], InvCameraView.M[3][2]);
+
+		// === Step 2: Build Light-Space coordinate system ===
+		// Light-Space uses: left, up, lightdir as basis vectors
+		// This differs from standard LookAt which uses right, up, forward
+
+		FVector LSLeft, LSUp;
+
+		// OpenGL (Right-handed): cross(lightdir, viewdir) = left
+		// DirectX (Left-handed): cross(viewdir, lightdir) = left (순서 반대)
+		// 또는 negate the result to flip handedness
+		LSLeft = FVector::Cross(ViewDir, LightDir);
+		LSLeft.Normalize();
+
+		// Calculate up vector: cross(left, lightdir)
+		LSUp = FVector::Cross(LSLeft, LightDir);
+		LSUp.Normalize();
+
+		// Build Light-Space view matrix manually
+		// DirectX Left-handed row-major format
+		FMatrix LSLightView = FMatrix::Identity();
+
+		LSLightView.M[0][0] = LSLeft.X;    LSLightView.M[0][1] = LSUp.X;    LSLightView.M[0][2] = LightDir.X;
+		LSLightView.M[1][0] = LSLeft.Y;    LSLightView.M[1][1] = LSUp.Y;    LSLightView.M[1][2] = LightDir.Y;
+		LSLightView.M[2][0] = LSLeft.Z;    LSLightView.M[2][1] = LSUp.Z;    LSLightView.M[2][2] = LightDir.Z;
+
+		LSLightView.M[3][0] = -FVector::Dot(LSLeft, EyePos);
+		LSLightView.M[3][1] = -FVector::Dot(LSUp, EyePos);
+		LSLightView.M[3][2] = -FVector::Dot(LightDir, EyePos);
+
+		// === Step 3: Transform frustum corners to Light Space and calculate AABB ===
+		float viewnear = 1.0f;  // Default value from OpenGL code
+
+		TArray<FVector> LSCorners;
+		LSCorners.Reserve(8);
+
+		float MinX = FLT_MAX, MaxX = -FLT_MAX;
+		float MinY = FLT_MAX, MaxY = -FLT_MAX;
+		float MinZ = FLT_MAX, MaxZ = -FLT_MAX;
+
+		for (int i = 0; i < 8; ++i)
+		{
+			FVector LSCorner = FrustumCorners[i] * LSLightView;
+			LSCorners.Add(LSCorner);
+
+			MinX = FMath::Min(MinX, LSCorner.X);
+			MaxX = FMath::Max(MaxX, LSCorner.X);
+			MinY = FMath::Min(MinY, LSCorner.Y);
+			MaxY = FMath::Max(MaxY, LSCorner.Y);
+			MinZ = FMath::Min(MinZ, LSCorner.Z);
+			MaxZ = FMath::Max(MaxZ, LSCorner.Z);
+		}
+
+		// === Step 4: Calculate LiSPSM parameters ===
+		float cosgamma = FVector::Dot(ViewDir, LightDir);
+		float singamma = FMath::Sqrt(1.0f - cosgamma * cosgamma);
+
+		// Prevent division by zero
+		singamma = FMath::Max(singamma, 0.01f);
+
+		float znear = viewnear / singamma;
+		float d = FMath::Abs(MaxY - MinY);  // AABB height in light space
+		float zfar = znear + d * singamma;
+		float n = (znear + FMath::Sqrt(zfar * znear)) / singamma;
+		float f = n + d;
+
+		// === Step 5: Build LiSPSM projection matrix ===
+		// This matrix warps along the Y-axis (up direction in light space)
+		FMatrix LiSPSMProj = FMatrix::Identity();
+
+		LiSPSMProj.M[1][1] = (f + n) / (f - n);
+		LiSPSMProj.M[3][1] = -2.0f * f * n / (f - n);
+		LiSPSMProj.M[1][3] = 1.0f;
+		LiSPSMProj.M[3][3] = 0.0f;
+
+		// === Step 6: Correct eye position ===
+		FVector CorrectedEyePos = EyePos - LSUp * (n - viewnear);
+
+		LSLightView.M[3][0] = -FVector::Dot(LSLeft, CorrectedEyePos);
+		LSLightView.M[3][1] = -FVector::Dot(LSUp, CorrectedEyePos);
+		LSLightView.M[3][2] = -FVector::Dot(LightDir, CorrectedEyePos);
+
+		// === Step 7: Apply LiSPSM projection and recalculate AABB ===
+		FMatrix LSLightViewProj = LSLightView * LiSPSMProj;
+
+		MinX = FLT_MAX; MaxX = -FLT_MAX;
+		MinY = FLT_MAX; MaxY = -FLT_MAX;
+		MinZ = FLT_MAX; MaxZ = -FLT_MAX;
+
+		for (int i = 0; i < 8; ++i)
+		{
+			// Transform to 4D homogeneous coordinates
+			FVector Corner = FrustumCorners[i];
+			FVector4 Corner4D = FVector4(Corner.X, Corner.Y, Corner.Z, 1.0f);
+			FVector4 WarpedCorner4D = Corner4D * LSLightViewProj;
+
+			// CRITICAL: Perspective division (divide by w)
+			// LiSPSM perspective matrix puts depth-dependent value in w
+			if (FMath::Abs(WarpedCorner4D.W) > 1e-6f)
+			{
+				FVector WarpedCorner = FVector(
+					WarpedCorner4D.X / WarpedCorner4D.W,
+					WarpedCorner4D.Y / WarpedCorner4D.W,
+					WarpedCorner4D.Z / WarpedCorner4D.W);
+
+				MinX = FMath::Min(MinX, WarpedCorner.X);
+				MaxX = FMath::Max(MaxX, WarpedCorner.X);
+				MinY = FMath::Min(MinY, WarpedCorner.Y);
+				MaxY = FMath::Max(MaxY, WarpedCorner.Y);
+				MinZ = FMath::Min(MinZ, WarpedCorner.Z);
+				MaxZ = FMath::Max(MaxZ, WarpedCorner.Z);
+			}
+		}
+
+		// === Step 8: Fit to unit cube using orthographic projection ===
+		// DirectX uses Left-handed coordinate system with Z=[0,1]
+		// Create off-center orthographic projection manually
+		float Width = MaxX - MinX;
+		float Height = MaxY - MinY;
+		float Depth = MaxZ - MinZ;
+
+		FMatrix FitToUnitCube = FMatrix::OrthoLH(Width, Height, MinZ, MaxZ);
+
+		// Apply center offset
+		float CenterX = (MaxX + MinX) * 0.5f;
+		float CenterY = (MaxY + MinY) * 0.5f;
+		FitToUnitCube.M[3][0] -= CenterX * FitToUnitCube.M[0][0];
+		FitToUnitCube.M[3][1] -= CenterY * FitToUnitCube.M[1][1];
+
+		// === Step 9: Final matrices ===
+		Result.View = LSLightView;
+		Result.Projection = LiSPSMProj * FitToUnitCube;
+		Result.ViewProjection = Result.View * Result.Projection;
+
+		return Result;
+	}
+
 	// PointLight용 Cube Map Shadow VP 행렬 6개 생성
 	// @param Position - 라이트 월드 위치
 	// @param AttenuationRadius - 라이트 감쇠 반경 (Far plane으로 사용)
