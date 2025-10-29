@@ -935,6 +935,109 @@ float SamplePointLightShadowMap(FPointLightInfo light, float3 worldPos, float3 w
 // 통합 조명 계산 함수
 //================================================================================================
 
+float SampleDirectionalLightShadowMapCSM(FCascadeTierInfo tierInfo, float4 lightSpacePos, float3 worldNormal, float3 lightDir)
+{
+    // Perspective divide to get NDC coordinates
+    float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+    // Convert NDC [-1, 1] to texture coordinates [0, 1]
+    float2 shadowTexCoord;
+    shadowTexCoord.x = projCoords.x * 0.5f + 0.5f;
+    shadowTexCoord.y = -projCoords.y * 0.5f + 0.5f;
+
+    // Check if position is outside shadow map bounds
+    if (shadowTexCoord.x < 0.0f || shadowTexCoord.x > 1.0f ||
+        shadowTexCoord.y < 0.0f || shadowTexCoord.y > 1.0f ||
+        projCoords.z < 0.0f || projCoords.z > 1.0f)
+    {
+        return 1.0f;
+    }
+
+    // Current depth in light space
+    float currentDepth = projCoords.z;
+    float shadow = 1.0f;
+
+    // Get data from tierInfo
+    uint shadowMapIndex = tierInfo.SliceIndex;
+    float shadowMapResolution = tierInfo.Resolution;
+    float texelSize = 1.0f / shadowMapResolution;
+
+    // Slope-scaled bias
+    float NdotL = saturate(dot(worldNormal, lightDir));
+    
+    [branch]
+    if (FilterType == 0 || FilterType == 1) // NONE, PCF
+    {
+        float bias = lerp(0.00001f, 0.00005f, NdotL);
+        float biasedDepth = currentDepth - bias;
+
+        if (FilterType == 0) // NONE
+        {
+            float3 shadowSampleCoord = float3(shadowTexCoord, shadowMapIndex);
+            [branch]
+            if (tierInfo.TierIndex == 0)
+                shadow = g_DirectionalShadowMaps_CSM_LowTier.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, biasedDepth);
+            else if (tierInfo.TierIndex == 1)
+                shadow = g_DirectionalShadowMaps_CSM_MediumTier.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, biasedDepth);
+            else
+                shadow = g_DirectionalShadowMaps_CSM_HighTier.SampleCmpLevelZero(g_ShadowSampler, shadowSampleCoord, biasedDepth);
+        }
+        else // PCF
+        {
+            uint sampleCount = (PCFSampleCount == 0) ? PCFCustomSampleCount : PCFSampleCount;
+            [branch]
+            if (tierInfo.TierIndex == 0)
+                shadow = SamplePCF_2DArray(g_DirectionalShadowMaps_CSM_LowTier, shadowTexCoord, shadowMapIndex, biasedDepth, sampleCount, texelSize);
+            else if (tierInfo.TierIndex == 1)
+                shadow = SamplePCF_2DArray(g_DirectionalShadowMaps_CSM_MediumTier, shadowTexCoord, shadowMapIndex, biasedDepth, sampleCount, texelSize);
+            else
+                shadow = SamplePCF_2DArray(g_DirectionalShadowMaps_CSM_HighTier, shadowTexCoord, shadowMapIndex, biasedDepth, sampleCount, texelSize);
+        }
+    }
+    else if (FilterType == 2) // VSM
+    {
+        float2 moments;
+        [branch]
+        if (tierInfo.TierIndex == 0)
+            moments = SampleGaussian_2DArray(g_DirectionalShadowMaps_CSM_LowTier_Float, shadowTexCoord, shadowMapIndex, texelSize, 5.1f, 2.0f);
+        else if (tierInfo.TierIndex == 1)
+            moments = SampleGaussian_2DArray(g_DirectionalShadowMaps_CSM_MediumTier_Float, shadowTexCoord, shadowMapIndex, texelSize, 5.1f, 2.0f);
+        else
+            moments = SampleGaussian_2DArray(g_DirectionalShadowMaps_CSM_HighTier_Float, shadowTexCoord, shadowMapIndex, texelSize, 5.1f, 2.0f);
+        
+        shadow = ChebyshevUpperBound(moments, currentDepth, VSMMinVariance, VSMLightBleedingReduction);
+    }
+    else if (FilterType == 3) // ESM
+    {
+        float2 moments;
+        [branch]
+        if (tierInfo.TierIndex == 0)
+            moments = SampleGaussian_2DArray(g_DirectionalShadowMaps_CSM_LowTier_Float, shadowTexCoord, shadowMapIndex, texelSize, 5.1f, 2.0f);
+        else if (tierInfo.TierIndex == 1)
+            moments = SampleGaussian_2DArray(g_DirectionalShadowMaps_CSM_MediumTier_Float, shadowTexCoord, shadowMapIndex, texelSize, 5.1f, 2.0f);
+        else
+            moments = SampleGaussian_2DArray(g_DirectionalShadowMaps_CSM_HighTier_Float, shadowTexCoord, shadowMapIndex, texelSize, 5.1f, 2.0f);
+
+        shadow = SampleESM(moments.r, currentDepth, ESMExponent);
+    }
+    else if (FilterType == 4) // EVSM
+    {
+        // EVSM은 바이어스를 적용해야 합니다 (원본 SpotLight 코드 [cite: 112] 참고)
+        float bias_evsm = lerp(0.0001f, 0.0005f, NdotL);
+        float biasedDepthEVSM = currentDepth - bias_evsm;
+
+        [branch]
+        if (tierInfo.TierIndex == 0)
+            shadow = SampleEVSM_PCF_2DArray(g_DirectionalShadowMaps_CSM_LowTier_Float, shadowTexCoord, shadowMapIndex, biasedDepthEVSM, EVSMPositiveExponent, EVSMNegativeExponent, EVSMLightBleedingReduction, texelSize, 2.5f);
+        else if (tierInfo.TierIndex == 1)
+            shadow = SampleEVSM_PCF_2DArray(g_DirectionalShadowMaps_CSM_MediumTier_Float, shadowTexCoord, shadowMapIndex, biasedDepthEVSM, EVSMPositiveExponent, EVSMNegativeExponent, EVSMLightBleedingReduction, texelSize, 2.5f);
+        else
+            shadow = SampleEVSM_PCF_2DArray(g_DirectionalShadowMaps_CSM_HighTier_Float, shadowTexCoord, shadowMapIndex, biasedDepthEVSM, EVSMPositiveExponent, EVSMNegativeExponent, EVSMLightBleedingReduction, texelSize, 2.5f);
+    }
+
+    return shadow;
+}
+
+
 // Directional Light 계산 (Diffuse + Specular + CSM Shadow)
 float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, float3 normal, float3 viewDir, float4 materialColor, bool includeSpecular, float specularPower)
 {
@@ -967,9 +1070,16 @@ float3 CalculateDirectionalLight(FDirectionalLightInfo light, float3 worldPos, f
             // 선택된 캐스케이드의 VP 행렬로 라이트 공간 변환
             float4 lightSpacePos = mul(float4(worldPos, 1.0f), light.CascadeViewProjection[cascadeIndex]);
 
-            // 섀도우 맵 배열 인덱스 계산: base + cascadeIndex
-            uint shadowMapIndex = light.ShadowMapIndex + cascadeIndex;
-            shadow = SampleDirectionalLightShadowMap(shadowMapIndex, lightSpacePos, normal, lightDir, DirectionalLightResolution);
+            // 1. light.CascadeTierInfos에서 올바른 티어 정보 가져오기 
+            FCascadeTierInfo tierInfo = light.CascadeTierInfos[cascadeIndex];
+
+            // 2. 1단계에서 추가한 CSM 전용 샘플링 함수 호출
+            shadow = SampleDirectionalLightShadowMapCSM(
+                tierInfo,
+                lightSpacePos,
+                normal,
+                lightDir
+            );
         }
         else
         {

@@ -51,7 +51,7 @@ BEGIN_PROPERTIES(UDirectionalLightComponent)
 	}
 
 	// CSM Configuration
-	ADD_PROPERTY_RANGE(int32, NumCascades, "Shadow", 3, 6, true, "캐스케이드 수 (3~6)")
+	ADD_PROPERTY_RANGE(int32, NumCascades, "Shadow", 2, 5, true, "캐스케이드 수 (2~5)")
 	ADD_PROPERTY_RANGE(float, CSMLambda, "Shadow", 0.0f, 1.0f, true, "PSSM 혼합 비율 (0=선형, 1=로그)")
 END_PROPERTIES()
 
@@ -88,6 +88,12 @@ FDirectionalLightInfo UDirectionalLightComponent::GetLightInfo() const
 	{
 		Info.CascadeViewProjection[i] = CascadeViewProjections[i];
 		Info.CascadeSplitDistances[i] = CascadeSplitDistances[i];
+
+		// CSM Tier Info (updated by ShadowManager)
+		Info.CascadeTierInfos[i].TierIndex = CascadeTierInfos[i].TierIndex;
+		Info.CascadeTierInfos[i].SliceIndex = CascadeTierInfos[i].SliceIndex;
+		Info.CascadeTierInfos[i].Resolution = CascadeTierInfos[i].Resolution;
+		Info.CascadeTierInfos[i].Padding = 0.0f;
 	}
 
 	return Info;

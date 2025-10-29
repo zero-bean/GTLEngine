@@ -28,6 +28,25 @@ enum class EPCFSampleCount : uint8
 	Custom = 0      // 사용자 정의
 };
 
+// CSM Resolution Tier (3-Tier System)
+enum class ECSMResolutionTier : uint8
+{
+	Low = 0,    // 256 ~ 512 (먼 캐스케이드)
+	Medium = 1, // 1024 ~ 2048 (중간 캐스케이드)
+	High = 2    // 4096+ (가까운 캐스케이드)
+};
+
+// CSM Tier Configuration
+struct FCSMTierConfig
+{
+	uint32 Resolution;   // 이 티어의 텍스처 해상도
+	uint32 MaxSlices;    // 최대 캐스케이드 슬롯 수
+
+	FCSMTierConfig(uint32 InResolution = 1024, uint32 InMaxSlices = 16)
+		: Resolution(InResolution), MaxSlices(InMaxSlices)
+	{}
+};
+
 // Shadow 시스템 설정
 // 모든 shadow 관련 설정을 중앙화하여 magic number 제거
 struct FShadowConfiguration
@@ -35,9 +54,14 @@ struct FShadowConfiguration
 	EShadowQuality Quality = EShadowQuality::Medium;
 
 	// 라이트 타입별 쉐도우 맵 해상도
-	uint32 DirectionalLightResolution = 4096;
+	uint32 DirectionalLightResolution = 4096;  // Non-CSM용 (legacy)
 	uint32 SpotLightResolution = 1024;
 	uint32 PointLightResolution = 1024;
+
+	// CSM 3-Tier 해상도 설정 (DirectionalLight CSM 전용)
+	FCSMTierConfig CSMTierLow = FCSMTierConfig(512, 16);      // Tier 0: 256~512
+	FCSMTierConfig CSMTierMedium = FCSMTierConfig(2048, 12);  // Tier 1: 1024~2048
+	FCSMTierConfig CSMTierHigh = FCSMTierConfig(4096, 8);     // Tier 2: 4096+
 
 	// 광원 타입별 최대 쉐도우 캐스팅 라이트 수
 	uint32 MaxDirectionalLights = 1;

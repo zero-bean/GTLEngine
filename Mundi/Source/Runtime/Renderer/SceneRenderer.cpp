@@ -480,6 +480,9 @@ void FSceneRenderer::PerformTileLightCulling()
 
 void FSceneRenderer::RenderShadowPass()
 {
+	// Step 0: 쉐도우 맵 리소스 언바인딩 (렌더 타겟으로 사용하기 전에 필수!)
+	GWorld->GetShadowManager()->UnbindShadowResources(RHIDevice);
+
 	// Step 1: 섀도우 캐스팅 라이트에 인덱스 할당
 	FShadowCastingLights ShadowLights(SceneGlobals.DirectionalLights, SceneLocals.SpotLights, SceneLocals.PointLights);
 	GWorld->GetShadowManager()->AssignShadowMapIndices(RHIDevice, ShadowLights);

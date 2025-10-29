@@ -17,6 +17,15 @@ struct FAmbientLightInfo
     float4 Color;       // 16 bytes - FLinearColor (Intensity + Temperature 포함)
 };
 
+// CSM Cascade Tier Info (Shader측)
+struct FCascadeTierInfo
+{
+    uint TierIndex;      // 0=Low, 1=Medium, 2=High
+    uint SliceIndex;     // 해당 티어 내 슬라이스 인덱스
+    float Resolution;    // 실제 해상도 (PCF texelSize 계산용)
+    float Padding;       // 16-byte 정렬
+};
+
 struct FDirectionalLightInfo
 {
     float4 Color;       // 16 bytes - FLinearColor (Intensity + Temperature 포함)
@@ -35,7 +44,10 @@ struct FDirectionalLightInfo
     row_major float4x4 CascadeViewProjection[4]; // 256 bytes (64 bytes × 4) - 각 캐스케이드의 VP 행렬
     float4 CascadeSplitDistances;                // 16 bytes - 각 캐스케이드의 Far 거리 (float4로 패킹)
 
-    // Total: 388 bytes
+    // CSM Tier Info (3-Tier System)
+    FCascadeTierInfo CascadeTierInfos[4];        // 64 bytes (16 bytes × 4) - 각 캐스케이드의 티어 정보
+
+    // Total: 388 + 64 = 452 bytes
 };
 
 struct FPointLightInfo
@@ -59,20 +71,20 @@ struct FPointLightInfo
 struct FSpotLightInfo
 {
     float4 Color;           // 16 bytes - FLinearColor (Intensity + Temperature 포함)
-    
+
     float3 Position;        // 12 bytes - FVector
     float InnerConeAngle;   // 4 bytes - 내부 원뿔 각도
-    
+
     float3 Direction;       // 12 bytes - FVector
     float OuterConeAngle;   // 4 bytes - 외부 원뿔 각도
-    
+
     float AttenuationRadius; // 4 bytes - 감쇠 반경
     float FalloffExponent;  // 4 bytes - 예술적 제어를 위한 감쇠 지수
     uint bUseInverseSquareFalloff; // 4 bytes - uint32 (true = 물리 기반, false = 지수 기반)
     uint bCastShadow;       // 4 bytes - 섀도우 캐스팅 여부
-    
+
     uint ShadowMapIndex;    // 4 bytes - 섀도우 맵 인덱스 (-1이면 섀도우 없음)
     float3 Padding;          // 12 bytes - 패딩
-    
+
     row_major float4x4 LightViewProjection; // 64 bytes - 라이트 공간 변환 행렬
 };

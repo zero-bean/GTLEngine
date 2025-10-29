@@ -24,6 +24,16 @@ struct FAmbientLightInfo
     // Total: 16 bytes
 };
 
+// CSM Cascade Tier Info (C++ 측)
+struct FCascadeTierInfo
+{
+    uint32 TierIndex;      // 4 bytes - 0=Low, 1=Medium, 2=High
+    uint32 SliceIndex;     // 4 bytes - 해당 티어 내 슬라이스 인덱스
+    float Resolution;      // 4 bytes - 실제 해상도 (PCF texelSize 계산용)
+    float Padding;         // 4 bytes - 16-byte 정렬
+    // Total: 16 bytes
+};
+
 struct FDirectionalLightInfo
 {
     FLinearColor Color;     // 16 bytes - Color already includes Intensity and Temperature
@@ -39,7 +49,10 @@ struct FDirectionalLightInfo
     FMatrix CascadeViewProjection[4];  // 256 bytes (64 bytes × 4) - 각 캐스케이드의 VP 행렬
     float CascadeSplitDistances[4];    // 16 bytes - 각 캐스케이드의 Far 거리
 
-    // Total: 116 + 256 + 16 = 388 bytes
+    // CSM Tier Info (3-Tier System)
+    FCascadeTierInfo CascadeTierInfos[4]; // 64 bytes (16 bytes × 4) - 각 캐스케이드의 티어 정보
+
+    // Total: 116 + 256 + 16 + 64 = 452 bytes
 };
 
 struct FPointLightInfo
