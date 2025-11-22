@@ -600,75 +600,68 @@ void USlateManager::ProcessInput()
     CleanupParticleEditorWindow();
 
     const FVector2D MousePosition = INPUT.GetMousePosition();
+    const bool bOverlayBlockingMouse = UUIManager::GetInstance().IsOverlayCapturingMouse();
 
-    if (ParticleEditorWindow && ParticleEditorWindow->Rect.Contains(MousePosition))
+    if (!bOverlayBlockingMouse)
     {
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        if (ParticleEditorWindow && ParticleEditorWindow->Rect.Contains(MousePosition))
         {
-            OnMouseDown(MousePosition, 0);
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            {
+                OnMouseDown(MousePosition, 0);
+            }
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+            {
+                OnMouseDown(MousePosition, 1);
+            }
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+            {
+                OnMouseUp(MousePosition, 0);
+            }
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+            {
+                OnMouseUp(MousePosition, 1);
+            }
         }
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+        else if (SkeletalViewerWindow && SkeletalViewerWindow->Rect.Contains(MousePosition))
         {
-            OnMouseDown(MousePosition, 1);
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            {
+                OnMouseDown(MousePosition, 0);
+            }
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+            {
+                OnMouseDown(MousePosition, 1);
+            }
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+            {
+                OnMouseUp(MousePosition, 0);
+            }
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+            {
+                OnMouseUp(MousePosition, 1);
+            }
         }
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-        {
-            OnMouseUp(MousePosition, 0);
-        }
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
-        {
-            OnMouseUp(MousePosition, 1);
-        }
-    }
-    else if (SkeletalViewerWindow && SkeletalViewerWindow->Rect.Contains(MousePosition))
-    {
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-        {
-            OnMouseDown(MousePosition, 0);
-        }
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-        {
-            OnMouseDown(MousePosition, 1);
-        }
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-        {
-            OnMouseUp(MousePosition, 0);
-        }
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
-        {
-            OnMouseUp(MousePosition, 1);
-        }
-    }
 
-    if (INPUT.IsMouseButtonPressed(LeftButton))
-    {
-        const FVector2D MousePosition = INPUT.GetMousePosition();
+        if (INPUT.IsMouseButtonPressed(LeftButton))
         {
             OnMouseDown(MousePosition, 0);
         }
-    }
-    if (INPUT.IsMouseButtonPressed(RightButton))
-    {
-        const FVector2D MousePosition = INPUT.GetMousePosition();
+        if (INPUT.IsMouseButtonPressed(RightButton))
         {
             OnMouseDown(MousePosition, 1);
         }
-    }
-    if (INPUT.IsMouseButtonReleased(LeftButton))
-    {
-        const FVector2D MousePosition = INPUT.GetMousePosition();
+        if (INPUT.IsMouseButtonReleased(LeftButton))
         {
             OnMouseUp(MousePosition, 0);
         }
-    }
-    if (INPUT.IsMouseButtonReleased(RightButton))
-    {
-        const FVector2D MousePosition = INPUT.GetMousePosition();
+        if (INPUT.IsMouseButtonReleased(RightButton))
         {
             OnMouseUp(MousePosition, 1);
         }
+
+        OnMouseMove(MousePosition);
     }
-    OnMouseMove(MousePosition);
 
     // Alt + ` (억음 부호 키)로 콘솔 토글
     if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent) && ImGui::GetIO().KeyAlt)

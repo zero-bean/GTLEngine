@@ -5,6 +5,7 @@
 // Forward declarations
 struct ID3D11Device;
 struct ID3D11DeviceContext;
+struct ImDrawData;
 
 /**
  * @brief ImGui 초기화/렌더링/해제를 담당하는 Helper 클래스
@@ -24,6 +25,7 @@ public:
 
 	void BeginFrame() const;
 	void EndFrame() const;
+	void RenderDrawData(ImDrawData* DrawData) const;
 
 	static LRESULT WndProcHandler(HWND hwnd, uint32 msg, WPARAM wParam, LPARAM lParam);
 

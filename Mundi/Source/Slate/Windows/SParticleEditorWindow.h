@@ -24,6 +24,8 @@ public:
     virtual void OnMouseUp(FVector2D MousePos, uint32 Button) override;
 
     void OnRenderViewport();
+    void CreateNewTab();
+    void RequestColorPickerFocus();
 
     bool IsOpen() const { return bIsOpen; }
     void Close() { bIsOpen = false; }
@@ -31,6 +33,7 @@ public:
     // Accessors (active tab)
     FViewport* GetViewport() const;
     FViewportClient* GetViewportClient() const;
+    void SetColorPickerSpawnPosition(const FVector2D& ScreenPos);
 
 private:
     // Tabs
@@ -75,6 +78,12 @@ private:
 
     // Window open state
     bool bIsOpen = true;
+
+    // Color picker state
+    bool bShowColorPicker = false;
+    bool bColorPickerFocusRequested = false;
+    bool bColorPickerSpawnPosValid = false;
+    FVector2D ColorPickerSpawnPos = FVector2D::Zero();
 
     // Section widgets
     FParticleEditorMenuBarSection MenuBarSection;

@@ -4,6 +4,8 @@
 #include "CameraActor.h"
 #include "FViewport.h"
 #include "FViewportClient.h"
+#include "Source/Runtime/Engine/GameFramework/World.h"
+#include "Grid/GridActor.h"
 
 ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name, UWorld* InWorld, ID3D11Device* InDevice)
 {
@@ -33,11 +35,17 @@ ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name
 
     State->Client = Client;
     State->Viewport->SetViewportClient(Client);
+    Client->SetViewportBackgroundColor(FVector4(
+        State->ViewportBackgroundColor[0],
+        State->ViewportBackgroundColor[1],
+        State->ViewportBackgroundColor[2],
+        State->ViewportBackgroundColor[3]));
 
     // Set camera location after client is set up
     if (Client->GetCamera())
     {
-        Client->GetCamera()->SetActorLocation(FVector(5, 0, 3));
+        Client->GetCamera()->SetActorLocation(FVector(-3.0f, -3.0f, 1.0f));
+        Client->GetCamera()->SetRotationFromEulerAngles(FVector(-30.f, 0.0f, 45.0f));
     }
 
     State->World->SetEditorCameraActor(Client->GetCamera());
@@ -53,6 +61,12 @@ ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name
     {
         State->World->GetRenderSettings().SetShowFlags(InWorld->GetRenderSettings().GetShowFlags());
         State->World->GetRenderSettings().DisableShowFlag(EEngineShowFlags::SF_EditorIcon);
+    }
+
+    if (State->World && State->World->GetGridActor())
+    {
+        State->World->GetGridActor()->SetGridVisible(State->bShowGrid);
+        State->World->GetGridActor()->SetAxisVisible(State->bShowAxis);
     }
 
     return State;

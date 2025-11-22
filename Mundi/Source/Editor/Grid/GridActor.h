@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Actor.h"
 #include "LineComponent.h"
 
@@ -17,6 +17,10 @@ public:
     void CreateGridLines(int32 GridSize = 50, float CellSize = 1.0f, const FVector& Center = FVector());
     void CreateAxisLines(float Length = 50.0f, const FVector& Origin = FVector());
     void ClearLines();
+    void SetAxisVisible(bool bVisible);
+    bool IsAxisVisible() const { return bShowAxis; }
+    void SetGridVisible(bool bVisible);
+    bool IsGridVisible() const { return bShowGridLines; }
     
     // Grid settings
     float GetLineSize() { return LineSize; }
@@ -25,7 +29,7 @@ public:
     // Component access
     ULineComponent* GetLineComponent() const { return LineComponent; }
 
-    // ───── 복사 관련 ────────────────────────────
+    // ���������� ���� ���� ��������������������������������������������������������
     void DuplicateSubObjects() override;
     DECLARE_DUPLICATE(AGridActor)
 private:
@@ -38,6 +42,8 @@ private:
     float CellSize = 1.0f;
     float AxisLength = 100.0f;
 
-    float LineSize = 1.0f;   // 기본값으로 사용됨
+    float LineSize = 1.0f;   // �⺻������ ����
+    bool bShowAxis = true;
+    bool bShowGridLines = true;
 };
 

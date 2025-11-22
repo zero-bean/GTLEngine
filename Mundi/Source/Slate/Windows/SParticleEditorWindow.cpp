@@ -4,6 +4,7 @@
 #include "ParticleEditorSections.h"
 #include "FViewport.h"
 #include "FViewportClient.h"
+#include "UIManager.h"
 #include "Source/Runtime/Engine/ParticleEditor/ParticleEditorState.h"
 #include "Source/Runtime/Engine/ParticleEditor/ParticleEditorBootstrap.h"
 
@@ -103,7 +104,7 @@ void SParticleEditorWindow::OnRender()
             ImGui::EndTabBar();
         }
 
-        FParticleEditorSectionContext SectionContext{ *this, ActiveState };
+        FParticleEditorSectionContext SectionContext{ *this, ActiveState, &bShowColorPicker };
 
         /* Section 1: 메뉴바 */
         MenuBarSection.Draw(SectionContext);
@@ -339,6 +340,37 @@ void SParticleEditorWindow::OnRender()
 
         // Pop the ItemSpacing style
         ImGui::PopStyleVar();
+
+        // 배경색 피커 윈도우 (메인 윈도우 끝나기 전에, 다른 패널에 가려지지 않도록)
+        if (bShowColorPicker && ActiveState)
+        {
+            if (bColorPickerSpawnPosValid)
+            {
+                ImGui::SetNextWindowPos(ImVec2(ColorPickerSpawnPos.X, ColorPickerSpawnPos.Y), ImGuiCond_Appearing);
+            }
+            if (bColorPickerFocusRequested)
+            {
+                ImGui::SetNextWindowFocus();
+                bColorPickerFocusRequested = false;
+            }
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+            ImGuiWindowFlags PickerFlags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize;
+            const bool bPickerWindowOpen = ImGui::Begin("Viewport Background Color", &bShowColorPicker, PickerFlags);
+            if (bPickerWindowOpen)
+            {
+                const bool bPickerHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+                UUIManager::GetInstance().RegisterOverlayWindow("Viewport Background Color", bPickerHovered);
+                ImGui::ColorPicker4("##ViewportBgColor", ActiveState->ViewportBackgroundColor,
+                    ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_AlphaBar);
+            }
+            ImGui::End();
+            ImGui::PopStyleVar(2);
+        }
+        else
+        {
+            bColorPickerFocusRequested = false;
+        }
     }
     ImGui::End();
 
@@ -425,6 +457,15 @@ void SParticleEditorWindow::OnRenderViewport()
         const uint32 NewWidth = static_cast<uint32>(ViewportRect.Right - ViewportRect.Left);
         const uint32 NewHeight = static_cast<uint32>(ViewportRect.Bottom - ViewportRect.Top);
 
+        if (ActiveState->Client)
+        {
+            ActiveState->Client->SetViewportBackgroundColor(FVector4(
+                ActiveState->ViewportBackgroundColor[0],
+                ActiveState->ViewportBackgroundColor[1],
+                ActiveState->ViewportBackgroundColor[2],
+                ActiveState->ViewportBackgroundColor[3]));
+        }
+
         ActiveState->Viewport->Resize(NewStartX, NewStartY, NewWidth, NewHeight);
         ActiveState->Viewport->Render();
     }
@@ -468,6 +509,24 @@ void SParticleEditorWindow::CloseTab(int Index)
         ActiveTabIndex = std::min(Index, Tabs.Num() - 1);
         ActiveState = Tabs[ActiveTabIndex];
     }
+}
+
+void SParticleEditorWindow::CreateNewTab()
+{
+    char label[32];
+    sprintf_s(label, "Particle Editor %d", Tabs.Num() + 1);
+    OpenNewTab(label);
+}
+
+void SParticleEditorWindow::RequestColorPickerFocus()
+{
+    bColorPickerFocusRequested = true;
+}
+
+void SParticleEditorWindow::SetColorPickerSpawnPosition(const FVector2D& ScreenPos)
+{
+    ColorPickerSpawnPos = ScreenPos;
+    bColorPickerSpawnPosValid = true;
 }
 
 bool SParticleEditorWindow::DrawSplitter(const char* Id, bool bVertical, float Length, 

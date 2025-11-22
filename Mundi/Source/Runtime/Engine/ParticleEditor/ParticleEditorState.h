@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 class FViewport;
 class FViewportClient;
@@ -21,8 +21,11 @@ public:
     // int32 SelectedEmitterIndex = -1;
 
     // UI state
-    bool bShowGrid = true;
+    bool bShowGrid = false;
+    bool bShowAxis = true;
     bool bShowBounds = false;
+    int32 ActiveLODLevel = 0;
+    float ViewportBackgroundColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // RGBA
 
     // Playback state
     bool bIsPlaying = false;
