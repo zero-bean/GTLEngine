@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "SWindow.h"
+#include "ParticleEditorSections.h"
 
 class FViewport;
 class FViewportClient;
@@ -37,12 +38,6 @@ private:
     void CloseTab(int Index);
 
     // 파티클 에디터 윈도우 UI에는 크게 6종류 파트로 나뉨
-    void DrawMenuBar();
-    void DrawToolBar();
-    void DrawViewportPanel();
-    void DrawEmitterPanel();
-    void DrawDetailPanel();
-    void DrawCurveEditorPanel();
 
     // 뷰포트 내부 헬퍼 함수
     bool DrawSplitter(const char* Id, bool bVertical, float Length,
@@ -80,4 +75,12 @@ private:
 
     // Window open state
     bool bIsOpen = true;
+
+    // Section widgets
+    FParticleEditorMenuBarSection MenuBarSection;
+    FParticleEditorToolBarSection ToolBarSection;
+    FParticleEditorViewportSection ViewportSection;
+    FParticleEditorEmitterSection EmitterSection;
+    FParticleEditorDetailSection DetailSection;
+    FParticleEditorCurveSection CurveSection;
 };

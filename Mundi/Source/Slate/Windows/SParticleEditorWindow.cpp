@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include <algorithm>
 #include "SParticleEditorWindow.h"
+#include "ParticleEditorSections.h"
 #include "FViewport.h"
 #include "FViewportClient.h"
 #include "Source/Runtime/Engine/ParticleEditor/ParticleEditorState.h"
@@ -102,8 +103,10 @@ void SParticleEditorWindow::OnRender()
             ImGui::EndTabBar();
         }
 
+        FParticleEditorSectionContext SectionContext{ *this, ActiveState };
+
         /* Section 1: 메뉴바 */
-        DrawMenuBar();
+        MenuBarSection.Draw(SectionContext);
 
         // Update window rect
         ImVec2 pos = ImGui::GetWindowPos();
@@ -115,7 +118,7 @@ void SParticleEditorWindow::OnRender()
         Rect.UpdateMinMax();
 
         /* Section 2: 툴바 */
-        DrawToolBar();
+        ToolBarSection.Draw(SectionContext);
 
         // Get available content region
         ImVec2 contentAvail = ImGui::GetContentRegionAvail();
@@ -177,7 +180,7 @@ void SParticleEditorWindow::OnRender()
             {
                 if (!bViewportCollapsed)
                 {
-                    DrawViewportPanel();
+                    ViewportSection.Draw(SectionContext);
 
                     // Cache viewport rect for input handling
                     ImVec2 childPos = ImGui::GetWindowPos();
@@ -212,7 +215,7 @@ void SParticleEditorWindow::OnRender()
             {
                 if (!bEmitterCollapsed)
                 {
-                    DrawEmitterPanel();
+                    EmitterSection.Draw(SectionContext);
 
                     // Cache emitter rect
                     ImVec2 childPos = ImGui::GetWindowPos();
@@ -278,7 +281,7 @@ void SParticleEditorWindow::OnRender()
             {
                 if (!bDetailCollapsed)
                 {
-                    DrawDetailPanel();
+                    DetailSection.Draw(SectionContext);
 
                     // Cache detail rect
                     ImVec2 childPos = ImGui::GetWindowPos();
@@ -313,7 +316,7 @@ void SParticleEditorWindow::OnRender()
             {
                 if (!bCurveCollapsed)
                 {
-                    DrawCurveEditorPanel();
+                    CurveSection.Draw(SectionContext);
 
                     // Cache curve editor rect
                     ImVec2 childPos = ImGui::GetWindowPos();
@@ -465,265 +468,6 @@ void SParticleEditorWindow::CloseTab(int Index)
         ActiveTabIndex = std::min(Index, Tabs.Num() - 1);
         ActiveState = Tabs[ActiveTabIndex];
     }
-}
-
-void SParticleEditorWindow::DrawMenuBar()
-{
-    if (ImGui::BeginMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("New Particle System"))
-            {
-                // TODO: Create new particle system
-            }
-            if (ImGui::MenuItem("Open..."))
-            {
-                // TODO: Open particle system
-            }
-            if (ImGui::MenuItem("Save"))
-            {
-                // TODO: Save particle system
-            }
-            if (ImGui::MenuItem("Save As..."))
-            {
-                // TODO: Save as particle system
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Close"))
-            {
-                bIsOpen = false;
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Edit"))
-        {
-            if (ImGui::MenuItem("Undo", "Ctrl+Z"))
-            {
-                // TODO: Undo
-            }
-            if (ImGui::MenuItem("Redo", "Ctrl+Y"))
-            {
-                // TODO: Redo
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Delete Emitter"))
-            {
-                // TODO: Delete selected emitter
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Emitter"))
-        {
-            if (ImGui::MenuItem("Add Sprite Emitter"))
-            {
-                // TODO: Add sprite emitter
-            }
-            if (ImGui::MenuItem("Add Mesh Emitter"))
-            {
-                // TODO: Add mesh emitter
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Duplicate Emitter"))
-            {
-                // TODO: Duplicate selected emitter
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("View"))
-        {
-            if (ActiveState)
-            {
-                if (ImGui::MenuItem("Show Grid", nullptr, &ActiveState->bShowGrid))
-                {
-                    // TODO: Toggle grid visibility
-                }
-                if (ImGui::MenuItem("Show Bounds", nullptr, &ActiveState->bShowBounds))
-                {
-                    // TODO: Toggle bounds visibility
-                }
-                ImGui::Separator();
-                if (ImGui::MenuItem("Reset Camera"))
-                {
-                    // TODO: Reset camera
-                }
-            }
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMenuBar();
-    }
-}
-
-void SParticleEditorWindow::DrawToolBar()
-{
-    ImGui::BeginChild("ToolBar", ImVec2(0, 40), true, ImGuiWindowFlags_NoScrollbar);
-    {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.28f, 0.40f, 0.55f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.50f, 0.70f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.25f, 0.35f, 0.50f, 1.0f));
-
-        if (ImGui::Button("New System", ImVec2(100, 30)))
-        {
-            // TODO: Create new particle system
-        }
-        ImGui::SameLine();
-
-        if (ImGui::Button("Add Emitter", ImVec2(100, 30)))
-        {
-            // TODO: Add emitter to system
-        }
-        ImGui::SameLine();
-
-        if (ImGui::Button("Save", ImVec2(80, 30)))
-        {
-            // TODO: Save particle system
-        }
-        ImGui::SameLine();
-
-        ImGui::Separator();
-        ImGui::SameLine();
-
-        if (ActiveState)
-        {
-            if (ImGui::Button(ActiveState->bIsPlaying ? "Stop" : "Play", ImVec2(80, 30)))
-            {
-                ActiveState->bIsPlaying = !ActiveState->bIsPlaying;
-                // TODO: Toggle particle system playback
-            }
-            ImGui::SameLine();
-
-            if (ImGui::Button("Reset", ImVec2(80, 30)))
-            {
-                ActiveState->CurrentTime = 0.0f;
-                // TODO: Reset particle system
-            }
-        }
-
-        ImGui::PopStyleColor(3);
-    }
-    ImGui::EndChild();
-}
-
-void SParticleEditorWindow::DrawViewportPanel()
-{
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.25f, 0.35f, 0.50f, 0.8f));
-    ImGui::Text("Viewport");
-    ImGui::PopStyleColor();
-    ImGui::Separator();
-
-    // Viewport rendering will be handled in OnRenderViewport
-    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-    ImGui::BeginChild("ViewportContent", viewportSize, false, ImGuiWindowFlags_NoScrollbar);
-    {
-        // Viewport is rendered separately
-        ImGui::Text("Particle Preview Viewport");
-        ImGui::Text("Size: %.0fx%.0f", viewportSize.x, viewportSize.y);
-    }
-    ImGui::EndChild();
-    ImGui::PopStyleColor();
-}
-
-void SParticleEditorWindow::DrawEmitterPanel()
-{
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.25f, 0.50f, 0.35f, 0.8f));
-    ImGui::Text("Emitters");
-    ImGui::PopStyleColor();
-    ImGui::Separator();
-
-    ImGui::Text("Particle System Emitters:");
-    ImGui::Spacing();
-
-    // Placeholder for emitter list
-    ImGui::BeginChild("EmitterList", ImVec2(0, 0), true);
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-        ImGui::TextWrapped("No emitters in the system.");
-        ImGui::TextWrapped("Use 'Add Emitter' button to add emitters.");
-        ImGui::PopStyleColor();
-
-        // TODO: Display list of emitters when particle system is loaded
-        // Example structure:
-        // if (ActiveState && ActiveState->CurrentParticleSystem)
-        // {
-        //     auto& emitters = ActiveState->CurrentParticleSystem->GetEmitters();
-        //     for (int i = 0; i < emitters.size(); ++i)
-        //     {
-        //         bool selected = (ActiveState->SelectedEmitterIndex == i);
-        //         if (ImGui::Selectable(emitters[i]->GetName().c_str(), selected))
-        //         {
-        //             ActiveState->SelectedEmitterIndex = i;
-        //         }
-        //     }
-        // }
-    }
-    ImGui::EndChild();
-}
-
-void SParticleEditorWindow::DrawDetailPanel()
-{
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.50f, 0.35f, 0.25f, 0.8f));
-    ImGui::Text("Details");
-    ImGui::PopStyleColor();
-    ImGui::Separator();
-
-    ImGui::Text("Emitter Properties:");
-    ImGui::Spacing();
-
-    // Placeholder for emitter properties
-    ImGui::BeginChild("DetailContent", ImVec2(0, 0), true);
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-        ImGui::TextWrapped("Select an emitter to edit its properties.");
-        ImGui::PopStyleColor();
-
-        // TODO: Display emitter properties when an emitter is selected
-        // if (ActiveState && ActiveState->SelectedEmitterIndex >= 0)
-        // {
-        //     auto* emitter = ActiveState->CurrentParticleSystem->GetEmitter(ActiveState->SelectedEmitterIndex);
-        //
-        //     ImGui::Text("Spawn Rate");
-        //     ImGui::DragFloat("##SpawnRate", &emitter->SpawnRate, 0.1f, 0.0f, 1000.0f);
-        //
-        //     ImGui::Text("Particle Lifetime");
-        //     ImGui::DragFloat("##Lifetime", &emitter->ParticleLifetime, 0.1f, 0.0f, 100.0f);
-        //
-        //     // etc.
-        // }
-    }
-    ImGui::EndChild();
-}
-
-void SParticleEditorWindow::DrawCurveEditorPanel()
-{
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.35f, 0.25f, 0.50f, 0.8f));
-    ImGui::Text("Curve Editor");
-    ImGui::PopStyleColor();
-    ImGui::Separator();
-
-    ImGui::Text("Property Curves:");
-    ImGui::Spacing();
-
-    // Placeholder for curve editor
-    ImGui::BeginChild("CurveEditorContent", ImVec2(0, 0), true);
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-        ImGui::TextWrapped("Curve editor for particle properties over time.");
-        ImGui::TextWrapped("Select a property from Details panel to edit its curve.");
-        ImGui::PopStyleColor();
-
-        // TODO: Implement curve editor
-        // - Display curves for selected property
-        // - Allow adding/removing keyframes
-        // - Allow editing curve tangents
-        // - Support for Size over Lifetime, Color over Lifetime, etc.
-    }
-    ImGui::EndChild();
 }
 
 bool SParticleEditorWindow::DrawSplitter(const char* Id, bool bVertical, float Length, 

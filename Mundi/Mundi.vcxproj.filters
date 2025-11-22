@@ -881,6 +881,9 @@
     <ClCompile Include="Source\Slate\Windows\SParticleEditorWindow.cpp">
       <Filter>Source\Slate\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorSections.cpp">
+      <Filter>Source\Slate\Windows</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Runtime\Engine\ParticleEditor\ParticleEditorBootstrap.cpp">
       <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
     </ClCompile>
@@ -1836,6 +1839,9 @@
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Source\Slate\Windows\SParticleEditorWindow.h">
+      <Filter>Source\Slate\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\Windows\ParticleEditorSections.h">
       <Filter>Source\Slate\Windows</Filter>
     </ClInclude>
     <ClInclude Include="Source\Runtime\Engine\ParticleEditor\ParticleEditorBootstrap.h">
