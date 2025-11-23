@@ -25,7 +25,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     _CrtSetBreakAlloc(0);
 #endif
 
-    FCrashHandler::Init();  
+    FCrashHandler::Initialize();  
 
     // Attach to parent console (if launched from cmd) or create a new console.
     //if (!AttachConsole(ATTACH_PARENT_PROCESS))
@@ -38,10 +38,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     freopen_s(&fDummy, "CONOUT$", "w", stderr);
 
     FConsole& Console = FConsole::GetInstance();
-    // Crash 명령어 등록
+
+    // 크래시 테스트용 명령어 등록
+    // 사용법: 콘솔에서 "Crash" 입력
+    // 효과: 매 프레임마다 메모리를 점진적으로 오염시켜 자연스럽게 크래시 발생
     Console.RegisterCommand(L"Crash", []() {
-        CCrashCommand CrashCmd;
-        CrashCmd.CauseCrash();
+        CCrashCommand::EnableCorruptionMode();
     }); 
 
     StartConsoleThread();
