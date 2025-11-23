@@ -7,11 +7,30 @@
 
 UParticleSystemComponent::UParticleSystemComponent()
 {
+	bCanEverTick = true;
 }
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
 	DestroyEmitterInstances();
+}
+
+void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
+{
+	if (Template == InTemplate)
+	{
+		return;
+	}
+
+	if (InTemplate)
+	{
+		DestroyEmitterInstances();
+
+		Template = InTemplate;
+
+		InitParticles();
+	}
+	
 }
 
 void UParticleSystemComponent::DestroyEmitterInstances()
@@ -28,6 +47,20 @@ void UParticleSystemComponent::DestroyEmitterInstances()
 
 void UParticleSystemComponent::BeginPlay()
 {
+	//테스트용 코드
+	UParticleSystem* PS = UParticleSystem::GetTestParticleSystem();
+	if (PS)
+	{
+		SetTemplate(PS);
+	}
+	
+}
+
+void UParticleSystemComponent::EndPlay()
+{
+	// 테스트용 코드
+	UParticleSystem::ReleaseTestParticleSystem();
+	DestroyEmitterInstances();
 }
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
@@ -54,13 +87,14 @@ void UParticleSystemComponent::InitParticles()
 
 	ResetParticles();
 
-	if (Template.IsValid())
+	if (Template)
 	{
-		for (UParticleEmitter* Emitter : Template.Get()->Emitters)
+		for (UParticleEmitter* Emitter : Template->Emitters)
 		{
 			FParticleEmitterInstance* NewInstance = Emitter->CreateInstance(this);
 
 			NewInstance->Init();
+			EmitterInstances.Add(NewInstance);
 		}
 
 	}

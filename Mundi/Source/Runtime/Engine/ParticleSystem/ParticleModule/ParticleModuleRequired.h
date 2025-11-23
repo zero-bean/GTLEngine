@@ -1,13 +1,17 @@
 ﻿#pragma once
 #include "ParticleModule.h"
+#include "UParticleModuleRequired.generated.h"
 
 class UMaterialInterface;
 
+UCLASS()
 class UParticleModuleRequired : public UParticleModule
 {
+	GENERATED_REFLECTION_BODY()
 public:
 
-	TWeakObjectPtr<UMaterialInterface> Material;
+
+	UMaterialInterface* Material;
 
 	// 이미터 1회 루프 시간
 	float EmitterDuration = 0;
@@ -23,4 +27,5 @@ public:
 	//     false인 경우: 자동차 배기가스는 분출된 이후 차를 따라가지 않음.
 	bool bUseLocalSpace = true;
 
+	UParticleModuleRequired() = default;
 };

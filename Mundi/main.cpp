@@ -25,7 +25,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     _CrtSetBreakAlloc(0);
 #endif
 
-    FCrashHandler::Initialize();  
+    //FCrashHandler::Initialize();  
 
     // Attach to parent console (if launched from cmd) or create a new console.
     //if (!AttachConsole(ATTACH_PARENT_PROCESS))

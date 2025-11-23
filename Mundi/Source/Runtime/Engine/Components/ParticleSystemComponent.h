@@ -20,9 +20,13 @@ public:
 
 	~UParticleSystemComponent();
 
+	void SetTemplate(UParticleSystem* InTemplate);
+
 	void DestroyEmitterInstances();
 
 	void BeginPlay() override;
+
+	void EndPlay() override;
 
 	void TickComponent(float DeltaTime) override;
 
@@ -35,7 +39,7 @@ private:
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 
-	TWeakObjectPtr<UParticleSystem> Template = nullptr;
+	UParticleSystem* Template = nullptr;
 
 	TArray<FDynamicEmitterDataBase*> EmitterRenderDatas;
 };

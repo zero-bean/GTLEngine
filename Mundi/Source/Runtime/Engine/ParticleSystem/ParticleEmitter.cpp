@@ -6,6 +6,19 @@
 #include "ParticleLODLevel.h"
 #include "ParticleModule.h"
 
+UParticleEmitter::UParticleEmitter()
+{
+}
+
+UParticleEmitter::~UParticleEmitter()
+{
+	for (int32 Index = 0; Index < LODLevels.Num(); Index++)
+	{
+		DeleteObject(LODLevels[Index]);
+	}
+	LODLevels.Empty();
+}
+
 // 이미터가 본인에 대해 제일 잘 알기 때문에 이미터가 직접 인스턴스 생성하는게 효율적임
 FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemComponent* InOwnerComponent)
 {

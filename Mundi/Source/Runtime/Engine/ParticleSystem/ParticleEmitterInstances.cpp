@@ -48,7 +48,8 @@ void FParticleEmitterInstance::Init()
 	}
 	UParticleLODLevel* HightestLODLevel = SpriteTemplate->LODLevels[0];
 
-	CurrentMaterial = HightestLODLevel->RequiredModule->Material.Get();
+	CurrentMaterial = HightestLODLevel->RequiredModule->Material;
+	CurrentLODLevel = HightestLODLevel;
 
 	bool bNeedsInit = (ParticleSize == 0);
 	// 이미터는 계속해서 상태를 초기화하고 이미팅을 반복함. 매번 ParticleEmiiter로부터 메모리 레이아웃을 재설정 하고 인스턴스 데이터 realloc할 필요 없이
@@ -306,8 +307,9 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, float StartTime, floa
 		// 그 뒤에 태어난 파티클은 Increment만큼 뒤에 태어난 파티클이므로 Increment시간만큼 덜 이동한 것임
 		// 2번째 인자는 이미터가 이동한 거리까지 고려한 것인데 일단 정적 이미터만 처리하기로 함.
 		PostSpawn(Particle, 0, StartTime - Increment * Index);
+		ActiveParticles++;
 	}
-	ActiveParticles += SpawnCount;
+	
 }
 
 void FParticleEmitterInstance::PostSpawn(FBaseParticle* InParticle, float InterpolationPercentage, float SpawnTime)

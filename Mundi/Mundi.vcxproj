@@ -390,6 +390,7 @@ start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(Sol
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleColor.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLifetime.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLocation.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotation.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSize.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSpawn.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleVelocity.cpp" />
@@ -611,7 +612,10 @@ start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(Sol
     <ClCompile Include="Generated\ACharacter.generated.cpp" />
     <ClCompile Include="Generated\UCharacterMovementComponent.generated.cpp" />
     <ClCompile Include="Generated\UPawnMovementComponent.generated.cpp" />
-  <ClCompile Include="Generated\UParticleModule.generated.cpp" /><ClCompile Include="Generated\UParticleModuleTypeDataBase.generated.cpp" /><ClCompile Include="Generated\UParticleSystemComponent.generated.cpp" /></ItemGroup>
+    <ClCompile Include="Generated\UParticleModule.generated.cpp" />
+    <ClCompile Include="Generated\UParticleModuleTypeDataBase.generated.cpp" />
+    <ClCompile Include="Generated\UParticleSystemComponent.generated.cpp" />
+  <ClCompile Include="Generated\UParticleEmitter.generated.cpp" /><ClCompile Include="Generated\UParticleLODLevel.generated.cpp" /><ClCompile Include="Generated\UParticleSystem.generated.cpp" /><ClCompile Include="Generated\UParticleModuleColor.generated.cpp" /><ClCompile Include="Generated\UParticleModuleLifetime.generated.cpp" /><ClCompile Include="Generated\UParticleModuleLocation.generated.cpp" /><ClCompile Include="Generated\UParticleModuleRequired.generated.cpp" /><ClCompile Include="Generated\UParticleModuleRotation.generated.cpp" /><ClCompile Include="Generated\UParticleModuleSize.generated.cpp" /><ClCompile Include="Generated\UParticleModuleSpawn.generated.cpp" /><ClCompile Include="Generated\UParticleModuleVelocity.generated.cpp" /></ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -864,6 +868,7 @@ start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(Sol
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleColor.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLocation.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRequired.h" />
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotation.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSize.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSpawn.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataBase.h" />
@@ -1061,7 +1066,10 @@ start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(Sol
     <ClInclude Include="Generated\ACharacter.generated.h" />
     <ClInclude Include="Generated\UCharacterMovementComponent.generated.h" />
     <ClInclude Include="Generated\UPawnMovementComponent.generated.h" />
-  <ClInclude Include="Generated\UParticleModule.generated.h" /><ClInclude Include="Generated\UParticleModuleTypeDataBase.generated.h" /><ClInclude Include="Generated\UParticleSystemComponent.generated.h" /></ItemGroup>
+    <ClInclude Include="Generated\UParticleModule.generated.h" />
+    <ClInclude Include="Generated\UParticleModuleTypeDataBase.generated.h" />
+    <ClInclude Include="Generated\UParticleSystemComponent.generated.h" />
+  <ClInclude Include="Generated\UParticleEmitter.generated.h" /><ClInclude Include="Generated\UParticleLODLevel.generated.h" /><ClInclude Include="Generated\UParticleSystem.generated.h" /><ClInclude Include="Generated\UParticleModuleColor.generated.h" /><ClInclude Include="Generated\UParticleModuleLifetime.generated.h" /><ClInclude Include="Generated\UParticleModuleLocation.generated.h" /><ClInclude Include="Generated\UParticleModuleRequired.generated.h" /><ClInclude Include="Generated\UParticleModuleRotation.generated.h" /><ClInclude Include="Generated\UParticleModuleSize.generated.h" /><ClInclude Include="Generated\UParticleModuleSpawn.generated.h" /><ClInclude Include="Generated\UParticleModuleVelocity.generated.h" /></ItemGroup>
   <ItemGroup>
     <None Include="Tools\CodeGenerator\generate.py" />
     <None Include="Tools\CodeGenerator\lua_generator.py" />

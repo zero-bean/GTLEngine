@@ -1,14 +1,20 @@
 ﻿#pragma once
 #include "Object.h"
+#include "UParticleEmitter.generated.h"
 
 class UParticleLODLevel;
 class UParticleModule;
 class UParticleSystemComponent;
 struct FParticleEmitterInstance;
 
+UCLASS()
 class UParticleEmitter : public UObject
 {
+    GENERATED_REFLECTION_BODY()
 public:
+
+    UParticleEmitter();
+    ~UParticleEmitter();
 
     FParticleEmitterInstance* CreateInstance(UParticleSystemComponent* InOwnerComponent);
 
