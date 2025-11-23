@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "CrashHandler.h"
+#include "SymbolServerManager.h"
 #include <filesystem>
 #include <chrono>
 #include <sstream>
@@ -28,6 +29,37 @@ void FCrashHandler::Initialize()
 	std::filesystem::path ProjectRoot = std::filesystem::path(ExePath).parent_path().parent_path().parent_path();
 	std::filesystem::create_directories(ProjectRoot / L"Saved" / L"Crashes");
 
+	// 심볼 서버 초기화 (로컬 캐시 + 네트워크 심볼 서버)
+	// 우선순위: 1) 로컬 서버 2) 네트워크 서버 3) 로컬 캐시만
+	std::wstring SymbolServerPath;
+
+	// 1. 로컬에 심볼 서버가 있는지 확인
+	DWORD Attrs = GetFileAttributesW(L"C:\\SymbolServer");
+	if (Attrs != INVALID_FILE_ATTRIBUTES && (Attrs & FILE_ATTRIBUTE_DIRECTORY))
+	{
+		SymbolServerPath = L"C:\\SymbolServer";
+	}
+	else
+	{
+		// 2. 네트워크 심볼 서버 접근 가능한지 확인 (타임아웃 방지)
+		Attrs = GetFileAttributesW(L"\\\\172.21.11.95\\SymbolServer");
+		if (Attrs != INVALID_FILE_ATTRIBUTES && (Attrs & FILE_ATTRIBUTE_DIRECTORY))
+		{
+			SymbolServerPath = L"\\\\172.21.11.95\\SymbolServer";
+		}
+		else
+		{
+			// 3. 서버 접근 불가 - 로컬 캐시만 사용
+			OutputDebugStringW(L"[SymbolServer] Server unavailable, using local cache only\n");
+			SymbolServerPath = L"";  // 빈 경로 = 캐시만 사용
+		}
+	}
+
+	if (!SymbolServerPath.empty())
+	{
+		FSymbolServerManager::Initialize(L"C:\\SymbolCache", SymbolServerPath);
+	}
+
 	// 시스템 에러 메시지 박스 비활성화
 	SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_FAILCRITICALERRORS);
 
@@ -52,9 +84,10 @@ LONG WINAPI FCrashHandler::OnUnhandledException(EXCEPTION_POINTERS* ExceptionInf
 		}
 	}
 
-	// Step 2: 스택 트레이스 수집
+	// Step 2: 스택 트레이스 수집 (심볼 서버 경로 설정)
 	HANDLE Process = GetCurrentProcess();
-	SymInitialize(Process, NULL, TRUE);
+	std::wstring SymbolPath = FSymbolServerManager::GetSymbolSearchPath();
+	SymInitializeW(Process, SymbolPath.empty() ? NULL : SymbolPath.c_str(), TRUE);
 	SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME);
 
 	// Context 복사 (원본 보호)
