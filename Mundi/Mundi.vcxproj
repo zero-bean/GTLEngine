@@ -115,7 +115,8 @@
       <Message>[CodeGen] Generating Lua binding code...</Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\$(Configuration)\libfbxsdk.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\$(Configuration)\libfbxsdk.dll" "$(OutDir)"
+start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbols.ps1" -ExePath "$(TargetPath)" -PdbPath "$(TargetDir)$(TargetName).pdb" -SymbolServer "C:\SymbolServer"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">
@@ -142,7 +143,8 @@
       <Message>[CodeGen] Generating Lua binding code...</Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\Debug\libfbxsdk.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\Debug\libfbxsdk.dll" "$(OutDir)"
+start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbols.ps1" -ExePath "$(TargetPath)" -PdbPath "$(TargetDir)$(TargetName).pdb" -SymbolServer "C:\SymbolServer"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -173,7 +175,8 @@
       <Message>[CodeGen] Generating Lua binding code...</Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\$(Configuration)\libfbxsdk.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\$(Configuration)\libfbxsdk.dll" "$(OutDir)"
+start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbols.ps1" -ExePath "$(TargetPath)" -PdbPath "$(TargetDir)$(TargetName).pdb" -SymbolServer "C:\SymbolServer"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_StandAlone|x64'">
@@ -204,7 +207,8 @@
       <Message>[CodeGen] Generating Lua binding code...</Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\Release\libfbxsdk.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\Release\libfbxsdk.dll" "$(OutDir)"
+start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbols.ps1" -ExePath "$(TargetPath)" -PdbPath "$(TargetDir)$(TargetName).pdb" -SymbolServer "C:\SymbolServer"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -293,6 +297,7 @@
     <ClCompile Include="Source\Runtime\Debug\ConsoleInputThread.cpp" />
     <ClCompile Include="Source\Runtime\Debug\CrashCommand.cpp" />
     <ClCompile Include="Source\Runtime\Debug\CrashHandler.cpp" />
+    <ClCompile Include="Source\Runtime\Debug\SymbolServerManager.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Animation\AnimationAsset.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Animation\AnimationRuntime.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Animation\AnimationStateMachine.cpp" />
@@ -791,6 +796,7 @@
     <ClInclude Include="Source\Runtime\Debug\Console.h" />
     <ClInclude Include="Source\Runtime\Debug\CrashCommand.h" />
     <ClInclude Include="Source\Runtime\Debug\CrashHandler.h" />
+    <ClInclude Include="Source\Runtime\Debug\SymbolServerManager.h" />
     <ClInclude Include="Source\Runtime\Engine\Animation\AnimationAsset.h" />
     <ClInclude Include="Source\Runtime\Engine\Animation\AnimationRuntime.h" />
     <ClInclude Include="Source\Runtime\Engine\Animation\AnimationStateMachine.h" />
