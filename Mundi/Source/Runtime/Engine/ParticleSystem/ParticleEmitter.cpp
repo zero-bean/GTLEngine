@@ -79,6 +79,8 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 			if (TempInstanceBytes)
 			{
 				ModuleInstanceOffsetMap.Add(ParticleModule, ReqInstanceBytes);
+				// LOD레벨 상관없이 똑같은 인스턴스 메모리 공유하므로 루프 안에선 해줄 필요 없음
+				ModulesNeedingInstanceData.Add(ParticleModule);
 				// 왜 인스턴스 데이터만 모든 LOD레벨의 모듈에 Offset 매핑을 해줄까?
 				// => LOD가 자주 바뀌는데 그때마다 HightestLODLevel을 찾고 Module찾고 매핑하는 과정 오버헤드
 				// + Payload의 경우 LOD 0레벨을 기준으로 메모리 레이아웃을 통일하고 있다는 사실을 명확히 하기 위함.

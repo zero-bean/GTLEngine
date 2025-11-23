@@ -17,6 +17,17 @@ struct FSpawnContext
 		:Owner(InOwner), PayloadOffset(InPayloadOffset), SpawnTime(InSpawnTime), ParticleBase(InParticleBase) {
 	}
 };
+
+struct FUpdateContext
+{
+	FParticleEmitterInstance* Owner;
+	int32 PayloadOffset;
+	float DeltaTime;
+
+	FUpdateContext(FParticleEmitterInstance* InOwner, int32 InPayloadOffset, float InDeltaTime)
+		:Owner(InOwner), PayloadOffset(InPayloadOffset), DeltaTime(InDeltaTime) {
+	}
+};
 UCLASS(DisplayName = "파티클 모듈", Description = "파티클 모듈")
 class UParticleModule : public UObject
 {
@@ -27,6 +38,8 @@ public:
 	bool bEnabled = true;
 
 	virtual void Spawn(const FSpawnContext& SpawnContext);
+	virtual void Update(const FUpdateContext& UpdateContext);
 	virtual uint32 RequiredBytes(UParticleModuleTypeDataBase* TypeData);
 	virtual uint32 RequiredBytesPerInstance();
+	virtual void PrepPerInstanceBlock(FParticleEmitterInstance* EmitterInstance, void* InstanceData);
 };

@@ -14,6 +14,8 @@ struct FBaseParticle
 	float      RotationRate;
 	FVector    Size;
 	FLinearColor     Color;
+	// 나눗셈 연산 비싸서 미리 구함.
+	float OneOverMaxLiftTime;
 };
 
 // 모든 Particle에 대해 POD 오프셋 연산 똑같이 적용되므로 실수 방지를 위해 만든 매크로
@@ -21,16 +23,15 @@ struct FBaseParticle
 	FBaseParticle* Name = (FBaseParticle*)(Address);
 
 // 페이로드는 필요시 별도로 오프셋을 계산해서 수정해야함.
-#define BEGIN_UPDATE_LOOP													\
-uint32 ParticleStride = Owner.ParticleStride;								\
-uint8* CurrentParticlePtr = Owner.ParticleData;								\
-for(int Index = 0 ; Index < Instance->ActiveParticles ; Index++)			\
-{																			\
-	FBaseParticle& Particle = *((FBaseParticle)CurrentParticlePtr);
+#define BEGIN_UPDATE_LOOP															\
+for(int Index = ActiveParticles - 1 ; Index >= 0; Index--)							\
+{																					\
+	const int32 CurrentIndex = ParticleIndices[Index];								\
+	const uint8* ParticlePtr = ParticleData + CurrentIndex * ParticleStride;		\
+	FBaseParticle& Particle = *((FBaseParticle*) ParticlePtr);	
 
 // DELCARE, BEGIN 이후에 Particle로 데이터 수정하고 END_UPDATE_LOOP써주면 알아서 오프셋 계산해서 모든 파티클 데이터 수정 가능하게 해줌
-#define END_UPDATE_LOOP														\
-CurrentParticlePtr += ParticleStride;										\
+#define END_UPDATE_LOOP																\
 }
 
 

@@ -8,6 +8,7 @@ void UParticleModuleLifetime::Spawn(const FSpawnContext& SpawnContext)
 {
 	float LifeTimeValue= LifeTime.GetValue(SpawnContext.Owner->EmitterTime, FMath::FRand());
 	SpawnContext.ParticleBase->Lifetime = LifeTimeValue;
+	SpawnContext.ParticleBase->OneOverMaxLiftTime = 1.0f / LifeTimeValue;
 	SpawnContext.ParticleBase->RelativeTime = 0.0f;
 }
 

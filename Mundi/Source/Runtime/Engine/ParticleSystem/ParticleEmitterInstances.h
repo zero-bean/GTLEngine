@@ -12,8 +12,6 @@ struct FParticleEmitterInstance
 {
 public:
 
-	uint32 GetModuleOffset(UParticleModule* InModule);
-
 	UParticleEmitter* SpriteTemplate = nullptr;
 
 	UParticleSystemComponent* OwnerComponent = nullptr;
@@ -48,23 +46,51 @@ public:
 	// ActiveParticles의 최대 개수
 	uint32 MaxActiveParticles = 0;
 
+	// 초당 10마리 생성 -> 프레임당 0.16마리 생성 -> 생성 안됨 -> 이전 프레임 남은 시간 누적 필요
+	float SpawnFraction = 0.0f;
+
+	// 현재 이미터 루프카운트
+	int32 LoopCount = 0;
+
 	UMaterialInterface* CurrentMaterial = nullptr;
 
-	float EmitterTime;
+	float EmitterTime = 0.0f;
+
+	// 이미터 루프 다 끝났는지 확인(끝나도 파티클이 남아있을 수 있음, 소멸 여부는 HasComplete함수가 결정)
+	bool bEmitterIsDone = false;
 
 	FParticleEmitterInstance(UParticleSystemComponent* InComponent);
+	~FParticleEmitterInstance();
 
 	virtual FDynamicEmitterDataBase* GetDynamicData(bool bSelected) {
 		return nullptr;
 	}
 
-	void InitParticles();
+	virtual void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials);
+
+	void Init();
+
+	void Tick(float DeltaTime, bool bSuppressSpawning);
+
+	void UpdateParticles(float DeltaTime);
+	
+	void KillParticles();
+
+	bool Resize(int32 NewMaxActiveParticles, bool bSetMaxActiveCount = false);
+
+	bool HasComplete();
 
 	void SpawnParticles(int32 Count, float StartTime, float Increment, const FVector& InitialLocation, const FVector& InitialVelocity);
 
 	void PreSpawn(FBaseParticle* Particle, const FVector& InitialLocation, const FVector& InitialVelocity);
 
 	void PostSpawn(FBaseParticle* InParticle, float InterpolationPercentage, float SpawnTime);
+
+	uint32 RequiredBytes();
+
+	uint32 GetModuleOffset(UParticleModule* InModule);
+
+	uint8* GetModuleInstanceData(UParticleModule* InModule);
 };
 
 struct FParticleSpriteEmitterInstance : FParticleEmitterInstance
@@ -73,4 +99,14 @@ public:
 	// ParticleSystemComponent 헤더가 방대해질 가능성이 높음, 인터페이스를 만들어야 함.
 	FParticleSpriteEmitterInstance(UParticleSystemComponent* InComponent);
 	FDynamicEmitterDataBase* GetDynamicData(bool bSelected) override;
+};
+
+struct FParticleMeshEmitterInstance : FParticleEmitterInstance
+{
+public:
+	// 메시 인스터스의 경우 다중 매터리얼 지원해야함.
+	// CurrentMaterial은 기본값이고 SpriteEmitterInstance는 그대로 사용
+	TArray<UMaterialInterface*> CurrentMaterials;
+
+	void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials) override;
 };

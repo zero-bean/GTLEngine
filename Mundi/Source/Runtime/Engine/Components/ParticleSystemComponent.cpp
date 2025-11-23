@@ -4,6 +4,51 @@
 #include "ParticleEmitterInstances.h"
 #include "ParticleEmitter.h"
 
+
+UParticleSystemComponent::UParticleSystemComponent()
+{
+}
+
+UParticleSystemComponent::~UParticleSystemComponent()
+{
+	DestroyEmitterInstances();
+}
+
+void UParticleSystemComponent::DestroyEmitterInstances()
+{
+	for (int32 Index = 0; Index < EmitterInstances.Num(); Index++)
+	{
+		if (EmitterInstances[Index])
+		{
+			delete EmitterInstances[Index];
+		}
+	}
+	EmitterInstances.Empty();
+}
+
+void UParticleSystemComponent::BeginPlay()
+{
+}
+
+void UParticleSystemComponent::TickComponent(float DeltaTime)
+{
+	for (int32 EmitterIndex = 0 ; EmitterIndex < EmitterInstances.Num(); EmitterIndex++)
+	{
+		FParticleEmitterInstance* EmitterInstance = EmitterInstances[EmitterIndex];
+		if (EmitterInstance)
+		{
+			EmitterInstance->Tick(DeltaTime, bSuppressSpawning);
+		}
+		if (EmitterInstance->HasComplete())
+		{
+			delete EmitterInstance;
+			EmitterInstances[EmitterIndex] = nullptr;
+		}
+	}
+	
+}
+
+
 void UParticleSystemComponent::InitParticles()
 {
 
@@ -15,7 +60,7 @@ void UParticleSystemComponent::InitParticles()
 		{
 			FParticleEmitterInstance* NewInstance = Emitter->CreateInstance(this);
 
-			NewInstance->InitParticles();
+			NewInstance->Init();
 		}
 
 	}
@@ -43,3 +88,5 @@ void UParticleSystemComponent::ResetParticles()
 	}
 	EmitterRenderDatas.Empty();
 }
+
+

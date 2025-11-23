@@ -606,7 +606,7 @@
     <ClCompile Include="Generated\ACharacter.generated.cpp" />
     <ClCompile Include="Generated\UCharacterMovementComponent.generated.cpp" />
     <ClCompile Include="Generated\UPawnMovementComponent.generated.cpp" />
-  <ClCompile Include="Generated\UParticleModule.generated.cpp" /><ClCompile Include="Generated\UParticleModuleTypeDataBase.generated.cpp" /></ItemGroup>
+  <ClCompile Include="Generated\UParticleModule.generated.cpp" /><ClCompile Include="Generated\UParticleModuleTypeDataBase.generated.cpp" /><ClCompile Include="Generated\UParticleSystemComponent.generated.cpp" /></ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1055,7 +1055,7 @@
     <ClInclude Include="Generated\ACharacter.generated.h" />
     <ClInclude Include="Generated\UCharacterMovementComponent.generated.h" />
     <ClInclude Include="Generated\UPawnMovementComponent.generated.h" />
-  <ClInclude Include="Generated\UParticleModule.generated.h" /><ClInclude Include="Generated\UParticleModuleTypeDataBase.generated.h" /></ItemGroup>
+  <ClInclude Include="Generated\UParticleModule.generated.h" /><ClInclude Include="Generated\UParticleModuleTypeDataBase.generated.h" /><ClInclude Include="Generated\UParticleSystemComponent.generated.h" /></ItemGroup>
   <ItemGroup>
     <None Include="Tools\CodeGenerator\generate.py" />
     <None Include="Tools\CodeGenerator\lua_generator.py" />
