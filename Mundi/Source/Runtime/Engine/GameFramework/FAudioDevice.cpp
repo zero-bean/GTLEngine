@@ -407,40 +407,40 @@ void FAudioDevice::StopSound(IXAudio2SourceVoice* pSourceVoice)
 
 void FAudioDevice::Preload()
 {
-    const fs::path DataDir(GDataDir + "/Audio");
-    if (!fs::exists(DataDir) || !fs::is_directory(DataDir))
+    fs::path DataDir = fs::path(UTF8ToWide(GDataDir + "/Audio"));
+    std::error_code Ec;
+    if (!fs::exists(DataDir, Ec) || Ec || !fs::is_directory(DataDir, Ec))
     {
-        UE_LOG("FAudioDevice::Preload: Data directory not found: %s", DataDir.string().c_str());
+        UE_LOG("FAudioDevice::Preload: Data directory not found: %s", (GDataDir + "/Audio").c_str());
         return;
     }
 
     size_t LoadedCount = 0;
-    std::unordered_set<FString> ProcessedFiles; //중복 로딩 방지
+    std::unordered_set<FString> ProcessedFiles;
 
-    for (const auto& Entry : fs::recursive_directory_iterator(DataDir))
+    fs::recursive_directory_iterator It(DataDir, fs::directory_options::skip_permission_denied, Ec);
+    fs::recursive_directory_iterator End;
+    for (; !Ec && It != End; It.increment(Ec))
     {
-        if (!Entry.is_regular_file())
-            continue;
+        const fs::directory_entry& Entry = *It;
+        if (!Entry.is_regular_file(Ec)) continue;
 
         const fs::path& Path = Entry.path();
-        FString Extension = Path.extension().string();
-        std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        FWideString WExt = Path.extension().wstring();
+        for (auto& Ch : WExt) Ch = static_cast<wchar_t>(::towlower(Ch));
 
-        if (Extension == ".wav")
+        FString PathStr = NormalizePath(WideToUTF8(Path.wstring()));
+
+        if (WExt == L".wav")
         {
-            FString PathStr = NormalizePath(Path.string());
-
-            // 이미 처리된 파일인지 확인
-            if (ProcessedFiles.find(PathStr) == ProcessedFiles.end())
+            if (ProcessedFiles.insert(PathStr).second)
             {
-                ProcessedFiles.insert(PathStr);
-                // Load wav file 
+                UResourceManager::GetInstance().Load<USound>(PathStr);
                 ++LoadedCount;
-                UResourceManager::GetInstance().Load<USound>(Path.string());
             }
         }
     }
-    RESOURCE.SetAudioFiles();
 
-    UE_LOG("FAudioDevice::Preload: Loaded %zu .wav files from %s", LoadedCount, DataDir.string().c_str());
+    RESOURCE.SetAudioFiles();
+    UE_LOG("FAudioDevice::Preload: Loaded %zu .wav files from %s", LoadedCount, (GDataDir + "/Audio").c_str());
 }

@@ -734,12 +734,28 @@ static inline FString ToUtf8(const FString& Ansi)
 
     // ANSI -> Wide
     int WideLen = MultiByteToWideChar(CP_ACP, 0, Ansi.c_str(), -1, nullptr, 0);
+    if (WideLen <= 0)
+    {
+        return {};
+    }
     FWideString Wide(static_cast<SIZE_T>(WideLen - 1), L'\0');
-    MultiByteToWideChar(CP_ACP, 0, Ansi.c_str(), -1, Wide.data(), WideLen);
+    int CopiedWide = MultiByteToWideChar(CP_ACP, 0, Ansi.c_str(), -1, Wide.data(), WideLen);
+    if (CopiedWide <= 0)
+    {
+        return {};
+    }
 
     // Wide -> UTF-8
     int Utf8Len = WideCharToMultiByte(CP_UTF8, 0, Wide.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (Utf8Len <= 0)
+    {
+        return {};
+    }
     FString Utf8(static_cast<SIZE_T>(Utf8Len - 1), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, Wide.c_str(), -1, Utf8.data(), Utf8Len, nullptr, nullptr);
+    int CopiedUtf8 = WideCharToMultiByte(CP_UTF8, 0, Wide.c_str(), -1, Utf8.data(), Utf8Len, nullptr, nullptr);
+    if (CopiedUtf8 <= 0)
+    {
+        return {};
+    }
     return Utf8;
 }
