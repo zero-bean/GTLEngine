@@ -99,6 +99,8 @@ public:
 	// ParticleSystemComponent 헤더가 방대해질 가능성이 높음, 인터페이스를 만들어야 함.
 	FParticleSpriteEmitterInstance(UParticleSystemComponent* InComponent);
 	FDynamicEmitterDataBase* GetDynamicData(bool bSelected) override;
+
+	void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData);
 };
 
 struct FParticleMeshEmitterInstance : FParticleEmitterInstance

@@ -49,8 +49,9 @@ UParticleSystem* UParticleSystem::GetTestParticleSystem()
 		Required->EmitterLoops = 0;
 
 		UParticleModuleColor* ColorModule = NewObject<UParticleModuleColor>();
-		ColorModule->StartColor.Operation = EDistributionMode::DOP_Constant;
-		ColorModule->StartColor.Constant = FVector(1.0f,1.0f,1.0f);
+		ColorModule->StartColor.Operation = EDistributionMode::DOP_Uniform;
+		ColorModule->StartColor.Min = FVector(0.0f,0.0f,0.0f);
+		ColorModule->StartColor.Max = FVector(1.0f,1.0f,1.0f);
 
 		UParticleModuleLifetime* LifetimeModule = NewObject<UParticleModuleLifetime>();
 		LifetimeModule->LifeTime.Operation = EDistributionMode::DOP_Uniform;
@@ -73,8 +74,8 @@ UParticleSystem* UParticleSystem::GetTestParticleSystem()
 
 		UParticleModuleVelocity* VelocityModule = NewObject<UParticleModuleVelocity>();
 		VelocityModule->StartVelocity.Operation = EDistributionMode::DOP_Uniform;
-		VelocityModule->StartVelocity.Min = FVector(-1, -1, -1);
-		VelocityModule->StartVelocity.Max = FVector(1, 1, 1);
+		VelocityModule->StartVelocity.Min = FVector(-10, -10, -10);
+		VelocityModule->StartVelocity.Max = FVector(10, 10, 10);
 
 		UParticleModuleRotation* RotationModule = NewObject<UParticleModuleRotation>();
 		RotationModule->StartRotation.Operation = EDistributionMode::DOP_Uniform;

@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_StandAlone|x64">
@@ -325,6 +325,12 @@ start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(Sol
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_StandAlone|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\Particles\SpriteParticle.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_StandAlone|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\PostProcess\GammaCorrection_PS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -405,6 +411,7 @@ start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(Sol
     <ClCompile Include="Source\Runtime\Engine\SkeletalViewer\ViewerState.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\FSkeletalViewerViewportClient.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\LightManager.cpp" />
+    <ClCompile Include="Source\Runtime\Renderer\ParticleRenderer.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\PostProcessing\GammaPass.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\PostProcessing\HeightFogPass.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\PostProcessing\FadeInOutPass.cpp" />
@@ -615,7 +622,18 @@ start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(Sol
     <ClCompile Include="Generated\UParticleModule.generated.cpp" />
     <ClCompile Include="Generated\UParticleModuleTypeDataBase.generated.cpp" />
     <ClCompile Include="Generated\UParticleSystemComponent.generated.cpp" />
-  <ClCompile Include="Generated\UParticleEmitter.generated.cpp" /><ClCompile Include="Generated\UParticleLODLevel.generated.cpp" /><ClCompile Include="Generated\UParticleSystem.generated.cpp" /><ClCompile Include="Generated\UParticleModuleColor.generated.cpp" /><ClCompile Include="Generated\UParticleModuleLifetime.generated.cpp" /><ClCompile Include="Generated\UParticleModuleLocation.generated.cpp" /><ClCompile Include="Generated\UParticleModuleRequired.generated.cpp" /><ClCompile Include="Generated\UParticleModuleRotation.generated.cpp" /><ClCompile Include="Generated\UParticleModuleSize.generated.cpp" /><ClCompile Include="Generated\UParticleModuleSpawn.generated.cpp" /><ClCompile Include="Generated\UParticleModuleVelocity.generated.cpp" /></ItemGroup>
+    <ClCompile Include="Generated\UParticleEmitter.generated.cpp" />
+    <ClCompile Include="Generated\UParticleLODLevel.generated.cpp" />
+    <ClCompile Include="Generated\UParticleSystem.generated.cpp" />
+    <ClCompile Include="Generated\UParticleModuleColor.generated.cpp" />
+    <ClCompile Include="Generated\UParticleModuleLifetime.generated.cpp" />
+    <ClCompile Include="Generated\UParticleModuleLocation.generated.cpp" />
+    <ClCompile Include="Generated\UParticleModuleRequired.generated.cpp" />
+    <ClCompile Include="Generated\UParticleModuleRotation.generated.cpp" />
+    <ClCompile Include="Generated\UParticleModuleSize.generated.cpp" />
+    <ClCompile Include="Generated\UParticleModuleSpawn.generated.cpp" />
+    <ClCompile Include="Generated\UParticleModuleVelocity.generated.cpp" />
+  </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -893,6 +911,7 @@ start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(Sol
     <ClInclude Include="Source\Runtime\Engine\Components\PointLightComponent.h" />
     <ClInclude Include="Source\Runtime\Engine\Components\SpotLightComponent.h" />
     <ClInclude Include="Source\Runtime\Renderer\MeshBatchElement.h" />
+    <ClInclude Include="Source\Runtime\Renderer\ParticleRenderer.h" />
     <ClInclude Include="Source\Runtime\Renderer\PostProcessing\GammaPass.h" />
     <ClInclude Include="Source\Runtime\Renderer\PostProcessing\HeightFogPass.h" />
     <ClInclude Include="Source\Runtime\Renderer\PostProcessing\FadeInOutPass.h" />
@@ -1069,7 +1088,18 @@ start /B powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$(Sol
     <ClInclude Include="Generated\UParticleModule.generated.h" />
     <ClInclude Include="Generated\UParticleModuleTypeDataBase.generated.h" />
     <ClInclude Include="Generated\UParticleSystemComponent.generated.h" />
-  <ClInclude Include="Generated\UParticleEmitter.generated.h" /><ClInclude Include="Generated\UParticleLODLevel.generated.h" /><ClInclude Include="Generated\UParticleSystem.generated.h" /><ClInclude Include="Generated\UParticleModuleColor.generated.h" /><ClInclude Include="Generated\UParticleModuleLifetime.generated.h" /><ClInclude Include="Generated\UParticleModuleLocation.generated.h" /><ClInclude Include="Generated\UParticleModuleRequired.generated.h" /><ClInclude Include="Generated\UParticleModuleRotation.generated.h" /><ClInclude Include="Generated\UParticleModuleSize.generated.h" /><ClInclude Include="Generated\UParticleModuleSpawn.generated.h" /><ClInclude Include="Generated\UParticleModuleVelocity.generated.h" /></ItemGroup>
+    <ClInclude Include="Generated\UParticleEmitter.generated.h" />
+    <ClInclude Include="Generated\UParticleLODLevel.generated.h" />
+    <ClInclude Include="Generated\UParticleSystem.generated.h" />
+    <ClInclude Include="Generated\UParticleModuleColor.generated.h" />
+    <ClInclude Include="Generated\UParticleModuleLifetime.generated.h" />
+    <ClInclude Include="Generated\UParticleModuleLocation.generated.h" />
+    <ClInclude Include="Generated\UParticleModuleRequired.generated.h" />
+    <ClInclude Include="Generated\UParticleModuleRotation.generated.h" />
+    <ClInclude Include="Generated\UParticleModuleSize.generated.h" />
+    <ClInclude Include="Generated\UParticleModuleSpawn.generated.h" />
+    <ClInclude Include="Generated\UParticleModuleVelocity.generated.h" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="Tools\CodeGenerator\generate.py" />
     <None Include="Tools\CodeGenerator\lua_generator.py" />

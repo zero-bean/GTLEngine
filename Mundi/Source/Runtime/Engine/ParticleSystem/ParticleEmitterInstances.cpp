@@ -173,7 +173,7 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 
 	// 파티클 나이 먹이기(메모리 관리는 KillParticles에서 함)
 	BEGIN_UPDATE_LOOP
-		Particle.RelativeTime = DeltaTime * Particle.OneOverMaxLiftTime;
+		Particle.RelativeTime += DeltaTime * Particle.OneOverMaxLiftTime;
 	END_UPDATE_LOOP
 
 	// 모듈 업데이트
@@ -405,6 +405,21 @@ FParticleSpriteEmitterInstance::FParticleSpriteEmitterInstance(UParticleSystemCo
 FDynamicEmitterDataBase* FParticleSpriteEmitterInstance::GetDynamicData(bool bSelected)
 {
 	return nullptr;
+}
+
+void FParticleSpriteEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData)
+{
+	BEGIN_UPDATE_LOOP
+		FSpriteParticleInstance NewInstance;
+		NewInstance.Color = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, 1.0f);
+
+		NewInstance.LifeTime = Particle.Lifetime;
+		NewInstance.Position = Particle.Location;
+		NewInstance.Rotation = Particle.Rotation;
+		NewInstance.Size = Particle.Size.X;
+
+		ParticleInstanceData.Add(NewInstance);
+	END_UPDATE_LOOP
 }
 
 

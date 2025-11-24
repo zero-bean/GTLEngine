@@ -28,6 +28,7 @@ class UGizmoArrowComponent;
 class FSceneView;
 class FTileLightCuller;
 class ULineComponent;
+class UParticleSystemComponent;
 
 struct FCandidateDrawable;
 
@@ -39,6 +40,7 @@ struct FVisibleRenderProxySet
 	TArray<UBillboardComponent*> Billboards; // 인게임 빌보드 (파티클, 잔디 등)
 	TArray<UDecalComponent*> Decals;
 	TArray<UTextRenderComponent*> Texts;
+	TArray<UParticleSystemComponent*> Particles;
 
 	// --- Type 2: In-Scene Editor (PP X, Depth-Test O) ---
 	TArray<ULineComponent*> EditorLines;	// 그리드
@@ -131,6 +133,7 @@ private:
 	FSceneView* View;
 	URenderer* OwnerRenderer;
 	D3D11RHI* RHIDevice;
+	class FParticleRenderer* ParticleRenderer = nullptr;
 
 	// 수집된 렌더링 대상 목록
 	FVisibleRenderProxySet Proxies;

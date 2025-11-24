@@ -82,6 +82,8 @@ public:
 	template<typename TVertex>
 	static HRESULT CreateVertexBuffer(ID3D11Device* device, const std::vector<FSkinnedVertex>& srcVertices, ID3D11Buffer** outBuffer);
 
+	static HRESULT CreateVertexBufferWithSize(ID3D11Device* Device, ID3D11Buffer** OutBuffer, UINT ByteWidth, D3D11_USAGE Usage, UINT CpuAccessFlags);
+
 	static HRESULT CreateIndexBuffer(ID3D11Device* device, const FMeshData* meshData, ID3D11Buffer** outBuffer);
 
 	static HRESULT CreateIndexBuffer(ID3D11Device* device, const FStaticMesh* mesh, ID3D11Buffer** outBuffer);
@@ -451,4 +453,15 @@ template<>
 inline HRESULT D3D11RHI::CreateVertexBuffer<FSkinnedVertex>(ID3D11Device* Device, const std::vector<FSkinnedVertex>& SrcVertices, ID3D11Buffer** OutBuffer)
 {
 	return CreateVertexBufferImpl<FSkinnedVertex>(Device, SrcVertices, OutBuffer, D3D11_USAGE_DEFAULT, 0);
+}
+
+inline HRESULT D3D11RHI::CreateVertexBufferWithSize(ID3D11Device* Device, ID3D11Buffer** OutBuffer, UINT ByteWidth, D3D11_USAGE Usage, UINT CpuAccessFlags)
+{
+	D3D11_BUFFER_DESC BufferDesc = {};
+	BufferDesc.Usage = Usage;
+	BufferDesc.ByteWidth = ByteWidth;
+	BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	BufferDesc.CPUAccessFlags = CpuAccessFlags;
+
+	return Device->CreateBuffer(&BufferDesc, nullptr, OutBuffer);
 }

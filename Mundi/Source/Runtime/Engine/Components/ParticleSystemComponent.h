@@ -16,6 +16,13 @@ public:
 	// 스폰 멈추기
 	bool bSuppressSpawning = false;
 
+	TArray<FParticleEmitterInstance*> EmitterInstances;
+
+	UParticleSystem* Template = nullptr;
+
+	TArray<FDynamicEmitterDataBase*> EmitterRenderDatas;
+
+
 	UParticleSystemComponent();
 
 	~UParticleSystemComponent();
@@ -34,12 +41,5 @@ public:
 
 	void ResetParticles();
 
-	
-private:
 
-	TArray<FParticleEmitterInstance*> EmitterInstances;
-
-	UParticleSystem* Template = nullptr;
-
-	TArray<FDynamicEmitterDataBase*> EmitterRenderDatas;
 };
