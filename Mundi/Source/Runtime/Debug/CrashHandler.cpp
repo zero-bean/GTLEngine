@@ -209,10 +209,25 @@ void FCrashHandler::WriteMiniDump(EXCEPTION_POINTERS* ExceptionInfo)
 	);
 
 	// 덤프 작성
-	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), 
+	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
 		HFile, DumpType, ExceptionInfo ? &DumpInfo : nullptr, NULL, NULL);
 
 	CloseHandle(HFile);
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// 덤프 파일과 같은 폴더에 EXE 복사 (다른 PC에서 바로 분석 가능하도록)
+	std::filesystem::path ExeDestPath = DumpPath.parent_path() / L"Mundi.exe";
+
+	try {
+		// 현재 실행 중인 exe 복사
+		std::filesystem::copy_file(ExePath, ExeDestPath, std::filesystem::copy_options::overwrite_existing);
+		OutputDebugStringW(L"[CrashHandler] Copied exe to crash folder for analysis\n");
+	}
+	catch (const std::exception&) {
+		// 복사 실패해도 덤프는 생성됨
+		OutputDebugStringW(L"[CrashHandler] Warning: Failed to copy exe\n");
+	}
+
 	g_bWritingDump.store(false);
 }
 
