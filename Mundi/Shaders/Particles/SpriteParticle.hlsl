@@ -34,10 +34,14 @@ PS_INPUT mainVS(VS_INPUT Input)
 {
     PS_INPUT Output;
 
+    
     float3 CameraRight = float3(InverseViewMatrix._11, InverseViewMatrix._12, InverseViewMatrix._13);
     float3 CameraUp = float3(InverseViewMatrix._21, InverseViewMatrix._22, InverseViewMatrix._23);
-
-    float3 FinalPos = Input.WorldPos + (CameraRight * Input.Position.x * Input.Size) + (CameraUp * Input.Position.y * Input.Size);
+    
+    float3 PositionRotated = Input.Position;
+    PositionRotated.x = Input.Position.x * cos(Input.Rotation) - Input.Position.y * sin(Input.Rotation);
+    PositionRotated.y = Input.Position.x * sin(Input.Rotation) + Input.Position.y * cos(Input.Rotation);
+    float3 FinalPos = Input.WorldPos + (CameraRight * PositionRotated.x * Input.Size) + (CameraUp * PositionRotated.y * Input.Size);
 
     float4 ViewPos = mul(float4(FinalPos, 1.0), ViewMatrix);
     Output.Position = mul(ViewPos, ProjectionMatrix);

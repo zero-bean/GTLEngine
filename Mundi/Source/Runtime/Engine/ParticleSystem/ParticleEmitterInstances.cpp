@@ -415,7 +415,7 @@ void FParticleSpriteEmitterInstance::GetParticleInstanceData(TArray<FSpriteParti
 
 		NewInstance.LifeTime = Particle.Lifetime;
 		NewInstance.Position = Particle.Location;
-		NewInstance.Rotation = Particle.Rotation;
+		NewInstance.Rotation = DegreesToRadians(Particle.Rotation);
 		NewInstance.Size = Particle.Size.X;
 
 		ParticleInstanceData.Add(NewInstance);
