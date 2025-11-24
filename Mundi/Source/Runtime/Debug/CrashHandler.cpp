@@ -198,7 +198,7 @@ void FCrashHandler::WriteMiniDump(EXCEPTION_POINTERS* ExceptionInfo)
 		return;
 	}
 
-	// 덤프 타입 (경량 덤프 - exe/dll 없이도 디버깅 가능, 소스 서버 지원)
+	// 덤프 타입
 	MINIDUMP_EXCEPTION_INFORMATION DumpInfo = { GetCurrentThreadId(), ExceptionInfo, FALSE };
 	MINIDUMP_TYPE DumpType = static_cast<MINIDUMP_TYPE>(
 		MiniDumpNormal |

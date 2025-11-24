@@ -110,13 +110,28 @@ function Get-PdbGuid {
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 심볼 서버에 이미 존재하는지 확인
 $PdbFileName = [System.IO.Path]::GetFileName($PdbPath)
+$ExeFileName = [System.IO.Path]::GetFileName($ExePath)
 $PdbSignature = Get-PdbGuid -ExePath $ExePath
+
+$PdbExists = $false
+$ExeExists = $false
 
 if ($PdbSignature) {
     $ServerPdbPath = Join-Path $SymbolServer "$PdbFileName\$PdbSignature\$PdbFileName"
+    $ServerExePath = Join-Path $SymbolServer "$ExeFileName\$PdbSignature\$ExeFileName"
 
     if (Test-Path $ServerPdbPath) {
-        Write-Host "[SymbolUpload] Symbol already exists on server: $PdbFileName" -ForegroundColor Green
+        Write-Host "[SymbolUpload] PDB already exists on server: $PdbFileName" -ForegroundColor Green
+        $PdbExists = $true
+    }
+
+    if (Test-Path $ServerExePath) {
+        Write-Host "[SymbolUpload] EXE already exists on server: $ExeFileName" -ForegroundColor Green
+        $ExeExists = $true
+    }
+
+    if ($PdbExists -and $ExeExists) {
+        Write-Host "[SymbolUpload] Both PDB and EXE already exist on server" -ForegroundColor Green
         exit 0
     }
 }
@@ -125,21 +140,47 @@ if ($PdbSignature) {
 # 심볼 서버에 업로드
 Write-Host "[SymbolUpload] Uploading symbols to server..." -ForegroundColor Cyan
 
-$Args = @(
-    "add",
-    "/f", "`"$PdbPath`"",
-    "/s", "`"$SymbolServer`"",
-    "/t", "`"$ProductName`"",
-    "/v", "`"$Version`"",
-    "/compress"
-)
+# PDB 파일 업로드
+if (-not $PdbExists) {
+    $PdbArgs = @(
+        "add",
+        "/f", "`"$PdbPath`"",
+        "/s", "`"$SymbolServer`"",
+        "/t", "`"$ProductName`"",
+        "/v", "`"$Version`"",
+        "/compress"
+    )
 
-$Process = Start-Process -FilePath $SymstoreExe -ArgumentList $Args -Wait -PassThru -NoNewWindow
+    $Process = Start-Process -FilePath $SymstoreExe -ArgumentList $PdbArgs -Wait -PassThru -NoNewWindow
 
-if ($Process.ExitCode -eq 0) {
-    Write-Host "[SymbolUpload] Upload successful: $PdbFileName" -ForegroundColor Green
-} else {
-    Write-Host "[SymbolUpload] Upload failed with code $($Process.ExitCode)" -ForegroundColor Red
+    if ($Process.ExitCode -eq 0) {
+        Write-Host "[SymbolUpload] PDB upload successful: $PdbFileName" -ForegroundColor Green
+    } else {
+        Write-Host "[SymbolUpload] PDB upload failed with code $($Process.ExitCode)" -ForegroundColor Red
+        exit 0  # 실패해도 빌드는 성공
+    }
+}
+
+# EXE 파일 업로드
+if (-not $ExeExists) {
+    Write-Host "[SymbolUpload] Uploading executable to server..." -ForegroundColor Cyan
+
+    $ExeArgs = @(
+        "add",
+        "/f", "`"$ExePath`"",
+        "/s", "`"$SymbolServer`"",
+        "/t", "`"$ProductName`"",
+        "/v", "`"$Version`"",
+        "/compress"
+    )
+
+    $Process = Start-Process -FilePath $SymstoreExe -ArgumentList $ExeArgs -Wait -PassThru -NoNewWindow
+
+    if ($Process.ExitCode -eq 0) {
+        Write-Host "[SymbolUpload] EXE upload successful: $ExeFileName" -ForegroundColor Green
+    } else {
+        Write-Host "[SymbolUpload] EXE upload failed with code $($Process.ExitCode)" -ForegroundColor Red
+    }
 }
 
 exit 0  # 실패해도 빌드는 성공
