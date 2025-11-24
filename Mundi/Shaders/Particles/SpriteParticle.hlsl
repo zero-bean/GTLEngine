@@ -27,12 +27,15 @@ struct PS_INPUT
     float LifeTime : TEXCOORD1;
 };
 
+Texture2D SpriteTex : register(t0);
+SamplerState LinearSampler : register(s0);
+
 PS_INPUT mainVS(VS_INPUT Input)
 {
     PS_INPUT Output;
 
-    float3 CameraRight = float3(ViewMatrix._11, ViewMatrix._12, ViewMatrix._13);
-    float3 CameraUp = float3(ViewMatrix._21, ViewMatrix._22, ViewMatrix._23);
+    float3 CameraRight = float3(InverseViewMatrix._11, InverseViewMatrix._12, InverseViewMatrix._13);
+    float3 CameraUp = float3(InverseViewMatrix._21, InverseViewMatrix._22, InverseViewMatrix._23);
 
     float3 FinalPos = Input.WorldPos + (CameraRight * Input.Position.x * Input.Size) + (CameraUp * Input.Position.y * Input.Size);
 
@@ -47,7 +50,8 @@ PS_INPUT mainVS(VS_INPUT Input)
 
 float4 mainPS(PS_INPUT Input) : SV_Target
 {
-    return Input.Color;
+    float4 Color = SpriteTex.Sample(LinearSampler, Input.TexCoord);
+    return Color * Input.Color;
     // float2 Center = float2(0.5, 0.5);
     // float Distance = distance(Input.TexCoord, Center);
     //

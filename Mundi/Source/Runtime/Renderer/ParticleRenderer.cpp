@@ -3,6 +3,7 @@
 #include "ParticleSystemComponent.h"
 #include "ParticleEmitterInstances.h"
 #include "ParticleLODLevel.h"
+#include "ParticleEmitter.h"
 #include "SceneView.h"
 
 FParticleRenderer::FParticleRenderer()
@@ -87,8 +88,9 @@ void FParticleRenderer::RenderParticles(const FSceneView* View, const TArray<UPa
     // PS 리소스 초기화
     ID3D11ShaderResourceView* NullSRVs[] = { nullptr };
     DeviceContext->PSSetShaderResources(0, 1, NullSRVs);
-    ID3D11SamplerState* NullSamplers[] = { nullptr };
-    DeviceContext->PSSetSamplers(0, 1, NullSamplers);
+
+    ID3D11SamplerState* DefaultSampler = RHI->GetSamplerState(RHI_Sampler_Index::Default);
+    DeviceContext->PSSetSamplers(0, 1, &DefaultSampler);
 
     DeviceContext->VSSetShader(CurrentVariant->VertexShader, nullptr, 0);
     DeviceContext->PSSetShader(CurrentVariant->PixelShader, nullptr, 0);
@@ -129,10 +131,29 @@ void FParticleRenderer::RenderParticles(const FSceneView* View, const TArray<UPa
 
                 DeviceContext->IASetVertexBuffers(1, 1, &InstanceBuffer, &InstanceStride, &Offset);
 
-                // TODO: 이미터마다 머티리얼 갈아끼우기
+                ID3D11ShaderResourceView* DiffuseTextureSRV = nullptr;
+                
+                UMaterialInterface* Material = Emitter->CurrentMaterial;
+                // 아래 if문은 테스트용임. 원래 머티리얼이 그냥 텍스처를 가지고 있어야 함.
+                if (Emitter->InstanceSRV)
+                {
+                    DiffuseTextureSRV = Emitter->InstanceSRV;
+                }
+                // 2순위: 머티리얼 텍스처 (스태틱 메시)
+                else if (Material)
+                {
+                    const FMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
+                    if (!MaterialInfo.DiffuseTextureFileName.empty())
+                    {
+                        if (UTexture* TextureData = Material->GetTexture(EMaterialTextureSlot::Diffuse))
+                        {
+                            DiffuseTextureSRV = TextureData->GetShaderResourceView();
+                        }
+                    }
+                }
+
+                DeviceContext->PSSetShaderResources(0, 1, &DiffuseTextureSRV);
                 DeviceContext->DrawIndexedInstanced(6, (UINT)ParticleInstanceData.Num(), 0, 0, 0);
-
-
             }
         }
     }

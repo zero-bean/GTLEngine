@@ -43,8 +43,7 @@ UParticleSystem* UParticleSystem::GetTestParticleSystem()
 		LODLevel->bEnabled = true;
 
 		UParticleModuleRequired* Required = NewObject<UParticleModuleRequired>();
-
-		Required->Material = UResourceManager::GetInstance().GetDefaultMaterial();
+		Required->Material = UResourceManager::GetInstance().Load<UMaterial>("Shaders/UI/Billboard.hlsl");
 		Required->EmitterDuration = 2.0f;
 		Required->EmitterLoops = 0;
 

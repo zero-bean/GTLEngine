@@ -92,8 +92,11 @@ void UParticleSystemComponent::InitParticles()
 		for (UParticleEmitter* Emitter : Template->Emitters)
 		{
 			FParticleEmitterInstance* NewInstance = Emitter->CreateInstance(this);
+			// 테스트용 텍스처
+			NewInstance->InstanceSRV = UResourceManager::GetInstance().Load<UTexture>(GDataDir + "/Textures/jin.png")->GetShaderResourceView();
 
 			NewInstance->Init();
+
 			EmitterInstances.Add(NewInstance);
 		}
 

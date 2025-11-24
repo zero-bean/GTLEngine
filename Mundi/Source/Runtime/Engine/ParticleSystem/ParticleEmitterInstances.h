@@ -54,6 +54,9 @@ public:
 
 	UMaterialInterface* CurrentMaterial = nullptr;
 
+	// 테스트용 텍스처
+	ID3D11ShaderResourceView* InstanceSRV = nullptr;
+
 	float EmitterTime = 0.0f;
 
 	// 이미터 루프 다 끝났는지 확인(끝나도 파티클이 남아있을 수 있음, 소멸 여부는 HasComplete함수가 결정)
