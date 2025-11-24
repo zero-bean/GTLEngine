@@ -1,8 +1,10 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "SymbolServerManager.h"
 #include <sstream>
 #include <fstream>
 #include <iomanip>
+#include <thread>
+#include <chrono>
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Static 멤버 변수
@@ -11,26 +13,86 @@ std::wstring FSymbolServerManager::s_SymbolServerPath;
 bool FSymbolServerManager::s_bInitialized = false;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 네트워크 경로 핑 체크 (3번 시도)
+bool FSymbolServerManager::PingNetworkPath(const std::wstring& NetworkPath, DWORD TimeoutMs)
+{
+	if (NetworkPath.empty()) return false;
+
+	// 3번 시도
+	for (int i = 0; i < 3; ++i)
+	{
+		// GetFileAttributesW를 비동기적으로 호출하기 위해 스레드 사용
+		DWORD Attributes = INVALID_FILE_ATTRIBUTES;
+		bool bCompleted = false;
+
+		std::thread PingThread([&]() {
+			Attributes = GetFileAttributesW(NetworkPath.c_str());
+			bCompleted = true;
+		});
+
+		// 타임아웃 대기
+		auto Start = std::chrono::steady_clock::now();
+		while (!bCompleted)
+		{
+			auto Elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+				std::chrono::steady_clock::now() - Start).count();
+
+			if (Elapsed > TimeoutMs)
+			{
+				// 타임아웃 발생 - 스레드는 백그라운드에서 계속 실행되지만 기다리지 않음
+				PingThread.detach();
+				break;
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
+
+		// 성공하면 즉시 반환
+		if (bCompleted && Attributes != INVALID_FILE_ATTRIBUTES)
+		{
+			if (PingThread.joinable()) PingThread.join();
+			return true;
+		}
+
+		// 실패한 경우 스레드가 아직 실행 중이면 detach
+		if (PingThread.joinable()) PingThread.join();
+	}
+
+	return false;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 초기화
 void FSymbolServerManager::Initialize(const std::wstring& LocalCachePath, const std::wstring& SymbolServerPath)
 {
 	s_LocalCachePath = LocalCachePath;
-	s_SymbolServerPath = SymbolServerPath;
 
 	// 로컬 캐시 디렉토리 생성
 	std::filesystem::create_directories(s_LocalCachePath);
 
-	s_bInitialized = true;
-
-	if (s_SymbolServerPath.empty())
+	// 심볼 서버가 지정된 경우 핑 체크
+	if (!SymbolServerPath.empty())
 	{
-		wprintf(L"[SymbolServer] Initialized with local cache only (server unavailable)\n");
+		wprintf(L"[SymbolServer] Checking server availability: %s\n", SymbolServerPath.c_str());
+
+		if (PingNetworkPath(SymbolServerPath, 100))
+		{
+			s_SymbolServerPath = SymbolServerPath;
+			wprintf(L"[SymbolServer] Initialized: Cache=%s, Server=%s\n",
+				s_LocalCachePath.c_str(), s_SymbolServerPath.c_str());
+		}
+		else
+		{
+			s_SymbolServerPath = L"";
+			wprintf(L"[SymbolServer] Server unavailable (timeout after 3 attempts), using local cache only\n");
+		}
 	}
 	else
 	{
-		wprintf(L"[SymbolServer] Initialized: Cache=%s, Server=%s\n",
-			s_LocalCachePath.c_str(), s_SymbolServerPath.c_str());
+		s_SymbolServerPath = L"";
+		wprintf(L"[SymbolServer] Initialized with local cache only (no server specified)\n");
 	}
+
+	s_bInitialized = true;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

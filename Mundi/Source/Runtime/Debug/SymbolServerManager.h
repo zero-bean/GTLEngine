@@ -94,6 +94,14 @@ public:
 	 */
 	static std::wstring FindSymstoreExe();
 
+	/**
+	 * @brief 네트워크 경로에 핑 체크 (3번 시도)
+	 * @param NetworkPath 네트워크 경로 (예: \\PC-NAME\SymbolServer)
+	 * @param TimeoutMs 각 핑의 타임아웃 (밀리초)
+	 * @return 응답이 있으면 true, 3번 모두 실패하면 false
+	 */
+	static bool PingNetworkPath(const std::wstring& NetworkPath, DWORD TimeoutMs = 100);
+
 private:
 	static std::wstring s_LocalCachePath;    // 로컬 심볼 캐시
 	static std::wstring s_SymbolServerPath;  // 네트워크 심볼 서버
