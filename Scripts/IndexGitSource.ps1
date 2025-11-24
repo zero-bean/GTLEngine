@@ -54,6 +54,15 @@ if ([string]::IsNullOrEmpty($GitRepoUrl)) {
     $GitRepoUrl = "LOCAL_REPO"
 }
 
+# GitHub URL을 raw.githubusercontent.com 형식으로 변환
+$GitRawUrl = $GitRepoUrl
+if ($GitRepoUrl -match "github\.com[:/](.+)/(.+?)(\.git)?$") {
+    $GitUser = $matches[1]
+    $GitRepo = $matches[2]
+    $GitRawUrl = "https://raw.githubusercontent.com/$GitUser/$GitRepo"
+    Write-Host "[GitIndex] Converted to Raw URL: $GitRawUrl" -ForegroundColor Cyan
+}
+
 Pop-Location
 
 Write-Host "[GitIndex] Commit: $CommitHash" -ForegroundColor Cyan
@@ -76,11 +85,13 @@ Write-Host "[GitIndex] Found $($SourceFiles.Count) source files" -ForegroundColo
 $SrcSrvStream = @"
 SRCSRV: ini ------------------------------------------------
 VERSION=2
-VERCTRL=git
+VERCTRL=http
 SRCSRV: variables ------------------------------------------
+HTTP_EXTRACT_TARGET=%targ%\%var2%\%fnbksl%(%var3%)
 GIT_COMMIT=$CommitHash
-GIT_REPO=$GitRepoUrl
-SRCSRVTRG=%GIT_REPO%/raw/%GIT_COMMIT%/%var2%
+GIT_RAW_URL=$GitRawUrl
+SRCSRVTRG=%HTTP_EXTRACT_TARGET%
+SRCSRVCMD=cmd /c powershell -ExecutionPolicy Bypass -Command "try { `$null = New-Item -ItemType Directory -Path (Split-Path '%HTTP_EXTRACT_TARGET%') -Force -ErrorAction SilentlyContinue; Invoke-WebRequest -Uri '%GIT_RAW_URL%/%var2%/%var3%' -OutFile '%HTTP_EXTRACT_TARGET%' -UseBasicParsing -TimeoutSec 10 } catch { Write-Host 'Download failed' }"
 SRCSRV: source files ---------------------------------------
 "@
 
@@ -94,8 +105,8 @@ foreach ($File in $SourceFiles) {
         $RelativePath = $File.Substring($SourceRoot.Length).TrimStart('\')
         $RelativePath = $RelativePath.Replace('\', '/')
 
-        # 형식: 절대경로*상대경로
-        $SrcSrvStream += "$File*$RelativePath`n"
+        # 형식: 절대경로*커밋해시*상대경로
+        $SrcSrvStream += "$File*$CommitHash*$RelativePath`n"
     }
 }
 
