@@ -58,6 +58,9 @@
     <FxCompile Include="Shaders\Utility\SceneDepth_PS.hlsl">
       <Filter>Shaders\Utility</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Particles\SpriteParticle.hlsl">
+      <Filter>Shaders\Particles</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -156,6 +159,9 @@
       <Filter>Source\Runtime\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Runtime\Debug\CrashHandler.cpp">
+      <Filter>Source\Runtime\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Debug\SymbolServerManager.cpp">
       <Filter>Source\Runtime\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Runtime\Engine\Animation\AnimationRuntime.cpp">
@@ -890,6 +896,90 @@
     <ClCompile Include="Source\Runtime\Engine\ParticleEditor\ParticleEditorState.cpp">
       <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\Components\ParticleSystemComponent.cpp">
+      <Filter>Source\Runtime\Engine\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleSystem.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleEmitter.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleLODLevel.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleEmitterInstances.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModule.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleColor.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLifetime.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLocation.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotation.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSize.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSpawn.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleVelocity.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Renderer\ParticleRenderer.cpp">
+      <Filter>Source\Runtime\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleEmitter.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleLODLevel.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModule.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleColor.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleLifetime.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleLocation.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleRequired.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleRotation.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleSize.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleSpawn.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleTypeDataBase.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleVelocity.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleSystem.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleSystemComponent.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -984,6 +1074,9 @@
       <Filter>Source\Runtime\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Runtime\Debug\CrashHandler.h">
+      <Filter>Source\Runtime\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Debug\SymbolServerManager.h">
       <Filter>Source\Runtime\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Runtime\Engine\Animation\AnimationRuntime.h">
@@ -1850,6 +1943,102 @@
     <ClInclude Include="Source\Runtime\Engine\ParticleEditor\ParticleEditorState.h">
       <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\Components\ParticleSystemComponent.h">
+      <Filter>Source\Runtime\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleEmitter.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleEmitterInstances.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleHelper.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleLODLevel.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleSystem.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModule.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleColor.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLifetime.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLocation.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRequired.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotation.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSize.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSpawn.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataBase.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleVelocity.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Core\Misc\Distribution.h">
+      <Filter>Source\Runtime\Core\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Renderer\ParticleRenderer.h">
+      <Filter>Source\Runtime\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleEmitter.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleLODLevel.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModule.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleColor.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleLifetime.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleLocation.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleRequired.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleRotation.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleSize.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleSpawn.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleTypeDataBase.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleVelocity.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleSystem.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleSystemComponent.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Tools\CodeGenerator\generate.py">
@@ -1905,6 +2094,12 @@
     <Filter Include="Source\Runtime\Engine\Components">
       <UniqueIdentifier>{98cf3694-45ae-4f4a-8f41-e70c677c60ad}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Runtime\Engine\ParticleSystem">
+      <UniqueIdentifier>{b2930f36-b113-45f8-a7a0-15b8c6a6c21e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Runtime\Engine\ParticleSystem\ParticleModule">
+      <UniqueIdentifier>{7896b021-a651-4e79-8fb2-2d14abd09d8c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Runtime\Engine\GameFramework">
       <UniqueIdentifier>{338e3bed-15bb-45c3-a12f-aa0254ce4e94}</UniqueIdentifier>
     </Filter>
@@ -1952,6 +2147,9 @@
     </Filter>
     <Filter Include="Shaders\Effects">
       <UniqueIdentifier>{f3ce2a14-3a53-45d6-b3ee-ba54ee64fe1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Particles">
+      <UniqueIdentifier>{9fea11b0-adf8-48e8-9ff1-6465c56281b3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shaders\Utility">
       <UniqueIdentifier>{e994b22d-efc4-4e18-9d5b-7472e21bce68}</UniqueIdentifier>

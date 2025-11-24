@@ -129,7 +129,10 @@ static FString FindMtlFilePath(const FString& InObjPath)
  */
 bool GetMtlDependencies(const FString& ObjPath, TArray<FString>& OutMtlFilePaths)
 {
-	// 한글 경로 지원: UTF-8 → UTF-16 변환 후 파일 열기
+	// UTF-8 → Wide 변환 후 wide 기반 filesystem 사용
+	fs::path BaseDir = fs::path(UTF8ToWide(ObjPath)).parent_path();
+	FString Line;
+
 	FWideString WPath = UTF8ToWide(ObjPath);
 	std::ifstream InFile(WPath);
 	if (!InFile.is_open())
@@ -138,23 +141,26 @@ bool GetMtlDependencies(const FString& ObjPath, TArray<FString>& OutMtlFilePaths
 		return false;
 	}
 
-	fs::path BaseDir = fs::path(ObjPath).parent_path();
-	FString Line;
-
 	while (std::getline(InFile, Line))
 	{
-		// 라인 앞뒤의 공백을 제거하여 안정성을 높입니다.
 		Line.erase(0, Line.find_first_not_of(" \t\r\n"));
 		Line.erase(Line.find_last_not_of(" \t\r\n") + 1);
 
-		if (Line.rfind("mtllib ", 0) == 0) // "mtllib "으로 시작하는지 확인
+		if (Line.rfind("mtllib ", 0) == 0)
 		{
-			// "mtllib " 다음의 모든 문자열을 경로로 추출합니다.
 			FString MtlFileName = Line.substr(7);
 			if (!MtlFileName.empty())
 			{
-				fs::path FullPath = fs::weakly_canonical(BaseDir / MtlFileName);
-				FString PathStr = FullPath.string();
+				fs::path FullPath = BaseDir / UTF8ToWide(MtlFileName);
+				std::error_code Ec;
+				fs::path Canonical = fs::weakly_canonical(FullPath, Ec);
+				if (Ec)
+				{
+					UE_LOG("GetMtlDependencies: weakly_canonical failed for %s (error %d)", MtlFileName.c_str(), Ec.value());
+					continue;
+				}
+
+				FString PathStr = WideToUTF8(Canonical.wstring());
 				std::replace(PathStr.begin(), PathStr.end(), '\\', '/');
 				OutMtlFilePaths.AddUnique(NormalizePath(PathStr));
 			}
@@ -172,55 +178,44 @@ bool GetMtlDependencies(const FString& ObjPath, TArray<FString>& OutMtlFilePaths
  */
 bool ShouldRegenerateCache(const FString& ObjPath, const FString& BinPath, const FString& MatBinPath)
 {
-	// 캐시 파일 중 하나라도 존재하지 않으면 무조건 재생성해야 합니다.
-	if (!fs::exists(BinPath) || !fs::exists(MatBinPath))
+	fs::path ObjWide = UTF8ToWide(ObjPath);
+	fs::path BinWide = UTF8ToWide(BinPath);
+	fs::path MatBinWide = UTF8ToWide(MatBinPath);
+
+	std::error_code Ec;
+	if (!fs::exists(BinWide, Ec) || Ec) return true;
+	Ec.clear();
+	if (!fs::exists(MatBinWide, Ec) || Ec) return true;
+
+	auto BinTimestamp = fs::last_write_time(BinWide, Ec);
+	if (Ec) return true;
+
+	auto ObjTimestamp = fs::last_write_time(ObjWide, Ec);
+	if (Ec) return true;
+	if (ObjTimestamp > BinTimestamp) return true;
+
+	TArray<FString> MtlDependencies;
+	if (!GetMtlDependencies(ObjPath, MtlDependencies))
 	{
 		return true;
 	}
 
-	try
+	for (const FString& MtlPath : MtlDependencies)
 	{
-		auto BinTimestamp = fs::last_write_time(BinPath);
-
-		// 1. 원본 .obj 파일의 수정 시간을 캐시 파일과 비교합니다.
-		if (fs::last_write_time(ObjPath) > BinTimestamp)
+		auto MtlTimestamp = fs::last_write_time(UTF8ToWide(MtlPath), Ec);
+		if (Ec || MtlTimestamp > BinTimestamp)
 		{
 			return true;
 		}
-
-		// 2. .obj 파일을 빠르게 스캔하여 의존하는 .mtl 파일 목록을 가져옵니다.
-		TArray<FString> MtlDependencies;
-		if (!GetMtlDependencies(ObjPath, MtlDependencies))
-		{
-			return true; // .obj 파일을 읽을 수 없으면 안전을 위해 캐시를 재생성합니다.
-		}
-
-		// 3. 각 .mtl 파일의 수정 시간을 캐시 파일과 비교합니다.
-		for (const FString& MtlPath : MtlDependencies)
-		{
-			// .mtl 파일이 존재하지 않거나 캐시보다 최신 버전이면 재생성합니다.
-			if (!fs::exists(MtlPath) || fs::last_write_time(MtlPath) > BinTimestamp)
-			{
-				return true;
-			}
-		}
 	}
-	catch (const fs::filesystem_error& e)
-	{
-		// 파일 시스템 오류(예: 접근 권한 없음) 발생 시 안전하게 캐시를 재생성합니다.
-		UE_LOG("Filesystem error during cache validation: %s. Forcing regeneration.", e.what());
-		return true;
-	}
-
-	// 모든 검사를 통과하면 캐시는 유효합니다.
 	return false;
 }
 
 void FObjManager::Preload()
 {
-	const fs::path DataDir(GDataDir);
-
-	if (!fs::exists(DataDir) || !fs::is_directory(DataDir))
+	const fs::path DataDir(UTF8ToWide(GDataDir));
+	std::error_code Ec;
+	if (!fs::exists(DataDir, Ec) || !fs::is_directory(DataDir, Ec))
 	{
 		UE_LOG("FObjManager::Preload: Data directory not found: %s", DataDir.string().c_str());
 		return;
@@ -229,30 +224,34 @@ void FObjManager::Preload()
 	size_t LoadedCount = 0;
 	std::unordered_set<FString> ProcessedFiles; // 중복 로딩 방지
 
-	for (const auto& Entry : fs::recursive_directory_iterator(DataDir))
+	fs::recursive_directory_iterator It(DataDir, fs::directory_options::skip_permission_denied, Ec);
+	fs::recursive_directory_iterator End;
+	for (; !Ec && It != End; It.increment(Ec))
 	{
+		const fs::directory_entry& Entry = *It;
 		if (!Entry.is_regular_file())
 			continue;
 
 		const fs::path& Path = Entry.path();
-		FString Extension = Path.extension().string();
-		std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-
-		if (Extension == ".obj"|| Extension == ".fbx")
+		FWideString WExt = Path.extension().wstring();
+		for (auto& ch : WExt)
 		{
-			FString PathStr = NormalizePath(Path.string());
+			ch = static_cast<wchar_t>(std::tolower(ch));
+		}
 
-			// 이미 처리된 파일인지 확인
-			if (ProcessedFiles.find(PathStr) == ProcessedFiles.end())
+		FString PathStr = NormalizePath(WideToUTF8(Path.wstring()));
+
+		if (WExt == L".ob" || WExt == L".fbx")
+		{
+			if (ProcessedFiles.insert(PathStr).second)
 			{
-				ProcessedFiles.insert(PathStr);
 				LoadObjStaticMesh(PathStr);
 				++LoadedCount;
 			}
 		}
-		else if (Extension == ".dds" || Extension == ".jpg" || Extension == ".png")
+		else if (WExt == L".dds" || WExt == L".jpg" || WExt == L".png")
 		{
-			UResourceManager::GetInstance().Load<UTexture>(Path.string()); // 데칼 텍스쳐를 ui에서 고를 수 있게 하기 위해 임시로 만듬.
+			UResourceManager::GetInstance().Load<UTexture>(PathStr);
 		}
 	}
 

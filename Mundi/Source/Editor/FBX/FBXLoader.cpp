@@ -24,46 +24,44 @@ void UFbxLoader::PreLoad()
 {
 	UFbxLoader& FbxLoader = GetInstance();
 
-	const fs::path DataDir(GDataDir);
-
-	if (!fs::exists(DataDir) || !fs::is_directory(DataDir))
+	fs::path DataDir = fs::path(UTF8ToWide(GDataDir));
+	std::error_code Ec;
+	if (!fs::exists(DataDir, Ec) || Ec || !fs::is_directory(DataDir, Ec))
 	{
-		UE_LOG("UFbxLoader::Preload: Data directory not found: %s", DataDir.string().c_str());
+		UE_LOG("UFbxLoader::Preload: Data directory not found: %s", GDataDir.c_str());
 		return;
 	}
 
 	size_t LoadedCount = 0;
-	std::unordered_set<FString> ProcessedFiles; // 중복 로딩 방지
+	std::unordered_set<FString> ProcessedFiles;
 
-	for (const auto& Entry : fs::recursive_directory_iterator(DataDir))
+	fs::recursive_directory_iterator It(DataDir, fs::directory_options::skip_permission_denied, Ec);
+	fs::recursive_directory_iterator End;
+	for (; !Ec && It != End; It.increment(Ec))
 	{
-		if (!Entry.is_regular_file())
-			continue;
+		const fs::directory_entry& Entry = *It;
+		if (!Entry.is_regular_file(Ec)) continue;
 
 		const fs::path& Path = Entry.path();
-		FString Extension = Path.extension().string();
-		std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
-		if (Extension == ".fbx")
+		// 확장자 소문자 비교 (wide 기반)
+		FWideString WExt = Path.extension().wstring();
+		for (auto& Ch : WExt) Ch = static_cast<wchar_t>(::towlower(Ch));
+
+		FString PathStr = NormalizePath(WideToUTF8(Path.wstring()));
+
+		if (WExt == L".fbx")
 		{
-			FString PathStr = NormalizePath(Path.string());
-
-			// 이미 처리된 파일인지 확인
-			if (ProcessedFiles.find(PathStr) == ProcessedFiles.end())
+			if (ProcessedFiles.insert(PathStr).second)
 			{
-				ProcessedFiles.insert(PathStr);
-
 				UE_LOG("=== Loading FBX: %s ===", PathStr.c_str());
-
-				// LoadFbxMesh는 이제 동일한 Scene에서 애니메이션도 함께 로드함
 				FbxLoader.LoadFbxMesh(PathStr);
-
 				++LoadedCount;
 			}
 		}
-		else if (Extension == ".dds" || Extension == ".jpg" || Extension == ".png")
+		else if (WExt == L".dds" || WExt == L".jpg" || WExt == L".png")
 		{
-			UResourceManager::GetInstance().Load<UTexture>(Path.string()); // 데칼 텍스쳐를 ui에서 고를 수 있게 하기 위해 임시로 만듬.
+			UResourceManager::GetInstance().Load<UTexture>(PathStr);
 		}
 	}
 	RESOURCE.SetSkeletalMeshs();

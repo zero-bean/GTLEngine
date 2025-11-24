@@ -10,6 +10,7 @@
 #include "USlateManager.h"
 #include <ObjManager.h>
 #include <roapi.h>
+#include "Source/Runtime/Debug/CrashCommand.h"
 
 float UEditorEngine::ClientWidth = 1024.0f;
 float UEditorEngine::ClientHeight = 1024.0f;
@@ -225,10 +226,14 @@ bool UEditorEngine::Startup(HINSTANCE hInstance)
 
 void UEditorEngine::Tick(float DeltaSeconds)
 {
+    // 크래시 테스트: 메모리 오염 모드가 활성화되어 있으면 매 프레임 1~3개의 객체를 점진적으로 오염
+    // 오염된 객체가 엔진 로직(World Tick, Render 등)에서 사용될 때 자연스럽게 크래시 발생
+    CCrashCommand::TickCorruption();
+
     //@TODO UV 스크롤 입력 처리 로직 이동
     HandleUVInput(DeltaSeconds);
-    
-    //@TODO: Delta Time 계산 + EditorActor Tick은 어떻게 할 것인가 
+
+    //@TODO: Delta Time 계산 + EditorActor Tick은 어떻게 할 것인가
     for (auto& WorldContext : WorldContexts)
     {
         WorldContext.World->Tick(DeltaSeconds);
@@ -242,7 +247,7 @@ void UEditorEngine::Tick(float DeltaSeconds)
         //    WorldContext.World->Tick(DeltaSeconds, WorldContext.WorldType);
         //}
     }
-    
+
     SLATE.Update(DeltaSeconds);
     UI.Update(DeltaSeconds);
     INPUT.Update();

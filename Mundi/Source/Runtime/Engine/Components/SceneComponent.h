@@ -22,7 +22,7 @@ public:
     USceneComponent();
 
 protected:
-    ~USceneComponent() override;
+    ~USceneComponent() override; 
 
 public:
     // ──────────────────────────────
