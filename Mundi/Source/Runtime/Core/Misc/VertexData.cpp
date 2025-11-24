@@ -88,3 +88,18 @@ void FBillboardVertexInfo_GPU::FillFrom(const FNormalVertex& src)
     UVRect[2] = src.color.Z;
     UVRect[3] = src.color.W;
 }
+
+void FParticleQuad::FillFrom(const FMeshData& mesh, size_t i)
+{
+    Position = mesh.Vertices[i];
+    UV = (i < mesh.UV.size()) ? mesh.UV[i] : FVector2D(0.0f, 0.0f);
+}
+
+void FSpriteParticleInstance::FillFrom(const FSpriteParticleInstance& Source)
+{
+    Position = Source.Position;
+    Color = Source.Color;
+    Size = Source.Size;
+    LifeTime = Source.LifeTime;
+    Rotation = Source.Rotation;
+}

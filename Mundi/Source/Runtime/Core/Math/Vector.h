@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <limits>
+#include <random>
 
 #include "UEContainer.h"
 #include "Archive.h"
@@ -29,6 +30,16 @@ inline float RadiansToDegrees(float Radian) { return Radian * (180.0f / PI); }
 // FMath 네임스페이스 대체
 namespace FMath
 {
+
+	static float FRand()
+	{
+		// random_device 객체 생성 후 함수 호출해서 랜덤 시드 생성, 멀티스레드 환경에서 파티클 생성 락 걸리면 안되니까 thread_local
+		// rand함수는 워커스레드 4개가 같이 돌려서 락걸림. rand는 또 패턴 중복됨(주기가 2^31), mt19937은 주기가 2^19937 - 1
+		// random_device는 컴퓨터 물리적 노이즈를 이용해서 ㄹㅇ 랜덤 만드는 대신 속도가 개느림 => static으로 시드 한번만 생성
+		static thread_local std::mt19937 Generator(std::random_device{}());
+		std::uniform_real_distribution<float> Distribution(0.0f, 1.0f);
+		return Distribution(Generator);
+	}
 	template<typename T>
 	static T Max(T A, T B) { return std::max(A, B); }
 

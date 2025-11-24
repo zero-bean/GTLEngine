@@ -12,6 +12,7 @@ class UBillboardComponent;
 class UPrimitiveComponent;
 class UCameraComponent;
 class FSceneView;
+class FParticleRenderer;
 
 struct FMaterialSlot;
 
@@ -45,12 +46,14 @@ public:
 	void ClearLineBatch();
 
 	D3D11RHI* GetRHIDevice() { return RHIDevice; }
+	FParticleRenderer* GetParticleRenderer() const { return ParticleRenderer; }
 
 	void SetCurrentCamera(ACameraActor* InCamera) { CurrentCamera = InCamera; }
 	ACameraActor* GetCurrentCamera() const { return CurrentCamera; }
 
 private:
 	D3D11RHI* RHIDevice;    // NOTE: 개발 편의성을 위해서 DX11를 종속적으로 사용한다 (URHIDevice를 사용하지 않음)
+	FParticleRenderer* ParticleRenderer = nullptr;
 
 	// Current viewport size (per FViewport draw); 0 if unset
 

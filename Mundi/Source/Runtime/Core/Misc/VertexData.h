@@ -430,3 +430,22 @@ struct FSkeletalMeshData
         return Ar;
     }
 };
+
+struct FParticleQuad
+{
+    FVector Position;
+    FVector2D UV;
+
+    void FillFrom(const FMeshData& mesh, size_t i);
+};
+
+struct FSpriteParticleInstance
+{
+    FVector4 Color;
+    FVector Position;
+    float Size;
+    float LifeTime;
+    float Rotation;
+
+    void FillFrom(const FSpriteParticleInstance& Source);
+};

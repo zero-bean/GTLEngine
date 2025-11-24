@@ -31,12 +31,18 @@
 #include "DecalStatManager.h"
 #include "SceneRenderer.h"
 #include "SceneView.h"
+#include "ParticleRenderer.h"
 
 #include <Windows.h>
 #include "DirectionalLightComponent.h"
 URenderer::URenderer(D3D11RHI* InDevice) : RHIDevice(InDevice)
 {
 	InitializeLineBatch();
+	if (!ParticleRenderer)
+	{
+		ParticleRenderer = new FParticleRenderer(InDevice);
+	}
+	ParticleRenderer->Initialize();
 }
 
 URenderer::~URenderer()
@@ -44,6 +50,10 @@ URenderer::~URenderer()
 	if (LineBatchData)
 	{
 		delete LineBatchData;
+	}
+	if (ParticleRenderer)
+	{
+		delete ParticleRenderer;
 	}
 }
 

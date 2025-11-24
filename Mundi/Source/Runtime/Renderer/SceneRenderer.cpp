@@ -50,12 +50,15 @@
 #include "SkinnedMeshComponent.h"
 #include "SkinningStats.h"
 #include "StatsOverlayD2D.h"
+#include "ParticleRenderer.h"
+#include "ParticleSystemComponent.h"
 
 FSceneRenderer::FSceneRenderer(UWorld* InWorld, FSceneView* InView, URenderer* InOwnerRenderer)
 	: World(InWorld)
 	, View(InView) // 전달받은 FSceneView 저장
 	, OwnerRenderer(InOwnerRenderer)
 	, RHIDevice(InOwnerRenderer->GetRHIDevice())
+	, ParticleRenderer(InOwnerRenderer->GetParticleRenderer())
 {
 	//OcclusionCPU = std::make_unique<FOcclusionCullingManagerCPU>();
 
@@ -103,6 +106,7 @@ void FSceneRenderer::Render()
 		World->GetLightManager()->UpdateLightBuffer(RHIDevice);
 		PerformTileLightCulling();	// 타일 기반 라이트 컬링 수행
 		RenderLitPath();
+		ParticleRenderer->RenderParticles(View, Proxies.Particles);
 		RenderPostProcessingPasses();	// 후처리 체인 실행
 		RenderTileCullingDebug();	// 타일 컬링 디버그 시각화 draw
 	}
@@ -702,6 +706,10 @@ void FSceneRenderer::GatherVisibleProxies()
 						{
 							Proxies.Meshes.Add(MeshComponent);
 						}
+					}
+					else if (UParticleSystemComponent* ParticleComponent = Cast<UParticleSystemComponent>(PrimitiveComponent))
+					{
+						Proxies.Particles.Add(ParticleComponent);
 					}
 					else if (UBillboardComponent* BillboardComponent = Cast<UBillboardComponent>(PrimitiveComponent); BillboardComponent && bUseBillboard)
 					{
