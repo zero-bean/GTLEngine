@@ -116,6 +116,7 @@
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\$(Configuration)\libfbxsdk.dll" "$(OutDir)"
+powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\IndexGitSource.ps1" -PdbPath "$(TargetDir)$(TargetName).pdb" -SourceRoot $(SolutionDir)
 powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbols.ps1" -ExePath "$(TargetPath)" -PdbPath "$(TargetDir)$(TargetName).pdb" -SymbolServer "\\172.21.11.95\SymbolServer"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -144,6 +145,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\Debug\libfbxsdk.dll" "$(OutDir)"
+powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\IndexGitSource.ps1" -PdbPath "$(TargetDir)$(TargetName).pdb" -SourceRoot $(SolutionDir)
 powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbols.ps1" -ExePath "$(TargetPath)" -PdbPath "$(TargetDir)$(TargetName).pdb" -SymbolServer "C:\SymbolServer"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -177,6 +179,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\$(Configuration)\libfbxsdk.dll" "$(OutDir)"
+powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\IndexGitSource.ps1" -PdbPath "$(TargetDir)$(TargetName).pdb" -SourceRoot $(SolutionDir)
 powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbols.ps1" -ExePath "$(TargetPath)" -PdbPath "$(TargetDir)$(TargetName).pdb" -SymbolServer "\\172.21.11.95\SymbolServer"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -210,6 +213,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)ThirdParty\FBXSDK\lib\Release\libfbxsdk.dll" "$(OutDir)"
+powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\IndexGitSource.ps1" -PdbPath "$(TargetDir)$(TargetName).pdb" -SourceRoot $(SolutionDir)
 powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbols.ps1" -ExePath "$(TargetPath)" -PdbPath "$(TargetDir)$(TargetName).pdb" -SymbolServer "C:\SymbolServer"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
