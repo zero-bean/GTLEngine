@@ -198,11 +198,15 @@ void FCrashHandler::WriteMiniDump(EXCEPTION_POINTERS* ExceptionInfo)
 		return;
 	}
 
-	// 덤프 타입 결정 (g_NextDumpProfile에 따라)
+	// 덤프 타입 (경량 덤프 - exe/dll 없이도 디버깅 가능, 소스 서버 지원)
 	MINIDUMP_EXCEPTION_INFORMATION DumpInfo = { GetCurrentThreadId(), ExceptionInfo, FALSE };
-	MINIDUMP_TYPE DumpType = (g_NextDumpProfile.exchange(0) == 1)
-		? static_cast<MINIDUMP_TYPE>(MiniDumpNormal | MiniDumpWithDataSegs)  // 경량
-		: MiniDumpWithFullMemory;  // 전체 메모리
+	MINIDUMP_TYPE DumpType = static_cast<MINIDUMP_TYPE>(
+		MiniDumpNormal |
+		MiniDumpWithDataSegs |
+		MiniDumpWithHandleData |
+		MiniDumpWithThreadInfo |
+		MiniDumpWithIndirectlyReferencedMemory
+	);
 
 	// 덤프 작성
 	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), 
