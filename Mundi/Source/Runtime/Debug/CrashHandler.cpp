@@ -23,11 +23,11 @@ void FCrashHandler::Initialize()
 	bool bExpected = false;
 	if (!g_bInitialized.compare_exchange_strong(bExpected, true)) return;
 
-	// 프로젝트 루트 경로 획득 및 덤프 폴더 생성 (Saved/Crashes/)
+	// 실행 파일 경로 획득 및 덤프 폴더 생성 (Saved/Crashes/)
 	wchar_t ExePath[MAX_PATH];
 	GetModuleFileNameW(nullptr, ExePath, MAX_PATH);
-	std::filesystem::path ProjectRoot = std::filesystem::path(ExePath).parent_path().parent_path().parent_path();
-	std::filesystem::create_directories(ProjectRoot / L"Saved" / L"Crashes");
+	std::filesystem::path ExeDir = std::filesystem::path(ExePath).parent_path();
+	std::filesystem::create_directories(ExeDir / L"Saved" / L"Crashes");
 
 	// 심볼 서버 초기화 (로컬 캐시 + 네트워크 심볼 서버)
 	// 우선순위: 1) 로컬 서버 2) 네트워크 서버 3) 로컬 캐시만
@@ -172,10 +172,10 @@ void FCrashHandler::WriteMiniDump(EXCEPTION_POINTERS* ExceptionInfo)
 	bool bExpected = false;
 	if (!g_bWritingDump.compare_exchange_strong(bExpected, true)) return;
 
-	// 프로젝트 루트 경로 획득
+	// 실행 파일 경로 획득
 	wchar_t ExePath[MAX_PATH];
 	GetModuleFileNameW(nullptr, ExePath, MAX_PATH);
-	std::filesystem::path ProjectRoot = std::filesystem::path(ExePath).parent_path().parent_path().parent_path();
+	std::filesystem::path ExeDir = std::filesystem::path(ExePath).parent_path();
 
 	// 타임스탬프 생성
 	auto Now = std::chrono::system_clock::now();
@@ -187,9 +187,14 @@ void FCrashHandler::WriteMiniDump(EXCEPTION_POINTERS* ExceptionInfo)
 	std::wstringstream Wss;
 	Wss << L"Crash_" << GetCurrentProcessId() << L"_" << std::put_time(&Tms, L"%Y%m%d_%H%M%S") << L".dmp";
 
+	// 덤프 폴더 경로 생성 (EXE 폴더 바로 밑에 Saved/Crashes 생성 - 배포/개발 환경 모두 호환)
+	std::filesystem::path CrashFolder = ExeDir / L"Saved" / L"Crashes";
+	std::error_code Ec;
+	std::filesystem::create_directories(CrashFolder, Ec);
+
 	// 덤프 파일 생성 (Saved/Crashes/)
-	std::filesystem::path DumpPath = ProjectRoot / L"Saved" / L"Crashes" / Wss.str();
-	HANDLE HFile = CreateFileW(DumpPath.c_str(), 
+	std::filesystem::path DumpPath = CrashFolder / Wss.str();
+	HANDLE HFile = CreateFileW(DumpPath.c_str(),
 		GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (HFile == INVALID_HANDLE_VALUE)
@@ -213,20 +218,6 @@ void FCrashHandler::WriteMiniDump(EXCEPTION_POINTERS* ExceptionInfo)
 		HFile, DumpType, ExceptionInfo ? &DumpInfo : nullptr, NULL, NULL);
 
 	CloseHandle(HFile);
-
-	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-	// 덤프 파일과 같은 폴더에 EXE 복사 (다른 PC에서 바로 분석 가능하도록)
-	std::filesystem::path ExeDestPath = DumpPath.parent_path() / L"Mundi.exe";
-
-	try {
-		// 현재 실행 중인 exe 복사
-		std::filesystem::copy_file(ExePath, ExeDestPath, std::filesystem::copy_options::overwrite_existing);
-		OutputDebugStringW(L"[CrashHandler] Copied exe to crash folder for analysis\n");
-	}
-	catch (const std::exception&) {
-		// 복사 실패해도 덤프는 생성됨
-		OutputDebugStringW(L"[CrashHandler] Warning: Failed to copy exe\n");
-	}
 
 	g_bWritingDump.store(false);
 }

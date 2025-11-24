@@ -147,8 +147,7 @@ if (-not $PdbExists) {
         "/f", "`"$PdbPath`"",
         "/s", "`"$SymbolServer`"",
         "/t", "`"$ProductName`"",
-        "/v", "`"$Version`"",
-        "/compress"
+        "/v", "`"$Version`""
     )
 
     $Process = Start-Process -FilePath $SymstoreExe -ArgumentList $PdbArgs -Wait -PassThru -NoNewWindow
@@ -170,8 +169,7 @@ if (-not $ExeExists) {
         "/f", "`"$ExePath`"",
         "/s", "`"$SymbolServer`"",
         "/t", "`"$ProductName`"",
-        "/v", "`"$Version`"",
-        "/compress"
+        "/v", "`"$Version`""
     )
 
     $Process = Start-Process -FilePath $SymstoreExe -ArgumentList $ExeArgs -Wait -PassThru -NoNewWindow
