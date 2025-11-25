@@ -3,9 +3,8 @@
 class FViewport;
 class FViewportClient;
 class UWorld;
-// TODO: Add when particle system is implemented
-// class UParticleSystem;
-// class UParticleEmitter;
+class UParticleSystem;
+class UParticleEmitter;
 
 class ParticleEditorState
 {
@@ -15,10 +14,10 @@ public:
     FViewport* Viewport = nullptr;
     FViewportClient* Client = nullptr;
 
-    // TODO: Particle system and emitter references
-    // UParticleSystem* CurrentParticleSystem = nullptr;
-    // FString LoadedParticleSystemPath;
-    // int32 SelectedEmitterIndex = -1;
+    // Particle system and emitter references
+    UParticleSystem* CurrentParticleSystem = nullptr;
+    FString LoadedParticleSystemPath;
+    int32 SelectedEmitterIndex = -1;
 
     // UI state
     bool bShowGrid = false;
@@ -45,4 +44,10 @@ public:
     // Curve editor state
     int32 SelectedCurveIndex = -1;
     int32 SelectedKeyframeIndex = -1;
+
+    // Helper functions
+    bool HasParticleSystem() const { return CurrentParticleSystem != nullptr; }
+    
+    UParticleEmitter* GetSelectedEmitter() const;
+    int32 GetEmitterCount() const;
 };

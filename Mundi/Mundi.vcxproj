@@ -430,7 +430,12 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClCompile Include="Source\Slate\Windows\ContentBrowserWindow.cpp" />
     <ClCompile Include="Source\Slate\Windows\SGraphEditorWindow.cpp" />
     <ClCompile Include="Source\Slate\Windows\SParticleEditorWindow.cpp" />
-    <ClCompile Include="Source\Slate\Windows\ParticleEditorSections.cpp" />
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorMenuBarSection.cpp" />
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorToolBarSection.cpp" />
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorViewportSection.cpp" />
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorEmitterSection.cpp" />
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorDetailSection.cpp" />
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorCurveSection.cpp" />
     <ClCompile Include="Source\Slate\Windows\SSkeletalMeshViewerWindow.cpp" />
     <ClCompile Include="Source\Slate\ThumbnailManager.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp">

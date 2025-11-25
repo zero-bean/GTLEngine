@@ -63,6 +63,15 @@ class FParticleEditorDetailSection : public FParticleEditorSection
 {
 public:
     virtual void Draw(const FParticleEditorSectionContext& Context) override;
+
+private:
+    void DrawRequiredModule(class UParticleModuleRequired* Module);
+    void DrawSpawnModule(class UParticleModuleSpawn* Module);
+    void DrawModuleProperties(class UParticleModule* Module, int32 ModuleIndex);
+    void DrawDistributionFloat(const char* Label, struct FRawDistributionFloat& Distribution, 
+        float Min = 0.0f, float Max = 100.0f);
+    void DrawDistributionVector(const char* Label, struct FRawDistributionVector& Distribution, 
+        float Min = 0.0f, float Max = 100.0f, bool bIsColor = false);
 };
 
 class FParticleEditorCurveSection : public FParticleEditorSection

@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include <algorithm>
 #include <filesystem>
 #include "ParticleEditorSections.h"
@@ -9,101 +9,6 @@
 #include "Source/Runtime/AssetManagement/Texture.h"
 #include "Source/Editor/PlatformProcess.h"
 #include "Grid/GridActor.h"
-
-void FParticleEditorMenuBarSection::Draw(const FParticleEditorSectionContext& Context)
-{
-    ParticleEditorState* ActiveState = Context.ActiveState;
-    if (ImGui::BeginMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("New Particle System"))
-            {
-                // TODO: Create new particle system
-            }
-            if (ImGui::MenuItem("Open..."))
-            {
-                // TODO: Open particle system
-            }
-            if (ImGui::MenuItem("Save"))
-            {
-                // TODO: Save particle system
-            }
-            if (ImGui::MenuItem("Save As..."))
-            {
-                // TODO: Save as particle system
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Close"))
-            {
-                Context.Window.Close();
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Edit"))
-        {
-            if (ImGui::MenuItem("Undo", "Ctrl+Z"))
-            {
-                // TODO: Undo
-            }
-            if (ImGui::MenuItem("Redo", "Ctrl+Y"))
-            {
-                // TODO: Redo
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Delete Emitter"))
-            {
-                // TODO: Delete selected emitter
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Emitter"))
-        {
-            if (ImGui::MenuItem("Add Sprite Emitter"))
-            {
-                // TODO: Add sprite emitter
-            }
-            if (ImGui::MenuItem("Add Mesh Emitter"))
-            {
-                // TODO: Add mesh emitter
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Duplicate Emitter"))
-            {
-                // TODO: Duplicate selected emitter
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("View"))
-        {
-            if (ActiveState)
-            {
-                if (ImGui::MenuItem("Show Grid", nullptr, &ActiveState->bShowGrid))
-                {
-                    if (ActiveState->World && ActiveState->World->GetGridActor())
-                    {
-                        ActiveState->World->GetGridActor()->SetGridVisible(ActiveState->bShowGrid);
-                    }
-                }
-                if (ImGui::MenuItem("Show Bounds", nullptr, &ActiveState->bShowBounds))
-                {
-                    // TODO: Toggle bounds visibility
-                }
-                ImGui::Separator();
-                if (ImGui::MenuItem("Reset Camera"))
-                {
-                    // TODO: Reset camera
-                }
-            }
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMenuBar();
-    }
-}
 
 FParticleEditorToolBarSection::FParticleEditorToolBarSection() = default;
 
@@ -145,13 +50,6 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
             "현재 파티클 시스템 애셋을 저장합니다.", unifiedButtonWidth))
         {
             // TODO(PYB): 저장 시스템
-            // Sample:
-            // if (ActiveState)
-            // {
-            //     const FString SavePath = "Data/ParticleSystems/MySystem.particle";
-            //     ParticleEditorSerializer::SaveToFile(*ActiveState, SavePath);
-            //     UE_LOG("ParticleEditor: Saved particle system to %s", SavePath.c_str());
-            // }
         }
 
         ImGui::SameLine(0.0f, 24.0f);
@@ -167,12 +65,6 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
             {
                 Context.Window.CreateNewTab();
                 // TODO(PYB): 로드 시스템
-                // Sample:
-                // if (ParticleEditorState* NewState = Context.Window.GetActiveState())
-                // {
-                //     ParticleEditorSerializer::LoadFromFile(*NewState, SelectedFile);
-                //     UE_LOG("ParticleEditor: Loaded particle system %s", SelectedFile.string().c_str());
-                // }
             }
         }
 
@@ -181,18 +73,7 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
         if (DrawIconButton("##ParticleToolbarResetSimul", IconResetSimul, "Restart Sim",
             "뷰포트 창의 시뮬레이션을 리셋시킵니다. ", unifiedButtonWidth))
         {
-            // TODO(PYB): 파티클 나오면 아마 만들기 가능함
-            // Sample:
-            // if (ActiveState && ActiveState->CurrentSystemComponent)
-            // {
-            //     UParticleSystemComponent* PSC = ActiveState->CurrentSystemComponent;
-            //     PSC->ResetSystem();
-            //     if (UParticleEmitterInstance* Root = PSC->GetRootEmitter())
-            //     {
-            //         Root->WarmUp(ActiveState->WarmupTime);
-            //     }
-            //     UE_LOG("ParticleEditor: Simulation restarted");
-            // }
+            // TODO(PYB): 파티클 시뮬레이션 리셋
         }
 
         ImGui::SameLine(0.0f, 24.0f);
@@ -200,23 +81,7 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
         if (DrawIconButton("##ParticleToolbarResetLevel", IconResetLevel, "Restart Level",
             "레벨에 있는 파티클 시스템과, 해당 시스템의 인스턴스를 리셋시킵니다.", unifiedButtonWidth))
         {
-            // TODO(PYB): 파티클 나오면 아마 만들기 가능함
-            // Sample:
-            // if (ActiveState && ActiveState->World)
-            // {
-            //     UWorld* PreviewWorld = ActiveState->World;
-            //     PreviewWorld->ClearPreviewActors();
-            //     if (UParticleSystem* SystemAsset = ActiveState->LoadedSystem)
-            //     {
-            //         UParticleSystemComponent* PSC = PreviewWorld->SpawnComponent<UParticleSystemComponent>();
-            //         PSC->SetTemplate(SystemAsset);
-            //         PSC->ActivateSystem(true);
-            //         ActiveState->CurrentSystemComponent = PSC;
-            //     }
-            //     PreviewWorld->ResetPreviewCamera();
-            //     ActiveState->ActiveLODLevel = 0;
-            //     UE_LOG("ParticleEditor: Preview level reset");
-            // }
+            // TODO(PYB): 레벨 리셋
         }
 
         ImGui::SameLine(0.0f, 24.0f);
@@ -224,7 +89,7 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
         ImVec2 colorButtonMin(0.0f, 0.0f);
         ImVec2 colorButtonMax(0.0f, 0.0f);
         if (DrawIconButton("##ParticleToolbarColor", IconColor, "Background",
-            "뷰포트 패널 카메라에서 보는 화면의 배경색을 조정합니다", 
+            "뷰포트 패널 카메라에서 보는 화면의 배경색을 조정합니다",
             unifiedButtonWidth, &colorButtonMin, &colorButtonMax))
         {
             if (Context.bShowColorPicker)
@@ -239,11 +104,10 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
         ImGui::SameLine(0.0f, 24.0f);
 
         if (DrawIconButton("##ParticleToolbarThumbnail", IconThumbnail, "Thumbnail",
-            "뷰포트 패널 카메라에서 보는 화면을 콘텐츠 브라우저에서 파티클 시스템에 쓸 썸네일 이미지로 저장합니다", 
+            "뷰포트 패널 카메라에서 보는 화면을 콘텐츠 브라우저에서 파티클 시스템에 쓸 썸네일 이미지로 저장합니다",
             unifiedButtonWidth))
         {
-            // TODO(PYB): 파티클 시스템이 연결되면 텍스쳐 이미지 포인터로 생성해서 연결되도록 해야할 것 같은데
-            //            생각보다 공을 들여야 할 부분, 예외 처리라던지..
+            // TODO(PYB): 썸네일 저장
         }
 
         ImGui::SameLine(0.0f, 24.0f);
@@ -251,7 +115,7 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
         if (DrawIconButton("##ParticleToolbarBound", IconBound, "Bounds",
             "뷰포트 패널에서 파티클 시스템의 현재 바운드 표시 토글입니다.", unifiedButtonWidth))
         {
-            // TODO(PYB): 바운드 기능이 연결된다면 bool 값을 통해 On/Off 하는 로직으로 처리
+            // TODO(PYB): 바운드 토글
         }
 
         ImGui::SameLine(0.0f, 24.0f);
@@ -371,7 +235,7 @@ bool FParticleEditorToolBarSection::DrawIconButton(const char* Id, UTexture* Ico
 
     // 아이콘을 중앙에서 살짝 왼쪽으로 이동
     const float iconCenterOffset = (columnWidth - IconSize) * 0.5f;
-    const float iconOffsetX = iconCenterOffset * 0.85f; 
+    const float iconOffsetX = iconCenterOffset * 0.85f;
     ImGui::SetCursorPos(ImVec2(startPos.x + iconOffsetX, startPos.y));
     const ImVec2 iconSize(IconSize, IconSize);
     if (Icon && Icon->GetShaderResourceView())
@@ -415,103 +279,4 @@ bool FParticleEditorToolBarSection::DrawIconButton(const char* Id, UTexture* Ico
     ImGui::Dummy(ImVec2(columnWidth, usedHeight));
     ImGui::EndGroup();
     return bClicked;
-}
-
-void FParticleEditorViewportSection::Draw(const FParticleEditorSectionContext& Context)
-{
-    ParticleEditorState* ActiveState = Context.ActiveState;
-
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.25f, 0.35f, 0.50f, 0.8f));
-    ImGui::Text("Viewport");
-    ImGui::PopStyleColor();
-    ImGui::Separator();
-
-    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-
-    // ActiveState가 있으면 저장된 배경색 사용, 없으면 기본값 사용
-    ImVec4 bgColor = ActiveState ?
-        ImVec4(ActiveState->ViewportBackgroundColor[0],
-               ActiveState->ViewportBackgroundColor[1],
-               ActiveState->ViewportBackgroundColor[2],
-               ActiveState->ViewportBackgroundColor[3])
-        : ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
-
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, bgColor);
-    ImGui::BeginChild("ViewportContent", viewportSize, false, ImGuiWindowFlags_NoScrollbar);
-    {
-        ImGui::Text("Particle Preview Viewport");
-        ImGui::Text("Size: %.0fx%.0f", viewportSize.x, viewportSize.y);
-    }
-    ImGui::EndChild();
-    ImGui::PopStyleColor();
-}
-
-void FParticleEditorEmitterSection::Draw(const FParticleEditorSectionContext& Context)
-{
-    ParticleEditorState* ActiveState = Context.ActiveState;
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.25f, 0.50f, 0.35f, 0.8f));
-    ImGui::Text("Emitters");
-    ImGui::PopStyleColor();
-    ImGui::Separator();
-
-    ImGui::Text("Particle System Emitters:");
-    ImGui::Spacing();
-
-    ImGui::BeginChild("EmitterList", ImVec2(0, 0), true);
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-        ImGui::TextWrapped("No emitters in the system.");
-        ImGui::TextWrapped("Use 'Add Emitter' button to add emitters.");
-        ImGui::PopStyleColor();
-
-        // TODO: Display list of emitters once particle systems are wired up
-        (void)ActiveState;
-    }
-    ImGui::EndChild();
-}
-
-void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Context)
-{
-    ParticleEditorState* ActiveState = Context.ActiveState;
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.50f, 0.35f, 0.25f, 0.8f));
-    ImGui::Text("Details");
-    ImGui::PopStyleColor();
-    ImGui::Separator();
-
-    ImGui::Text("Emitter Properties:");
-    ImGui::Spacing();
-
-    ImGui::BeginChild("DetailContent", ImVec2(0, 0), true);
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-        ImGui::TextWrapped("Select an emitter to edit its properties.");
-        ImGui::PopStyleColor();
-
-        // TODO: Display emitter properties when selection is available
-        (void)ActiveState;
-    }
-    ImGui::EndChild();
-}
-
-void FParticleEditorCurveSection::Draw(const FParticleEditorSectionContext& Context)
-{
-    (void)Context;
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.35f, 0.25f, 0.50f, 0.8f));
-    ImGui::Text("Curve Editor");
-    ImGui::PopStyleColor();
-    ImGui::Separator();
-
-    ImGui::Text("Property Curves:");
-    ImGui::Spacing();
-
-    ImGui::BeginChild("CurveEditorContent", ImVec2(0, 0), true);
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-        ImGui::TextWrapped("Curve editor for particle properties over time.");
-        ImGui::TextWrapped("Select a property from Details panel to edit its curve.");
-        ImGui::PopStyleColor();
-
-        // TODO: Implement the actual curve editor overlay
-    }
-    ImGui::EndChild();
 }

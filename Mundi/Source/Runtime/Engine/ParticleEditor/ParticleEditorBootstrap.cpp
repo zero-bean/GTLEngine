@@ -6,6 +6,15 @@
 #include "FViewportClient.h"
 #include "Source/Runtime/Engine/GameFramework/World.h"
 #include "Grid/GridActor.h"
+#include "ParticleSystem.h"
+#include "ParticleEmitter.h"
+#include "ParticleLODLevel.h"
+#include "ParticleModule/ParticleModuleRequired.h"
+#include "ParticleModule/ParticleModuleSpawn.h"
+#include "ParticleModule/ParticleModuleLifetime.h"
+#include "ParticleModule/ParticleModuleSize.h"
+#include "ParticleModule/ParticleModuleColor.h"
+#include "Source/Runtime/AssetManagement/ResourceManager.h"
 
 ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name, UWorld* InWorld, ID3D11Device* InDevice)
 {
@@ -68,6 +77,68 @@ ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name
         State->World->GetGridActor()->SetGridVisible(State->bShowGrid);
         State->World->GetGridActor()->SetAxisVisible(State->bShowAxis);
     }
+
+    // 언리얼 방식: 빈 파티클 시스템에 기본 Sprite Emitter 1개 자동 생성
+    State->CurrentParticleSystem = NewObject<UParticleSystem>();
+    State->LoadedParticleSystemPath = "Untitled Particle System";
+
+    // 기본 Sprite Emitter 생성
+    UParticleEmitter* DefaultEmitter = NewObject<UParticleEmitter>();
+
+    // LOD Level 0 생성
+    UParticleLODLevel* LODLevel = NewObject<UParticleLODLevel>();
+    LODLevel->Level = 0;
+    LODLevel->bEnabled = true;
+    DefaultEmitter->LODLevels.Add(LODLevel);
+
+    // Required Module (필수)
+    UParticleModuleRequired* Required = NewObject<UParticleModuleRequired>();
+    Required->Material = UResourceManager::GetInstance().Load<UMaterial>("Shaders/UI/Billboard.hlsl");
+    Required->EmitterDuration = 2.0f;
+    Required->EmitterLoops = 0;
+    LODLevel->RequiredModule = Required;
+
+    // Spawn Module (필수)
+    UParticleModuleSpawn* SpawnModule = NewObject<UParticleModuleSpawn>();
+    SpawnModule->SpawnRate.Operation = EDistributionMode::DOP_Constant;
+    SpawnModule->SpawnRate.Constant = 30.0f;
+    LODLevel->SpawnModule = SpawnModule;
+
+    // 기본 모듈들 추가
+    UParticleModuleLifetime* LifetimeModule = NewObject<UParticleModuleLifetime>();
+    LifetimeModule->LifeTime.Operation = EDistributionMode::DOP_Uniform;
+    LifetimeModule->LifeTime.Min = 1.0f;
+    LifetimeModule->LifeTime.Max = 2.0f;
+
+    UParticleModuleSize* SizeModule = NewObject<UParticleModuleSize>();
+    SizeModule->StartSize.Operation = EDistributionMode::DOP_Constant;
+    SizeModule->StartSize.Constant = FVector(1.0f, 1.0f, 1.0f);
+
+    UParticleModuleColor* ColorModule = NewObject<UParticleModuleColor>();
+    ColorModule->StartColor.Operation = EDistributionMode::DOP_Constant;
+    ColorModule->StartColor.Constant = FVector(1.0f, 1.0f, 1.0f);
+
+    // Modules 배열에 추가
+    LODLevel->Modules.Add(LifetimeModule);
+    LODLevel->Modules.Add(SizeModule);
+    LODLevel->Modules.Add(ColorModule);
+
+    // SpawnModules 배열에 추가 (초기화 시 실행되는 모듈들)
+    LODLevel->SpawnModules.Add(LifetimeModule);
+    LODLevel->SpawnModules.Add(SizeModule);
+    LODLevel->SpawnModules.Add(ColorModule);
+
+    // TypeDataModule은 Sprite의 경우 nullptr
+    LODLevel->TypeDataModule = nullptr;
+
+    // Emitter 정보 캐싱
+    DefaultEmitter->CacheEmitterModuleInfo();
+
+    // ParticleSystem에 기본 Emitter 추가
+    State->CurrentParticleSystem->Emitters.Add(DefaultEmitter);
+
+    // 첫 번째 Emitter 자동 선택
+    State->SelectedEmitterIndex = 0;
 
     return State;
 }
