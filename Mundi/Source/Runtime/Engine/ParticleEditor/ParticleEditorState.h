@@ -6,6 +6,14 @@ class UWorld;
 class UParticleSystem;
 class UParticleEmitter;
 
+enum class EParticleDetailSelection : uint8
+{
+    None = 0,
+    Required,
+    Spawn,
+    Module
+};
+
 class ParticleEditorState
 {
 public:
@@ -40,6 +48,8 @@ public:
     // Emitter property editing state
     int32 SelectedPropertyIndex = -1;
     bool bShowCurveEditor = true;
+    EParticleDetailSelection SelectedModuleSelection = EParticleDetailSelection::None;
+    int32 SelectedModuleIndex = -1;
 
     // Curve editor state
     int32 SelectedCurveIndex = -1;

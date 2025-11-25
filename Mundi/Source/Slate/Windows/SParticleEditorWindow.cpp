@@ -5,8 +5,8 @@
 #include "FViewport.h"
 #include "FViewportClient.h"
 #include "UIManager.h"
-#include "Source/Runtime/Engine/ParticleEditor/ParticleEditorState.h"
-#include "Source/Runtime/Engine/ParticleEditor/ParticleEditorBootstrap.h"
+#include "ParticleEditorState.h"
+#include "ParticleEditorBootstrap.h"
 
 SParticleEditorWindow::SParticleEditorWindow()
 {
@@ -147,28 +147,28 @@ void SParticleEditorWindow::OnRender()
         // Remove spacing between panels
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
-        // --- Section 3 & 4: Left Column (Viewport / Emitters) ---
+        // --- Section 3 & 4: Left Column (Viewport / Details) ---
         const float leftColumnWidthForDraw = leftWidth > 0.0f ? leftWidth : CollapsedPanelEpsilon;
         const float totalHeightForDraw = totalHeight > 0.0f ? totalHeight : SplitterThickness;
         ImGui::BeginChild("LeftColumn", ImVec2(leftColumnWidthForDraw, totalHeightForDraw), false, ImGuiWindowFlags_NoScrollbar);
         {
             const float availableLeftHeight = std::max(0.0f, totalHeight - SplitterThickness);
             float viewportHeight = availableLeftHeight * LeftColumnSplitRatio;
-            float emitterHeight = availableLeftHeight - viewportHeight;
+            float detailHeight = availableLeftHeight - viewportHeight;
 
             if (availableLeftHeight >= MinRowHeight * 2.0f)
             {
                 viewportHeight = std::clamp(viewportHeight, MinRowHeight, availableLeftHeight - MinRowHeight);
-                emitterHeight = availableLeftHeight - viewportHeight;
+                detailHeight = availableLeftHeight - viewportHeight;
             }
             else if (availableLeftHeight > 0.0f)
             {
                 viewportHeight = availableLeftHeight * 0.5f;
-                emitterHeight = availableLeftHeight - viewportHeight;
+                detailHeight = availableLeftHeight - viewportHeight;
             }
             else
             {
-                viewportHeight = emitterHeight = 0.0f;
+                viewportHeight = detailHeight = 0.0f;
             }
 
             /* Section 3: 뷰포트 패널 - 현재 파티클 시스템을 표시합니다. 툴바를 통해 시뮬레이션 속도 결정 가능 */
@@ -197,9 +197,9 @@ void SParticleEditorWindow::OnRender()
             }
             ImGui::EndChild();
 
-            if (DrawSplitter("ViewportEmitterSplitter", false, leftWidth, viewportHeight, emitterHeight, MinRowHeight, MinRowHeight))
+            if (DrawSplitter("ViewportDetailSplitter", false, leftWidth, viewportHeight, detailHeight, MinRowHeight, MinRowHeight))
             {
-                float total = viewportHeight + emitterHeight;
+                float total = viewportHeight + detailHeight;
                 if (total > 0.0f)
                 {
                     LeftColumnSplitRatio = viewportHeight / total;
@@ -207,27 +207,27 @@ void SParticleEditorWindow::OnRender()
             }
 
             /* Section 4: 이미터 패널 - 현재 파티클 시스템의 모든 이미터 패널과 각 이미터의 모든 모듈 리스트가 포함 */
-            const bool bEmitterCollapsed = (emitterHeight <= 0.0f) || (leftWidth <= 0.0f);
-            const float emitterDrawHeight = bEmitterCollapsed ? CollapsedPanelEpsilon : emitterHeight;
-            ImGui::BeginChild("EmitterPanel", ImVec2(0, emitterDrawHeight), true, ImGuiWindowFlags_NoScrollbar);
+            const bool bDetailCollapsed = (detailHeight <= 0.0f) || (leftWidth <= 0.0f);
+            const float detailDrawHeight = bDetailCollapsed ? CollapsedPanelEpsilon : detailHeight;
+            ImGui::BeginChild("DetailPanel", ImVec2(0, detailDrawHeight), true, ImGuiWindowFlags_NoScrollbar);
             {
-                if (!bEmitterCollapsed)
+                if (!bDetailCollapsed)
                 {
-                    EmitterSection.Draw(SectionContext);
+                    DetailSection.Draw(SectionContext);
 
-                    // Cache emitter rect
+                    // Cache detail rect
                     ImVec2 childPos = ImGui::GetWindowPos();
                     ImVec2 childSize = ImGui::GetWindowSize();
-                    EmitterRect.Left = childPos.x;
-                    EmitterRect.Top = childPos.y;
-                    EmitterRect.Right = childPos.x + childSize.x;
-                    EmitterRect.Bottom = childPos.y + childSize.y;
-                    EmitterRect.UpdateMinMax();
+                    DetailRect.Left = childPos.x;
+                    DetailRect.Top = childPos.y;
+                    DetailRect.Right = childPos.x + childSize.x;
+                    DetailRect.Bottom = childPos.y + childSize.y;
+                    DetailRect.UpdateMinMax();
                 }
                 else
                 {
-                    EmitterRect = FRect(0, 0, 0, 0);
-                    EmitterRect.UpdateMinMax();
+                    DetailRect = FRect(0, 0, 0, 0);
+                    DetailRect.UpdateMinMax();
                 }
             }
             ImGui::EndChild();
@@ -254,56 +254,56 @@ void SParticleEditorWindow::OnRender()
         ImGui::BeginChild("RightColumn", ImVec2(rightColumnWidthForDraw, totalHeightForDraw), false, ImGuiWindowFlags_NoScrollbar);
         {
             const float availableRightHeight = std::max(0.0f, totalHeight - SplitterThickness);
-            float detailHeight = availableRightHeight * RightColumnSplitRatio;
-            float curveHeight = availableRightHeight - detailHeight;
+            float emitterHeight = availableRightHeight * RightColumnSplitRatio;
+            float curveHeight = availableRightHeight - emitterHeight;
 
             if (availableRightHeight >= MinRowHeight * 2.0f)
             {
-                detailHeight = std::clamp(detailHeight, MinRowHeight, availableRightHeight - MinRowHeight);
-                curveHeight = availableRightHeight - detailHeight;
+                emitterHeight = std::clamp(emitterHeight, MinRowHeight, availableRightHeight - MinRowHeight);
+                curveHeight = availableRightHeight - emitterHeight;
             }
             else if (availableRightHeight > 0.0f)
             {
-                detailHeight = availableRightHeight * 0.5f;
-                curveHeight = availableRightHeight - detailHeight;
+                emitterHeight = availableRightHeight * 0.5f;
+                curveHeight = availableRightHeight - emitterHeight;
             }
             else
             {
-                detailHeight = curveHeight = 0.0f;
+                emitterHeight = curveHeight = 0.0f;
             }
 
             // Section 5: Detail Panel
-            const bool bDetailCollapsed = (detailHeight <= 0.0f) || (rightWidth <= 0.0f);
-            const float detailDrawHeight = bDetailCollapsed ? CollapsedPanelEpsilon : detailHeight;
-            ImGui::BeginChild("DetailPanel", ImVec2(0, detailDrawHeight), true, ImGuiWindowFlags_NoScrollbar);
+            const bool bEmitterCollapsed = (emitterHeight <= 0.0f) || (rightWidth <= 0.0f);
+            const float emitterDrawHeight = bEmitterCollapsed ? CollapsedPanelEpsilon : emitterHeight;
+            ImGui::BeginChild("EmitterPanel", ImVec2(0, emitterDrawHeight), true, ImGuiWindowFlags_NoScrollbar);
             {
-                if (!bDetailCollapsed)
+                if (!bEmitterCollapsed)
                 {
-                    DetailSection.Draw(SectionContext);
+                    EmitterSection.Draw(SectionContext);
 
-                    // Cache detail rect
+                    // Cache emitter rect
                     ImVec2 childPos = ImGui::GetWindowPos();
                     ImVec2 childSize = ImGui::GetWindowSize();
-                    DetailRect.Left = childPos.x;
-                    DetailRect.Top = childPos.y;
-                    DetailRect.Right = childPos.x + childSize.x;
-                    DetailRect.Bottom = childPos.y + childSize.y;
-                    DetailRect.UpdateMinMax();
+                    EmitterRect.Left = childPos.x;
+                    EmitterRect.Top = childPos.y;
+                    EmitterRect.Right = childPos.x + childSize.x;
+                    EmitterRect.Bottom = childPos.y + childSize.y;
+                    EmitterRect.UpdateMinMax();
                 }
                 else
                 {
-                    DetailRect = FRect(0, 0, 0, 0);
-                    DetailRect.UpdateMinMax();
+                    EmitterRect = FRect(0, 0, 0, 0);
+                    EmitterRect.UpdateMinMax();
                 }
             }
             ImGui::EndChild();
 
-            if (DrawSplitter("DetailCurveSplitter", false, rightWidth, detailHeight, curveHeight, MinRowHeight, MinRowHeight))
+            if (DrawSplitter("EmitterCurveSplitter", false, rightWidth, emitterHeight, curveHeight, MinRowHeight, MinRowHeight))
             {
-                float total = detailHeight + curveHeight;
+                float total = emitterHeight + curveHeight;
                 if (total > 0.0f)
                 {
-                    RightColumnSplitRatio = detailHeight / total;
+                    RightColumnSplitRatio = emitterHeight / total;
                 }
             }
 

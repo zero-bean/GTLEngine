@@ -3,13 +3,13 @@
 #include <filesystem>
 #include "ParticleEditorSections.h"
 #include "SParticleEditorWindow.h"
-#include "Source/Runtime/Engine/ParticleEditor/ParticleEditorState.h"
-#include "Source/Runtime/Engine/GameFramework/World.h"
-#include "Source/Runtime/AssetManagement/ResourceManager.h"
-#include "Source/Runtime/AssetManagement/Texture.h"
-#include "Source/Editor/PlatformProcess.h"
+#include "ParticleEditorState.h"
+#include "World.h"
+#include "ResourceManager.h"
+#include "Texture.h"
+#include "PlatformProcess.h"
 #include "Grid/GridActor.h"
-#include "Source/Runtime/Engine/ParticleSystem/ParticleSystem.h"
+#include "ParticleSystem.h"
 
 FParticleEditorToolBarSection::FParticleEditorToolBarSection() = default;
 

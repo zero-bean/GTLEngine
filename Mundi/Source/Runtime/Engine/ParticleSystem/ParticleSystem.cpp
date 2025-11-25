@@ -13,7 +13,7 @@
 #include "ParticleModuleRotation.h"
 #include "JsonSerializer.h"
 #include "ObjectFactory.h"
-#include "Source/Runtime/Core/Misc/PathUtils.h"
+#include "PathUtils.h"
 
 UParticleSystem* UParticleSystem::TestParticleSystem = nullptr;
 

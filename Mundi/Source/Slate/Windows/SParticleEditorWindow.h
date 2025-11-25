@@ -67,8 +67,8 @@ private:
 
     // Cached panel regions
     FRect ViewportRect;      // Left-top
-    FRect EmitterRect;       // Left-bottom
-    FRect DetailRect;        // Right-top
+    FRect DetailRect;        // Left-bottom
+    FRect EmitterRect;       // Right-top
     FRect CurveEditorRect;   // Right-bottom
 
     // Whether we've applied the initial ImGui window placement

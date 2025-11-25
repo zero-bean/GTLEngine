@@ -51,6 +51,10 @@ class FParticleEditorEmitterSection : public FParticleEditorSection
 {
 public:
     virtual void Draw(const FParticleEditorSectionContext& Context) override;
+
+private:
+    void CreateNewEmitter(ParticleEditorState* State);
+    void DeleteSelectedEmitter(ParticleEditorState* State);
 };
 
 class FParticleEditorDetailSection : public FParticleEditorSection
@@ -59,13 +63,18 @@ public:
     virtual void Draw(const FParticleEditorSectionContext& Context) override;
 
 private:
-    void DrawRequiredModule(class UParticleModuleRequired* Module);
-    void DrawSpawnModule(class UParticleModuleSpawn* Module);
+    void DrawRequiredModuleProperties(class UParticleModuleRequired* Module);
+    void DrawSpawnModuleProperties(class UParticleModuleSpawn* Module);
     void DrawModuleProperties(class UParticleModule* Module, int32 ModuleIndex);
-    void DrawDistributionFloat(const char* Label, struct FRawDistributionFloat& Distribution, 
+    void DrawDistributionFloat(const char* Label, struct FRawDistributionFloat& Distribution,
         float Min = 0.0f, float Max = 100.0f);
-    void DrawDistributionVector(const char* Label, struct FRawDistributionVector& Distribution, 
+    void DrawDistributionVector(const char* Label, struct FRawDistributionVector& Distribution,
         float Min = 0.0f, float Max = 100.0f, bool bIsColor = false);
+
+    void AddSpawnModule(ParticleEditorState* State, class UParticleLODLevel* LODLevel);
+    void DeleteSpawnModule(ParticleEditorState* State, class UParticleLODLevel* LODLevel);
+    void AddModule(ParticleEditorState* State, class UParticleLODLevel* LODLevel, const char* ModuleClassName);
+    void DeleteModule(ParticleEditorState* State, class UParticleLODLevel* LODLevel, int32 ModuleIndex);
 };
 
 class FParticleEditorCurveSection : public FParticleEditorSection
