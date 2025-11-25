@@ -10,6 +10,10 @@
 #include "PlatformProcess.h"
 #include "Grid/GridActor.h"
 #include "ParticleSystem.h"
+#include "ParticleEmitter.h"
+#include "ParticleLODLevel.h"
+#include "ParticleModuleRequired.h"
+#include "ParticleModuleSpawn.h"
 
 FParticleEditorToolBarSection::FParticleEditorToolBarSection() = default;
 
@@ -53,8 +57,7 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
             if (ActiveState && ActiveState->CurrentParticleSystem)
             {
                 // 기존 경로가 있으면 그대로 저장, 없으면 Save As 다이얼로그 표시
-                if (!ActiveState->LoadedParticleSystemPath.empty() &&
-                    ActiveState->LoadedParticleSystemPath != "Test Particle System")
+                if (!ActiveState->LoadedParticleSystemPath.empty())
                 {
                     if (ActiveState->CurrentParticleSystem->Save(ActiveState->LoadedParticleSystemPath))
                     {
@@ -68,17 +71,32 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
                 else
                 {
                     // Save As 다이얼로그 표시
-                    const FWideString BaseDir = L"Data/ParticleSystems";
+                    const FWideString BaseDir = L"Data/Particles";
                     const FWideString Extension = L".particle";
                     const FWideString Description = L"Particle System";
-                    const FWideString DefaultFileName = L"NewParticleSystem";
-                    std::filesystem::path SelectedFile = FPlatformProcess::OpenSaveFileDialog(BaseDir, Extension, Description, DefaultFileName);
+
+                    // 현재 탭 이름을 기본 파일명으로 사용
+                    FString DefaultName = "NewParticleSystem";
+                    if (!ActiveState->LoadedParticleSystemPath.empty() &&
+                        ActiveState->LoadedParticleSystemPath != "Untitled Particle System")
+                    {
+                        std::filesystem::path p(ActiveState->LoadedParticleSystemPath);
+                        DefaultName = p.stem().string();
+                    }
+
+                    std::wstring wDefaultName(DefaultName.begin(), DefaultName.end());
+                    std::filesystem::path SelectedFile = FPlatformProcess::OpenSaveFileDialog(BaseDir, Extension, Description, wDefaultName);
                     if (!SelectedFile.empty())
                     {
                         FString SavePath = SelectedFile.string();
                         if (ActiveState->CurrentParticleSystem->Save(SavePath))
                         {
                             ActiveState->LoadedParticleSystemPath = SavePath;
+
+                            // 탭 이름을 파일명으로 업데이트
+                            std::filesystem::path filePath(SavePath);
+                            ActiveState->Name = filePath.stem().string();
+
                             UE_LOG("Particle system saved successfully: %s", SavePath.c_str());
                         }
                         else
@@ -95,7 +113,7 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
         if (DrawIconButton("##ParticleToolbarOpen", IconLoad, "Open",
             "파티클 시스템 애셋을 불러옵니다.", unifiedButtonWidth))
         {
-            const FWideString BaseDir = L"Data/ParticleSystems";
+            const FWideString BaseDir = L"Data/Particles";
             const FWideString Extension = L".particle";
             const FWideString Description = L"Particle System";
             std::filesystem::path SelectedFile = FPlatformProcess::OpenLoadFileDialog(BaseDir, Extension, Description);
@@ -122,7 +140,20 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
 
                         NewState->CurrentParticleSystem = LoadedSystem;
                         NewState->LoadedParticleSystemPath = LoadPath;
-                        NewState->SelectedEmitterIndex = -1;
+
+                        // 첫 번째 Emitter 선택 (있으면)
+                        if (LoadedSystem->Emitters.Num() > 0)
+                        {
+                            NewState->SelectedEmitterIndex = 0;
+                        }
+                        else
+                        {
+                            NewState->SelectedEmitterIndex = -1;
+                        }
+
+                        // 탭 이름을 파일명으로 업데이트
+                        std::filesystem::path filePath(LoadPath);
+                        NewState->Name = filePath.stem().string();
 
                         // 프리뷰 액터 업데이트
                         NewState->UpdatePreviewParticleSystem();

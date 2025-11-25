@@ -86,13 +86,14 @@ public:
 struct FRawDistributionVector
 {
 public:
-	
+
 	EDistributionMode Operation = EDistributionMode::DOP_Constant;
 
 	FVector Constant = FVector::Zero();
 	FVector Min = FVector::Zero();
 	FVector Max = FVector::Zero();
 
+	FRawDistributionVector() {};
 	FRawDistributionVector(EDistributionMode InOperation, const FVector& InConstant, const FVector& InMin, const FVector& InMax)
 		:Operation(InOperation)
 		, Constant(InConstant)
