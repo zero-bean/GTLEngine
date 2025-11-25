@@ -989,9 +989,6 @@
     <ClCompile Include="Source\Slate\Windows\ParticleEditorEmitterSection.cpp">
       <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Slate\Windows\ParticleEditorMenuBarSection.cpp">
-      <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Slate\Windows\ParticleEditorToolBarSection.cpp">
       <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
     </ClCompile>

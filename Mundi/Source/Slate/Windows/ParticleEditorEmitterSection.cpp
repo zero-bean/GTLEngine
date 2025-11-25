@@ -397,7 +397,10 @@ void FParticleEditorEmitterSection::Draw(const FParticleEditorSectionContext& Co
                         }
 
                         ImGui::PushID(emitterIndex);
-                        ImGui::BeginChild("EmitterColumn", ImVec2(columnWidth, 0), true, ImGuiWindowFlags_AlwaysAutoResize);
+                        ImGui::BeginChild(
+                            "EmitterColumn",
+                            ImVec2(columnWidth, 0),
+                            ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize);
                         {
                             const bool bSelected = (ActiveState->SelectedEmitterIndex == emitterIndex);
                             char HeaderLabel[64];
