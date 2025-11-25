@@ -4,8 +4,10 @@ class UParticleEmitter;
 class UParticleSystemComponent;
 class UParticleLODLevel;
 class UParticleModule;
+class UParticleModuleTypeDataBeam;
 struct FBaseParticle;
 struct FDynamicEmitterDataBase;
+struct FBeamParticleInstance;
 
 
 struct FParticleEmitterInstance
@@ -114,4 +116,56 @@ public:
 	TArray<UMaterialInterface*> CurrentMaterials;
 
 	void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials) override;
+};
+
+struct FParticleBeamEmitterInstance : FParticleEmitterInstance
+{
+	struct FBeamPoint
+	{
+		// 보간된 위치
+		FVector Position;
+		// taper가 적용된 두께
+		float Width;
+		// 길이 비율에 따른 U 좌표
+		float TexCoord;
+	};
+public:
+	UParticleModuleTypeDataBeam* BeamTypeData;
+
+	// 액터가 존재하면 액터의 위치로 갱신
+	FVector SourcePosition;
+	FVector TargetPosition;
+
+	// 휘어지는 경우 필요, 베지어 곡선 적용에 필요함
+	// 접선 : 진행 방향, 베지어 곡선의 제어점 역할
+	FVector SourceTangent;
+	FVector TargetTangent;	
+
+	// 액터 캐싱용 변수
+	AActor* SourceActor = nullptr;
+	
+	AActor* TargetActor = nullptr;
+
+	int32 ActiveBeamCount;
+
+	// 현재 빔의 길이 상태
+	float CurrentTravelDistance;
+
+	TArray<FBeamPoint> BeamPoints;
+
+	float BaseWidth;
+
+	TArray<FBeamParticleInstance> RenderVertices;
+	
+	FParticleBeamEmitterInstance(UParticleSystemComponent* InComponent);
+
+	void Init();
+
+	void Tick(float DeltaTime, bool bSuppressSpawning);
+
+	void GetParticleInstanceData(TArray<FBeamParticleInstance>& ParticleInstanceData);
+
+	void BuildBeamPoints();
+
+	void BuildBeamMesh(const FVector& CameraPosition);
 };

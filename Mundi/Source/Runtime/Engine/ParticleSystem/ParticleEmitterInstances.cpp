@@ -7,6 +7,7 @@
 #include "ParticleEmitter.h"
 #include "ParticleSystemComponent.h"
 #include "ParticleModuleSpawn.h"
+#include "ParticleModuleTypeDataBeam.h"
 
 FParticleEmitterInstance::FParticleEmitterInstance(UParticleSystemComponent* InComponent)
 	:OwnerComponent(InComponent)
@@ -427,4 +428,103 @@ void FParticleSpriteEmitterInstance::GetParticleInstanceData(TArray<FSpriteParti
 void FParticleMeshEmitterInstance::SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials)
 {
 	CurrentMaterials = MeshMaterials;
+}
+
+FParticleBeamEmitterInstance::FParticleBeamEmitterInstance(UParticleSystemComponent* InComponent)
+	: FParticleEmitterInstance(InComponent)
+{
+}
+
+void FParticleBeamEmitterInstance::GetParticleInstanceData(TArray<FBeamParticleInstance>& ParticleInstanceData)
+{
+	// loop 안돔, 이미 BuildMesh에서 계산 완료
+	ParticleInstanceData = RenderVertices;
+}
+
+void FParticleBeamEmitterInstance::BuildBeamPoints()
+{
+	// 보간 점 + 시작점 + 끝 점
+	int32 TotalPoints = BeamTypeData->InterpolationPoints + 2;
+	
+	BeamPoints.Empty();
+	BeamPoints.SetNum(TotalPoints);
+
+	// 베지어 곡선의 각 정점
+	FVector P0 = SourcePosition;
+	FVector P1 = SourcePosition + SourceTangent;
+	FVector P2 = TargetPosition - TargetTangent;
+	FVector P3 = TargetPosition;
+	for (int32 i = 0; i < TotalPoints; i++)
+	{
+		FBeamPoint& Point = BeamPoints[i];
+		
+		// 진행률
+		float Progress = static_cast<float>(i) / static_cast<float>(TotalPoints - 1);
+
+		// 3차 베지어 곡선
+		// {(1-t)^3 * P0} + {3(1-t)^2 * t * P1} + {3(1-t) * t^2 * P2} + {t^3 * P3}
+		float InvProgress = 1.0f - Progress;
+		float Weight0 = InvProgress * InvProgress * InvProgress;
+		float Weight1 = 3.0f * InvProgress * InvProgress * Progress;
+		float Weight2 = 3.0f * InvProgress * Progress * Progress;
+		float Weight3 = Progress * Progress * Progress;
+
+		Point.Position = (P0 * Weight0) + (P1 * Weight1) + (P2 * Weight2) + (P3 * Weight3);
+		
+		// TODO 노이즈 추가
+
+		// 텍스쳐 타일링
+		Point.TexCoord = Progress * (BeamTypeData->TextureTile);
+
+		// 두께
+		float Factor = BeamTypeData->TaperFactor.GetValue(Progress);
+		float Scale = BeamTypeData->TaperScale.GetValue(Factor);
+		Point.Width = BaseWidth * Scale;
+	}
+}
+
+void FParticleBeamEmitterInstance::BuildBeamMesh(const FVector& CameraPosition)
+{
+	int32 PointCount = BeamPoints.Num();
+	
+	if (PointCount < 2)
+	{
+		return;
+	}
+
+	RenderVertices.Empty();
+	RenderVertices.Reserve(PointCount * 2);
+	for (int32 i = 0; i < PointCount; i++)
+	{
+		FVector CurrentPosition = BeamPoints[i].Position;
+
+		FVector Forward = {};
+		if (i < PointCount - 1)
+		{
+			// 다음 점을 향하는 방향 벡터
+			Forward = (BeamPoints[i + 1].Position - CurrentPosition).GetSafeNormal();
+		}
+		else
+		{
+			// 마지막인 경우 방향 벡터 유지
+			Forward = (CurrentPosition - BeamPoints[i - 1].Position).GetSafeNormal();
+		}
+
+		FVector CameraDirection = (CameraPosition - CurrentPosition).GetSafeNormal();
+		FVector Right = FVector::Cross(Forward, CameraDirection).GetSafeNormal();
+
+		float HalfWidth = BeamPoints[i].Width * 0.5f;
+
+		FBeamParticleInstance TopVertex, BottomVertex;
+		TopVertex.Position = CurrentPosition + (Right * HalfWidth);
+		TopVertex.UV = FVector2D(BeamPoints[i].TexCoord, 0.0f);
+		TopVertex.Color = BeamTypeData->Color;
+
+		BottomVertex.Position = CurrentPosition - (Right * HalfWidth);
+		BottomVertex.UV = FVector2D(BeamPoints[i].TexCoord, 1.0f);
+		BottomVertex.Color = BeamTypeData->Color;
+
+		RenderVertices.Add(TopVertex);
+		RenderVertices.Add(BottomVertex);
+	}
 }

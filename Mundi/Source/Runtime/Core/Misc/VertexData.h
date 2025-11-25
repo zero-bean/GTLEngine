@@ -449,3 +449,12 @@ struct FSpriteParticleInstance
 
     void FillFrom(const FSpriteParticleInstance& Source);
 };
+
+struct FBeamParticleInstance
+{
+    FVector4 Color;
+    FVector Position;
+    FVector2D UV;
+
+    void FillFrom(const FBeamParticleInstance& Source);
+};

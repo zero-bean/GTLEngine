@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_StandAlone|x64">
@@ -637,7 +637,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClCompile Include="Generated\UParticleModuleSize.generated.cpp" />
     <ClCompile Include="Generated\UParticleModuleSpawn.generated.cpp" />
     <ClCompile Include="Generated\UParticleModuleVelocity.generated.cpp" />
-  </ItemGroup>
+  <ClCompile Include="Generated\UParticleModuleTypeDataBeam.generated.cpp" /></ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -895,6 +895,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSpawn.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataBase.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLifetime.h" />
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataBeam.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleVelocity.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleSystem.h" />
     <ClInclude Include="Source\Runtime\Engine\Scripting\GameObject.h" />
@@ -1103,7 +1104,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClInclude Include="Generated\UParticleModuleSize.generated.h" />
     <ClInclude Include="Generated\UParticleModuleSpawn.generated.h" />
     <ClInclude Include="Generated\UParticleModuleVelocity.generated.h" />
-  </ItemGroup>
+  <ClInclude Include="Generated\UParticleModuleTypeDataBeam.generated.h" /></ItemGroup>
   <ItemGroup>
     <None Include="Tools\CodeGenerator\generate.py" />
     <None Include="Tools\CodeGenerator\lua_generator.py" />
