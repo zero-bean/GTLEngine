@@ -18,6 +18,7 @@
 #include "Material.h"
 #include "Texture.h"
 #include "Shader.h"
+#include "PathUtils.h"
 #include "PlatformProcess.h"
 #include <cstring>
 #include <filesystem>
@@ -26,6 +27,28 @@ namespace
 {
     constexpr ImGuiTableFlags PropertyTableFlags =
         ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV;
+
+    FString MakeDataRelativePath(const std::filesystem::path& AbsolutePath)
+    {
+        try
+        {
+            const fs::path CanonicalPath = fs::weakly_canonical(AbsolutePath);
+            const fs::path DataRoot = fs::weakly_canonical(fs::absolute(fs::path(UTF8ToWide(GDataDir))));
+
+            std::error_code ec;
+            fs::path RelativePath = fs::relative(CanonicalPath, DataRoot, ec);
+            if (!ec && !RelativePath.empty())
+            {
+                return NormalizePath(GDataDir + "/" + WideToUTF8(RelativePath.generic_wstring()));
+            }
+
+            return NormalizePath(WideToUTF8(CanonicalPath.generic_wstring()));
+        }
+        catch (const std::exception&)
+        {
+            return NormalizePath(WideToUTF8(AbsolutePath.generic_wstring()));
+        }
+    }
 
     template <typename ValueCallable>
     void DrawPropertyRow(const char* Label, ValueCallable&& ValueDrawer)
@@ -747,7 +770,7 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
                 {
                     try
                     {
-                        FString TexturePath = SelectedFile.string();
+                        FString TexturePath = MakeDataRelativePath(SelectedFile);
 
                         // 텍스처 로드
                         UTexture* Texture = UResourceManager::GetInstance().Load<UTexture>(TexturePath);
