@@ -468,7 +468,16 @@ void FParticleEditorEmitterSection::CreateNewEmitter(ParticleEditorState* State)
 
     // Required Module 생성 (필수)
     UParticleModuleRequired* RequiredModule = NewObject<UParticleModuleRequired>();
-    RequiredModule->Material = UResourceManager::GetInstance().Load<UMaterial>("Shaders/UI/Billboard.hlsl");
+
+    // 기본 Material 생성 (텍스처 없는 흰색 파티클)
+    UMaterial* DefaultMaterial = NewObject<UMaterial>();
+    UShader* BillboardShader = UResourceManager::GetInstance().Load<UShader>("Shaders/UI/Billboard.hlsl");
+    if (BillboardShader)
+    {
+        DefaultMaterial->SetShader(BillboardShader);
+    }
+    RequiredModule->Material = DefaultMaterial;
+
     RequiredModule->EmitterDuration = 2.0f;
     RequiredModule->EmitterLoops = 0;
     RequiredModule->bUseLocalSpace = false;
@@ -528,6 +537,9 @@ void FParticleEditorEmitterSection::CreateNewEmitter(ParticleEditorState* State)
     // 파티클 시스템에 추가
     State->CurrentParticleSystem->Emitters.Add(NewEmitter);
 
+    // 프리뷰 파티클 시스템 업데이트 (EmitterInstance 재생성)
+    State->UpdatePreviewParticleSystem();
+
     // 새로 생성된 Emitter 선택
     State->SelectedEmitterIndex = State->CurrentParticleSystem->Emitters.Num() - 1;
     SelectDefaultModule(State, NewEmitter);
@@ -551,6 +563,9 @@ void FParticleEditorEmitterSection::DeleteSelectedEmitter(ParticleEditorState* S
     }
 
     State->CurrentParticleSystem->Emitters.RemoveAt(State->SelectedEmitterIndex);
+
+    // 프리뷰 파티클 시스템 업데이트 (EmitterInstance 재생성)
+    State->UpdatePreviewParticleSystem();
 
     // 선택 인덱스 조정
     if (State->CurrentParticleSystem->Emitters.Num() > 0)

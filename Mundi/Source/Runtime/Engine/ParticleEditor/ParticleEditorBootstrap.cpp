@@ -75,7 +75,7 @@ ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name
 
     // 언리얼 방식: 빈 파티클 시스템에 기본 Sprite Emitter 1개 자동 생성
     State->CurrentParticleSystem = NewObject<UParticleSystem>();
-    State->LoadedParticleSystemPath = "Untitled Particle System";
+    State->LoadedParticleSystemPath = "";
 
     // 기본 Sprite Emitter 생성
     UParticleEmitter* DefaultEmitter = NewObject<UParticleEmitter>();
