@@ -229,7 +229,10 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
         ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
 
-        ImGui::BeginChild(ContainerId, ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::BeginChild(
+            ContainerId,
+            ImVec2(0, 0),
+            ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysAutoResize);
 
         ImGui::Dummy(ImVec2(0.0f, 6.0f));
         ImGui::Indent(8.0f);
