@@ -3,7 +3,6 @@
 #include "UParticleSystemComponent.generated.h"
 
 struct FParticleEmitterInstance;
-struct FDynamicEmitterDataBase;
 class UParticleSystem;
 
 UCLASS(DisplayName = "파티클 시스템 컴포넌트", Description = "파티클 시스템 컴포넌트")
@@ -21,8 +20,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Particle")
 	UParticleSystem* Template = nullptr;
 
-	TArray<FDynamicEmitterDataBase*> EmitterRenderDatas;
-
+	void CollectMeshBatches(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
 
 	UParticleSystemComponent();
 

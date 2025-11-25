@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "UEContainer.h"
 #include <d3d11.h>
 
@@ -253,4 +253,11 @@ enum class EWorldType : uint8
 
     End,
     PreviewMinimal, 
+};
+
+enum class EBlendType : uint8
+{
+    Opaque = 0,
+    Additive,
+    Alpha
 };

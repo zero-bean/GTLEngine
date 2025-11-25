@@ -31,18 +31,18 @@
 #include "DecalStatManager.h"
 #include "SceneRenderer.h"
 #include "SceneView.h"
-#include "ParticleRenderer.h"
 
 #include <Windows.h>
 #include "DirectionalLightComponent.h"
+
+#define MAX_PARTICLES 1000
+
 URenderer::URenderer(D3D11RHI* InDevice) : RHIDevice(InDevice)
 {
 	InitializeLineBatch();
-	if (!ParticleRenderer)
-	{
-		ParticleRenderer = new FParticleRenderer(InDevice);
-	}
-	ParticleRenderer->Initialize();
+
+	constexpr uint32 InstanceBytes = sizeof(FSpriteParticleInstance) * MAX_PARTICLES;
+	InDevice->CreateVertexBufferWithSize(InDevice->GetDevice(), &ParticleInstanceBuffer, InstanceBytes, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
 }
 
 URenderer::~URenderer()
@@ -51,9 +51,9 @@ URenderer::~URenderer()
 	{
 		delete LineBatchData;
 	}
-	if (ParticleRenderer)
+	if (ParticleInstanceBuffer)
 	{
-		delete ParticleRenderer;
+		ParticleInstanceBuffer->Release();
 	}
 }
 
