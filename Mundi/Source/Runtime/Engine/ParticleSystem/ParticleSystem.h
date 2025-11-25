@@ -19,4 +19,6 @@ public:
 	static UParticleSystem* GetTestParticleSystem();
 
 	static void ReleaseTestParticleSystem();
+
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 };

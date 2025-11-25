@@ -887,9 +887,6 @@
     <ClCompile Include="Source\Slate\Windows\SParticleEditorWindow.cpp">
       <Filter>Source\Slate\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Slate\Windows\ParticleEditorSections.cpp">
-      <Filter>Source\Slate\Windows</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Runtime\Engine\ParticleEditor\ParticleEditorBootstrap.cpp">
       <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
     </ClCompile>
@@ -979,6 +976,27 @@
     </ClCompile>
     <ClCompile Include="Generated\UParticleSystemComponent.generated.cpp">
       <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorViewportSection.cpp">
+      <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorCurveSection.cpp">
+      <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorDetailSection.cpp">
+      <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorEmitterSection.cpp">
+      <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorMenuBarSection.cpp">
+      <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\Windows\ParticleEditorToolBarSection.cpp">
+      <Filter>Source\Runtime\Engine\ParticleEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRequired.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

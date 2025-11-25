@@ -22,3 +22,17 @@ uint32 UParticleModule::RequiredBytesPerInstance()
 void UParticleModule::PrepPerInstanceBlock(FParticleEmitterInstance* EmitterInstance, void* InstanceData)
 {
 }
+
+void UParticleModule::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	if (bInIsLoading)
+	{
+		bEnabled = InOutHandle["bEnabled"].ToBool();
+	}
+	else
+	{
+		InOutHandle["bEnabled"] = bEnabled;
+	}
+}

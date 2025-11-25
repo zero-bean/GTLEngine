@@ -402,6 +402,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleColor.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLifetime.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLocation.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRequired.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotation.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSize.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSpawn.cpp" />

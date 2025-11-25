@@ -11,6 +11,8 @@
 #include "ParticleModuleSpawn.h"
 #include "ParticleModuleVelocity.h"
 #include "ParticleModuleRotation.h"
+#include "JsonSerializer.h"
+#include "ObjectFactory.h"
 
 UParticleSystem* UParticleSystem::TestParticleSystem = nullptr;
 
@@ -107,5 +109,71 @@ void UParticleSystem::ReleaseTestParticleSystem()
 	{
 		DeleteObject(TestParticleSystem);
 		TestParticleSystem = nullptr;
+	}
+}
+
+void UParticleSystem::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	auto ResetEmitters = [this]()
+	{
+		for (UParticleEmitter* Emitter : Emitters)
+		{
+			if (Emitter)
+			{
+				DeleteObject(Emitter);
+			}
+		}
+		Emitters.Empty();
+	};
+
+	if (bInIsLoading)
+	{
+		ResetEmitters();
+
+		JSON EmittersJson;
+		if (FJsonSerializer::ReadArray(InOutHandle, "Emitters", EmittersJson, nullptr, false))
+		{
+			for (uint32 Index = 0; Index < static_cast<uint32>(EmittersJson.size()); ++Index)
+			{
+				JSON EmitterJson = EmittersJson.at(Index);
+
+				FString TypeString;
+				FJsonSerializer::ReadString(EmitterJson, "Type", TypeString, "UParticleEmitter", false);
+
+				UClass* EmitterClass = !TypeString.empty() ? UClass::FindClass(TypeString) : nullptr;
+				if (!EmitterClass || !EmitterClass->IsChildOf(UParticleEmitter::StaticClass()))
+				{
+					EmitterClass = UParticleEmitter::StaticClass();
+				}
+
+				if (UParticleEmitter* NewEmitter = Cast<UParticleEmitter>(ObjectFactory::NewObject(EmitterClass)))
+				{
+					NewEmitter->Serialize(true, EmitterJson);
+					NewEmitter->CacheEmitterModuleInfo();
+					Emitters.Add(NewEmitter);
+				}
+			}
+		}
+	}
+	else
+	{
+		InOutHandle["Version"] = 1;
+
+		JSON EmittersJson = JSON::Make(JSON::Class::Array);
+		for (UParticleEmitter* Emitter : Emitters)
+		{
+			if (!Emitter)
+			{
+				continue;
+			}
+
+			JSON EmitterJson = JSON::Make(JSON::Class::Object);
+			EmitterJson["Type"] = Emitter->GetClass()->Name;
+			Emitter->Serialize(false, EmitterJson);
+			EmittersJson.append(EmitterJson);
+		}
+		InOutHandle["Emitters"] = EmittersJson;
 	}
 }
