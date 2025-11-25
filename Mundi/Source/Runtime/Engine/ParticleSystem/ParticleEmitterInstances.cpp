@@ -7,6 +7,8 @@
 #include "ParticleEmitter.h"
 #include "ParticleSystemComponent.h"
 #include "ParticleModuleSpawn.h"
+#include "MeshBatchElement.h"
+#include "SceneView.h"
 #include "ParticleModuleTypeDataBeam.h"
 
 FParticleEmitterInstance::FParticleEmitterInstance(UParticleSystemComponent* InComponent)
@@ -371,6 +373,11 @@ void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& 
 
 }
 
+void FParticleEmitterInstance::FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View)
+{
+}
+
+
 void FParticleDataContainer::Alloc(int32 InParticleDataNumBytes, int32 InParticleIndicesNumShorts)
 {
 	if (!(InParticleDataNumBytes > 0 && InParticleIndicesNumShorts >= 0 &&
@@ -400,12 +407,7 @@ void FParticleDataContainer::Free()
 FParticleSpriteEmitterInstance::FParticleSpriteEmitterInstance(UParticleSystemComponent* InComponent)
 	:FParticleEmitterInstance(InComponent)
 {
-}
-
-// bSelected: 선택된 이미터인 경우 에디터에서 바운딩 박스 표시하기 위함
-FDynamicEmitterDataBase* FParticleSpriteEmitterInstance::GetDynamicData(bool bSelected)
-{
-	return nullptr;
+	Quad = UResourceManager::GetInstance().Get<UQuad>("BillboardQuad");
 }
 
 void FParticleSpriteEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData)
@@ -423,11 +425,52 @@ void FParticleSpriteEmitterInstance::GetParticleInstanceData(TArray<FSpriteParti
 	END_UPDATE_LOOP
 }
 
+void FParticleSpriteEmitterInstance::FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View)
+{
+	ParticleInstanceData.Empty();
+	GetParticleInstanceData(ParticleInstanceData);
+	BatchElement.BaseVertexIndex = 0;
+	BatchElement.Distance = (View->ViewLocation - EmitterLocation * OwnerComponent->GetWorldMatrix()).Size();
 
+	BatchElement.VertexBuffer = Quad->GetVertexBuffer();
+	BatchElement.VertexStride = sizeof(FBillboardVertex);
+	BatchElement.IndexBuffer = Quad->GetIndexBuffer();
+	BatchElement.IndexCount = 6;
+	BatchElement.ParticleInstanceData = &ParticleInstanceData;
+	BatchElement.InstanceStride = sizeof(FSpriteParticleInstance);
+	BatchElement.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	BatchElement.InstanceShaderResourceView = InstanceSRV;
+	
+	if (CurrentMaterial)
+	{
+		BatchElement.Material = CurrentMaterial;
+		UShader* Shader = UResourceManager::GetInstance().Load<UShader>("Shaders/Particles/SpriteParticle.hlsl");
+
+		FShaderVariant* ShaderVariant = Shader->GetOrCompileShaderVariant();
+		if (ShaderVariant)
+		{
+			BatchElement.VertexShader = ShaderVariant->VertexShader;
+			BatchElement.PixelShader = ShaderVariant->PixelShader;
+			BatchElement.InputLayout = ShaderVariant->InputLayout;
+		}
+	}
+}
+
+
+
+
+void FParticleMeshEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData)
+{
+}
 
 void FParticleMeshEmitterInstance::SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials)
 {
 	CurrentMaterials = MeshMaterials;
+}
+
+void FParticleMeshEmitterInstance::FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View)
+{
+
 }
 
 FParticleBeamEmitterInstance::FParticleBeamEmitterInstance(UParticleSystemComponent* InComponent)

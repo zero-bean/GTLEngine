@@ -1,5 +1,5 @@
 ﻿#pragma once
-
+#include "MeshBatchElement.h"
 class UParticleEmitter;
 class UParticleSystemComponent;
 class UParticleLODLevel;
@@ -56,6 +56,9 @@ public:
 
 	UMaterialInterface* CurrentMaterial = nullptr;
 
+	// 컴포넌트 로컬 좌표계에서 정의되는 이미터 좌표
+	FVector EmitterLocation = FVector::Zero();
+
 	// 테스트용 텍스처
 	ID3D11ShaderResourceView* InstanceSRV = nullptr;
 
@@ -67,11 +70,9 @@ public:
 	FParticleEmitterInstance(UParticleSystemComponent* InComponent);
 	~FParticleEmitterInstance();
 
-	virtual FDynamicEmitterDataBase* GetDynamicData(bool bSelected) {
-		return nullptr;
-	}
-
 	virtual void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials);
+	virtual void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData) = 0;
+	virtual void FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View);
 
 	void Init();
 
@@ -101,11 +102,16 @@ public:
 struct FParticleSpriteEmitterInstance : FParticleEmitterInstance
 {
 public:
+
+	UQuad* Quad = nullptr;
+
+	TArray<FSpriteParticleInstance> ParticleInstanceData;
+
 	// ParticleSystemComponent 헤더가 방대해질 가능성이 높음, 인터페이스를 만들어야 함.
 	FParticleSpriteEmitterInstance(UParticleSystemComponent* InComponent);
-	FDynamicEmitterDataBase* GetDynamicData(bool bSelected) override;
 
-	void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData);
+	void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData) override;
+	void FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View) override;
 };
 
 struct FParticleMeshEmitterInstance : FParticleEmitterInstance
@@ -115,7 +121,10 @@ public:
 	// CurrentMaterial은 기본값이고 SpriteEmitterInstance는 그대로 사용
 	TArray<UMaterialInterface*> CurrentMaterials;
 
+	void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData) override;
+
 	void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials) override;
+	void FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View) override;
 };
 
 struct FParticleBeamEmitterInstance : FParticleEmitterInstance
