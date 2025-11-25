@@ -12,3 +12,19 @@ void UParticleModuleLifetime::Spawn(const FSpawnContext& SpawnContext)
 	SpawnContext.ParticleBase->RelativeTime = 0.0f;
 }
 
+void UParticleModuleLifetime::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	if (bInIsLoading)
+	{
+		JSON LifeTimeJson = InOutHandle["LifeTime"];
+		LifeTime.Serialize(true, LifeTimeJson);
+	}
+	else
+	{
+		JSON LifeTimeJson = JSON::Make(JSON::Class::Object);
+		LifeTime.Serialize(false, LifeTimeJson);
+		InOutHandle["LifeTime"] = LifeTimeJson;
+	}
+}

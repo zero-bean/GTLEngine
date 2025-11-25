@@ -133,16 +133,19 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 	KillParticles();
 
 	// 파티클 스폰
-	if (!bSuppressSpawning)
-	{
-		int32 SpawnCount = CurrentLODLevel->SpawnModule->GetSpawnCount(DeltaTime, SpawnFraction, EmitterTime);
+    if (!bSuppressSpawning)
+    {
+        int32 SpawnCount = 0;
+        if (CurrentLODLevel->SpawnModule)
+        {
+            SpawnCount = CurrentLODLevel->SpawnModule->GetSpawnCount(DeltaTime, SpawnFraction, EmitterTime);
+        }
 
-		if (SpawnCount > 0)
-		{
+        if (SpawnCount > 0)
+        {
 			// ActiveParticles는 실제로 Spawn할때 올림
 			Resize(ActiveParticles + SpawnCount);
 			SpawnParticles(SpawnCount, DeltaTime, DeltaTime / SpawnCount, OwnerComponent->GetWorldLocation(), FVector(0, 0, 0));
-
 		}
 	}
 

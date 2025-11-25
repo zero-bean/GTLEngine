@@ -9,8 +9,6 @@ class UParticleModuleRequired : public UParticleModule
 {
 	GENERATED_REFLECTION_BODY()
 public:
-
-
 	UMaterialInterface* Material;
 
 	// 이미터 1회 루프 시간
@@ -28,4 +26,6 @@ public:
 	bool bUseLocalSpace = true;
 
 	UParticleModuleRequired() = default;
+
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 };

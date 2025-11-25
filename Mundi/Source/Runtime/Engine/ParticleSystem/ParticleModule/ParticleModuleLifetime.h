@@ -15,4 +15,6 @@ public:
 	UParticleModuleLifetime() = default;
 
 	void Spawn(const FSpawnContext& SpawnContext) override;
+
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 };

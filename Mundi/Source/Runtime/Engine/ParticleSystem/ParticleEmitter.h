@@ -42,4 +42,6 @@ public:
     TMap<UParticleModule*, uint32> ModuleInstanceOffsetMap;
 
     void CacheEmitterModuleInfo();
+
+    void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 };

@@ -1,5 +1,8 @@
 ﻿#pragma once
+#include "JsonSerializer.h"
 
+namespace json { class JSON; }
+using JSON = json::JSON;
 
 enum class EDistributionMode
 {
@@ -58,18 +61,39 @@ public:
 			break;
 		}
 	}
+
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle)
+	{
+		if (bInIsLoading)
+		{
+			// Load
+			Operation = static_cast<EDistributionMode>(InOutHandle["operation"].ToInt());
+			Constant = static_cast<float>(InOutHandle["constant"].ToFloat());
+			Min = static_cast<float>(InOutHandle["min"].ToFloat());
+			Max = static_cast<float>(InOutHandle["max"].ToFloat());
+		}
+		else
+		{
+			// Save
+			InOutHandle["operation"] = static_cast<int>(Operation);
+			InOutHandle["constant"] = Constant;
+			InOutHandle["min"] = Min;
+			InOutHandle["max"] = Max;
+		}
+	}
 };
 
 struct FRawDistributionVector
 {
 public:
-	
+
 	EDistributionMode Operation = EDistributionMode::DOP_Constant;
 
 	FVector Constant = FVector::Zero();
 	FVector Min = FVector::Zero();
 	FVector Max = FVector::Zero();
 
+	FRawDistributionVector() {};
 	FRawDistributionVector(EDistributionMode InOperation, const FVector& InConstant, const FVector& InMin, const FVector& InMax)
 		:Operation(InOperation)
 		, Constant(InConstant)
@@ -97,6 +121,59 @@ public:
 		case EDistributionMode::DOP_Curve:
 		default:
 			break;
+		}
+	}
+
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle)
+	{
+		if (bInIsLoading)
+		{
+			// Load
+			Operation = static_cast<EDistributionMode>(InOutHandle["operation"].ToInt());
+
+			auto& constArr = InOutHandle["constant"];
+			Constant = FVector(
+				static_cast<float>(constArr[0].ToFloat()),
+				static_cast<float>(constArr[1].ToFloat()),
+				static_cast<float>(constArr[2].ToFloat())
+			);
+
+			auto& minArr = InOutHandle["min"];
+			Min = FVector(
+				static_cast<float>(minArr[0].ToFloat()),
+				static_cast<float>(minArr[1].ToFloat()),
+				static_cast<float>(minArr[2].ToFloat())
+			);
+
+			auto& maxArr = InOutHandle["max"];
+			Max = FVector(
+				static_cast<float>(maxArr[0].ToFloat()),
+				static_cast<float>(maxArr[1].ToFloat()),
+				static_cast<float>(maxArr[2].ToFloat())
+			);
+		}
+		else
+		{
+			// Save
+			InOutHandle["operation"] = static_cast<int>(Operation);
+
+			JSON constArr = JSON::Make(JSON::Class::Array);
+			constArr.append(Constant.X);
+			constArr.append(Constant.Y);
+			constArr.append(Constant.Z);
+			InOutHandle["constant"] = constArr;
+
+			JSON minArr = JSON::Make(JSON::Class::Array);
+			minArr.append(Min.X);
+			minArr.append(Min.Y);
+			minArr.append(Min.Z);
+			InOutHandle["min"] = minArr;
+
+			JSON maxArr = JSON::Make(JSON::Class::Array);
+			maxArr.append(Max.X);
+			maxArr.append(Max.Y);
+			maxArr.append(Max.Z);
+			InOutHandle["max"] = maxArr;
 		}
 	}
 };

@@ -4,6 +4,10 @@
 #include "ParticleEmitterInstances.h"
 #include "ParticleEmitter.h"
 #include "MeshBatchElement.h"
+#include "ParticleLODLevel.h"
+#include "ParticleModuleRequired.h"
+#include "Material.h"
+#include "Texture.h"
 
 
 void UParticleSystemComponent::CollectMeshBatches(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View)
@@ -56,19 +60,15 @@ void UParticleSystemComponent::DestroyEmitterInstances()
 
 void UParticleSystemComponent::BeginPlay()
 {
-	//테스트용 코드
-	UParticleSystem* PS = UParticleSystem::GetTestParticleSystem();
-	if (PS)
+	// Template이 설정되어 있으면 파티클 초기화
+	if (Template)
 	{
-		SetTemplate(PS);
+		InitParticles();
 	}
-	
 }
 
 void UParticleSystemComponent::EndPlay()
 {
-	// 테스트용 코드
-	UParticleSystem::ReleaseTestParticleSystem();
 	DestroyEmitterInstances();
 }
 
@@ -81,19 +81,17 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		{
 			EmitterInstance->Tick(DeltaTime, bSuppressSpawning);
 		}
-		if (EmitterInstance->HasComplete())
+		if (EmitterInstance && EmitterInstance->HasComplete())
 		{
 			delete EmitterInstance;
 			EmitterInstances[EmitterIndex] = nullptr;
 		}
 	}
-	
 }
 
 
 void UParticleSystemComponent::InitParticles()
 {
-
 	ResetParticles();
 
 	if (Template)
@@ -101,16 +99,25 @@ void UParticleSystemComponent::InitParticles()
 		for (UParticleEmitter* Emitter : Template->Emitters)
 		{
 			FParticleEmitterInstance* NewInstance = Emitter->CreateInstance(this);
-			// 테스트용 텍스처
-			NewInstance->InstanceSRV = UResourceManager::GetInstance().Load<UTexture>(GDataDir + "/Textures/jin.png")->GetShaderResourceView();
+
+			// Required Module에서 Material의 텍스처 가져오기
+			if (Emitter->LODLevels.Num() > 0 && Emitter->LODLevels[0])
+			{
+				UParticleLODLevel* LODLevel = Emitter->LODLevels[0];
+				if (LODLevel->RequiredModule && LODLevel->RequiredModule->Material)
+				{
+					UTexture* DiffuseTexture = LODLevel->RequiredModule->Material->GetTexture(EMaterialTextureSlot::Diffuse);
+					if (DiffuseTexture && DiffuseTexture->GetShaderResourceView())
+					{
+						NewInstance->InstanceSRV = DiffuseTexture->GetShaderResourceView();
+					}
+				}
+			}
 
 			NewInstance->Init();
-
 			EmitterInstances.Add(NewInstance);
 		}
-
 	}
-
 }
 
 void UParticleSystemComponent::ResetParticles()

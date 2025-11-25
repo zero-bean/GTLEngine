@@ -1,0 +1,159 @@
+{
+  "Emitters" : [{
+      "InitialAllocationCount" : 0,
+      "LODLevels" : [{
+          "Level" : 0,
+          "Modules" : [{
+              "LifeTime" : {
+                "constant" : 1.000000,
+                "max" : 2.000000,
+                "min" : 1.000000,
+                "operation" : 1
+              },
+              "Type" : "UParticleModuleLifetime",
+              "bEnabled" : true
+            }, {
+              "StartSize" : {
+                "constant" : [1.000000, 1.000000, 1.000000],
+                "max" : [5.000000, 5.000000, 5.000000],
+                "min" : [2.000000, 2.000000, 2.000000],
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleSize",
+              "bEnabled" : true
+            }, {
+              "StartColor" : {
+                "constant" : [1.000000, 1.000000, 1.000000],
+                "max" : [1.000000, 1.000000, 1.000000],
+                "min" : [0.000000, 0.000000, 0.000000],
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleColor",
+              "bEnabled" : true
+            }],
+          "PeakActiveParticles" : 0,
+          "RequiredModule" : {
+            "EmitterDelay" : 0.000000,
+            "EmitterDuration" : 2.000000,
+            "EmitterLoops" : 0,
+            "MaterialData" : {
+              "DiffuseTexture" : "C:\\Krafton\\GTL_Week12\\Mundi\\Data\\Textures\\Boom.png",
+              "NormalTexture" : "",
+              "ShaderPath" : "Shaders/UI/Billboard.hlsl",
+              "SpecularTexture" : ""
+            },
+            "Type" : "UParticleModuleRequired",
+            "bEnabled" : true,
+            "bUseLocalSpace" : true
+          },
+          "SpawnModule" : {
+            "SpawnRate" : {
+              "constant" : 30.000000,
+              "max" : 0.000000,
+              "min" : 0.000000,
+              "operation" : 0
+            },
+            "Type" : "UParticleModuleSpawn",
+            "bEnabled" : true
+          },
+          "SpawnModuleIndices" : [0, 1, 2],
+          "Type" : "UParticleLODLevel",
+          "UpdateModuleIndices" : [],
+          "bEnabled" : true
+        }],
+      "MeshMaterials" : [],
+      "Type" : "UParticleEmitter"
+    }, {
+      "InitialAllocationCount" : 0,
+      "LODLevels" : [{
+          "Level" : 0,
+          "Modules" : [{
+              "StartColor" : {
+                "constant" : [1.000000, 1.000000, 1.000000],
+                "max" : [1.000000, 1.000000, 1.000000],
+                "min" : [0.000000, 0.000000, 0.000000],
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleColor",
+              "bEnabled" : true
+            }, {
+              "LifeTime" : {
+                "constant" : 2.000000,
+                "max" : 1.000000,
+                "min" : 0.000000,
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleLifetime",
+              "bEnabled" : true
+            }, {
+              "SpawnLocation" : {
+                "constant" : [0.000000, 0.000000, 0.000000],
+                "max" : [1.000000, 1.000000, 1.000000],
+                "min" : [0.000000, 0.000000, 0.000000],
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleLocation",
+              "bEnabled" : true
+            }, {
+              "StartSize" : {
+                "constant" : [1.000000, 1.000000, 1.000000],
+                "max" : [5.000000, 5.000000, 5.000000],
+                "min" : [2.000000, 2.000000, 2.000000],
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleSize",
+              "bEnabled" : true
+            }, {
+              "StartVelocity" : {
+                "constant" : [0.000000, 0.000000, 10.000000],
+                "max" : [1.000000, 1.000000, 1.000000],
+                "min" : [-1.000000, -1.000000, -1.000000],
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleVelocity",
+              "bEnabled" : true
+            }, {
+              "StartRotation" : {
+                "constant" : 0.000000,
+                "max" : 90.000000,
+                "min" : 0.000000,
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleRotation",
+              "bEnabled" : true
+            }],
+          "PeakActiveParticles" : 0,
+          "RequiredModule" : {
+            "EmitterDelay" : 0.000000,
+            "EmitterDuration" : 2.000000,
+            "EmitterLoops" : 0,
+            "MaterialData" : {
+              "DiffuseTexture" : "",
+              "NormalTexture" : "",
+              "ShaderPath" : "Shaders/UI/Billboard.hlsl",
+              "SpecularTexture" : ""
+            },
+            "Type" : "UParticleModuleRequired",
+            "bEnabled" : true,
+            "bUseLocalSpace" : false
+          },
+          "SpawnModule" : {
+            "SpawnRate" : {
+              "constant" : 10.000000,
+              "max" : 0.000000,
+              "min" : 0.000000,
+              "operation" : 0
+            },
+            "Type" : "UParticleModuleSpawn",
+            "bEnabled" : true
+          },
+          "SpawnModuleIndices" : [0, 1, 2, 3, 4, 5],
+          "Type" : "UParticleLODLevel",
+          "UpdateModuleIndices" : [],
+          "bEnabled" : true
+        }],
+      "MeshMaterials" : [],
+      "Type" : "UParticleEmitter"
+    }],
+  "Version" : 1
+}

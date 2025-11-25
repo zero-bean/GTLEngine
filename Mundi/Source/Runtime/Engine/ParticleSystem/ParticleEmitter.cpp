@@ -5,6 +5,10 @@
 #include "ParticleModuleTypeDataBase.h"
 #include "ParticleLODLevel.h"
 #include "ParticleModule.h"
+#include "JsonSerializer.h"
+#include "ObjectFactory.h"
+#include "ResourceManager.h"
+#include "Material.h"
 
 UParticleEmitter::UParticleEmitter()
 {
@@ -105,5 +109,106 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 				ReqInstanceBytes += TempInstanceBytes;
 			}
 		}
+	}
+}
+
+void UParticleEmitter::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	auto ResetLODLevels = [this]()
+	{
+		for (UParticleLODLevel* LOD : LODLevels)
+		{
+			if (LOD)
+			{
+				DeleteObject(LOD);
+			}
+		}
+		LODLevels.Empty();
+	};
+
+	if (bInIsLoading)
+	{
+		ResetLODLevels();
+		ModulesNeedingInstanceData.Empty();
+		ModuleOffsetMap.Empty();
+		ModuleInstanceOffsetMap.Empty();
+		MeshMaterials.Empty();
+
+		FJsonSerializer::ReadInt32(InOutHandle, "InitialAllocationCount", InitialAllocationCount, InitialAllocationCount, false);
+
+		JSON MaterialsJson;
+		if (FJsonSerializer::ReadArray(InOutHandle, "MeshMaterials", MaterialsJson, nullptr, false))
+		{
+			for (uint32 MaterialIndex = 0; MaterialIndex < static_cast<uint32>(MaterialsJson.size()); ++MaterialIndex)
+			{
+				const JSON& MaterialValue = MaterialsJson.at(MaterialIndex);
+				if (MaterialValue.JSONType() == JSON::Class::String)
+				{
+					FString Path = MaterialValue.ToString();
+					if (!Path.empty())
+					{
+						MeshMaterials.Add(UResourceManager::GetInstance().Load<UMaterial>(Path));
+					}
+					else
+					{
+						MeshMaterials.Add(nullptr);
+					}
+				}
+			}
+		}
+
+		JSON LODArrayJson;
+		if (FJsonSerializer::ReadArray(InOutHandle, "LODLevels", LODArrayJson, nullptr, false))
+		{
+			for (uint32 LODIndex = 0; LODIndex < static_cast<uint32>(LODArrayJson.size()); ++LODIndex)
+			{
+				JSON LODJson = LODArrayJson.at(LODIndex);
+
+				FString TypeString;
+				FJsonSerializer::ReadString(LODJson, "Type", TypeString, "UParticleLODLevel", false);
+
+				UClass* LODClass = !TypeString.empty() ? UClass::FindClass(TypeString) : nullptr;
+				if (!LODClass || !LODClass->IsChildOf(UParticleLODLevel::StaticClass()))
+				{
+					LODClass = UParticleLODLevel::StaticClass();
+				}
+
+				if (UParticleLODLevel* NewLOD = Cast<UParticleLODLevel>(ObjectFactory::NewObject(LODClass)))
+				{
+					NewLOD->Serialize(true, LODJson);
+					LODLevels.Add(NewLOD);
+				}
+			}
+		}
+
+		CacheEmitterModuleInfo();
+	}
+	else
+	{
+		InOutHandle["InitialAllocationCount"] = InitialAllocationCount;
+
+		JSON MaterialsJson = JSON::Make(JSON::Class::Array);
+		for (UMaterialInterface* Material : MeshMaterials)
+		{
+			MaterialsJson.append(Material ? Material->GetFilePath().c_str() : "");
+		}
+		InOutHandle["MeshMaterials"] = MaterialsJson;
+
+		JSON LODArrayJson = JSON::Make(JSON::Class::Array);
+		for (UParticleLODLevel* LOD : LODLevels)
+		{
+			if (!LOD)
+			{
+				continue;
+			}
+
+			JSON LODJson = JSON::Make(JSON::Class::Object);
+			LODJson["Type"] = LOD->GetClass()->Name;
+			LOD->Serialize(false, LODJson);
+			LODArrayJson.append(LODJson);
+		}
+		InOutHandle["LODLevels"] = LODArrayJson;
 	}
 }

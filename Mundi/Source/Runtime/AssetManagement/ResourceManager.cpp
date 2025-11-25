@@ -565,14 +565,43 @@ void UResourceManager::CreateTextBillboardTexture()
     Add<UTexture>("TextBillboard.dds", TextBillboardTexture);
 }
 
+UParticleSystem* UResourceManager::LoadParticleSystem(const FString& InFilePath)
+{
+	return Load<UParticleSystem>(InFilePath);
+}
+
+bool UResourceManager::SaveParticleSystem(UParticleSystem* InParticleSystem, const FString& InFilePath)
+{
+    if (!InParticleSystem || InFilePath.empty()) { return false; }
+
+	const FString NormalizedPath = NormalizePath(InFilePath);
+    if (!InParticleSystem->Save(NormalizedPath)) { return false; }
+
+	const uint8 TypeIndex = static_cast<uint8>(EResourceType::ParticleSystem);
+    if (TypeIndex >= Resources.size()) { return false; }
+
+	auto& Bucket = Resources[TypeIndex];
+
+	const FString PreviousPath = InParticleSystem->GetFilePath();
+	if (!PreviousPath.empty() && PreviousPath != NormalizedPath)
+	{
+		auto It = Bucket.find(PreviousPath);
+		if (It != Bucket.end() && It->second == InParticleSystem)
+		{
+			Bucket.Remove(PreviousPath);
+		}
+	}
+
+	Bucket[NormalizedPath] = InParticleSystem;
+	InParticleSystem->SetFilePath(NormalizedPath);
+	return true;
+}
+
 void UResourceManager::CheckAndReloadShaders(float DeltaTime)
 {
     // Throttle check frequency to reduce file system overhead
     ShaderCheckTimer += DeltaTime;
-    if (ShaderCheckTimer < ShaderCheckInterval)
-    {
-        return;
-    }
+    if (ShaderCheckTimer < ShaderCheckInterval) { return; }
     ShaderCheckTimer = 0.0f;
 
     // Get all shader resources

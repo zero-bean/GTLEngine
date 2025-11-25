@@ -17,6 +17,8 @@
 #include "SpotLightComponent.h"
 #include "PlatformProcess.h"
 #include "SkeletalMeshComponent.h"
+#include "ParticleSystemComponent.h"
+#include "ParticleSystem.h"
 #include "USlateManager.h"
 #include "BlueprintGraph/AnimationGraph.h"
 #include "BlueprintGraph/AnimBlueprintCompiler.h"
@@ -162,6 +164,11 @@ bool UPropertyRenderer::RenderProperty(const FProperty& Property, void* ObjectIn
 	case EPropertyType::Sound:
 		bChanged = RenderSoundProperty(Property, ObjectInstance);
 		break;
+
+	case EPropertyType::ParticleSystem:
+		bChanged = RenderParticleSystemProperty(Property, ObjectInstance);
+		break;
+
 	default:
 		ImGui::Text("%s: [Unknown Type]", Property.Name);
 		break;
@@ -1766,6 +1773,41 @@ bool UPropertyRenderer::RenderSoundSelectionComboSimple(const char* Label, USoun
     return bChanged;
 }
 
+bool UPropertyRenderer::RenderParticleSystemProperty(const FProperty& Prop, void* Instance)
+{
+	UParticleSystem** ParticleSystemPtr = Prop.GetValuePtr<UParticleSystem*>(Instance);
+
+	// 현재 파티클 시스템 표시 (읽기 전용으로 일단 표시)
+	FString CurrentPath;
+	if (*ParticleSystemPtr)
+	{
+		CurrentPath = (*ParticleSystemPtr)->GetName();
+	}
+	else
+	{
+		CurrentPath = "None";
+	}
+
+	ImGui::Text("%s: %s", Prop.Name, CurrentPath.c_str());
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	UObject* Object = static_cast<UObject*>(Instance);
+	UParticleSystemComponent* ParticleComp = Cast<UParticleSystemComponent>(Object);
+
+	if (ParticleComp)
+	{
+		// "Open Particle Editor" 버튼
+		if (ImGui::Button("Open Particle Editor", ImVec2(-1, 30)))
+		{
+			USlateManager::GetInstance().OpenParticleEditor();
+		}
+	}
+
+	return false;
+}
 
 bool UPropertyRenderer::RenderTransformProperty(const FProperty& Prop, void* Instance)
 {
