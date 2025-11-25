@@ -58,7 +58,6 @@ FSceneRenderer::FSceneRenderer(UWorld* InWorld, FSceneView* InView, URenderer* I
 	, View(InView) // 전달받은 FSceneView 저장
 	, OwnerRenderer(InOwnerRenderer)
 	, RHIDevice(InOwnerRenderer->GetRHIDevice())
-	, ParticleRenderer(InOwnerRenderer->GetParticleRenderer())
 {
 	//OcclusionCPU = std::make_unique<FOcclusionCullingManagerCPU>();
 
@@ -106,7 +105,6 @@ void FSceneRenderer::Render()
 		World->GetLightManager()->UpdateLightBuffer(RHIDevice);
 		PerformTileLightCulling();	// 타일 기반 라이트 컬링 수행
 		RenderLitPath();
-		ParticleRenderer->RenderParticles(View, Proxies.Particles);
 		RenderPostProcessingPasses();	// 후처리 체인 실행
 		RenderTileCullingDebug();	// 타일 컬링 디버그 시각화 draw
 	}
@@ -910,6 +908,11 @@ void FSceneRenderer::RenderOpaquePass(EViewMode InRenderViewMode)
 		MeshComponent->CollectMeshBatches(MeshBatchElements, View);
 	}
 
+	for (UParticleSystemComponent* ParticleComponent : Proxies.Particles)
+	{
+		ParticleComponent->CollectMeshBatches(MeshBatchElements, View);
+	}
+
 	for (UBillboardComponent* BillboardComponent : Proxies.Billboards)
 	{
 		BillboardComponent->CollectMeshBatches(MeshBatchElements, View);
@@ -1470,8 +1473,30 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 		RHIDevice->SetAndUpdateConstantBuffer(ModelBufferType(Batch.WorldMatrix, Batch.WorldMatrix.InverseAffine().Transpose()));
 		RHIDevice->SetAndUpdateConstantBuffer(ColorBufferType(Batch.InstanceColor, Batch.ObjectID));
 
-		// 5. 드로우 콜 실행
-		RHIDevice->GetDeviceContext()->DrawIndexed(Batch.IndexCount, Batch.StartIndex, Batch.BaseVertexIndex);
+		// 파티클(스프라이트, 메시)
+		if (Batch.ParticleInstanceData)
+		{
+			// 반투명 가정, 블렌딩 타입을 에디터에서 결정하도록 해야함
+			// 깊이 테스트 On, 쓰기 off
+			RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqualReadOnly);
+			RHIDevice->OMSetBlendState(true);
+			RHIDevice->RSSetState(ERasterizerMode::Solid_NoCull);
+
+			RHIDevice->VertexBufferUpdate(OwnerRenderer->ParticleInstanceBuffer, *Batch.ParticleInstanceData);
+			UINT Stride = Batch.InstanceStride;
+			UINT Offset = 0;
+			RHIDevice->GetDeviceContext()->IASetVertexBuffers(1, 1, &OwnerRenderer->ParticleInstanceBuffer, &Stride, &Offset);
+			RHIDevice->GetDeviceContext()->DrawIndexedInstanced(Batch.IndexCount, (UINT)Batch.ParticleInstanceData->Num(), 0, 0, 0);
+
+			RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual);
+			RHIDevice->OMSetBlendState(false);
+			RHIDevice->RSSetState(ERasterizerMode::Solid);
+		}
+		else
+		{
+			// 5. 드로우 콜 실행
+			RHIDevice->GetDeviceContext()->DrawIndexed(Batch.IndexCount, Batch.StartIndex, Batch.BaseVertexIndex);
+		}
 	}
 
 	// 루프 종료 후 리스트 비우기 (옵션)

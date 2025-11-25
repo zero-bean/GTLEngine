@@ -133,7 +133,6 @@ private:
 	FSceneView* View;
 	URenderer* OwnerRenderer;
 	D3D11RHI* RHIDevice;
-	class FParticleRenderer* ParticleRenderer = nullptr;
 
 	// 수집된 렌더링 대상 목록
 	FVisibleRenderProxySet Proxies;

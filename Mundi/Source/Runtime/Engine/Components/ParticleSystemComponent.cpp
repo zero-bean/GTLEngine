@@ -3,7 +3,19 @@
 #include "ParticleSystem.h"
 #include "ParticleEmitterInstances.h"
 #include "ParticleEmitter.h"
+#include "MeshBatchElement.h"
 
+
+void UParticleSystemComponent::CollectMeshBatches(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View)
+{
+	for (FParticleEmitterInstance* EmitterInstance : EmitterInstances)
+	{
+		FMeshBatchElement BatchElement;
+
+		EmitterInstance->FillMeshBatch(BatchElement, View);
+		MeshBatch.Add(BatchElement);
+	}
+}
 
 UParticleSystemComponent::UParticleSystemComponent()
 {
@@ -115,15 +127,6 @@ void UParticleSystemComponent::ResetParticles()
 	}
 
 	EmitterInstances.Empty();
-
-	for (FDynamicEmitterDataBase* RenderData : EmitterRenderDatas)
-	{
-		if (RenderData)
-		{
-			delete RenderData;
-		}
-	}
-	EmitterRenderDatas.Empty();
 }
 
 

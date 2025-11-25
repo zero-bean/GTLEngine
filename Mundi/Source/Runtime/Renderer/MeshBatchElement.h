@@ -11,6 +11,7 @@ class UMaterial;
  */
 struct FMeshBatchElement
 {
+	EBlendType BlendType = EBlendType::Opaque;
 	// --- 1. 정렬 키 (Sorting Keys) ---
 	// 렌더러가 상태 변경을 최소화하기 위해 정렬하는 기준입니다.
 	ID3D11VertexShader* VertexShader = nullptr;
@@ -21,6 +22,8 @@ struct FMeshBatchElement
 	UMaterialInterface* Material = nullptr;
 	// GPU에 바인딩될 정점 버퍼입니다.
 	ID3D11Buffer* VertexBuffer = nullptr;
+	
+	TArray<FSpriteParticleInstance>* ParticleInstanceData = nullptr;
 
 	// GPU에 바인딩될 인덱스 버퍼입니다.
 	ID3D11Buffer* IndexBuffer = nullptr;
@@ -44,9 +47,13 @@ struct FMeshBatchElement
 	// 정점 버퍼의 스트라이드(Stride)입니다. (정점 1개의 크기)
 	uint32 VertexStride = 0;
 
+	uint32 InstanceStride = 0;
 
 	// --- 3. 인스턴스 데이터 (Instance Data) ---
 	// 드로우 콜마다 고유하게 설정되는 데이터입니다. (정렬 키가 아님)
+
+	// 카메라로부터 거리, 알파 블랜딩 위해 필요함
+	float Distance = 0;
 
 	// 이 오브젝트의 월드 변환 행렬입니다. (Model Matrix)
 	FMatrix WorldMatrix;
@@ -79,6 +86,10 @@ struct FMeshBatchElement
 	{
 		const FMeshBatchElement& A = *this; // A는 'this' (자신), B는 비교 대상
 
+		// 0순위: 블렌딩 타입
+		if (A.BlendType != B.BlendType) return A.BlendType < B.BlendType;
+
+		if (A.BlendType == EBlendType::Alpha && B.BlendType == EBlendType::Alpha) return A.Distance > B.Distance;
 		// 1순위: 셰이더 프로그램 (VS, PS)
 		if (A.VertexShader != B.VertexShader) return A.VertexShader < B.VertexShader;
 		if (A.PixelShader != B.PixelShader) return A.PixelShader < B.PixelShader;
