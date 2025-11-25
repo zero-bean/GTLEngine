@@ -61,7 +61,7 @@ public:
 	// --- 헬퍼 및 유틸리티 ---
 	ID3D11Device* GetDevice() { return Device; }
 	ID3D11DeviceContext* GetDeviceContext() { return Context; }
-	TArray<D3D11_INPUT_ELEMENT_DESC>& GetProperInputLayout(const FString& InShaderName);
+	TArray<D3D11_INPUT_ELEMENT_DESC>& GetProperInputLayout(const FString& InShaderName, const TArray<FShaderMacro>& Macros);
 	FString& GetProperShader(const FString& InTextureName);
 
 	// --- Shader Hot Reload ---

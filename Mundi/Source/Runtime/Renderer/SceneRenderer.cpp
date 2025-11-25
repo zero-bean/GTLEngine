@@ -1484,8 +1484,8 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 			{
 				RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqualReadOnly);
 				RHIDevice->OMSetBlendState(true);
-				RHIDevice->RSSetState(ERasterizerMode::Solid_NoCull);
 			}
+			RHIDevice->RSSetState(ERasterizerMode::Solid_NoCull);
 
 			RHIDevice->VertexBufferUpdate(OwnerRenderer->ParticleInstanceBuffer, *Batch.ParticleInstanceData);
 			UINT Stride = Batch.InstanceStride;

@@ -873,7 +873,7 @@ void FParticleEditorDetailSection::DrawModuleProperties(UParticleModule* Module,
         }
         else if (UParticleModuleRotation* RotMod = dynamic_cast<UParticleModuleRotation*>(Module))
         {
-            DrawDistributionFloat("Start Rotation (Degrees)", RotMod->StartRotation, -360.0f, 360.0f);
+            DrawDistributionVector("Start Rotation (Degrees)", RotMod->StartRotation, -360.0f, 360.0f);
         }
 
         ImGui::PopID();

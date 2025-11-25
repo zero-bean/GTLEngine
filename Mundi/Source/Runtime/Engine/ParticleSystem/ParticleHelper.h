@@ -10,8 +10,8 @@ struct FBaseParticle
 	// 파티클이 원래 가지던 오리지널 속도(파티클 현재 속도를 2배로 하면 중력도 2배 적용)
 	// 배속은 현재 속도가 아닌 BaseVelocity에 적용되어야 함.
 	FVector    BaseVelocity;
-	float      Rotation;
-	float      RotationRate;
+	FQuat      Rotation;
+	FQuat      RotationRate;
 	FVector    Size;
 	FLinearColor     Color;
 	// 나눗셈 연산 비싸서 미리 구함.

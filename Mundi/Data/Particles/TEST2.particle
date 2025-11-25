@@ -37,7 +37,7 @@
             "EmitterDuration" : 2.000000,
             "EmitterLoops" : 0,
             "MaterialData" : {
-              "DiffuseTexture" : "C:\\Krafton\\GTL_Week12\\Mundi\\Data\\Textures\\Boom.png",
+              "DiffuseTexture" : "C:\\\\Krafton\\\\GTL_Week12\\\\Mundi\\\\Data\\\\Textures\\\\Boom.png",
               "NormalTexture" : "",
               "ShaderPath" : "Shaders/UI/Billboard.hlsl",
               "SpecularTexture" : ""
@@ -114,9 +114,9 @@
               "bEnabled" : true
             }, {
               "StartRotation" : {
-                "constant" : 0.000000,
-                "max" : 90.000000,
-                "min" : 0.000000,
+                "constant" : [0.000000, 0.000000, 0.000000],
+                "max" : [0.000000, 0.000000, 0.000000],
+                "min" : [0.000000, 0.000000, 0.000000],
                 "operation" : 0
               },
               "Type" : "UParticleModuleRotation",

@@ -191,7 +191,8 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 	//위치 업데이트
 	BEGIN_UPDATE_LOOP
 		Particle.Location += Particle.Velocity * DeltaTime;
-		Particle.Rotation += Particle.RotationRate * DeltaTime;
+		
+		Particle.Rotation = Particle.Rotation * FQuat::Slerp(FQuat::Identity(), Particle.RotationRate, DeltaTime);
 	END_UPDATE_LOOP
 }
 void FParticleEmitterInstance::KillParticles()
@@ -384,8 +385,8 @@ void FParticleEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleIns
 
 	NewInstance.LifeTime = Particle.Lifetime;
 	NewInstance.Position = Particle.Location;
-	NewInstance.Rotation = DegreesToRadians(Particle.Rotation);
-	NewInstance.Size = Particle.Size.X;
+	NewInstance.Rotation = Particle.Rotation;
+	NewInstance.Size = Particle.Size;
 
 	ParticleInstanceData.Add(NewInstance);
 	END_UPDATE_LOOP
