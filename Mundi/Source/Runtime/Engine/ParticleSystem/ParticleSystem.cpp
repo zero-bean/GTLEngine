@@ -13,6 +13,7 @@
 #include "ParticleModuleRotation.h"
 #include "JsonSerializer.h"
 #include "ObjectFactory.h"
+#include "Source/Runtime/Core/Misc/PathUtils.h"
 
 UParticleSystem* UParticleSystem::TestParticleSystem = nullptr;
 
@@ -176,4 +177,38 @@ void UParticleSystem::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		}
 		InOutHandle["Emitters"] = EmittersJson;
 	}
+}
+
+bool UParticleSystem::Load(const FString& InFilePath, ID3D11Device* /*InDevice*/)
+{
+	if (InFilePath.empty())
+	{
+		return false;
+	}
+
+	FWideString FilePath = UTF8ToWide(InFilePath);
+	JSON LoadedJson;
+	if (!FJsonSerializer::LoadJsonFromFile(LoadedJson, FilePath))
+	{
+		UE_LOG("UParticleSystem::Load - Failed to load %s", InFilePath.c_str());
+		return false;
+	}
+
+	Serialize(true, LoadedJson);
+	return true;
+}
+
+bool UParticleSystem::Save(const FString& InFilePath) const
+{
+	if (InFilePath.empty())
+	{
+		return false;
+	}
+
+	JSON RootJson = JSON::Make(JSON::Class::Object);
+	UParticleSystem* MutableThis = const_cast<UParticleSystem*>(this);
+	MutableThis->Serialize(false, RootJson);
+
+	FWideString FilePath = UTF8ToWide(InFilePath);
+	return FJsonSerializer::SaveJsonToFile(RootJson, FilePath);
 }

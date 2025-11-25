@@ -82,6 +82,9 @@ public:
 	void CreateTextBillboardMesh();
 	void CreateTextBillboardTexture();
 
+	UParticleSystem* LoadParticleSystem(const FString& InFilePath);
+	bool SaveParticleSystem(UParticleSystem* InParticleSystem, const FString& InFilePath);
+
 	// --- 캐시 관리 ---
 	FMeshBVH* GetMeshBVH(const FString& ObjPath);
 	FMeshBVH* GetOrBuildMeshBVH(const FString& ObjPath, const struct FStaticMesh* StaticMeshAsset);

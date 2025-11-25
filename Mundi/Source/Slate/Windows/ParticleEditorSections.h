@@ -19,12 +19,6 @@ public:
     virtual void Draw(const FParticleEditorSectionContext& Context) = 0;
 };
 
-class FParticleEditorMenuBarSection : public FParticleEditorSection
-{
-public:
-    virtual void Draw(const FParticleEditorSectionContext& Context) override;
-};
-
 class FParticleEditorToolBarSection : public FParticleEditorSection
 {
 public:

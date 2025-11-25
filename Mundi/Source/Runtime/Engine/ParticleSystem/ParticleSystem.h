@@ -1,11 +1,11 @@
 ﻿#pragma once
-#include "Object.h"
+#include "ResourceBase.h"
 #include "UParticleSystem.generated.h"
 
 class UParticleEmitter;
 
 UCLASS()
-class UParticleSystem : public UObject
+class UParticleSystem : public UResourceBase
 {
 	GENERATED_REFLECTION_BODY()
 public:
@@ -21,4 +21,7 @@ public:
 	static void ReleaseTestParticleSystem();
 
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+
+	bool Load(const FString& InFilePath, ID3D11Device* InDevice);
+	bool Save(const FString& InFilePath) const;
 };

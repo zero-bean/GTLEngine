@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include <algorithm>
 #include <filesystem>
 #include "ParticleEditorSections.h"
@@ -9,6 +9,7 @@
 #include "Source/Runtime/AssetManagement/Texture.h"
 #include "Source/Editor/PlatformProcess.h"
 #include "Grid/GridActor.h"
+#include "Source/Runtime/Engine/ParticleSystem/ParticleSystem.h"
 
 FParticleEditorToolBarSection::FParticleEditorToolBarSection() = default;
 
@@ -49,13 +50,50 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
         if (DrawIconButton("##ParticleToolbarSave", IconSave, "Save",
             "현재 파티클 시스템 애셋을 저장합니다.", unifiedButtonWidth))
         {
-            // TODO(PYB): 저장 시스템
+            if (ActiveState && ActiveState->CurrentParticleSystem)
+            {
+                // 기존 경로가 있으면 그대로 저장, 없으면 Save As 다이얼로그 표시
+                if (!ActiveState->LoadedParticleSystemPath.empty() &&
+                    ActiveState->LoadedParticleSystemPath != "Test Particle System")
+                {
+                    if (ActiveState->CurrentParticleSystem->Save(ActiveState->LoadedParticleSystemPath))
+                    {
+                        UE_LOG("Particle system saved successfully: %s", ActiveState->LoadedParticleSystemPath.c_str());
+                    }
+                    else
+                    {
+                        UE_LOG("Failed to save particle system: %s", ActiveState->LoadedParticleSystemPath.c_str());
+                    }
+                }
+                else
+                {
+                    // Save As 다이얼로그 표시
+                    const FWideString BaseDir = L"Data/ParticleSystems";
+                    const FWideString Extension = L".particle";
+                    const FWideString Description = L"Particle System";
+                    const FWideString DefaultFileName = L"NewParticleSystem";
+                    std::filesystem::path SelectedFile = FPlatformProcess::OpenSaveFileDialog(BaseDir, Extension, Description, DefaultFileName);
+                    if (!SelectedFile.empty())
+                    {
+                        FString SavePath = SelectedFile.string();
+                        if (ActiveState->CurrentParticleSystem->Save(SavePath))
+                        {
+                            ActiveState->LoadedParticleSystemPath = SavePath;
+                            UE_LOG("Particle system saved successfully: %s", SavePath.c_str());
+                        }
+                        else
+                        {
+                            UE_LOG("Failed to save particle system: %s", SavePath.c_str());
+                        }
+                    }
+                }
+            }
         }
 
         ImGui::SameLine(0.0f, 24.0f);
 
         if (DrawIconButton("##ParticleToolbarOpen", IconLoad, "Open",
-            "현재 파티클 시스템 애셋의 위치를 찾습니다.", unifiedButtonWidth))
+            "파티클 시스템 애셋을 불러옵니다.", unifiedButtonWidth))
         {
             const FWideString BaseDir = L"Data/ParticleSystems";
             const FWideString Extension = L".particle";
@@ -63,8 +101,46 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
             std::filesystem::path SelectedFile = FPlatformProcess::OpenLoadFileDialog(BaseDir, Extension, Description);
             if (!SelectedFile.empty())
             {
-                Context.Window.CreateNewTab();
-                // TODO(PYB): 로드 시스템
+                FString LoadPath = SelectedFile.string();
+
+                // 새 파티클 시스템 생성
+                UParticleSystem* LoadedSystem = NewObject<UParticleSystem>();
+                if (LoadedSystem && LoadedSystem->Load(LoadPath, nullptr))
+                {
+                    // 새 탭 생성 - CreateNewTab이 내부적으로 ActiveState를 업데이트함
+                    Context.Window.CreateNewTab();
+
+                    // 새로 생성된 탭의 ActiveState 가져오기
+                    ParticleEditorState* NewState = Context.Window.GetActiveState();
+                    if (NewState)
+                    {
+                        // 기존 시스템이 있다면 제거
+                        if (NewState->CurrentParticleSystem)
+                        {
+                            DeleteObject(NewState->CurrentParticleSystem);
+                        }
+
+                        NewState->CurrentParticleSystem = LoadedSystem;
+                        NewState->LoadedParticleSystemPath = LoadPath;
+                        NewState->SelectedEmitterIndex = -1;
+                        UE_LOG("Particle system loaded successfully: %s", LoadPath.c_str());
+                    }
+                    else
+                    {
+                        // 탭 생성 실패 시 로드된 시스템 정리
+                        DeleteObject(LoadedSystem);
+                        UE_LOG("Failed to create new tab for particle system");
+                    }
+                }
+                else
+                {
+                    // 로드 실패 시 생성된 오브젝트 정리
+                    if (LoadedSystem)
+                    {
+                        DeleteObject(LoadedSystem);
+                    }
+                    UE_LOG("Failed to load particle system: %s", LoadPath.c_str());
+                }
             }
         }
 

@@ -34,6 +34,7 @@ public:
     FViewport* GetViewport() const;
     FViewportClient* GetViewportClient() const;
     void SetColorPickerSpawnPosition(const FVector2D& ScreenPos);
+    ParticleEditorState* GetActiveState() const { return ActiveState; }
 
 private:
     // Tabs
@@ -86,7 +87,6 @@ private:
     FVector2D ColorPickerSpawnPos = FVector2D::Zero();
 
     // Section widgets
-    FParticleEditorMenuBarSection MenuBarSection;
     FParticleEditorToolBarSection ToolBarSection;
     FParticleEditorViewportSection ViewportSection;
     FParticleEditorEmitterSection EmitterSection;

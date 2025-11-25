@@ -106,9 +106,6 @@ void SParticleEditorWindow::OnRender()
 
         FParticleEditorSectionContext SectionContext{ *this, ActiveState, &bShowColorPicker };
 
-        /* Section 1: 메뉴바 */
-        MenuBarSection.Draw(SectionContext);
-
         // Update window rect
         ImVec2 pos = ImGui::GetWindowPos();
         ImVec2 size = ImGui::GetWindowSize();
