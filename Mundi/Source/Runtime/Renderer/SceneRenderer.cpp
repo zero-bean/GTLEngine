@@ -1478,9 +1478,12 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 		{
 			// 반투명 가정, 블렌딩 타입을 에디터에서 결정하도록 해야함
 			// 깊이 테스트 On, 쓰기 off
-			RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqualReadOnly);
-			RHIDevice->OMSetBlendState(true);
-			RHIDevice->RSSetState(ERasterizerMode::Solid_NoCull);
+			if (Batch.BlendType != EBlendType::Opaque)
+			{
+				RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqualReadOnly);
+				RHIDevice->OMSetBlendState(true);
+				RHIDevice->RSSetState(ERasterizerMode::Solid_NoCull);
+			}
 
 			RHIDevice->VertexBufferUpdate(OwnerRenderer->ParticleInstanceBuffer, *Batch.ParticleInstanceData);
 			UINT Stride = Batch.InstanceStride;
