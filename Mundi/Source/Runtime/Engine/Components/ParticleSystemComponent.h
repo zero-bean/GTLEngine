@@ -17,10 +17,10 @@ public:
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 
-	void CollectMeshBatches(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
-
+	UPROPERTY(EditAnywhere, Category = "Particle")
 	UParticleSystem* Template = nullptr;
 
+	void CollectMeshBatches(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
 
 	UParticleSystemComponent();
 

@@ -15,10 +15,16 @@ UUIManager::UUIManager()
 {
 	ImGuiHelper = NewObject<UImGuiHelper>();
 	Initialize();
+	DeferredOverlayDrawData = new ImDrawData();
 }
 
 UUIManager::~UUIManager()
 {
+	if (DeferredOverlayDrawData)
+	{
+		delete DeferredOverlayDrawData;
+		DeferredOverlayDrawData = nullptr;
+	}
 }
 
 UUIManager& UUIManager::GetInstance()
@@ -168,12 +174,160 @@ void UUIManager::Render()
 		}
 	}
 }
-void UUIManager::EndFrame() 
+void UUIManager::EndFrame()
 {
-	// ImGui 프레임 종료
-	ImGuiHelper->EndFrame();
+	if (!bIsInitialized || !ImGuiHelper)
+	{
+		return;
+	}
+
+	ImGuiHelper->EndFrame(); // Finalize ImGui commands for this frame.
+
+	ImDrawData* FullDrawData = ImGui::GetDrawData();
+    if (!FullDrawData)
+    {
+        if (DeferredOverlayDrawData)
+        {
+            DeferredOverlayDrawData->Clear();
+        }
+        bHasDeferredOverlayDrawData = false;
+        OverlayWindows.clear();
+        return;
+    }
+
+    if (OverlayWindows.empty())
+    {
+        ImGuiHelper->RenderDrawData(FullDrawData);
+        if (DeferredOverlayDrawData)
+        {
+            DeferredOverlayDrawData->Clear();
+        }
+        bHasDeferredOverlayDrawData = false;
+        return;
+    }
+
+    auto ShouldDefer = [this](const char* OwnerName) -> bool
+    {
+        if (!OwnerName)
+        {
+            return false;
+        }
+        for (const FOverlayWindowEntry& Entry : OverlayWindows)
+        {
+            if (Entry.Name == OwnerName)
+            {
+                return true;
+            }
+        }
+        return false;
+	};
+
+	ImDrawData MainDrawData;
+	MainDrawData.DisplayPos = FullDrawData->DisplayPos;
+	MainDrawData.DisplaySize = FullDrawData->DisplaySize;
+	MainDrawData.FramebufferScale = FullDrawData->FramebufferScale;
+	MainDrawData.OwnerViewport = FullDrawData->OwnerViewport;
+	MainDrawData.Textures = FullDrawData->Textures;
+	MainDrawData.Valid = FullDrawData->Valid;
+
+	if (!DeferredOverlayDrawData)
+	{
+		DeferredOverlayDrawData = new ImDrawData();
+	}
+	DeferredOverlayDrawData->Clear();
+	DeferredOverlayDrawData->DisplayPos = FullDrawData->DisplayPos;
+	DeferredOverlayDrawData->DisplaySize = FullDrawData->DisplaySize;
+	DeferredOverlayDrawData->FramebufferScale = FullDrawData->FramebufferScale;
+	DeferredOverlayDrawData->OwnerViewport = FullDrawData->OwnerViewport;
+	DeferredOverlayDrawData->Textures = FullDrawData->Textures;
+	DeferredOverlayDrawData->Valid = FullDrawData->Valid;
+
+	for (int32 ListIndex = 0; ListIndex < FullDrawData->CmdListsCount; ++ListIndex)
+	{
+		ImDrawList* DrawList = FullDrawData->CmdLists[ListIndex];
+		if (ShouldDefer(DrawList->_OwnerName))
+		{
+			DeferredOverlayDrawData->AddDrawList(DrawList);
+		}
+		else
+		{
+			MainDrawData.AddDrawList(DrawList);
+		}
+	}
+
+	if (MainDrawData.CmdListsCount > 0)
+	{
+		ImGuiHelper->RenderDrawData(&MainDrawData);
+	}
+
+    if (DeferredOverlayDrawData->CmdListsCount > 0)
+    {
+        bHasDeferredOverlayDrawData = true;
+    }
+    else
+    {
+        DeferredOverlayDrawData->Clear();
+        OverlayWindows.clear();
+        bHasDeferredOverlayDrawData = false;
+    }
 }
 
+void UUIManager::RenderDeferredOverlayWindows()
+{
+    if (!bHasDeferredOverlayDrawData || !DeferredOverlayDrawData)
+    {
+        if (DeferredOverlayDrawData)
+        {
+            DeferredOverlayDrawData->Clear();
+        }
+        OverlayWindows.clear();
+        bHasDeferredOverlayDrawData = false;
+        return;
+    }
+
+    if (ImGuiHelper && DeferredOverlayDrawData->CmdListsCount > 0)
+	{
+		ImGuiHelper->RenderDrawData(DeferredOverlayDrawData);
+    }
+
+    DeferredOverlayDrawData->Clear();
+    OverlayWindows.clear();
+    bHasDeferredOverlayDrawData = false;
+}
+void UUIManager::RegisterOverlayWindow(const char* WindowName, bool bRequestsMouseCapture)
+{
+    if (!WindowName)
+    {
+        return;
+    }
+
+    auto Iter = std::find_if(OverlayWindows.begin(), OverlayWindows.end(),
+        [WindowName](const FOverlayWindowEntry& Entry)
+        {
+            return Entry.Name == WindowName;
+        });
+
+    if (Iter == OverlayWindows.end())
+    {
+        OverlayWindows.push_back(FOverlayWindowEntry{ WindowName, bRequestsMouseCapture });
+    }
+    else
+    {
+        Iter->bRequestsMouseCapture |= bRequestsMouseCapture;
+    }
+}
+
+bool UUIManager::IsOverlayCapturingMouse() const
+{
+    for (const FOverlayWindowEntry& Entry : OverlayWindows)
+    {
+        if (Entry.bRequestsMouseCapture)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 bool UUIManager::RegisterUIWindow(UUIWindow* InWindow)
 {
 	if (!InWindow)
@@ -369,3 +523,4 @@ void UUIManager::ClearTransformWidgetSelection()
 		TargetTransformWidgetRef->OnSelectedActorCleared();
 	}
 }
+

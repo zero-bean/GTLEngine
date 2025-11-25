@@ -59,7 +59,7 @@ void AActor::Tick(float DeltaSeconds)
 {
 	// 에디터에서 틱 Off면 스킵
 	if (!bTickInEditor && World->bPie == false) return;
-	
+
 	for (UActorComponent* Comp : OwnedComponents)
 	{
 		if (Comp && Comp->IsComponentTickEnabled())

@@ -42,4 +42,7 @@ public:
 	virtual uint32 RequiredBytes(UParticleModuleTypeDataBase* TypeData);
 	virtual uint32 RequiredBytesPerInstance();
 	virtual void PrepPerInstanceBlock(FParticleEmitterInstance* EmitterInstance, void* InstanceData);
+
+	// JSON 직렬화
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 };

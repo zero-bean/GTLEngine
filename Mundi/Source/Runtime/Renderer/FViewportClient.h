@@ -48,6 +48,8 @@ public:
 
     EViewMode GetViewMode() { return ViewMode;}
 
+    void SetViewportBackgroundColor(const FVector4& InColor) { ViewportBackgroundColor = InColor; }
+    FVector4 GetViewportBackgroundColor() const { return ViewportBackgroundColor; }
 protected:
     EViewportType ViewportType = EViewportType::Perspective;
     UWorld* World = nullptr;
@@ -71,4 +73,5 @@ protected:
     FVector PerspectiveCameraPosition = FVector(-5.0f, 5.0f, 5.0f);
     FVector PerspectiveCameraRotation = FVector(0.0f, 22.5f, -45.0f);
     float PerspectiveCameraFov=60;
+    FVector4 ViewportBackgroundColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
 };

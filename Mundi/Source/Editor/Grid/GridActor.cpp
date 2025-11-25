@@ -102,6 +102,28 @@ void AGridActor::ClearLines()
     }
 }
 
+void AGridActor::SetAxisVisible(bool bVisible)
+{
+    if (bShowAxis == bVisible)
+    {
+        return;
+    }
+
+    bShowAxis = bVisible;
+    RegenerateGrid();
+}
+
+void AGridActor::SetGridVisible(bool bVisible)
+{
+    if (bShowGridLines == bVisible)
+    {
+        return;
+    }
+
+    bShowGridLines = bVisible;
+    RegenerateGrid();
+}
+
 void AGridActor::DuplicateSubObjects()
 {
     Super::DuplicateSubObjects();
@@ -115,7 +137,12 @@ void AGridActor::RegenerateGrid()
     ClearLines();
     
     // Generate new grid and axis lines with current settings
-    CreateAxisLines(AxisLength, FVector());
-    CreateGridLines(GridSize, CellSize, FVector());
+    if (bShowAxis)
+    {
+        CreateAxisLines(AxisLength, FVector());
+    }
+    if (bShowGridLines)
+    {
+        CreateGridLines(GridSize, CellSize, FVector());
+    }
 }
-
