@@ -109,7 +109,7 @@ void UStaticMeshComponent::CollectMeshBatches(TArray<FMeshBatchElement>& OutMesh
 			BatchElement.VertexShader = ShaderVariant->VertexShader;
 			BatchElement.PixelShader = ShaderVariant->PixelShader;
 			BatchElement.InputLayout = ShaderVariant->InputLayout;
-		}
+		}  
 
 		// UMaterialInterface를 UMaterial로 캐스팅해야 할 수 있음. 렌더러가 UMaterial을 기대한다면.
 		// 지금은 Material.h 구조상 UMaterialInterface에 필요한 정보가 다 있음.

@@ -10,10 +10,7 @@ void UParticleSystemComponent::CollectMeshBatches(TArray<FMeshBatchElement>& Mes
 {
 	for (FParticleEmitterInstance* EmitterInstance : EmitterInstances)
 	{
-		FMeshBatchElement BatchElement;
-
-		EmitterInstance->FillMeshBatch(BatchElement, View);
-		MeshBatch.Add(BatchElement);
+		EmitterInstance->FillMeshBatch(MeshBatch, View);
 	}
 }
 

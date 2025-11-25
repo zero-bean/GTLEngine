@@ -34,7 +34,10 @@ PS_INPUT mainVS(VS_INPUT Input)
 {
     PS_INPUT Output;
 
-    
+    #ifdef MESH_PARTICLE
+
+    float3 FinalPos = Input.Position + Input.WorldPos;
+    #else
     float3 CameraRight = float3(InverseViewMatrix._11, InverseViewMatrix._12, InverseViewMatrix._13);
     float3 CameraUp = float3(InverseViewMatrix._21, InverseViewMatrix._22, InverseViewMatrix._23);
     
@@ -43,11 +46,14 @@ PS_INPUT mainVS(VS_INPUT Input)
     PositionRotated.y = Input.Position.x * sin(Input.Rotation) + Input.Position.y * cos(Input.Rotation);
     float3 FinalPos = Input.WorldPos + (CameraRight * PositionRotated.x * Input.Size) + (CameraUp * PositionRotated.y * Input.Size);
 
+    #endif
     float4 ViewPos = mul(float4(FinalPos, 1.0), ViewMatrix);
     Output.Position = mul(ViewPos, ProjectionMatrix);
     Output.Color = Input.Color;
     Output.LifeTime = Input.LifeTime;
     Output.TexCoord = Input.TexCoord;
+    
+   
 
     return Output;
 }
@@ -55,7 +61,7 @@ PS_INPUT mainVS(VS_INPUT Input)
 float4 mainPS(PS_INPUT Input) : SV_Target
 {
     float4 Color = SpriteTex.Sample(LinearSampler, Input.TexCoord);
-    return Color * Input.Color;
+    return Color * 1.0f;
     // float2 Center = float2(0.5, 0.5);
     // float Distance = distance(Input.TexCoord, Center);
     //

@@ -71,8 +71,8 @@ public:
 	~FParticleEmitterInstance();
 
 	virtual void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials);
-	virtual void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData) = 0;
-	virtual void FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View);
+	virtual void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData);
+	virtual void FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) = 0;
 
 	void Init();
 
@@ -110,21 +110,25 @@ public:
 	// ParticleSystemComponent 헤더가 방대해질 가능성이 높음, 인터페이스를 만들어야 함.
 	FParticleSpriteEmitterInstance(UParticleSystemComponent* InComponent);
 
-	void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData) override;
-	void FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View) override;
+	void FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
 };
 
 struct FParticleMeshEmitterInstance : FParticleEmitterInstance
 {
 public:
+	// true일 경우 스테틱 메시 자체적인 머티리얼 무시하고 설정한 머티리얼로 렌더링
+	bool bMaterialOverride = false;
+
+	TArray<FSpriteParticleInstance> ParticleInstanceData;
+
 	// 메시 인스터스의 경우 다중 매터리얼 지원해야함.
 	// CurrentMaterial은 기본값이고 SpriteEmitterInstance는 그대로 사용
 	TArray<UMaterialInterface*> CurrentMaterials;
 
-	void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData) override;
+	FParticleMeshEmitterInstance(UParticleSystemComponent* InComponent);
 
 	void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials) override;
-	void FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View) override;
+	void FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
 };
 
 struct FParticleBeamEmitterInstance : FParticleEmitterInstance

@@ -10,6 +10,7 @@
 #include "MeshBatchElement.h"
 #include "SceneView.h"
 #include "ParticleModuleTypeDataBeam.h"
+#include "ParticleModuleTypeDataMesh.h"
 
 FParticleEmitterInstance::FParticleEmitterInstance(UParticleSystemComponent* InComponent)
 	:OwnerComponent(InComponent)
@@ -373,8 +374,19 @@ void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& 
 
 }
 
-void FParticleEmitterInstance::FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View)
+void FParticleEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData)
 {
+	BEGIN_UPDATE_LOOP
+		FSpriteParticleInstance NewInstance;
+	NewInstance.Color = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, 1.0f);
+
+	NewInstance.LifeTime = Particle.Lifetime;
+	NewInstance.Position = Particle.Location;
+	NewInstance.Rotation = DegreesToRadians(Particle.Rotation);
+	NewInstance.Size = Particle.Size.X;
+
+	ParticleInstanceData.Add(NewInstance);
+	END_UPDATE_LOOP
 }
 
 
@@ -410,25 +422,14 @@ FParticleSpriteEmitterInstance::FParticleSpriteEmitterInstance(UParticleSystemCo
 	Quad = UResourceManager::GetInstance().Get<UQuad>("BillboardQuad");
 }
 
-void FParticleSpriteEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData)
+
+void FParticleSpriteEmitterInstance::FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View)
 {
-	BEGIN_UPDATE_LOOP
-		FSpriteParticleInstance NewInstance;
-		NewInstance.Color = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, 1.0f);
+	FMeshBatchElement BatchElement;
 
-		NewInstance.LifeTime = Particle.Lifetime;
-		NewInstance.Position = Particle.Location;
-		NewInstance.Rotation = DegreesToRadians(Particle.Rotation);
-		NewInstance.Size = Particle.Size.X;
-
-		ParticleInstanceData.Add(NewInstance);
-	END_UPDATE_LOOP
-}
-
-void FParticleSpriteEmitterInstance::FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View)
-{
 	ParticleInstanceData.Empty();
 	GetParticleInstanceData(ParticleInstanceData);
+	BatchElement.BlendType = EBlendType::Alpha;
 	BatchElement.BaseVertexIndex = 0;
 	BatchElement.Distance = (View->ViewLocation - EmitterLocation * OwnerComponent->GetWorldMatrix()).Size();
 
@@ -454,12 +455,11 @@ void FParticleSpriteEmitterInstance::FillMeshBatch(FMeshBatchElement& BatchEleme
 			BatchElement.InputLayout = ShaderVariant->InputLayout;
 		}
 	}
+	MeshBatch.Add(BatchElement);
 }
 
-
-
-
-void FParticleMeshEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData)
+FParticleMeshEmitterInstance::FParticleMeshEmitterInstance(UParticleSystemComponent* InComponent)
+	:FParticleEmitterInstance(InComponent)
 {
 }
 
@@ -468,9 +468,81 @@ void FParticleMeshEmitterInstance::SetMeshMaterials(TArray<UMaterialInterface*>&
 	CurrentMaterials = MeshMaterials;
 }
 
-void FParticleMeshEmitterInstance::FillMeshBatch(FMeshBatchElement& BatchElement, const FSceneView* View)
+void FParticleMeshEmitterInstance::FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View)
 {
+	
+	UStaticMesh* StaticMesh = static_cast<UParticleModuleTypeDataMesh*>(CurrentLODLevel->TypeDataModule)->StaticMesh;
+	if (!StaticMesh || !StaticMesh->GetStaticMeshAsset())
+	{
+		return;
+	}
+	FMeshBatchElement BatchElement;
+	BatchElement.BlendType = EBlendType::Opaque;
+	BatchElement.Distance = (View->ViewLocation - EmitterLocation * OwnerComponent->GetWorldMatrix()).Size();
 
+	ParticleInstanceData.Empty();
+	GetParticleInstanceData(ParticleInstanceData);
+
+	BatchElement.ParticleInstanceData = &ParticleInstanceData;  
+	BatchElement.InstanceStride = sizeof(FSpriteParticleInstance);
+
+	const TArray<FGroupInfo>& MeshGroupInfos = StaticMesh->GetMeshGroupInfo();
+	const bool bHasSections = !MeshGroupInfos.IsEmpty();
+	const uint32 NumSectionsToProcess = bHasSections ? static_cast<uint32>(MeshGroupInfos.size()) : 1;
+
+	UShader* Shader = UResourceManager::GetInstance().Load<UShader>("Shaders/Particles/SpriteParticle.hlsl");
+	TArray<FShaderMacro> ShaderMacros;
+	ShaderMacros.Add(FShaderMacro("MESH_PARTICLE", "1"));
+	FShaderVariant* ShaderVariant = Shader->GetOrCompileShaderVariant(ShaderMacros);
+
+	
+	for (uint32 SectionIndex = 0; SectionIndex < NumSectionsToProcess; ++SectionIndex)
+	{
+		uint32 IndexCount = 0;
+		uint32 StartIndex = 0;
+		UMaterialInterface* Material = nullptr;
+		if (bHasSections)
+		{
+			const FGroupInfo& Group = MeshGroupInfos[SectionIndex];
+			Material = UResourceManager::GetInstance().Load<UMaterial>(Group.InitialMaterialName);
+			IndexCount = Group.IndexCount;
+			StartIndex = Group.StartIndex;
+		}
+		else
+		{
+			IndexCount = StaticMesh->GetIndexCount();
+			StartIndex = 0;
+		}
+
+		if (IndexCount == 0)
+		{
+			continue;
+		}
+
+		if (CurrentMaterials.Num() > 0 && bMaterialOverride)
+		{
+			BatchElement.Material = CurrentMaterials[SectionIndex];
+		}
+	
+		if (ShaderVariant)
+		{
+			BatchElement.VertexShader = ShaderVariant->VertexShader;
+			BatchElement.PixelShader = ShaderVariant->PixelShader;
+			BatchElement.InputLayout = ShaderVariant->InputLayout;
+		}
+
+		// UMaterialInterface를 UMaterial로 캐스팅해야 할 수 있음. 렌더러가 UMaterial을 기대한다면.
+		// 지금은 Material.h 구조상 UMaterialInterface에 필요한 정보가 다 있음.
+		BatchElement.Material = Material;
+		BatchElement.VertexBuffer = StaticMesh->GetVertexBuffer();
+		BatchElement.IndexBuffer = StaticMesh->GetIndexBuffer();
+		BatchElement.VertexStride = StaticMesh->GetVertexStride();
+		BatchElement.IndexCount = IndexCount;
+		BatchElement.StartIndex = StartIndex;
+		BatchElement.BaseVertexIndex = 0;
+		BatchElement.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		MeshBatch.Add(BatchElement);
+	}
 }
 
 FParticleBeamEmitterInstance::FParticleBeamEmitterInstance(UParticleSystemComponent* InComponent)

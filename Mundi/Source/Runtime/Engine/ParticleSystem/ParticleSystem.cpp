@@ -11,6 +11,7 @@
 #include "ParticleModuleSpawn.h"
 #include "ParticleModuleVelocity.h"
 #include "ParticleModuleRotation.h"
+#include "ParticleModuleTypeDataMesh.h"
 
 UParticleSystem* UParticleSystem::TestParticleSystem = nullptr;
 
@@ -81,11 +82,13 @@ UParticleSystem* UParticleSystem::GetTestParticleSystem()
 		RotationModule->StartRotation.Min = 0.0f;
 		RotationModule->StartRotation.Max = 90.0f;
 		
+		UParticleModuleTypeDataMesh* MeshModule = NewObject<UParticleModuleTypeDataMesh>();
+		MeshModule->StaticMesh = UResourceManager::GetInstance().Load<UStaticMesh>(GDataDir + "/Model/smokegrenade.obj");
 
 		LODLevel->SpawnModule = SpawnModule;
 		LODLevel->RequiredModule = Required;
 		// SpriteInstance사용
-		LODLevel->TypeDataModule = nullptr;
+		LODLevel->TypeDataModule = MeshModule;
 		LODLevel->Modules.Add(ColorModule); LODLevel->Modules.Add(LifetimeModule); LODLevel->Modules.Add(LocationModule); 
 		LODLevel->Modules.Add(SizeModule); LODLevel->Modules.Add(VelocityModule); LODLevel->Modules.Add(RotationModule);
 
