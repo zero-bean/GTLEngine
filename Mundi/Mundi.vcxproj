@@ -833,6 +833,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClInclude Include="Source\Runtime\Core\Object\CharacterMovementComponent.h" />
     <ClInclude Include="Source\Runtime\Core\Object\Controller.h" />
     <ClInclude Include="Source\Runtime\Core\Object\FireballActor.h" />
+    <ClInclude Include="Source\Runtime\Core\Object\ObjectMacros.h" />
     <ClInclude Include="Source\Runtime\Core\Object\Pawn.h" />
     <ClInclude Include="Source\Runtime\Core\Object\PlayerController.h" />
     <ClInclude Include="Source\Runtime\Core\Object\Property.h" />

@@ -179,10 +179,6 @@ void USlateManager::Initialize(ID3D11Device* InDevice, UWorld* InWorld, const FR
     {
         UE_LOG("ERROR: Failed to create ContentBrowserWindow");
     }
-
-    // TODO(PYB): 파티클 시스템 파트가 끝나면 삭제해야 하는 라인임
-    // === Particle Editor 자동 시작 ===
-    OpenParticleEditor();
 }
 
 void USlateManager::OpenSkeletalMeshViewer()

@@ -18,6 +18,7 @@ public:
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 
+	UPROPERTY(EditAnywhere, Category = "Particle")
 	UParticleSystem* Template = nullptr;
 
 	TArray<FDynamicEmitterDataBase*> EmitterRenderDatas;
