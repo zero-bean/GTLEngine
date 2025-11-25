@@ -145,7 +145,6 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 			// ActiveParticles는 실제로 Spawn할때 올림
 			Resize(ActiveParticles + SpawnCount);
 			SpawnParticles(SpawnCount, DeltaTime, DeltaTime / SpawnCount, OwnerComponent->GetWorldLocation(), FVector(0, 0, 0));
-
 		}
 	}
 

@@ -5,6 +5,8 @@ class FViewportClient;
 class UWorld;
 class UParticleSystem;
 class UParticleEmitter;
+class AActor;
+class UParticleSystemComponent;
 
 enum class EParticleDetailSelection : uint8
 {
@@ -26,6 +28,10 @@ public:
     UParticleSystem* CurrentParticleSystem = nullptr;
     FString LoadedParticleSystemPath;
     int32 SelectedEmitterIndex = -1;
+
+    // Preview actor and component
+    AActor* PreviewActor = nullptr;
+    UParticleSystemComponent* PreviewComponent = nullptr;
 
     // UI state
     bool bShowGrid = false;
@@ -57,7 +63,12 @@ public:
 
     // Helper functions
     bool HasParticleSystem() const { return CurrentParticleSystem != nullptr; }
-    
+
     UParticleEmitter* GetSelectedEmitter() const;
     int32 GetEmitterCount() const;
+
+    // Preview actor management
+    void CreatePreviewActor();
+    void DestroyPreviewActor();
+    void UpdatePreviewParticleSystem();
 };

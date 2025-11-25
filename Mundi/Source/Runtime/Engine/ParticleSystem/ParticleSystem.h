@@ -11,14 +11,8 @@ class UParticleSystem : public UResourceBase
 public:
 	TArray<UParticleEmitter*> Emitters;
 
-	static UParticleSystem* TestParticleSystem;
-
 	UParticleSystem();
 	~UParticleSystem();
-
-	static UParticleSystem* GetTestParticleSystem();
-
-	static void ReleaseTestParticleSystem();
 
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 

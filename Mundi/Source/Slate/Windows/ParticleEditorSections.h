@@ -63,7 +63,7 @@ public:
     virtual void Draw(const FParticleEditorSectionContext& Context) override;
 
 private:
-    void DrawRequiredModuleProperties(class UParticleModuleRequired* Module);
+    void DrawRequiredModuleProperties(class UParticleModuleRequired* Module, const FParticleEditorSectionContext& Context);
     void DrawSpawnModuleProperties(class UParticleModuleSpawn* Module);
     void DrawModuleProperties(class UParticleModule* Module, int32 ModuleIndex);
     void DrawDistributionFloat(const char* Label, struct FRawDistributionFloat& Distribution,

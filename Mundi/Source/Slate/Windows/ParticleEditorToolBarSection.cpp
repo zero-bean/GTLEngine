@@ -123,6 +123,10 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
                         NewState->CurrentParticleSystem = LoadedSystem;
                         NewState->LoadedParticleSystemPath = LoadPath;
                         NewState->SelectedEmitterIndex = -1;
+
+                        // 프리뷰 액터 업데이트
+                        NewState->UpdatePreviewParticleSystem();
+
                         UE_LOG("Particle system loaded successfully: %s", LoadPath.c_str());
                     }
                     else

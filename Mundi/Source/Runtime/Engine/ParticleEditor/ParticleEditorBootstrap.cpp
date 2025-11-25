@@ -15,6 +15,8 @@
 #include "ParticleModule/ParticleModuleSize.h"
 #include "ParticleModule/ParticleModuleColor.h"
 #include "Source/Runtime/AssetManagement/ResourceManager.h"
+#include "Material.h"
+#include "Shader.h"
 
 ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name, UWorld* InWorld, ID3D11Device* InDevice)
 {
@@ -59,13 +61,6 @@ ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name
 
     State->World->SetEditorCameraActor(Client->GetCamera());
 
-    // TODO(PYB): AParticleSystemActor 기능이 구현되면 주석 해제할 것
-    // if (State->World)
-    // {
-    //     AParticleSystemActor* Preview = State->World->SpawnActor<AParticleSystemActor>();
-    //     State->PreviewActor = Preview;
-    // }
-
     if (InWorld)
     {
         State->World->GetRenderSettings().SetShowFlags(InWorld->GetRenderSettings().GetShowFlags());
@@ -93,7 +88,16 @@ ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name
 
     // Required Module (필수)
     UParticleModuleRequired* Required = NewObject<UParticleModuleRequired>();
-    Required->Material = UResourceManager::GetInstance().Load<UMaterial>("Shaders/UI/Billboard.hlsl");
+
+    // 기본 Material 생성 (텍스처 없는 흰색 파티클)
+    UMaterial* DefaultMaterial = NewObject<UMaterial>();
+    UShader* BillboardShader = UResourceManager::GetInstance().Load<UShader>("Shaders/UI/Billboard.hlsl");
+    if (BillboardShader)
+    {
+        DefaultMaterial->SetShader(BillboardShader);
+    }
+    Required->Material = DefaultMaterial;
+
     Required->EmitterDuration = 2.0f;
     Required->EmitterLoops = 0;
     LODLevel->RequiredModule = Required;
@@ -140,12 +144,19 @@ ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name
     // 첫 번째 Emitter 자동 선택
     State->SelectedEmitterIndex = 0;
 
+    // 프리뷰 액터 생성
+    State->CreatePreviewActor();
+
     return State;
 }
 
 void ParticleEditorBootstrap::DestroyEditorState(ParticleEditorState*& State)
 {
     if (!State) return;
+
+    // 프리뷰 액터 파괴
+    State->DestroyPreviewActor();
+
     if (State->Viewport) { delete State->Viewport; State->Viewport = nullptr; }
     if (State->Client) { delete State->Client; State->Client = nullptr; }
     if (State->World) { ObjectFactory::DeleteObject(State->World); State->World = nullptr; }

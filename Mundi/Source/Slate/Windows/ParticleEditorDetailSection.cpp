@@ -13,7 +13,14 @@
 #include "ParticleModuleLocation.h"
 #include "ParticleModuleVelocity.h"
 #include "ParticleModuleRotation.h"
+#include "ParticleSystemComponent.h"
+#include "ResourceManager.h"
+#include "Material.h"
+#include "Texture.h"
+#include "Shader.h"
+#include "PlatformProcess.h"
 #include <cstring>
+#include <filesystem>
 
 namespace
 {
@@ -342,7 +349,7 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
         {
             DrawModuleCard("RequiredModuleContainer", "Required Module", false, nullptr, [&]()
             {
-                DrawRequiredModuleProperties(LODLevel->RequiredModule);
+                DrawRequiredModuleProperties(LODLevel->RequiredModule, Context);
             });
         }
         else
@@ -691,7 +698,7 @@ void FParticleEditorDetailSection::DeleteModule(ParticleEditorState* State, UPar
     UE_LOG("Module deleted. Remaining modules: %d", LODLevel->Modules.Num());
 }
 
-void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleRequired* Module)
+void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleRequired* Module, const FParticleEditorSectionContext& Context)
 {
     if (!Module)
     {
@@ -706,6 +713,92 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
         ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
         DrawPropertyRow("Enabled", [&]() { ImGui::Checkbox("##RequiredEnabled", &Module->bEnabled); });
+
+        // Material/Texture 선택
+        DrawPropertyRow("Material", [&]()
+        {
+            // 현재 Material 경로 표시
+            const char* CurrentMaterialName = Module->Material ? Module->Material->GetFilePath().c_str() : "None";
+
+            // 버튼 크기 계산
+            float availableWidth = ImGui::GetContentRegionAvail().x;
+            float buttonWidth = 60.0f;
+            float textWidth = availableWidth - buttonWidth - 8.0f;
+
+            // Material 이름 표시 (읽기 전용)
+            ImGui::PushItemWidth(textWidth);
+            ImGui::InputText("##MaterialPath", const_cast<char*>(CurrentMaterialName), strlen(CurrentMaterialName) + 1, ImGuiInputTextFlags_ReadOnly);
+            ImGui::PopItemWidth();
+
+            // Browse 버튼
+            ImGui::SameLine();
+            if (ImGui::Button("Browse##MaterialBrowse", ImVec2(buttonWidth, 0)))
+            {
+                // 스프라이트 타입: 텍스처 선택 후 Billboard Material 생성
+                const FWideString BaseDir = L"Data/Textures";
+                const FWideString Extension = L".png;.jpg;.dds;.tga";
+                const FWideString Description = L"Texture Files";
+                std::filesystem::path SelectedFile = FPlatformProcess::OpenLoadFileDialog(BaseDir, Extension, Description);
+
+                if (!SelectedFile.empty())
+                {
+                    try
+                    {
+                        FString TexturePath = SelectedFile.string();
+
+                        // 텍스처 로드
+                        UTexture* Texture = UResourceManager::GetInstance().Load<UTexture>(TexturePath);
+                        if (!Texture)
+                        {
+                            UE_LOG("Failed to load texture: %s", TexturePath.c_str());
+                            return;
+                        }
+
+                        // Billboard Material 생성 (스프라이트용)
+                        UMaterial* NewMaterial = NewObject<UMaterial>();
+                        if (!NewMaterial)
+                        {
+                            UE_LOG("Failed to create material");
+                            return;
+                        }
+
+                        // Billboard 셰이더 로드
+                        UShader* BillboardShader = UResourceManager::GetInstance().Load<UShader>("Shaders/UI/Billboard.hlsl");
+                        if (!BillboardShader)
+                        {
+                            DeleteObject(NewMaterial);
+                            UE_LOG("Failed to load Billboard shader");
+                            return;
+                        }
+
+                        NewMaterial->SetShader(BillboardShader);
+
+                        // Material 정보 설정
+                        FMaterialInfo MatInfo;
+                        MatInfo.MaterialName = "ParticleSpriteMaterial";
+                        MatInfo.DiffuseTextureFileName = TexturePath;
+                        NewMaterial->SetMaterialInfo(MatInfo);
+                        NewMaterial->ResolveTextures();
+
+                        Module->Material = NewMaterial;
+                        UE_LOG("Texture loaded and material created: %s", TexturePath.c_str());
+
+                        // 프리뷰 업데이트 - Material이 변경되었으므로 파티클 재초기화
+                        if (Context.ActiveState && Context.ActiveState->PreviewComponent)
+                        {
+                            Context.ActiveState->PreviewComponent->EndPlay();
+                            Context.ActiveState->PreviewComponent->InitParticles();
+                            Context.ActiveState->PreviewComponent->BeginPlay();
+                        }
+                    }
+                    catch (const std::exception& e)
+                    {
+                        UE_LOG("Exception while loading texture: %s", e.what());
+                    }
+                }
+            }
+        });
+
         DrawPropertyRow("Emitter Duration", [&]() { ImGui::DragFloat("##EmitterDuration", &Module->EmitterDuration, 0.1f, 0.0f, 100.0f); });
         DrawPropertyRow("Emitter Delay", [&]() { ImGui::DragFloat("##EmitterDelay", &Module->EmitterDelay, 0.1f, 0.0f, 100.0f); });
         DrawPropertyRow("Emitter Loops", [&]() { ImGui::DragInt("##EmitterLoops", &Module->EmitterLoops, 1, 0, 100); });
