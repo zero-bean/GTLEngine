@@ -12,6 +12,7 @@
 #include "ParticleModuleSize.h"
 #include "ParticleModuleVelocity.h"
 #include "ParticleModuleRotation.h"
+#include "ParticleModuleTypeDataMesh.h"
 #include "ResourceManager.h"
 #include "Material.h"
 #include <algorithm>
@@ -211,7 +212,11 @@ void FParticleEditorEmitterSection::Draw(const FParticleEditorSectionContext& Co
         {
             if (ImGui::MenuItem("Sprite Emitter"))
             {
-                CreateNewEmitter(ActiveState);
+                CreateNewEmitter(ActiveState, EEmitterType::Sprite);
+            }
+            else if (ImGui::MenuItem("Mesh Emitter"))
+            {
+                CreateNewEmitter(ActiveState, EEmitterType::Mesh);
             }
             ImGui::EndPopup();
         }
@@ -416,7 +421,7 @@ void FParticleEditorEmitterSection::Draw(const FParticleEditorSectionContext& Co
                             {
                                 if (ImGui::MenuItem("Add Sprite Emitter"))
                                 {
-                                    CreateNewEmitter(ActiveState);
+                                    CreateNewEmitter(ActiveState, EEmitterType::Sprite);
                                 }
                                 if (ImGui::MenuItem("Delete Emitter"))
                                 {
@@ -447,7 +452,7 @@ void FParticleEditorEmitterSection::Draw(const FParticleEditorSectionContext& Co
     ImGui::EndChild();
 }
 
-void FParticleEditorEmitterSection::CreateNewEmitter(ParticleEditorState* State)
+void FParticleEditorEmitterSection::CreateNewEmitter(ParticleEditorState* State, EEmitterType EmitterType)
 {
     if (!State || !State->CurrentParticleSystem)
         return;
@@ -519,6 +524,13 @@ void FParticleEditorEmitterSection::CreateNewEmitter(ParticleEditorState* State)
     LODLevel->RequiredModule = RequiredModule;
     LODLevel->SpawnModule = SpawnModule;
     LODLevel->TypeDataModule = nullptr; // Sprite는 TypeData 없음
+
+    if (EmitterType == EEmitterType::Mesh)
+    {
+        UParticleModuleTypeDataMesh* MeshModule = NewObject<UParticleModuleTypeDataMesh>();
+        MeshModule->StaticMesh = UResourceManager::GetInstance().Load<UStaticMesh>(GDataDir + "/Model/smokegrenade.obj");
+        LODLevel->TypeDataModule = MeshModule;
+    }
 
     LODLevel->Modules.Add(ColorModule);
     LODLevel->Modules.Add(LifetimeModule);

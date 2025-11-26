@@ -5,6 +5,11 @@ class ParticleEditorState;
 class UTexture;
 struct ImVec2;
 
+enum class EEmitterType
+{
+    Sprite,
+    Mesh
+};
 struct FParticleEditorSectionContext
 {
     SParticleEditorWindow& Window;
@@ -53,7 +58,7 @@ public:
     virtual void Draw(const FParticleEditorSectionContext& Context) override;
 
 private:
-    void CreateNewEmitter(ParticleEditorState* State);
+    void CreateNewEmitter(ParticleEditorState* State, EEmitterType EmitterType);
     void DeleteSelectedEmitter(ParticleEditorState* State);
 };
 
