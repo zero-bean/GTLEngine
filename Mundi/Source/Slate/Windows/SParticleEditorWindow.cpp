@@ -67,6 +67,12 @@ void SParticleEditorWindow::OnRender()
         return;
     }
 
+    // Sync show flags from UI to world render settings
+    if (ActiveState)
+    {
+        ActiveState->SyncShowFlagsToWorld();
+    }
+
     // Parent window with solid background
     ImGuiWindowFlags flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoSavedSettings;
 

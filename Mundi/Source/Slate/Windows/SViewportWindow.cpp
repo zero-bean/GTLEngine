@@ -1613,6 +1613,24 @@ void SViewportWindow::RenderShowFlagDropdownMenu()
 			ImGui::SetTooltip("스텔레탈 메시 렌더링을 표시합니다.");
 		}
 
+		// Particle Systems
+		bool bParticles = RenderSettings.IsShowFlagEnabled(EEngineShowFlags::SF_Particles);
+		if (ImGui::Checkbox("##ParticleSystems", &bParticles))
+		{
+			RenderSettings.ToggleShowFlag(EEngineShowFlags::SF_Particles);
+		}
+		ImGui::SameLine();
+		if (IconCollision && IconCollision->GetShaderResourceView())
+		{
+			ImGui::Image((void*)IconCollision->GetShaderResourceView(), IconSize);
+			ImGui::SameLine(0, 4);
+		}
+		ImGui::Text(" 파티클 시스템");
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("파티클 시스템 렌더링을 표시합니다.");
+		}
+
 		// Billboard
 		bool bBillboard = RenderSettings.IsShowFlagEnabled(EEngineShowFlags::SF_Billboard);
 		if (ImGui::Checkbox("##Billboard", &bBillboard))

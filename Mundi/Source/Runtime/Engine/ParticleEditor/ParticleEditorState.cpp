@@ -5,6 +5,7 @@
 #include "Actor.h"
 #include "World.h"
 #include "ParticleSystemComponent.h"
+#include "Grid/GridActor.h"
 
 UParticleEmitter* ParticleEditorState::GetSelectedEmitter() const
 {
@@ -78,5 +79,38 @@ void ParticleEditorState::UpdatePreviewParticleSystem()
     {
         // EndPlay 호출 후 SetTemplate, 그리고 다시 BeginPlay
         PreviewComponent->SetTemplate(CurrentParticleSystem);
+    }
+}
+
+void ParticleEditorState::SyncShowFlagsToWorld()
+{
+    if (!World)
+        return;
+
+    URenderSettings& RenderSettings = World->GetRenderSettings();
+    EEngineShowFlags Flags = RenderSettings.GetShowFlags();
+
+    auto ApplyFlag = [&Flags](EEngineShowFlags Flag, bool bEnable)
+    {
+        if (bEnable)
+        {
+            Flags |= Flag;
+        }
+        else
+        {
+            Flags &= ~Flag;
+        }
+    };
+
+    ApplyFlag(EEngineShowFlags::SF_Grid, bShowGrid);
+    ApplyFlag(EEngineShowFlags::SF_Lighting, bShowLighting);
+    ApplyFlag(EEngineShowFlags::SF_PostProcessing, bEnablePostProcess);
+
+    RenderSettings.SetShowFlags(Flags);
+
+    if (AGridActor* GridActor = World->GetGridActor())
+    {
+        GridActor->SetGridVisible(bShowGrid);
+        GridActor->SetAxisVisible(bShowAxis);
     }
 }

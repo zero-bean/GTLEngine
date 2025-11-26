@@ -45,6 +45,7 @@ private:
     UTexture* IconNextFrame = nullptr;
     UTexture* IconColor = nullptr;
     UTexture* IconAxis = nullptr;
+    UTexture* IconGrid = nullptr;
     float IconSize = 40.0f;
 };
 
