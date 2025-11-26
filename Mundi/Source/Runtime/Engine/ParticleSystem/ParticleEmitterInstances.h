@@ -115,6 +115,9 @@ public:
 	uint32 GetModuleOffset(UParticleModule* InModule);
 
 	uint8* GetModuleInstanceData(UParticleModule* InModule);
+
+	// 이미터의 정규화된 시간(0.0~1.0) 반환 - 커브 샘플링용
+	float GetNormalizedEmitterTime() const;
 };
 
 struct FParticleSpriteEmitterInstance : FParticleEmitterInstance
