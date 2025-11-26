@@ -12,9 +12,15 @@
 
 void UParticleSystemComponent::CollectMeshBatches(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View)
 {
+	// 방어 코드
+	if (!IsActive() || EmitterInstances.IsEmpty()) { return; }
+
 	for (FParticleEmitterInstance* EmitterInstance : EmitterInstances)
 	{
-		EmitterInstance->FillMeshBatch(MeshBatch, View);
+		if (EmitterInstance)
+		{
+			EmitterInstance->FillMeshBatch(MeshBatch, View);
+		}
 	}
 }
 
@@ -81,18 +87,22 @@ void UParticleSystemComponent::LoadParticleSystemFromAssetPath()
 
 void UParticleSystemComponent::DestroyEmitterInstances()
 {
-	for (int32 Index = 0; Index < EmitterInstances.Num(); Index++)
+	// 방어 코드
+	if (EmitterInstances.IsEmpty()) { return; }
+
+	// Delete all emitter instances
+	for (int32 Index = EmitterInstances.Num() - 1; Index >= 0; Index--)
 	{
-		if (EmitterInstances[Index])
-		{
-			delete EmitterInstances[Index];
-		}
+		if (FParticleEmitterInstance* Instance = EmitterInstances[Index]) { delete Instance; }
 	}
+
 	EmitterInstances.Empty();
 }
 
 void UParticleSystemComponent::BeginPlay()
 {
+	UPrimitiveComponent::BeginPlay();
+
 	// AssetPath가 있으면 먼저 로드
 	if (!ParticleSystemAssetPath.empty())
 	{
@@ -108,21 +118,25 @@ void UParticleSystemComponent::BeginPlay()
 void UParticleSystemComponent::EndPlay()
 {
 	DestroyEmitterInstances();
+	UPrimitiveComponent::EndPlay();
 }
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
-	for (int32 EmitterIndex = 0 ; EmitterIndex < EmitterInstances.Num(); EmitterIndex++)
+	// 방어 코드
+	if (!IsActive() || EmitterInstances.IsEmpty()) { return; }
+
+	for (int32 EmitterIndex = EmitterInstances.Num() - 1; EmitterIndex >= 0; EmitterIndex--)
 	{
-		FParticleEmitterInstance* EmitterInstance = EmitterInstances[EmitterIndex];
-		if (EmitterInstance)
+		if (FParticleEmitterInstance* EmitterInstance = EmitterInstances[EmitterIndex])
 		{
 			EmitterInstance->Tick(DeltaTime, bSuppressSpawning);
-		}
-		if (EmitterInstance && EmitterInstance->HasComplete())
-		{
-			delete EmitterInstance;
-			EmitterInstances[EmitterIndex] = nullptr;
+
+			if (EmitterInstance->HasComplete())
+			{
+				delete EmitterInstance;
+				EmitterInstances.RemoveAt(EmitterIndex);
+			}
 		}
 	}
 }
@@ -160,13 +174,5 @@ void UParticleSystemComponent::InitParticles()
 
 void UParticleSystemComponent::ResetParticles()
 {
-	for (FParticleEmitterInstance* Instance : EmitterInstances)
-	{
-		if (Instance)
-		{
-			delete Instance;
-		}
-	}
-
-	EmitterInstances.Empty();
+	DestroyEmitterInstances();
 }
