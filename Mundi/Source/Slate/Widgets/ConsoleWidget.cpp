@@ -52,6 +52,7 @@ void UConsoleWidget::Initialize()
 	HelpCommandList.Add("STAT NONE");
 	HelpCommandList.Add("STAT LIGHT");
 	HelpCommandList.Add("STAT SHADOW");
+	HelpCommandList.Add("STAT PARTICLE");
 
 	// Add welcome messages
 	AddLog("=== Console Widget Initialized ===");
@@ -311,6 +312,7 @@ void UConsoleWidget::ExecCommand(const char* command_line)
 		AddLog("- STAT MEMORY");
 		AddLog("- STAT PICKING");
 		AddLog("- STAT DECAL");
+		AddLog("- STAT PARTICLE");
 		AddLog("- STAT ALL");
 		AddLog("- STAT LIGHT");
 		AddLog("- STAT NONE");
@@ -347,7 +349,13 @@ void UConsoleWidget::ExecCommand(const char* command_line)
 		UStatsOverlayD2D::Get().SetShowPicking(true);
 		UStatsOverlayD2D::Get().SetShowDecal(true);
 		UStatsOverlayD2D::Get().SetShowTileCulling(true);
+		UStatsOverlayD2D::Get().SetShowParticle(true);
 		AddLog("STAT: ON");
+	}
+	else if (Stricmp(command_line, "STAT PARTICLE") == 0)
+	{
+		UStatsOverlayD2D::Get().ToggleParticle();
+		AddLog("STAT PARTICLE TOGGLED");
 	}
 	else if (Stricmp(command_line, "STAT NONE") == 0)
 	{
@@ -356,6 +364,7 @@ void UConsoleWidget::ExecCommand(const char* command_line)
 		UStatsOverlayD2D::Get().SetShowPicking(false);
 		UStatsOverlayD2D::Get().SetShowDecal(false);
 		UStatsOverlayD2D::Get().SetShowTileCulling(false);
+		UStatsOverlayD2D::Get().SetShowParticle(false);
 		AddLog("STAT: OFF");
 	}
 	else
