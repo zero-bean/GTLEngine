@@ -111,6 +111,7 @@ float4 mainPS(PS_INPUT Input) : SV_Target
         if (bHasTexture)
         {
             finalPixel.rgb = texColor.rgb;
+            finalPixel.a = texColor.a;
         }
         // 자체발광 추가
         finalPixel.rgb += Material.EmissiveColor;
@@ -120,6 +121,7 @@ float4 mainPS(PS_INPUT Input) : SV_Target
         // LerpColor와 블렌드
         //finalPixel.rgb = lerp(finalPixel.rgb, LerpColor.rgb, LerpColor.a);
         finalPixel.rgb *= texColor.rgb;
+        finalPixel.a = texColor.a;
     }
 
     // 머티리얼 투명도 적용 (0=불투명, 1=투명)
@@ -127,6 +129,6 @@ float4 mainPS(PS_INPUT Input) : SV_Target
     {
         finalPixel.a *= (1.0f - Material.Transparency);
     }
-    
+
     return finalPixel;
 }
