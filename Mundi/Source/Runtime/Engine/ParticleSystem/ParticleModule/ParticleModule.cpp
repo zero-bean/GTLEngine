@@ -1,5 +1,15 @@
 ﻿#include "pch.h"
 #include "ParticleModule.h"
+#include "ParticleEmitterInstances.h"
+
+float FSpawnContext::GetNormalizedEmitterTime() const
+{
+	if (Owner)
+	{
+		return Owner->GetNormalizedEmitterTime();
+	}
+	return 0.0f;
+}
 
 void UParticleModule::Spawn(const FSpawnContext& SpawnContext)
 {

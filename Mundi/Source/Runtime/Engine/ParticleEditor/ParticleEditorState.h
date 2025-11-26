@@ -39,6 +39,9 @@ public:
     bool bShowGrid = false;
     bool bShowAxis = true;
     bool bShowBounds = false;
+    bool bShowWireframe = false;
+    bool bShowLighting = true;
+    bool bEnablePostProcess = true;
     int32 ActiveLODLevel = 0;
     float ViewportBackgroundColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // RGBA
 

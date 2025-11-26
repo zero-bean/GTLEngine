@@ -6,7 +6,9 @@
 // UParticleModuleLifetime은 업데이트가 필요 없음
 void UParticleModuleLifetime::Spawn(const FSpawnContext& SpawnContext)
 {
-	float LifeTimeValue= LifeTime.GetValue(SpawnContext.Owner->EmitterTime, FMath::FRand());
+	// 이미터의 정규화된 시간(0.0~1.0)을 사용하여 커브 샘플링
+	float NormalizedTime = SpawnContext.GetNormalizedEmitterTime();
+	float LifeTimeValue= LifeTime.GetValue(NormalizedTime, FMath::FRand());
 	SpawnContext.ParticleBase->Lifetime = LifeTimeValue;
 	SpawnContext.ParticleBase->OneOverMaxLiftTime = 1.0f / LifeTimeValue;
 	SpawnContext.ParticleBase->RelativeTime = 0.0f;

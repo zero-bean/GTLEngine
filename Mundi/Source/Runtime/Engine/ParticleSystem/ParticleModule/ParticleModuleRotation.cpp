@@ -6,7 +6,9 @@
 
 void UParticleModuleRotation::Spawn(const FSpawnContext& SpawnContext)
 {
-	FVector StartRotationValue = StartRotation.GetValue(SpawnContext.SpawnTime, FMath::FRand());
+	// 이미터의 정규화된 시간(0.0~1.0)을 사용하여 커브 샘플링
+	float NormalizedTime = SpawnContext.GetNormalizedEmitterTime();
+	FVector StartRotationValue = StartRotation.GetValue(NormalizedTime, FMath::FRand());
 	if (!SpawnContext.Owner->CurrentLODLevel->TypeDataModule)
 		StartRotationValue.X = StartRotationValue.Y = 0;
 
