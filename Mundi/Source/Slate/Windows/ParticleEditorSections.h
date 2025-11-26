@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <map>
+#include <string>
 
 class SParticleEditorWindow;
 class ParticleEditorState;
@@ -88,4 +90,44 @@ class FParticleEditorCurveSection : public FParticleEditorSection
 {
 public:
     virtual void Draw(const FParticleEditorSectionContext& Context) override;
+
+private:
+    struct FCurveViewRange
+    {
+        float MinValue = 0.0f;
+        float MaxValue = 1.0f;
+        float DefaultMin = 0.0f;
+        float DefaultMax = 1.0f;
+    };
+
+    void DrawCurveEditor(struct FCurve* Curve, const char* PropertyName, float MinValue = 0.0f, float MaxValue = 1.0f);
+
+    // 범용 Distribution 커브 에디터 (Vector 3축)
+    void DrawVectorDistributionCurveEditor(
+        struct FRawDistributionVector* Distribution,
+        const char* ModuleName,
+        void* ModulePtr,
+        float MinValue,
+        float MaxValue,
+        const char* AxisNames[3] = nullptr  // 기본: X, Y, Z
+    );
+
+    // 범용 Distribution 커브 에디터 (Float 단일)
+    void DrawFloatDistributionCurveEditor(
+        struct FRawDistributionFloat* Distribution,
+        const char* ModuleName,
+        void* ModulePtr,
+        float MinValue,
+        float MaxValue
+    );
+
+    // 드래그 상태 (PropertyName별로 관리)
+    std::map<std::string, int32> DraggingKeyIndexMap;
+    std::map<std::string, bool> IsDraggingMap;
+
+    // 현재 선택된 축 (PropertyName별로 관리)
+    std::map<std::string, int32> SelectedAxisIndexMap;
+
+    // 커브별 사용자 정의 그리드 범위
+    std::map<std::string, FCurveViewRange> CurveRangeMap;
 };
