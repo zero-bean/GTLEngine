@@ -35,6 +35,8 @@ public:
 
 	void DestroyEmitterInstances();
 
+	void OnRegister(UWorld* InWorld) override;
+
 	void BeginPlay() override;
 
 	void EndPlay() override;

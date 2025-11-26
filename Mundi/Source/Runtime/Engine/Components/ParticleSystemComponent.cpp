@@ -74,6 +74,14 @@ void UParticleSystemComponent::DestroyEmitterInstances()
 	EmitterInstances.Empty();
 }
 
+void UParticleSystemComponent::OnRegister(UWorld* InWorld)
+{
+	if (Owner)
+	{
+		Owner->SetTickInEditor(true);
+	}
+}
+
 void UParticleSystemComponent::BeginPlay()
 {
 	UPrimitiveComponent::BeginPlay();
