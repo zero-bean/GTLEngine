@@ -48,5 +48,7 @@ public:
 	void ResetParticles();
 
 	void DuplicateSubObjects() override;
+	
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
 };
