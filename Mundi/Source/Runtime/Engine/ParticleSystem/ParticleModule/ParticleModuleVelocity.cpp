@@ -4,7 +4,9 @@
 
 void UParticleModuleVelocity::Spawn(const FSpawnContext& SpawnContext)
 {
-	FVector StartVelocityVector = StartVelocity.GetValue(SpawnContext.Owner->EmitterTime, FMath::FRand());
+	// 이미터의 정규화된 시간(0.0~1.0)을 사용하여 커브 샘플링
+	float NormalizedTime = SpawnContext.GetNormalizedEmitterTime();
+	FVector StartVelocityVector = StartVelocity.GetValue(NormalizedTime, FMath::FRand());
 	// 이미터에 대한 상대속도
 	SpawnContext.ParticleBase->BaseVelocity += StartVelocityVector;
 	SpawnContext.ParticleBase->Velocity += StartVelocityVector;

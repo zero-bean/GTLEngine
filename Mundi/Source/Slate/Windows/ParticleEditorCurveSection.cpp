@@ -399,9 +399,10 @@ void FParticleEditorCurveSection::DrawVectorDistributionCurveEditor(
     sprintf_s(CurveIDBuffer, "%s_%p", ModuleName, ModulePtr);
     std::string CurveID = CurveIDBuffer;
 
+    constexpr int32 NoAxisSelected = -1;
     if (SelectedAxisIndexMap.find(CurveID) == SelectedAxisIndexMap.end())
     {
-        SelectedAxisIndexMap[CurveID] = 0; // 기본값 첫 번째 축
+        SelectedAxisIndexMap[CurveID] = NoAxisSelected; // 기본값: 축 미선택
     }
     int32& SelectedAxisIndex = SelectedAxisIndexMap[CurveID];
 
@@ -424,14 +425,18 @@ void FParticleEditorCurveSection::DrawVectorDistributionCurveEditor(
 
     for (int i = 0; i < 3; ++i)
     {
-        ImGui::PushStyleColor(ImGuiCol_Button, ButtonColors[i]);
+        bool bIsSelected = (SelectedAxisIndex == i);
+        const ImVec4& ButtonColor = bIsSelected ? ButtonActiveColors[i] : ButtonColors[i];
+        ImGui::PushStyleColor(ImGuiCol_Button, ButtonColor);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ButtonHoverColors[i]);
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ButtonActiveColors[i]);
 
         char ButtonLabel[32];
         sprintf_s(ButtonLabel, "%s##%sAxis%d", AxisNames[i], ModuleName, i);
         if (ImGui::Button(ButtonLabel, ImVec2(50, 25)))
-            SelectedAxisIndex = i;
+        {
+            SelectedAxisIndex = bIsSelected ? NoAxisSelected : i;
+        }
 
         ImGui::PopStyleColor(3);
 
@@ -470,6 +475,16 @@ void FParticleEditorCurveSection::DrawVectorDistributionCurveEditor(
 
     ImGui::Dummy(ImVec2(0.0f, 12.0f));
     ImGui::Separator();
+
+    if (SelectedAxisIndex < 0 || SelectedAxisIndex > 2)
+    {
+        ImGui::Dummy(ImVec2(0.0f, 8.0f));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+        ImGui::TextWrapped("축 버튼을 눌러 편집할 커브를 선택하세요.");
+        ImGui::PopStyleColor();
+        ImGui::Dummy(ImVec2(0.0f, 12.0f));
+        return;
+    }
 
     // 선택된 축의 커브 표시
     FCurve* SelectedCurve = nullptr;

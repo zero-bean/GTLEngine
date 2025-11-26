@@ -358,6 +358,25 @@ uint8* FParticleEmitterInstance::GetModuleInstanceData(UParticleModule* InModule
 	return nullptr;
 }
 
+// 이미터의 정규화된 시간(0.0~1.0) 반환 - 커브 샘플링용
+float FParticleEmitterInstance::GetNormalizedEmitterTime() const
+{
+	if (!CurrentLODLevel || !CurrentLODLevel->RequiredModule)
+	{
+		return FMath::Clamp<float>(EmitterTime, 0.0f, 1.0f);
+	}
+
+	const float Duration = CurrentLODLevel->RequiredModule->EmitterDuration;
+	if (Duration > KINDA_SMALL_NUMBER)
+	{
+		return FMath::Clamp<float>(EmitterTime / Duration, 0.0f, 1.0f);
+	}
+
+	// Duration이 0이면 에미터 시간이 무한히 증가하므로 1초 단위로 반복되도록 처리
+	float Frac = EmitterTime - floorf(EmitterTime);
+	return FMath::Clamp<float>(Frac, 0.0f, 1.0f);
+}
+
 // 파티클 하나 초기화 하는 함수
 void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& InitialLocation, const FVector& InitialVelocity)
 {
@@ -385,52 +404,52 @@ void FParticleEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleIns
 	switch (CurrentLODLevel->RequiredModule->SortMode)
 	{
 	case EParticleSortMode::AgeOldestFirst:
-		{
-			GenerateSortKey(ParticleIndicesForSort, [](const FBaseParticle& Particle)
+	{
+		GenerateSortKey(ParticleIndicesForSort, [](const FBaseParticle& Particle)
 			{
 				// 키 값이 큰 것이 앞에 옴: RelativeTime이 크면 늙은 파티클이 앞에 옴
 				return Particle.RelativeTime;
 			});
-		}
-		break;
+	}
+	break;
 	case EParticleSortMode::AgeNewestFirst:
-		{
-			GenerateSortKey(ParticleIndicesForSort, [](const FBaseParticle& Particle)
+	{
+		GenerateSortKey(ParticleIndicesForSort, [](const FBaseParticle& Particle)
 			{
 				// 역으로 남은 시간 비율이 큰 것이 앞에 오도록 함: 새로 태어난 파티클이 앞에 옴
 				return 1.0f - Particle.RelativeTime * Particle.OneOverMaxLiftTime;
 			});
-		}
-		break;
+	}
+	break;
 	case EParticleSortMode::DistToView:
-		{
-			GenerateSortKey(ParticleIndicesForSort, [&View](const FBaseParticle& Particle)
+	{
+		GenerateSortKey(ParticleIndicesForSort, [&View](const FBaseParticle& Particle)
 			{
 				// 카메라로부터 거리 큰 것이 앞에 옴(제곱해도 결과 똑같으므로 루트 안 씌움)
 				return (View->ViewLocation - Particle.Location).SizeSquared();
 			});
-		}
-		break;
+	}
+	break;
 	case EParticleSortMode::None:
 	default:
-		{
-			BEGIN_UPDATE_LOOP
-				FSpriteParticleInstance NewInstance;
-				NewInstance.Color = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, 1.0f);
+	{
+		BEGIN_UPDATE_LOOP
+			FSpriteParticleInstance NewInstance;
+		NewInstance.Color = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, 1.0f);
 
-				NewInstance.LifeTime = Particle.Lifetime;
-				NewInstance.Position = Particle.Location;
-				NewInstance.Rotation = Particle.Rotation;
-				NewInstance.Size = Particle.Size;
-				ParticleInstanceData.Add(NewInstance);
-			END_UPDATE_LOOP
-			return; 
-		}
+		NewInstance.LifeTime = Particle.Lifetime;
+		NewInstance.Position = Particle.Location;
+		NewInstance.Rotation = Particle.Rotation;
+		NewInstance.Size = Particle.Size;
+		ParticleInstanceData.Add(NewInstance);
+		END_UPDATE_LOOP
+			return;
 	}
-	
-	
+	}
+
+
 	ParticleIndicesForSort.Sort([](const FParticleSortKey& A, const FParticleSortKey& B) {
-	return A.SortKey > B.SortKey;
+		return A.SortKey > B.SortKey;
 		});
 
 	for (int32 Index = 0; Index < ParticleIndicesForSort.Num(); Index++)

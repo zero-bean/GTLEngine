@@ -16,6 +16,9 @@ struct FSpawnContext
 	FSpawnContext(FParticleEmitterInstance* InOwner, int32 InPayloadOffset, float InSpawnTime, FBaseParticle* InParticleBase)
 		:Owner(InOwner), PayloadOffset(InPayloadOffset), SpawnTime(InSpawnTime), ParticleBase(InParticleBase) {
 	}
+
+	// 이미터의 정규화된 시간(0.0~1.0) 반환 - 커브 샘플링용
+	float GetNormalizedEmitterTime() const;
 };
 
 struct FUpdateContext
