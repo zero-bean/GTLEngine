@@ -519,6 +519,15 @@ void FParticleEditorDetailSection::DrawDistributionFloat(const char* Label, FRaw
         DrawPropertyRow(MinLabel, [&]() { ImGui::DragFloat(MinId, &Distribution.Min, 0.1f, Min, Max); });
         DrawPropertyRow(MaxLabel, [&]() { ImGui::DragFloat(MaxId, &Distribution.Max, 0.1f, Min, Max); });
     }
+    else if (Distribution.Operation == EDistributionMode::DOP_Curve)
+    {
+        DrawPropertyRow(Label, [&]()
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.8f, 0.4f, 1.0f));
+            ImGui::TextWrapped("Curve Editor에서 편집 가능");
+            ImGui::PopStyleColor();
+        });
+    }
 }
 
 void FParticleEditorDetailSection::DrawDistributionVector(const char* Label, FRawDistributionVector& Distribution, float Min, float Max, bool bIsColor)
@@ -585,6 +594,15 @@ void FParticleEditorDetailSection::DrawDistributionVector(const char* Label, FRa
             {
                 ImGui::DragFloat3(MaxId, &Distribution.Max.X, 0.1f, Min, Max);
             }
+        });
+    }
+    else if (Distribution.Operation == EDistributionMode::DOP_Curve)
+    {
+        DrawPropertyRow(Label, [&]()
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.8f, 0.4f, 1.0f));
+            ImGui::TextWrapped("Curve Editor에서 편집 가능 (X, Y, Z 각각)");
+            ImGui::PopStyleColor();
         });
     }
 }
