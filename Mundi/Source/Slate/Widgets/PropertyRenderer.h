@@ -22,6 +22,9 @@ public:
 
 	static void RefreshParticleSystemCache();
 
+	static TArray<FString> CachedStaticMeshPaths;
+	static TArray<FString> CachedStaticMeshItems;
+
 private:
 	// 타입별 렌더링 함수들
 	static bool RenderBoolProperty(const FProperty& Prop, void* Instance);
@@ -62,8 +65,6 @@ private:
 	// 렌더링 중 캐시되는 리소스 목록
 	static TArray<FString> CachedSkeletalMeshPaths;
 	static TArray<FString> CachedSkeletalMeshItems;
-	static TArray<FString> CachedStaticMeshPaths;
-	static TArray<FString> CachedStaticMeshItems;
 	static TArray<FString> CachedMaterialPaths;
 	static TArray<const char*> CachedMaterialItems;
 	static TArray<FString> CachedShaderPaths;

@@ -68,6 +68,7 @@ public:
     virtual void Draw(const FParticleEditorSectionContext& Context) override;
 
 private:
+    void DrawTypeDataMeshModuleProperties(class UParticleModuleTypeDataMesh* Module, const FParticleEditorSectionContext& Context);
     void DrawRequiredModuleProperties(class UParticleModuleRequired* Module, const FParticleEditorSectionContext& Context);
     void DrawSpawnModuleProperties(class UParticleModuleSpawn* Module);
     void DrawModuleProperties(class UParticleModule* Module, int32 ModuleIndex);
@@ -77,6 +78,7 @@ private:
         float Min = 0.0f, float Max = 100.0f, bool bIsColor = false);
 
     void AddSpawnModule(ParticleEditorState* State, class UParticleLODLevel* LODLevel);
+    void DeleteTypeModule(ParticleEditorState* State, class UParticleLODLevel* LODLevel);
     void DeleteSpawnModule(ParticleEditorState* State, class UParticleLODLevel* LODLevel);
     void AddModule(ParticleEditorState* State, class UParticleLODLevel* LODLevel, const char* ModuleClassName);
     void DeleteModule(ParticleEditorState* State, class UParticleLODLevel* LODLevel, int32 ModuleIndex);

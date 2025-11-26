@@ -14,12 +14,14 @@
 #include "ParticleModuleVelocity.h"
 #include "ParticleModuleRotation.h"
 #include "ParticleSystemComponent.h"
+#include "ParticleModuleTypeDataMesh.h"
 #include "ResourceManager.h"
 #include "Material.h"
 #include "Texture.h"
 #include "Shader.h"
 #include "PathUtils.h"
 #include "PlatformProcess.h"
+#include "Widgets/PropertyRenderer.h"
 #include <cstring>
 #include <filesystem>
 
@@ -90,6 +92,15 @@ namespace
             return;
         }
 
+        if (LODLevel && LODLevel->TypeDataModule)
+        {
+            if (Cast<UParticleModuleTypeDataMesh>(LODLevel->TypeDataModule))
+            {
+                State->SelectedModuleSelection = EParticleDetailSelection::MeshType;
+                State->SelectedModuleIndex = -1;
+                return;
+            }
+        }
         if (LODLevel && LODLevel->RequiredModule)
         {
             State->SelectedModuleSelection = EParticleDetailSelection::Required;
@@ -353,12 +364,17 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
         {
             AddModule(ActiveState, LODLevel, "UParticleModuleRotation");
         }
+        if (ImGui::MenuItem("Type Data Mesh"))
+        {
+            AddModule(ActiveState, LODLevel, "UParticleModuleTypeDataMesh");
+        }
         ImGui::EndPopup();
     }
 
     const EParticleDetailSelection Selection = ActiveState ? ActiveState->SelectedModuleSelection : EParticleDetailSelection::None;
     const int32 SelectedModuleIndex = ActiveState ? ActiveState->SelectedModuleIndex : -1;
     bool bDeleteSpawn = false;
+    bool bDeleteType = false;
     int32 ModuleToDelete = -1;
 
     auto ShowSelectionHint = [&](const char* Message)
@@ -370,6 +386,16 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
 
     switch (Selection)
     {
+    case EParticleDetailSelection::MeshType:
+        if (LODLevel->TypeDataModule)
+        {
+            UParticleModuleTypeDataMesh* MeshModule = static_cast<UParticleModuleTypeDataMesh*>(LODLevel->TypeDataModule);
+            bDeleteType = DrawModuleCard("TypeDataMeshContainer", "Type Data Mesh Module", true, "X##DeleteTypeDataMesh", [&]()
+            {
+                DrawTypeDataMeshModuleProperties(MeshModule, Context);
+            });
+        }
+        break;
     case EParticleDetailSelection::Required:
         if (LODLevel->RequiredModule)
         {
@@ -436,6 +462,10 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
         break;
     }
 
+    if (bDeleteType)
+    {
+        DeleteTypeModule(ActiveState, LODLevel);
+    }
     if (bDeleteSpawn)
     {
         DeleteSpawnModule(ActiveState, LODLevel);
@@ -583,6 +613,29 @@ void FParticleEditorDetailSection::AddSpawnModule(ParticleEditorState* State, UP
     UE_LOG("Spawn module added");
 }
 
+void FParticleEditorDetailSection::DeleteTypeModule(ParticleEditorState* State, UParticleLODLevel* LODLevel)
+{
+    if (!State || !LODLevel || !LODLevel->TypeDataModule)
+    {
+        return;
+    }
+
+    DeleteObject(LODLevel->TypeDataModule);
+    LODLevel->TypeDataModule = nullptr;
+
+    if (State->GetSelectedEmitter())
+    {
+        State->GetSelectedEmitter()->CacheEmitterModuleInfo();
+        State->PreviewComponent->EndPlay();
+        State->PreviewComponent->InitParticles();
+        State->PreviewComponent->BeginPlay();
+    }
+    State->SelectedModuleSelection = EParticleDetailSelection::None;
+    State->SelectedModuleIndex = -1;
+
+    UE_LOG("Type Data module deleted");
+}
+
 void FParticleEditorDetailSection::DeleteSpawnModule(ParticleEditorState* State, UParticleLODLevel* LODLevel)
 {
     if (!State || !LODLevel || !LODLevel->SpawnModule)
@@ -668,6 +721,13 @@ void FParticleEditorDetailSection::AddModule(ParticleEditorState* State, UPartic
         RotationModule->StartRotation.Constant = 0.0f;
         NewModule = RotationModule;
     }
+    else if (strcmp(ModuleClassName, "UParticleModuleTypeDataMesh") == 0)
+    {
+        UParticleModuleTypeDataMesh* MeshModule = NewObject<UParticleModuleTypeDataMesh>();
+        MeshModule->StaticMesh = UResourceManager::GetInstance().Load<UStaticMesh>(GDataDir + "/Model/smokegrenade.obj");
+        NewModule = MeshModule;
+        LODLevel->TypeDataModule = MeshModule;
+    }
 
     if (!NewModule)
     {
@@ -681,16 +741,28 @@ void FParticleEditorDetailSection::AddModule(ParticleEditorState* State, UPartic
         return;
     }
 
-    LODLevel->Modules.Add(NewModule);
-    LODLevel->SpawnModules.Add(NewModule);
+    if (!Cast<UParticleModuleTypeDataBase>(NewModule))
+    {
+        LODLevel->Modules.Add(NewModule);
+        LODLevel->SpawnModules.Add(NewModule);
+        State->SelectedModuleSelection = EParticleDetailSelection::Module;
+        State->SelectedModuleIndex = LODLevel->Modules.Num() - 1;
+    }
+    else
+    {
+        State->SelectedModuleSelection = EParticleDetailSelection::MeshType;
+        State->SelectedModuleIndex = 1002;
+    }
 
     if (State->GetSelectedEmitter())
     {
         State->GetSelectedEmitter()->CacheEmitterModuleInfo();
+        State->PreviewComponent->EndPlay();
+        State->PreviewComponent->InitParticles();
+        State->PreviewComponent->BeginPlay();
     }
 
-    State->SelectedModuleSelection = EParticleDetailSelection::Module;
-    State->SelectedModuleIndex = LODLevel->Modules.Num() - 1;
+    
 
     UE_LOG("Module added: %s. Total modules: %d", ModuleClassName, LODLevel->Modules.Num());
 }
@@ -722,6 +794,63 @@ void FParticleEditorDetailSection::DeleteModule(ParticleEditorState* State, UPar
     State->SelectedModuleIndex = -1;
 
     UE_LOG("Module deleted. Remaining modules: %d", LODLevel->Modules.Num());
+}
+
+void FParticleEditorDetailSection::DrawTypeDataMeshModuleProperties(UParticleModuleTypeDataMesh* Module, const FParticleEditorSectionContext& Context)
+{
+    if (!Module)
+    {
+        ImGui::TextDisabled("TypeDataMeshModule Missing");
+        return;
+    }
+
+    ImGui::PushID("TypeDataMeshModuleProps");
+    if (ImGui::BeginTable("TypeDataMeshModulePropsTable", 2, PropertyTableFlags))
+    {
+        ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+        DrawPropertyRow("Mesh", [&]()
+            {
+                FString CurrentPath = "";
+                if (Module->StaticMesh)
+                {
+                    CurrentPath = Module->StaticMesh->GetFilePath();
+                }
+                if (UPropertyRenderer::CachedStaticMeshPaths.empty())
+                {
+                    ImGui::Text("<No Meshes>");
+                    return;
+                }
+                int SelectedIdx = -1;
+                for (int i = 0; i < static_cast<int>(UPropertyRenderer::CachedStaticMeshPaths.size()); ++i)
+                {
+                    if (UPropertyRenderer::CachedStaticMeshPaths[i] == CurrentPath)
+                    {
+                        SelectedIdx = i;
+                        break;
+                    }
+                }
+                TArray<const char*> ItemsPtr;
+                ItemsPtr.reserve(UPropertyRenderer::CachedStaticMeshItems.size());
+                for (const FString& item : UPropertyRenderer::CachedStaticMeshItems)
+                {
+                    ItemsPtr.push_back(item.c_str());
+                }
+
+                //ImGui::SetNextItemWidth(240);
+                if (ImGui::Combo("##MeshCombInParticleEditor", &SelectedIdx, ItemsPtr.data(), static_cast<int>(ItemsPtr.size())))
+                {
+                    if (SelectedIdx >= 0 && SelectedIdx < static_cast<int>(UPropertyRenderer::CachedStaticMeshPaths.size()))
+                    {
+                        Module->StaticMesh = UResourceManager::GetInstance().Load<UStaticMesh>(UPropertyRenderer::CachedStaticMeshPaths[SelectedIdx]);
+                    }
+                    return;
+                }
+            });
+        ImGui::EndTable();
+    }
+    ImGui::PopID();
 }
 
 void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleRequired* Module, const FParticleEditorSectionContext& Context)

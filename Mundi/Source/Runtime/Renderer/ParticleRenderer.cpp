@@ -137,7 +137,7 @@
 //                UMaterialInterface* Material = Emitter->CurrentMaterial;
 //                // 아래 if문은 테스트용임. 원래 머티리얼이 그냥 텍스처를 가지고 있어야 함.
 //                if (Emitter->InstanceSRV)
-//                {
+//                { 
 //                    DiffuseTextureSRV = Emitter->InstanceSRV;
 //                }
 //                // 2순위: 머티리얼 텍스처 (스태틱 메시)

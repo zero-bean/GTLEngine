@@ -52,6 +52,7 @@ namespace
             return;
         }
 
+        const ImVec4 TypeDataColor(1.0f, 0.3f, 0.3f, 0.9f);
         const ImVec4 RequiredColor(0.85f, 0.55f, 0.15f, 0.9f);
         const ImVec4 SpawnColor(0.20f, 0.45f, 0.95f, 0.9f);
         const ImVec4 ModuleColor(0.18f, 0.65f, 0.50f, 0.9f);
@@ -94,6 +95,11 @@ namespace
             ImGui::PopID();
             bHasChip = true;
         };
+
+        if (LODLevel->TypeDataModule)
+        {
+            EmitChip("TypeData", TypeDataColor, EParticleDetailSelection::MeshType, -1, 1002);
+        }
 
         if (LODLevel->RequiredModule)
         {

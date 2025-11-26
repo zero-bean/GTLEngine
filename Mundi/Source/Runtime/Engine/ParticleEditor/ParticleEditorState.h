@@ -13,6 +13,7 @@ enum class EParticleDetailSelection : uint8
     None = 0,
     Required,
     Spawn,
+    MeshType,
     Module
 };
 
