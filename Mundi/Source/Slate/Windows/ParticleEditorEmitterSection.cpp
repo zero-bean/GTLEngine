@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cctype>
 #include <string>
+#include "ParticleModuleTypeDataBeam.h"
 
 namespace
 {
@@ -223,6 +224,10 @@ void FParticleEditorEmitterSection::Draw(const FParticleEditorSectionContext& Co
             else if (ImGui::MenuItem("Mesh Emitter"))
             {
                 CreateNewEmitter(ActiveState, EEmitterType::Mesh);
+            }
+            else if (ImGui::MenuItem("Beam Emitter"))
+            {
+                CreateNewEmitter(ActiveState, EEmitterType::Beam);
             }
             ImGui::EndPopup();
         }
@@ -481,20 +486,48 @@ void FParticleEditorEmitterSection::CreateNewEmitter(ParticleEditorState* State,
     NewEmitter->LODLevels.Add(LODLevel);
 
     // Required Module 생성 (필수)
-    UParticleModuleRequired* RequiredModule = NewObject<UParticleModuleRequired>();
-
-    // 기본 Material 생성 (텍스처 없는 흰색 파티클)
-    UMaterial* DefaultMaterial = NewObject<UMaterial>();
-    UShader* BillboardShader = UResourceManager::GetInstance().Load<UShader>("Shaders/UI/Billboard.hlsl");
-    if (BillboardShader)
-    {
-        DefaultMaterial->SetShader(BillboardShader);
-    }
-    RequiredModule->Material = DefaultMaterial;
+    UParticleModuleRequired* RequiredModule = NewObject<UParticleModuleRequired>();    
 
     RequiredModule->EmitterDuration = 2.0f;
     RequiredModule->EmitterLoops = 0;
     RequiredModule->bUseLocalSpace = false;
+
+    UShader* DefaultShader = nullptr;
+    if (EmitterType != EEmitterType::Beam)
+    {
+        // 기본 Material 생성 (텍스처 없는 흰색 파티클)
+        DefaultShader = UResourceManager::GetInstance().Load<UShader>("Shaders/UI/Billboard.hlsl");        
+
+        UParticleModuleLocation* LocationModule = NewObject<UParticleModuleLocation>();
+        LocationModule->SpawnLocation.Operation = EDistributionMode::DOP_Constant;
+        LocationModule->SpawnLocation.Constant = FVector(0.0f, 0.0f, 0.0f);
+
+        UParticleModuleVelocity* VelocityModule = NewObject<UParticleModuleVelocity>();
+        VelocityModule->StartVelocity.Operation = EDistributionMode::DOP_Constant;
+        VelocityModule->StartVelocity.Constant = FVector(0.0f, 0.0f, 10.0f);
+
+        UParticleModuleRotation* RotationModule = NewObject<UParticleModuleRotation>();
+        RotationModule->StartRotation.Operation = EDistributionMode::DOP_Constant;
+        RotationModule->StartRotation.Constant = 0.0f;
+
+        LODLevel->Modules.Add(LocationModule);
+        LODLevel->Modules.Add(VelocityModule);
+        LODLevel->Modules.Add(RotationModule);
+        LODLevel->SpawnModules.Add(LocationModule);
+        LODLevel->SpawnModules.Add(VelocityModule);
+        LODLevel->SpawnModules.Add(RotationModule);
+    }
+    else if (EmitterType == EEmitterType::Beam)
+    {
+        // todo 빔 전용 모듈 생기면 추가
+        DefaultShader = UResourceManager::GetInstance().Load<UShader>("Shaders/Particles/TrailParticle.hlsl");
+    }
+    UMaterial* DefaultMaterial = NewObject<UMaterial>();
+    if (DefaultShader)
+    {
+        DefaultMaterial->SetShader(DefaultShader);
+    }
+    RequiredModule->Material = DefaultMaterial;
 
     // Spawn Module 생성 (필수)
     UParticleModuleSpawn* SpawnModule = NewObject<UParticleModuleSpawn>();
@@ -510,21 +543,9 @@ void FParticleEditorEmitterSection::CreateNewEmitter(ParticleEditorState* State,
     LifetimeModule->LifeTime.Operation = EDistributionMode::DOP_Constant;
     LifetimeModule->LifeTime.Constant = 2.0f;
 
-    UParticleModuleLocation* LocationModule = NewObject<UParticleModuleLocation>();
-    LocationModule->SpawnLocation.Operation = EDistributionMode::DOP_Constant;
-    LocationModule->SpawnLocation.Constant = FVector(0.0f, 0.0f, 0.0f);
-
     UParticleModuleSize* SizeModule = NewObject<UParticleModuleSize>();
     SizeModule->StartSize.Operation = EDistributionMode::DOP_Constant;
     SizeModule->StartSize.Constant = FVector(1.0f, 1.0f, 1.0f);
-
-    UParticleModuleVelocity* VelocityModule = NewObject<UParticleModuleVelocity>();
-    VelocityModule->StartVelocity.Operation = EDistributionMode::DOP_Constant;
-    VelocityModule->StartVelocity.Constant = FVector(0.0f, 0.0f, 10.0f);
-
-    UParticleModuleRotation* RotationModule = NewObject<UParticleModuleRotation>();
-    RotationModule->StartRotation.Operation = EDistributionMode::DOP_Constant;
-    RotationModule->StartRotation.Constant = 0.0f;
 
     // LOD Level에 모듈 할당
     LODLevel->RequiredModule = RequiredModule;
@@ -537,20 +558,20 @@ void FParticleEditorEmitterSection::CreateNewEmitter(ParticleEditorState* State,
         MeshModule->StaticMesh = UResourceManager::GetInstance().Load<UStaticMesh>(GDataDir + "/Model/smokegrenade.obj");
         LODLevel->TypeDataModule = MeshModule;
     }
+    else if (EmitterType == EEmitterType::Beam)
+    {
+        UParticleModuleTypeDataBeam* BeamModule = NewObject<UParticleModuleTypeDataBeam>();
+        LODLevel->TypeDataModule = BeamModule;
+    }
 
     LODLevel->Modules.Add(ColorModule);
     LODLevel->Modules.Add(LifetimeModule);
-    LODLevel->Modules.Add(LocationModule);
     LODLevel->Modules.Add(SizeModule);
-    LODLevel->Modules.Add(VelocityModule);
-    LODLevel->Modules.Add(RotationModule);
+    
 
     LODLevel->SpawnModules.Add(ColorModule);
     LODLevel->SpawnModules.Add(LifetimeModule);
-    LODLevel->SpawnModules.Add(LocationModule);
     LODLevel->SpawnModules.Add(SizeModule);
-    LODLevel->SpawnModules.Add(VelocityModule);
-    LODLevel->SpawnModules.Add(RotationModule);
 
     // Emitter 정보 캐싱
     NewEmitter->CacheEmitterModuleInfo();

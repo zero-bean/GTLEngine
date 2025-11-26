@@ -20,6 +20,9 @@ struct PS_INPUT
     float2 TexCoord : TEXCOORD0;
 };
 
+Texture2D DiffuseTexture : register(t0);
+SamplerState LinearSampler : register(s0);
+
 PS_INPUT mainVS(VS_INPUT Input)
 {
     PS_INPUT Output;
@@ -34,5 +37,6 @@ PS_INPUT mainVS(VS_INPUT Input)
 
 float4 mainPS(PS_INPUT Input) : SV_Target
 {
-    return Input.Color;
+    float4 Tex = DiffuseTexture.Sample(LinearSampler, Input.TexCoord);
+    return Input.Color * (Tex.a == 0 ? 1.0f : Tex);
 }

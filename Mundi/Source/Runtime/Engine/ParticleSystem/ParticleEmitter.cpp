@@ -9,6 +9,8 @@
 #include "ObjectFactory.h"
 #include "ResourceManager.h"
 #include "Material.h"
+#include "ParticleModuleTypeDataBeam.h"
+#include "ParticleModuleTypeDataMesh.h"
 
 UParticleEmitter::UParticleEmitter()
 {
@@ -33,9 +35,14 @@ FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemCompon
 	}
 
 	FParticleEmitterInstance* NewInstance = nullptr;
-	if (LODLevels[0]->TypeDataModule)
+	UParticleModuleTypeDataBase* TypeData = LODLevels[0]->TypeDataModule; 
+	if (auto* BeamType = dynamic_cast<UParticleModuleTypeDataBeam*>(TypeData))
 	{
 		NewInstance = new FParticleBeamEmitterInstance(InOwnerComponent);
+	}
+	else if (auto* MeshType = dynamic_cast<UParticleModuleTypeDataMesh*>(TypeData))
+	{
+		NewInstance = new FParticleMeshEmitterInstance(InOwnerComponent);
 	}
 	else
 	{

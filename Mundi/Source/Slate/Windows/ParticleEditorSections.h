@@ -10,7 +10,8 @@ struct ImVec2;
 enum class EEmitterType
 {
     Sprite,
-    Mesh
+    Mesh,
+    Beam
 };
 struct FParticleEditorSectionContext
 {
@@ -71,6 +72,7 @@ public:
 
 private:
     void DrawTypeDataMeshModuleProperties(class UParticleModuleTypeDataMesh* Module, const FParticleEditorSectionContext& Context);
+    void DrawTypeDataBeamModuleProperties(class UParticleModuleTypeDataBeam* Module, const FParticleEditorSectionContext& Context);
     void DrawRequiredModuleProperties(class UParticleModuleRequired* Module, const FParticleEditorSectionContext& Context);
     void DrawSpawnModuleProperties(class UParticleModuleSpawn* Module);
     void DrawModuleProperties(class UParticleModule* Module, int32 ModuleIndex);

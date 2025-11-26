@@ -134,6 +134,7 @@ public:
 	// ParticleSystemComponent 헤더가 방대해질 가능성이 높음, 인터페이스를 만들어야 함.
 	FParticleSpriteEmitterInstance(UParticleSystemComponent* InComponent);
 	~FParticleSpriteEmitterInstance() override {};
+	void Tick(float DeltaTime, bool bSuppressSpawning) override;
 
 	void FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
 };
@@ -152,6 +153,7 @@ public:
 
 	FParticleMeshEmitterInstance(UParticleSystemComponent* InComponent);
 	~FParticleMeshEmitterInstance() override {};
+	void Tick(float DeltaTime, bool bSuppressSpawning) override;
 
 	void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials) override;
 	void FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
@@ -167,6 +169,8 @@ struct FParticleBeamEmitterInstance : FParticleEmitterInstance
 		float Width;
 		// 길이 비율에 따른 U 좌표
 		float TexCoord;
+		float Progress;
+		FVector4 Color;
 	};
 public:
 	// 캐싱용 변수
@@ -200,6 +204,7 @@ public:
 	TArray<FBeamParticleInstance> RenderVertices;
 
 	float BeamLength;
+	
 	
 	FParticleBeamEmitterInstance(UParticleSystemComponent* InComponent);
 	~FParticleBeamEmitterInstance() override {};

@@ -14,7 +14,8 @@ enum class EParticleDetailSelection : uint8
     Required,
     Spawn,
     MeshType,
-    Module
+    Module,
+    BeamType
 };
 
 class ParticleEditorState

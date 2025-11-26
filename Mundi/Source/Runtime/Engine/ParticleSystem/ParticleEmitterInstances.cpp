@@ -501,6 +501,11 @@ FParticleSpriteEmitterInstance::FParticleSpriteEmitterInstance(UParticleSystemCo
 }
 
 
+void FParticleSpriteEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
+{
+	FParticleEmitterInstance::Tick(DeltaTime, bSuppressSpawning);
+}
+
 void FParticleSpriteEmitterInstance::FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View)
 {
 	FMeshBatchElement BatchElement;
@@ -539,6 +544,11 @@ void FParticleSpriteEmitterInstance::FillMeshBatch(TArray<FMeshBatchElement>& Me
 FParticleMeshEmitterInstance::FParticleMeshEmitterInstance(UParticleSystemComponent* InComponent)
 	:FParticleEmitterInstance(InComponent)
 {
+}
+
+void FParticleMeshEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
+{
+	FParticleEmitterInstance::Tick(DeltaTime, bSuppressSpawning);
 }
 
 void FParticleMeshEmitterInstance::SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials)
@@ -649,6 +659,11 @@ void FParticleBeamEmitterInstance::Init()
 		return;
 	}
 	
+	if (AActor* Owner = OwnerComponent->GetOwner())
+	{
+		SourceActor = Owner;
+	}
+	
 	SourcePosition = SourceActor ? SourceActor->GetActorLocation() : BeamTypeData->SourcePosition;
 	
 	TargetPosition = TargetActor ? TargetActor->GetActorLocation() : BeamTypeData->TargetPosition;
@@ -726,6 +741,21 @@ void FParticleBeamEmitterInstance::BuildBeamPoints()
 		EstimatedTotalLength = 1.0f;
 	}
 
+	TArray<FVector4> Colors;
+	if (ActiveParticles > 0 && ParticleData)
+	{
+		Colors.Reserve(ActiveParticles);
+		BEGIN_UPDATE_LOOP			
+			Colors.Add(FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, 1.0f));
+		END_UPDATE_LOOP
+	}
+	else
+	{
+		Colors.Add(FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+	}
+	
+	int32 ColorCount = Colors.Num();
+
 	// 베지어 곡선의 각 정점
 	const FVector P0 = SourcePosition;
 	const FVector P1 = SourcePosition + SourceTangent;
@@ -743,6 +773,7 @@ void FParticleBeamEmitterInstance::BuildBeamPoints()
 
 		return (P0 * W0) + (P1 * W1) + (P2 * W2)+ (P3 * W3);
 	};
+
 	for (int32 i = 0; i < TotalPoints; i++)
 	{
 		FBeamPoint& Point = BeamPoints[i];
@@ -779,6 +810,7 @@ void FParticleBeamEmitterInstance::BuildBeamPoints()
 		}
 
 		Point.Position = BezierCurve(Progress);
+		Point.Progress = Progress;
 		
 		// TODO 노이즈 추가
 
@@ -788,7 +820,22 @@ void FParticleBeamEmitterInstance::BuildBeamPoints()
 		// 두께
 		float Factor = BeamTypeData->TaperFactor.GetValue(Progress);
 		float Scale = BeamTypeData->TaperScale.GetValue(Factor);
-		Point.Width = BaseWidth * Scale;
+		// Point.Width = BaseWidth * Scale;
+		Point.Width = 10.0f;
+
+		float ColorPos = Progress * static_cast<float>(ColorCount - 1);
+		int32 StartIndex = FMath::Clamp(static_cast<int32>(ColorPos), 0, ColorCount - 1);
+		int32 EndIndex = FMath::Min(StartIndex + 1, ColorCount - 1);
+		float LocalAlpha = (ColorCount > 1) ? (ColorPos - static_cast<float>(StartIndex)) : 0.0f;
+
+		FVector4 Color0 = Colors[StartIndex];
+		FVector4 Color1 = Colors[EndIndex];
+		BeamPoints[i].Color = FVector4(
+			FMath::Lerp(Color0.X, Color1.X, LocalAlpha),
+			FMath::Lerp(Color0.Y, Color1.Y, LocalAlpha),
+			FMath::Lerp(Color0.Z, Color1.Z, LocalAlpha),
+			FMath::Lerp(Color0.W, Color1.W, LocalAlpha)
+		);
 
 		if (bStopGeneration)
 		{
@@ -805,7 +852,7 @@ void FParticleBeamEmitterInstance::BuildBeamMesh(const FVector& CameraPosition)
 	if (PointCount < 2)
 	{
 		return;
-	}
+	}	
 
 	RenderVertices.Empty();
 	RenderVertices.Reserve(PointCount * 2);
@@ -846,9 +893,11 @@ void FParticleBeamEmitterInstance::BuildBeamMesh(const FVector& CameraPosition)
 		FBeamParticleInstance TopVertex, BottomVertex;
 		TopVertex.Position = CurrentPosition + (Right * HalfWidth);
 		TopVertex.UV = FVector2D(BeamPoints[i].TexCoord, 0.0f);
+		TopVertex.Color = BeamPoints[i].Color;
 
 		BottomVertex.Position = CurrentPosition - (Right * HalfWidth);
 		BottomVertex.UV = FVector2D(BeamPoints[i].TexCoord, 1.0f);
+		BottomVertex.Color = BeamPoints[i].Color;
 
 		RenderVertices.Add(TopVertex);
 		RenderVertices.Add(BottomVertex);

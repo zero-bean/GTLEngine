@@ -33,38 +33,42 @@ public:
     GENERATED_REFLECTION_BODY()
     UParticleModuleTypeDataBeam() = default;
 
-    EBeamMethod BeamMethod;
+    void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+
+public:
+
+    EBeamMethod BeamMethod = EBeamMethod::EBM_Target;
     
-    EBeamTaperMethod BeamTaperMethod;
+    EBeamTaperMethod BeamTaperMethod = EBeamTaperMethod::EBTM_None;
 
     // 텍스처 반복 횟수 
-    int32 TextureTile;
+    int32 TextureTile = 1;
     // 텍스처 반복 길이
     // TextureTile과 동시에 사용할 수 없음. 이게 0보다 크면 우선 사용
-    float TextureTileDistance;
+    float TextureTileDistance = 0.0f;
 
     // 빔의 겹침 횟수, 몇 개 겹칠 지 결정
-    int32 Sheets;
+    int32 Sheets = 1;
 
-    int32 MaxBeamCount;
+    int32 MaxBeamCount = 1;
 
     // 빔이 목표 지점까지 날아가는 속도, 0 이면 instance
-    float Speed;
+    float Speed = 0.0f;
 
     float BaseWidth = 1.0f;
 
     // 시작점과 끝점 사이에 찍을 점의 갯수
     // segments 숫자
-    int32 InterpolationPoints;
+    int32 InterpolationPoints = 4;
 
     // 수명이 끝나도 켜질 지 
-    int8 bAlwaysOn;
+    int32 bAlwaysOn = 1;
 
     // UpVector 계산 빈도
     // 0 : 매 점마다 계산
     // 1 : 시작점에서 한 번만 계산
     // N : 매 N번 째 점마다 계산한다는데 언리얼 주석에 unsupported라고 되어 있네
-    int32 UpVectorStepSize;
+    int32 UpVectorStepSize = 0;
 
     FRawDistributionFloat Distance;
 
@@ -75,9 +79,9 @@ public:
     FRawDistributionFloat TaperScale;
 
     // 언리얼은 모듈로 되어 있는데 간단한 구현을 위해 FVector 사용
-    FVector SourcePosition;
-    FVector TargetPosition;
-    FVector SourceTangent;
-    FVector TargetTangent;
+    FVector SourcePosition = FVector::Zero();
+    FVector TargetPosition = FVector(0.0f, 0.0f, 100.0f);
+    FVector SourceTangent = FVector::Zero();
+    FVector TargetTangent = FVector::Zero();
 
 };

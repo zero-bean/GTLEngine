@@ -25,6 +25,8 @@
 #include <cstring>
 #include <filesystem>
 
+#include "ParticleModuleTypeDataBeam.h"
+
 namespace
 {
     constexpr ImGuiTableFlags PropertyTableFlags =
@@ -97,6 +99,15 @@ namespace
             if (Cast<UParticleModuleTypeDataMesh>(LODLevel->TypeDataModule))
             {
                 State->SelectedModuleSelection = EParticleDetailSelection::MeshType;
+                State->SelectedModuleIndex = -1;
+                return;
+            }
+        }
+        if (LODLevel && LODLevel->TypeDataModule)
+        {
+            if (Cast<UParticleModuleTypeDataBeam>(LODLevel->TypeDataModule))
+            {
+                State->SelectedModuleSelection = EParticleDetailSelection::BeamType;
                 State->SelectedModuleIndex = -1;
                 return;
             }
@@ -368,6 +379,10 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
         {
             AddModule(ActiveState, LODLevel, "UParticleModuleTypeDataMesh");
         }
+        if (ImGui::MenuItem("Type Data Beam"))
+        {
+            AddModule(ActiveState, LODLevel, "UParticleModuleTypeDataBeam");
+        }
         ImGui::EndPopup();
     }
 
@@ -386,6 +401,16 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
 
     switch (Selection)
     {
+    case EParticleDetailSelection::BeamType:
+        if (LODLevel->TypeDataModule)
+        {
+            UParticleModuleTypeDataBeam* BeamModule = static_cast<UParticleModuleTypeDataBeam*>(LODLevel->TypeDataModule);
+            bDeleteType = DrawModuleCard("TypeDataBeamContainer", "Type Data Beam Module", true, "X##DeleteTypeDataBeam", [&]()
+            {
+                DrawTypeDataBeamModuleProperties(BeamModule, Context);
+            });
+        }
+        break;
     case EParticleDetailSelection::MeshType:
         if (LODLevel->TypeDataModule)
         {
@@ -745,6 +770,12 @@ void FParticleEditorDetailSection::AddModule(ParticleEditorState* State, UPartic
         NewModule = MeshModule;
         LODLevel->TypeDataModule = MeshModule;
     }
+    else if (strcmp(ModuleClassName, "UParticleModuleTypeDataBeam") == 0)
+    {
+        UParticleModuleTypeDataBeam* BeamModule = NewObject<UParticleModuleTypeDataBeam>();
+        NewModule = BeamModule;
+        LODLevel->TypeDataModule = BeamModule;
+    }
 
     if (!NewModule)
     {
@@ -765,10 +796,15 @@ void FParticleEditorDetailSection::AddModule(ParticleEditorState* State, UPartic
         State->SelectedModuleSelection = EParticleDetailSelection::Module;
         State->SelectedModuleIndex = LODLevel->Modules.Num() - 1;
     }
-    else
+    else if (Cast<UParticleModuleTypeDataMesh>(NewModule))
     {
         State->SelectedModuleSelection = EParticleDetailSelection::MeshType;
         State->SelectedModuleIndex = 1002;
+    }
+    else if (Cast<UParticleModuleTypeDataBeam>(NewModule))
+    {
+        State->SelectedModuleSelection = EParticleDetailSelection::BeamType;
+        State->SelectedModuleIndex = 1003;
     }
 
     if (State->GetSelectedEmitter())
@@ -864,6 +900,89 @@ void FParticleEditorDetailSection::DrawTypeDataMeshModuleProperties(UParticleMod
                     return;
                 }
             });
+        ImGui::EndTable();
+    }
+    ImGui::PopID();
+}
+
+void FParticleEditorDetailSection::DrawTypeDataBeamModuleProperties(class UParticleModuleTypeDataBeam* Module, const FParticleEditorSectionContext& Context)
+{
+    if (!Module)
+    {
+        ImGui::TextDisabled("Beam module missing.");
+        return;
+    }
+
+    ImGui::PushID("BeamModuleProps");
+    if (ImGui::BeginTable("TypeDataBeamModulePropsTable", 2, PropertyTableFlags))
+    {
+        ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+        DrawPropertyRow("Beam Method", [&]()
+        {
+            const char* Items[] = {"Distance", "Target"};
+            int32 Index = static_cast<int32>(Module->BeamMethod);
+            if (ImGui::Combo("##BeamMethod", &Index, Items, IM_ARRAYSIZE(Items)))
+            {
+                Module->BeamMethod = static_cast<EBeamMethod>(Index);
+            }
+        });
+        DrawPropertyRow("Taper Method", [&]()
+        {
+            const char* Items[] = {"None", "Full", "Partial"};
+            int32 Index = static_cast<int32>(Module->BeamTaperMethod);
+            if (ImGui::Combo("##TaperMethod", &Index, Items, IM_ARRAYSIZE(Items)))
+            {
+                Module->BeamTaperMethod = static_cast<EBeamTaperMethod>(Index);
+            }
+        });
+        DrawPropertyRow("Texture Tile", [&]()
+        {
+            ImGui::DragInt("##TextureTile", &Module->TextureTile, 0.1f, 1, 1024);
+        });
+        DrawPropertyRow("Tile Distance", [&]()
+        {
+            ImGui::DragFloat("##TextureTileDistance", &Module->TextureTileDistance, 0.1f, 0.0f, 10000.0f);
+        });
+        DrawPropertyRow("Sheets", [&]() { ImGui::DragInt("##Sheets", &Module->Sheets, 0.1f, 1, 8); });
+        DrawPropertyRow("Max Beam Count", [&]()
+        {
+            ImGui::DragInt("##MaxBeamCount", &Module->MaxBeamCount, 0.1f, 1, 32);
+        });
+        DrawPropertyRow("Speed", [&]() { ImGui::DragFloat("##Speed", &Module->Speed, 1.0f, 0.0f, 10000.0f); });
+        DrawPropertyRow("Base Width", [&]()
+        {
+            ImGui::DragFloat("##BaseWidth", &Module->BaseWidth, 0.1f, 0.0f, 1000.0f);
+        });
+        DrawPropertyRow("Interpolation Points", [&]()
+        {
+            ImGui::DragInt("##InterpolationPoints", &Module->InterpolationPoints,
+                           1.0f, 0, 256);
+        });
+        DrawPropertyRow("Always On", [&]()
+        {
+            ImGui::Checkbox("##AlwaysOn", reinterpret_cast<bool*>(&Module->bAlwaysOn));
+        });
+        DrawPropertyRow("UpVector Step Size", [&]()
+        {
+            ImGui::DragInt("##UpVectorStepSize", &Module->UpVectorStepSize, 1.0f,
+                           0, 16);
+        });
+        DrawPropertyRow("Source Position", [&]()
+        {
+            ImGui::DragFloat3("##SourcePos", &Module->SourcePosition.X, 0.1f);
+        });
+        DrawPropertyRow("Target Position", [&]()
+        {
+            ImGui::DragFloat3("##TargetPos", &Module->TargetPosition.X, 0.1f);
+        });
+        
+        DrawPropertyRow("Source Tangent", [&]() { ImGui::DragFloat3("##SourceTan", &Module->SourceTangent.X, 0.1f); });
+        DrawPropertyRow("Target Tangent", [&]() { ImGui::DragFloat3("##TargetTan", &Module->TargetTangent.X, 0.1f); });
+        DrawDistributionFloat("Distance", Module->Distance, 0.0f, 10000.0f);
+        DrawDistributionFloat("Taper Factor", Module->TaperFactor, 0.0f, 1.0f);
+        DrawDistributionFloat("Taper Scale", Module->TaperScale, 0.0f, 10.0f);
         ImGui::EndTable();
     }
     ImGui::PopID();
