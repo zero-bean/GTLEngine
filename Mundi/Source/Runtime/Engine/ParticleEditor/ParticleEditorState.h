@@ -39,7 +39,6 @@ public:
     bool bShowGrid = false;
     bool bShowAxis = true;
     bool bShowBounds = false;
-    bool bShowWireframe = false;
     bool bShowLighting = true;
     bool bEnablePostProcess = true;
     int32 ActiveLODLevel = 0;
@@ -76,4 +75,7 @@ public:
     void CreatePreviewActor();
     void DestroyPreviewActor();
     void UpdatePreviewParticleSystem();
+
+    // Sync show flags to world's render settings
+    void SyncShowFlagsToWorld();
 };

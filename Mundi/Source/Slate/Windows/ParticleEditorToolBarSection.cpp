@@ -297,6 +297,21 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
             }
         }
 
+        ImGui::SameLine(0.0f, 24.0f);
+
+        if (DrawIconButton("##ParticleToolbarGrid", IconGrid, "Grid",
+            "파티클 뷰포트 창에서의 그리드 표시 토글입니다.", unifiedButtonWidth))
+        {
+            if (ActiveState)
+            {
+                ActiveState->bShowGrid = !ActiveState->bShowGrid;
+                if (ActiveState->World && ActiveState->World->GetGridActor())
+                {
+                    ActiveState->World->GetGridActor()->SetGridVisible(ActiveState->bShowGrid);
+                }
+            }
+        }
+
         ImGui::PopStyleColor(3);
         ImGui::PopStyleVar(3);
     }
@@ -341,6 +356,10 @@ void FParticleEditorToolBarSection::EnsureIconsLoaded()
     if (!IconAxis)
     {
         IconAxis = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Toolbar_Grid.png");
+    }
+    if (!IconGrid)
+    {
+        IconGrid = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Grid.png");
     }
 }
 
