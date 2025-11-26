@@ -53,6 +53,8 @@ void UParticleModuleRequired::Serialize(const bool bInIsLoading, JSON& InOutHand
 			EmitterLoops = InOutHandle["EmitterLoops"].ToInt();
 		if (InOutHandle.hasKey("bUseLocalSpace"))
 			bUseLocalSpace = InOutHandle["bUseLocalSpace"].ToBool();
+		if (InOutHandle.hasKey("MaxActiveParticles"))
+			MaxActiveParticles = InOutHandle["MaxActiveParticles"].ToInt();
 	}
 	else
 	{
@@ -83,5 +85,7 @@ void UParticleModuleRequired::Serialize(const bool bInIsLoading, JSON& InOutHand
 		InOutHandle["EmitterDelay"] = EmitterDelay;
 		InOutHandle["EmitterLoops"] = EmitterLoops;
 		InOutHandle["bUseLocalSpace"] = bUseLocalSpace;
+		InOutHandle["MaxActiveParticles"] = MaxActiveParticles;
+
 	}
 }

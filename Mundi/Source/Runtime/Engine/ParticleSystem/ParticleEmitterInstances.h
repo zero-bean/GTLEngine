@@ -45,11 +45,10 @@ public:
 	// 현재 활성화된 파티클 개수
 	uint32 ActiveParticles = 0;
 
+	uint32 CurrentActiveParticleCapacity = 0;
+
 	// 파티클 ID로 씀. GUObjectArray의 InternalIndex같은 느낌.
 	uint32 ParticleCounter = 0;
-
-	// ActiveParticles의 최대 개수
-	uint32 MaxActiveParticles = 0;
 
 	// 초당 10마리 생성 -> 프레임당 0.16마리 생성 -> 생성 안됨 -> 이전 프레임 남은 시간 누적 필요
 	float SpawnFraction = 0.0f;

@@ -98,6 +98,7 @@ void UParticleSystemComponent::BeginPlay()
 	{
 		InitParticles();
 	}
+	
 }
 
 void UParticleSystemComponent::EndPlay()
@@ -119,8 +120,8 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 			if (EmitterInstance->HasComplete())
 			{
-				delete EmitterInstance;
-				EmitterInstances.RemoveAt(EmitterIndex);
+				//delete EmitterInstance;
+				//EmitterInstances.RemoveAt(EmitterIndex);
 			}
 		}
 	}

@@ -15,6 +15,7 @@
 #include "ParticleModuleRotation.h"
 #include "ParticleSystemComponent.h"
 #include "ParticleModuleTypeDataMesh.h"
+#include "ParticleEmitterInstances.h"
 #include "ResourceManager.h"
 #include "Material.h"
 #include "Texture.h"
@@ -156,6 +157,7 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
         return;
     }
 
+    
     // Emitter 헤더 + Add Module 버튼
     ImGui::Text("Emitter %d Properties", ActiveState->SelectedEmitterIndex);
     ImGui::SameLine();
@@ -184,6 +186,12 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
     ImGui::PopStyleColor(3);
 
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+    FParticleEmitterInstance* Instance = ActiveState->PreviewComponent->EmitterInstances[ActiveState->SelectedEmitterIndex];
+    ImGui::Text("Active Particles: %d, Peak: %d, Max Particles: %d",
+        Instance->ActiveParticles,
+        Instance->CurrentActiveParticleCapacity,
+        SelectedEmitter->LODLevels[0]->RequiredModule->MaxActiveParticles);
     ImGui::Separator();
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
 
@@ -1014,7 +1022,7 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
         DrawPropertyRow("Emitter Loops", [&]() { ImGui::DragInt("##EmitterLoops", &Module->EmitterLoops, 1, 0, 100); });
         DrawPropertyRow("Use Local Space", [&]() { ImGui::Checkbox("##UseLocalSpace", &Module->bUseLocalSpace); });
         ImGui::Separator();
-        ImGui::Text("Renderer");
+        ImGui::Text("Render");
         const char* SortModes[] = { "SORTMODE None", "SORTMODE Age Oldest First", "SORTMODE Age Newest First", "SORTMODE Distance To View" };
 
         DrawPropertyRow("Sort Mode", [&]()
@@ -1026,6 +1034,7 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
                 }
             });
         
+        DrawPropertyRow("MaxActiveParticles", [&]() {ImGui::DragInt("##EmitterCapacity", &Module->MaxActiveParticles, 1, 0, 1000); });
 
         ImGui::EndTable();
     }
