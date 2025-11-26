@@ -14,6 +14,7 @@
 #include "ParticleLODLevel.h"
 #include "ParticleModuleRequired.h"
 #include "ParticleModuleSpawn.h"
+#include "ParticleSystemComponent.h"
 #include "Source/Slate/Widgets/PropertyRenderer.h"
 
 FParticleEditorToolBarSection::FParticleEditorToolBarSection() = default;
@@ -33,7 +34,7 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
     const float toolbarHeight = IconSize + labelHeight + 18.0f;
 
     // 모든 라벨의 최대 너비를 계산
-    const char* labels[] = { "Save", "Open", "Restart Sim",
+    const char* labels[] = { "Save", "Open", "Restart Sim", "Play", "Pause", "Next",
         "Restart Level", "Background", "Thumbnail", "Bounds", "Axis", "Grid" };
     float maxLabelWidth = 0.0f;
     for (const char* label : labels)
@@ -179,7 +180,11 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
         if (DrawIconButton("##ParticleToolbarResetSimul", IconResetSimul, "Restart Sim",
             "뷰포트 창의 시뮬레이션을 리셋시킵니다. ", unifiedButtonWidth))
         {
-            // TODO(PYB): 파티클 시뮬레이션 리셋
+            if (ActiveState && ActiveState->PreviewComponent)
+            {
+                ActiveState->PreviewComponent->ResetParticles();
+                ActiveState->PreviewComponent->InitParticles();
+            }
         }
 
         ImGui::SameLine(0.0f, 24.0f);
@@ -187,7 +192,66 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
         if (DrawIconButton("##ParticleToolbarResetLevel", IconResetLevel, "Restart Level",
             "레벨에 있는 파티클 시스템과, 해당 시스템의 인스턴스를 리셋시킵니다.", unifiedButtonWidth))
         {
-            // TODO(PYB): 레벨 리셋
+            if (ActiveState && ActiveState->World)
+            {
+                const TArray<AActor*>& Actors = ActiveState->World->GetActors();
+                for (AActor* Actor : Actors)
+                {
+                    if (Actor && !Actor->IsPendingDestroy())
+                    {
+                        const TSet<UActorComponent*>& Components = Actor->GetOwnedComponents();
+                        for (UActorComponent* Component : Components)
+                        {
+                            if (UParticleSystemComponent* ParticleComp = Cast<UParticleSystemComponent>(Component))
+                            {
+                                ParticleComp->ResetParticles();
+                                ParticleComp->InitParticles();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ImGui::SameLine(0.0f, 24.0f);
+
+        if (DrawIconButton("##ParticleToolbarPlay", IconPlay, "Play",
+            "뷰포트 창의 파티클 시스템을 재생합니다. ", unifiedButtonWidth))
+        {
+            if (ActiveState && ActiveState->PreviewComponent)
+            {
+                ActiveState->bIsPlaying = true;
+                ActiveState->PreviewComponent->SetTickEnabled(true);
+            }
+        }
+
+        ImGui::SameLine(0.0f, 24.0f);
+
+        if (DrawIconButton("##ParticleToolbarPause", IconPause, "Pause",
+            "뷰포트 창의 파티클 시스템을 정지합니다.  ", unifiedButtonWidth))
+        {
+            if (ActiveState && ActiveState->PreviewComponent)
+            {
+                ActiveState->bIsPlaying = false;
+                ActiveState->PreviewComponent->SetTickEnabled(false);
+            }
+        }
+
+        ImGui::SameLine(0.0f, 24.0f);
+
+        if (DrawIconButton("##ParticleToolbarNext", IconNextFrame, "Next",
+            "뷰포트 창의 파티클 시스템을 다음 프레임으로 진행합니다.", unifiedButtonWidth))
+        {
+            if (ActiveState && ActiveState->PreviewComponent)
+            {
+                // Pause playback and step forward one frame (1/60 second)
+                ActiveState->bIsPlaying = false;
+                ActiveState->PreviewComponent->SetTickEnabled(false);
+
+                const float FrameDelta = 1.0f / 60.0f;
+                ActiveState->CurrentTime += FrameDelta;
+                ActiveState->PreviewComponent->TickComponent(FrameDelta);
+            }
         }
 
         ImGui::SameLine(0.0f, 24.0f);
@@ -209,23 +273,6 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
 
         ImGui::SameLine(0.0f, 24.0f);
 
-        if (DrawIconButton("##ParticleToolbarThumbnail", IconThumbnail, "Thumbnail",
-            "뷰포트 패널 카메라에서 보는 화면을 콘텐츠 브라우저에서 파티클 시스템에 쓸 썸네일 이미지로 저장합니다",
-            unifiedButtonWidth))
-        {
-            // TODO(PYB): 썸네일 저장
-        }
-
-        ImGui::SameLine(0.0f, 24.0f);
-
-        if (DrawIconButton("##ParticleToolbarBound", IconBound, "Bounds",
-            "뷰포트 패널에서 파티클 시스템의 현재 바운드 표시 토글입니다.", unifiedButtonWidth))
-        {
-            // TODO(PYB): 바운드 토글
-        }
-
-        ImGui::SameLine(0.0f, 24.0f);
-
         if (DrawIconButton("##ParticleToolbarAxis", IconAxis, "Axis",
             "파티클 뷰포트 창에서의 원점 축 표시 토글입니다.", unifiedButtonWidth))
         {
@@ -237,41 +284,6 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
                     ActiveState->World->GetGridActor()->SetAxisVisible(ActiveState->bShowAxis);
                 }
             }
-        }
-
-        ImGui::SameLine(0.0f, 24.0f);
-
-        if (DrawIconButton("##ParticleToolbarLOD", IconLOD, "LOD",
-            "LOD를 선택할 수 있습니다.", unifiedButtonWidth))
-        {
-            ImGui::OpenPopup("ParticleEditorLODPopup");
-        }
-
-        if (ActiveState && ImGui::BeginPopup("ParticleEditorLODPopup"))
-        {
-            const char* LODLabels[] = { "LOD 0 (Highest)", "LOD 1", "LOD 2", "LOD 3 (Lowest)" };
-            const int32 LODCount = static_cast<int32>(IM_ARRAYSIZE(LODLabels));
-            for (int32 lodIndex = 0; lodIndex < LODCount; ++lodIndex)
-            {
-                const bool bIsActiveLOD = (ActiveState->ActiveLODLevel == lodIndex);
-                if (bIsActiveLOD)
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.9f, 0.3f, 1.0f));
-                }
-
-                if (ImGui::Selectable(LODLabels[lodIndex], bIsActiveLOD))
-                {
-                    ActiveState->ActiveLODLevel = lodIndex;
-                    // TODO(PYB): LOD 버전 별로 구현이 되면, 선택이 되도록 만들어야 함
-                }
-
-                if (bIsActiveLOD)
-                {
-                    ImGui::PopStyleColor();
-                }
-            }
-
-            ImGui::EndPopup();
         }
 
         ImGui::PopStyleColor(3);
@@ -299,25 +311,25 @@ void FParticleEditorToolBarSection::EnsureIconsLoaded()
     {
         IconResetLevel = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Toolbar_Rotate.png");
     }
+    if (!IconPlay)
+    {
+        IconPlay = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Toolbar_Play.png");
+    }
+    if (!IconPause)
+    {
+        IconPause = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Toolbar_Pause.png");
+    }
+    if (!IconNextFrame)
+    {
+        IconNextFrame = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Toolbar_Next.png");
+    }
     if (!IconColor)
     {
         IconColor = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Toolbar_Color.png");
     }
-    if (!IconThumbnail)
-    {
-        IconThumbnail = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Toolbar_Thumbnail.png");
-    }
-    if (!IconBound)
-    {
-        IconBound = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Toolbar_Bound.png");
-    }
     if (!IconAxis)
     {
         IconAxis = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Toolbar_Grid.png");
-    }
-    if (!IconLOD)
-    {
-        IconLOD = ResourceManager.Load<UTexture>("Data/Icon/Viewport_Toolbar_LOD.png");
     }
 }
 

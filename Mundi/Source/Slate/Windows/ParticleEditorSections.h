@@ -38,11 +38,11 @@ private:
     UTexture* IconLoad = nullptr;
     UTexture* IconResetSimul = nullptr;
     UTexture* IconResetLevel = nullptr;
+    UTexture* IconPlay = nullptr;
+    UTexture* IconPause = nullptr;
+    UTexture* IconNextFrame = nullptr;
     UTexture* IconColor = nullptr;
-    UTexture* IconThumbnail = nullptr;
-    UTexture* IconBound = nullptr;
     UTexture* IconAxis = nullptr;
-    UTexture* IconLOD = nullptr;
     float IconSize = 40.0f;
 };
 
