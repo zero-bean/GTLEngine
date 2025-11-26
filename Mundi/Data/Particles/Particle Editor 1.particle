@@ -213,6 +213,7 @@
               "ShaderPath" : "Shaders/UI/Billboard.hlsl",
               "SpecularTexture" : ""
             },
+            "MaxActiveParticles" : 58,
             "Type" : "UParticleModuleRequired",
             "bEnabled" : true,
             "bUseLocalSpace" : false
