@@ -130,9 +130,17 @@ void UImGuiHelper::EndFrame() const
 		return;
 	}
 
-	// Render ImGui
 	ImGui::Render();
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+}
+
+void UImGuiHelper::RenderDrawData(ImDrawData* DrawData) const
+{
+	if (!bIsInitialized || !DrawData)
+	{
+		return;
+	}
+
+	ImGui_ImplDX11_RenderDrawData(DrawData);
 }
 
 /**

@@ -9,3 +9,20 @@ void UParticleModuleVelocity::Spawn(const FSpawnContext& SpawnContext)
 	SpawnContext.ParticleBase->BaseVelocity += StartVelocityVector;
 	SpawnContext.ParticleBase->Velocity += StartVelocityVector;
 }
+
+void UParticleModuleVelocity::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	if (bInIsLoading)
+	{
+		JSON StartVelocityJson = InOutHandle["StartVelocity"];
+		StartVelocity.Serialize(true, StartVelocityJson);
+	}
+	else
+	{
+		JSON StartVelocityJson = JSON::Make(JSON::Class::Object);
+		StartVelocity.Serialize(false, StartVelocityJson);
+		InOutHandle["StartVelocity"] = StartVelocityJson;
+	}
+}

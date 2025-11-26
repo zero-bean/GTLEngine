@@ -10,12 +10,9 @@
 #include "../Engine/Audio/Sound.h"
 #include "Quad.h"
 #include "LineDynamicMesh.h"
-
-#pragma once
-#include "ObjectFactory.h"
-#include "Object.h"
 #include "SkeletalMesh.h"
 #include "Source/Runtime/Engine/Animation/AnimSequence.h"
+#include "Source/Runtime/Engine/ParticleSystem/ParticleSystem.h"
 // ... 기타 include ...
 
 // --- 전방 선언 ---
@@ -64,7 +61,7 @@ public:
 	// --- 헬퍼 및 유틸리티 ---
 	ID3D11Device* GetDevice() { return Device; }
 	ID3D11DeviceContext* GetDeviceContext() { return Context; }
-	TArray<D3D11_INPUT_ELEMENT_DESC>& GetProperInputLayout(const FString& InShaderName);
+	TArray<D3D11_INPUT_ELEMENT_DESC>& GetProperInputLayout(const FString& InShaderName, const TArray<FShaderMacro>& Macros);
 	FString& GetProperShader(const FString& InTextureName);
 
 	// --- Shader Hot Reload ---
@@ -84,6 +81,9 @@ public:
 	void CreateBillboardMesh();
 	void CreateTextBillboardMesh();
 	void CreateTextBillboardTexture();
+
+	UParticleSystem* LoadParticleSystem(const FString& InFilePath);
+	bool SaveParticleSystem(UParticleSystem* InParticleSystem, const FString& InFilePath);
 
 	// --- 캐시 관리 ---
 	FMeshBVH* GetMeshBVH(const FString& ObjPath);
@@ -262,6 +262,8 @@ EResourceType UResourceManager::GetResourceType()
         return EResourceType::Sound;
 	if (T::StaticClass() == UAnimSequence::StaticClass())
 		return EResourceType::Animation;
+	if (T::StaticClass() == UParticleSystem::StaticClass())
+		return EResourceType::ParticleSystem;
 
     return EResourceType::None;
 }

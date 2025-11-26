@@ -3,7 +3,6 @@
 #include "Distribution.h"
 #include "UParticleModuleSpawn.generated.h"
 
-
 struct FParticleSpawnInstanceData
 {
 	// 거리기반 누적, 1m당 몇개 생성..
@@ -24,4 +23,6 @@ public:
 	uint32 RequiredBytesPerInstance() override;
 
 	int32 GetSpawnCount(float DeltaTime, float& SpawnFraction, float EmitterTime);
+
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 };

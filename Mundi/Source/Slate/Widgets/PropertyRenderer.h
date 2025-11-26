@@ -20,6 +20,11 @@ public:
 	// 객체의 모든 프로퍼티를 카테고리별로 렌더링 (부모 클래스 프로퍼티 포함)
 	static void RenderAllPropertiesWithInheritance(UObject* Object);
 
+	static void RefreshParticleSystemCache();
+
+	static TArray<FString> CachedStaticMeshPaths;
+	static TArray<FString> CachedStaticMeshItems;
+
 private:
 	// 타입별 렌더링 함수들
 	static bool RenderBoolProperty(const FProperty& Prop, void* Instance);
@@ -41,6 +46,7 @@ private:
 	static bool RenderSkeletalMeshProperty(const FProperty& Prop, void* Instance);
 	static bool RenderStaticMeshProperty(const FProperty& Prop, void* Instance);
 	static bool RenderMaterialProperty(const FProperty& Prop, void* Instance);
+	static bool RenderParticleSystemProperty(const FProperty& Prop, void* Instance);
 	static bool RenderMaterialArrayProperty(const FProperty& Prop, void* Instance);
 	static bool RenderSingleMaterialSlot(const char* Label, UMaterialInterface** MaterialPtr, UObject* OwningObject, uint32 MaterialIndex);	// 단일 UMaterial* 슬롯을 렌더링하는 헬퍼 함수.
 	static bool RenderTextureSelectionCombo(const char* Label, UTexture* CurrentTexture, UTexture*& OutNewTexture);
@@ -59,8 +65,6 @@ private:
 	// 렌더링 중 캐시되는 리소스 목록
 	static TArray<FString> CachedSkeletalMeshPaths;
 	static TArray<FString> CachedSkeletalMeshItems;
-	static TArray<FString> CachedStaticMeshPaths;
-	static TArray<FString> CachedStaticMeshItems;
 	static TArray<FString> CachedMaterialPaths;
 	static TArray<const char*> CachedMaterialItems;
 	static TArray<FString> CachedShaderPaths;
@@ -71,4 +75,6 @@ private:
 	static TArray<const char*> CachedSoundItems;
 	static TArray<FString> CachedScriptPaths;
 	static TArray<const char*> CachedScriptItems;
+	static TArray<FString> CachedParticleSystemPaths;
+	static TArray<FString> CachedParticleSystemItems;
 };

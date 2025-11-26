@@ -4,13 +4,19 @@
 
 class UMaterialInterface;
 
+enum class EParticleSortMode
+{
+	None,
+	AgeOldestFirst,
+	AgeNewestFirst,
+	DistToView
+};
+
 UCLASS()
 class UParticleModuleRequired : public UParticleModule
 {
 	GENERATED_REFLECTION_BODY()
 public:
-
-
 	UMaterialInterface* Material;
 
 	// 이미터 1회 루프 시간
@@ -27,5 +33,9 @@ public:
 	//     false인 경우: 자동차 배기가스는 분출된 이후 차를 따라가지 않음.
 	bool bUseLocalSpace = true;
 
+	EParticleSortMode SortMode = EParticleSortMode::None;
+
 	UParticleModuleRequired() = default;
+
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 };

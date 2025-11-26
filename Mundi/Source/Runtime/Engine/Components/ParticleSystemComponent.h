@@ -17,10 +17,13 @@ public:
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 
-	void CollectMeshBatches(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
+	UPROPERTY(EditAnywhere, Category = "Particle")
+	FString ParticleSystemAssetPath;
 
+	UPROPERTY(EditAnywhere, Category = "Particle")
 	UParticleSystem* Template = nullptr;
 
+	void CollectMeshBatches(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
 
 	UParticleSystemComponent();
 
@@ -28,7 +31,11 @@ public:
 
 	void SetTemplate(UParticleSystem* InTemplate);
 
+	void LoadParticleSystemFromAssetPath();
+
 	void DestroyEmitterInstances();
+
+	void OnRegister(UWorld* InWorld) override;
 
 	void BeginPlay() override;
 
@@ -40,5 +47,6 @@ public:
 
 	void ResetParticles();
 
+	void DuplicateSubObjects() override;
 
 };

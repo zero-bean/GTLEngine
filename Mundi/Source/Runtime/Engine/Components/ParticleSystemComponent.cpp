@@ -4,14 +4,24 @@
 #include "ParticleEmitterInstances.h"
 #include "ParticleEmitter.h"
 #include "MeshBatchElement.h"
+#include "ParticleLODLevel.h"
+#include "ParticleModuleRequired.h"
+#include "Material.h"
+#include "Texture.h"
 
 
 void UParticleSystemComponent::CollectMeshBatches(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View)
 {
+	// 방어 코드
+	if (!IsActive() || EmitterInstances.IsEmpty()) { return; }
+
 	for (FParticleEmitterInstance* EmitterInstance : EmitterInstances)
 	{
-		EmitterInstance->FillMeshBatch(MeshBatch, View);
-	}	
+		if (EmitterInstance)
+		{
+			EmitterInstance->FillMeshBatch(MeshBatch, View);
+		}
+	}
 }
 
 UParticleSystemComponent::UParticleSystemComponent()
@@ -26,10 +36,6 @@ UParticleSystemComponent::~UParticleSystemComponent()
 
 void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 {
-	if (Template == InTemplate)
-	{
-		return;
-	}
 
 	if (InTemplate)
 	{
@@ -39,91 +45,127 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 
 		InitParticles();
 	}
+	else
+	{
+		DestroyEmitterInstances();
+	}
+
+}
+
+void UParticleSystemComponent::LoadParticleSystemFromAssetPath()
+{
 	
+	// 새 파티클 시스템 로드
+	UParticleSystem* NewSystem = UResourceManager::GetInstance().Load<UParticleSystem>(ParticleSystemAssetPath);
+	SetTemplate(NewSystem);
 }
 
 void UParticleSystemComponent::DestroyEmitterInstances()
 {
-	for (int32 Index = 0; Index < EmitterInstances.Num(); Index++)
+	// 방어 코드
+	if (EmitterInstances.IsEmpty()) { return; }
+
+	// Delete all emitter instances
+	for (int32 Index = EmitterInstances.Num() - 1; Index >= 0; Index--)
 	{
-		if (EmitterInstances[Index])
-		{
-			delete EmitterInstances[Index];
-		}
+		if (FParticleEmitterInstance* Instance = EmitterInstances[Index]) { delete Instance; }
 	}
+
 	EmitterInstances.Empty();
+}
+
+void UParticleSystemComponent::OnRegister(UWorld* InWorld)
+{
+	if (Owner)
+	{
+		Owner->SetTickInEditor(true);
+	}
 }
 
 void UParticleSystemComponent::BeginPlay()
 {
-	//테스트용 코드
-	UParticleSystem* PS = UParticleSystem::GetTestParticleSystem();
-	if (PS)
+	UPrimitiveComponent::BeginPlay();
+
+	// 얕은 복사된 인스턴스 리스트, Template 비움 -> 이후 새로 할당
+	EmitterInstances.Empty(); 
+	// AssetPath가 있으면 먼저 로드
+	if (!ParticleSystemAssetPath.empty())
 	{
-		SetTemplate(PS);
+		LoadParticleSystemFromAssetPath();
 	}
-	
+	// Template이 설정되어 있으면 파티클 초기화
+	else if (Template)
+	{
+		InitParticles();
+	}
 }
 
 void UParticleSystemComponent::EndPlay()
 {
-	// 테스트용 코드
-	UParticleSystem::ReleaseTestParticleSystem();
 	DestroyEmitterInstances();
+	UPrimitiveComponent::EndPlay();
 }
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
-	for (int32 EmitterIndex = 0 ; EmitterIndex < EmitterInstances.Num(); EmitterIndex++)
+	// 방어 코드
+	if (!IsActive() || EmitterInstances.IsEmpty()) { return; }
+
+	for (int32 EmitterIndex = EmitterInstances.Num() - 1; EmitterIndex >= 0; EmitterIndex--)
 	{
-		FParticleEmitterInstance* EmitterInstance = EmitterInstances[EmitterIndex];
-		if (EmitterInstance)
+		if (FParticleEmitterInstance* EmitterInstance = EmitterInstances[EmitterIndex])
 		{
 			EmitterInstance->Tick(DeltaTime, bSuppressSpawning);
-		}
-		if (EmitterInstance->HasComplete())
-		{
-			delete EmitterInstance;
-			EmitterInstances[EmitterIndex] = nullptr;
+
+			if (EmitterInstance->HasComplete())
+			{
+				delete EmitterInstance;
+				EmitterInstances.RemoveAt(EmitterIndex);
+			}
 		}
 	}
-	
 }
 
 
 void UParticleSystemComponent::InitParticles()
 {
-
 	ResetParticles();
 
 	if (Template)
 	{
-		for (UParticleEmitter* Emitter : Template->Emitters)
+		for (uint32 Index = 0 ; Index < Template->Emitters.Num() ; Index++)
 		{
+			UParticleEmitter* Emitter = Template->Emitters[Index];
 			FParticleEmitterInstance* NewInstance = Emitter->CreateInstance(this);
-			// 테스트용 텍스처
-			// NewInstance->InstanceSRV = UResourceManager::GetInstance().Load<UTexture>(GDataDir + "/Textures/jin.png")->GetShaderResourceView();
+
+			// Required Module에서 Material의 텍스처 가져오기
+			if (Emitter->LODLevels.Num() > 0 && Emitter->LODLevels[0])
+			{
+				UParticleLODLevel* LODLevel = Emitter->LODLevels[0];
+				if (LODLevel->RequiredModule && LODLevel->RequiredModule->Material)
+				{
+					UTexture* DiffuseTexture = LODLevel->RequiredModule->Material->GetTexture(EMaterialTextureSlot::Diffuse);
+					if (DiffuseTexture && DiffuseTexture->GetShaderResourceView())
+					{
+						NewInstance->InstanceSRV = DiffuseTexture->GetShaderResourceView();
+					}
+				}
+			}
 
 			NewInstance->Init();
-
 			EmitterInstances.Add(NewInstance);
 		}
-
 	}
-
 }
 
 void UParticleSystemComponent::ResetParticles()
 {
-	for (FParticleEmitterInstance* Instance : EmitterInstances)
-	{
-		if (Instance)
-		{
-			delete Instance;
-		}
-	}
-
-	EmitterInstances.Empty();
+	DestroyEmitterInstances();
 }
 
+void UParticleSystemComponent::DuplicateSubObjects()
+{
+	Super::DuplicateSubObjects();
 
+
+}

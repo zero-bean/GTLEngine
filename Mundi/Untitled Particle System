@@ -1,0 +1,63 @@
+{
+  "Emitters" : [{
+      "InitialAllocationCount" : 0,
+      "LODLevels" : [{
+          "Level" : 0,
+          "Modules" : [{
+              "LifeTime" : {
+                "constant" : 1.000000,
+                "max" : 2.000000,
+                "min" : 1.000000,
+                "operation" : 1
+              },
+              "Type" : "UParticleModuleLifetime",
+              "bEnabled" : true
+            }, {
+              "StartSize" : {
+                "constant" : [1.000000, 1.000000, 1.000000],
+                "max" : [5.000000, 5.000000, 5.000000],
+                "min" : [2.000000, 2.000000, 2.000000],
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleSize",
+              "bEnabled" : true
+            }, {
+              "StartColor" : {
+                "constant" : [1.000000, 1.000000, 1.000000],
+                "max" : [1.000000, 1.000000, 1.000000],
+                "min" : [0.000000, 0.000000, 0.000000],
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleColor",
+              "bEnabled" : true
+            }],
+          "PeakActiveParticles" : 0,
+          "RequiredModule" : {
+            "EmitterDelay" : 0.000000,
+            "EmitterDuration" : 2.000000,
+            "EmitterLoops" : 0,
+            "Material" : "Shaders/UI/Billboard.hlsl",
+            "Type" : "UParticleModuleRequired",
+            "bEnabled" : true,
+            "bUseLocalSpace" : true
+          },
+          "SpawnModule" : {
+            "SpawnRate" : {
+              "constant" : 30.000000,
+              "max" : 0.000000,
+              "min" : 0.000000,
+              "operation" : 0
+            },
+            "Type" : "UParticleModuleSpawn",
+            "bEnabled" : true
+          },
+          "SpawnModuleIndices" : [0, 1, 2],
+          "Type" : "UParticleLODLevel",
+          "UpdateModuleIndices" : [],
+          "bEnabled" : true
+        }],
+      "MeshMaterials" : [],
+      "Type" : "UParticleEmitter"
+    }],
+  "Version" : 1
+}

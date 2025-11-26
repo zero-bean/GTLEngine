@@ -17,6 +17,8 @@
 #include "SpotLightComponent.h"
 #include "PlatformProcess.h"
 #include "SkeletalMeshComponent.h"
+#include "ParticleSystemComponent.h"
+#include "ParticleSystem.h"
 #include "USlateManager.h"
 #include "BlueprintGraph/AnimationGraph.h"
 #include "BlueprintGraph/AnimBlueprintCompiler.h"
@@ -39,6 +41,15 @@ TArray<FString> UPropertyRenderer::CachedSoundPaths;
 TArray<const char*> UPropertyRenderer::CachedSoundItems;
 TArray<FString> UPropertyRenderer::CachedScriptPaths;
 TArray<const char*> UPropertyRenderer::CachedScriptItems;
+TArray<FString> UPropertyRenderer::CachedParticleSystemPaths;
+TArray<FString> UPropertyRenderer::CachedParticleSystemItems;
+
+namespace
+{
+	bool GParticleSystemCacheDirty = true;
+	bool GParticleDirectoryTimestampValid = false;
+	fs::file_time_type GParticleDirectoryTimestamp{};
+}
 
 static bool ItemsGetter(void* Data, int Index, const char** CItem)
 {
@@ -162,6 +173,11 @@ bool UPropertyRenderer::RenderProperty(const FProperty& Property, void* ObjectIn
 	case EPropertyType::Sound:
 		bChanged = RenderSoundProperty(Property, ObjectInstance);
 		break;
+
+	case EPropertyType::ParticleSystem:
+		bChanged = RenderParticleSystemProperty(Property, ObjectInstance);
+		break;
+
 	default:
 		ImGui::Text("%s: [Unknown Type]", Property.Name);
 		break;
@@ -301,6 +317,14 @@ void UPropertyRenderer::RenderAllPropertiesWithInheritance(UObject* Object)
 	RenderProperties(AllProperties, Object);
 }
 
+void UPropertyRenderer::RefreshParticleSystemCache()
+{
+	GParticleSystemCacheDirty = true;
+	GParticleDirectoryTimestampValid = false;
+	CacheResources();
+}
+
+
 // ===== 리소스 캐싱 =====
 
 void UPropertyRenderer::CacheResources()
@@ -401,16 +425,79 @@ void UPropertyRenderer::CacheResources()
 			CachedScriptItems.Add(CachedScriptPaths[i].c_str());
 		}
 	}
-    // 5. Sound (.wav)
-    if (CachedSoundPaths.IsEmpty() && CachedSoundItems.IsEmpty())
-    {
-        CachedSoundPaths = ResMgr.GetAllFilePaths<USound>();
-        CachedSoundItems.Add("None");
-        for (const FString& path : CachedSoundPaths)
-        {
-            CachedSoundItems.push_back(path.c_str());
-        }
-    }
+	// 5. Sound (.wav)
+	if (CachedSoundPaths.IsEmpty() && CachedSoundItems.IsEmpty())
+	{
+		CachedSoundPaths = ResMgr.GetAllFilePaths<USound>();
+		CachedSoundItems.Add("None");
+		for (const FString& path : CachedSoundPaths)
+		{
+			CachedSoundItems.push_back(path.c_str());
+		}
+	}
+
+	// 6. Particle System (.particle)
+	{
+		const FString ParticleDir = "Data/Particles/";
+		const FString AbsoluteParticleDir = GDataDir + "/Particles/";
+		const bool bParticleDirExists = fs::exists(AbsoluteParticleDir) && fs::is_directory(AbsoluteParticleDir);
+
+		std::error_code DirTimestampError;
+		fs::file_time_type CurrentTimestamp{};
+		bool bTimestampValid = false;
+		if (bParticleDirExists)
+		{
+			CurrentTimestamp = fs::last_write_time(AbsoluteParticleDir, DirTimestampError);
+			if (!DirTimestampError)
+			{
+				bTimestampValid = true;
+				if (!GParticleDirectoryTimestampValid || CurrentTimestamp != GParticleDirectoryTimestamp)
+				{
+					GParticleSystemCacheDirty = true;
+				}
+			}
+		}
+		else if (!CachedParticleSystemPaths.IsEmpty() || !CachedParticleSystemItems.IsEmpty())
+		{
+			GParticleSystemCacheDirty = true;
+		}
+
+		const bool bCacheEmpty = CachedParticleSystemPaths.IsEmpty() || CachedParticleSystemItems.IsEmpty();
+		if (GParticleSystemCacheDirty || bCacheEmpty)
+		{
+			CachedParticleSystemPaths.Empty();
+			CachedParticleSystemItems.Empty();
+
+			if (bParticleDirExists)
+			{
+				for (const auto& Entry : fs::recursive_directory_iterator(AbsoluteParticleDir))
+				{
+					if (Entry.is_regular_file() && Entry.path().extension() == ".particle")
+					{
+						FString RelativePath = ParticleDir + Entry.path().filename().string();
+						CachedParticleSystemPaths.Add(NormalizePath(RelativePath));
+						CachedParticleSystemItems.push_back(Entry.path().filename().string());
+					}
+				}
+			}
+
+			CachedParticleSystemPaths.Insert("", 0);
+			CachedParticleSystemItems.Insert("None", 0);
+
+			if (bTimestampValid)
+			{
+				GParticleDirectoryTimestamp = CurrentTimestamp;
+				GParticleDirectoryTimestampValid = true;
+			}
+			else if (!bParticleDirExists)
+			{
+				GParticleDirectoryTimestampValid = false;
+				GParticleDirectoryTimestamp = fs::file_time_type{};
+			}
+
+			GParticleSystemCacheDirty = false;
+		}
+	}
 }
 
 void UPropertyRenderer::ClearResourcesCache()
@@ -429,6 +516,8 @@ void UPropertyRenderer::ClearResourcesCache()
 	CachedSoundItems.Empty();
 	CachedScriptPaths.Empty();
 	CachedScriptItems.Empty();
+	CachedParticleSystemPaths.Empty();
+	CachedParticleSystemItems.Empty();
 }
 
 // ===== 타입별 렌더링 구현 =====
@@ -524,6 +613,62 @@ bool UPropertyRenderer::RenderStringProperty(const FProperty& Prop, void* Instan
 {
 	FString* Value = Prop.GetValuePtr<FString>(Instance);
 
+	// ParticleSystemAssetPath는 콤보박스로 렌더링
+	if (strcmp(Prop.Name, "ParticleSystemAssetPath") == 0)
+	{
+		if (CachedParticleSystemPaths.empty())
+		{
+			ImGui::Text("%s: <No Particle Systems>", Prop.Name);
+			return false;
+		}
+
+		int SelectedIdx = -1;
+		for (int i = 0; i < static_cast<int>(CachedParticleSystemPaths.size()); ++i)
+		{
+			if (CachedParticleSystemPaths[i] == *Value)
+			{
+				SelectedIdx = i;
+				break;
+			}
+		}
+
+		// TArray<FString>을 const char* 배열로 변환
+		TArray<const char*> ItemsPtr;
+		ItemsPtr.reserve(CachedParticleSystemItems.size());
+		for (const FString& item : CachedParticleSystemItems)
+		{
+			ItemsPtr.push_back(item.c_str());
+		}
+
+		ImGui::SetNextItemWidth(240);
+		if (ImGui::Combo(Prop.Name, &SelectedIdx, ItemsPtr.data(), static_cast<int>(ItemsPtr.size())))
+		{
+			if (SelectedIdx >= 0 && SelectedIdx < static_cast<int>(CachedParticleSystemPaths.size()))
+			{
+				*Value = CachedParticleSystemPaths[SelectedIdx];
+
+				// ParticleSystemComponent인 경우 즉시 로드
+				UObject* Object = static_cast<UObject*>(Instance);
+				if (UParticleSystemComponent* PSC = Cast<UParticleSystemComponent>(Object))
+				{
+					PSC->LoadParticleSystemFromAssetPath();
+				}
+				return true;
+			}
+		}
+
+		// 툴팁 표시
+		if (ImGui::IsItemHovered() && !Value->empty())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted(Value->c_str());
+			ImGui::EndTooltip();
+		}
+
+		return false;
+	}
+
+	// 일반 String 프로퍼티는 InputText로 렌더링
 	// ImGui::InputText는 char 버퍼를 사용하므로 변환 필요
 	char Buffer[256];
 	strncpy_s(Buffer, Value->c_str(), sizeof(Buffer) - 1);
@@ -1766,6 +1911,42 @@ bool UPropertyRenderer::RenderSoundSelectionComboSimple(const char* Label, USoun
     return bChanged;
 }
 
+bool UPropertyRenderer::RenderParticleSystemProperty(const FProperty& Prop, void* Instance)
+{
+	UParticleSystem** ParticleSystemPtr = Prop.GetValuePtr<UParticleSystem*>(Instance);
+
+	// 현재 파티클 시스템 표시 (읽기 전용으로 일단 표시)
+	FString CurrentPath;
+	if (*ParticleSystemPtr)
+	{
+		CurrentPath = (*ParticleSystemPtr)->GetName();
+	}
+	else
+	{
+		CurrentPath = "None";
+	}
+
+	ImGui::Text("%s: %s", Prop.Name, CurrentPath.c_str());
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	UObject* Object = static_cast<UObject*>(Instance);
+	UParticleSystemComponent* ParticleComp = Cast<UParticleSystemComponent>(Object);
+
+	if (ParticleComp)
+	{
+		// "Open Particle Editor" 버튼
+		if (ImGui::Button("Open Particle Editor", ImVec2(-1, 30)))
+		{
+			// ParticleSystemComponent의 Template을 파티클 에디터로 전달
+			USlateManager::GetInstance().OpenParticleEditor(ParticleComp->Template);
+		}
+	}
+
+	return false;
+}
 
 bool UPropertyRenderer::RenderTransformProperty(const FProperty& Prop, void* Instance)
 {
@@ -1891,3 +2072,5 @@ bool UPropertyRenderer::RenderTransformProperty(const FProperty& Prop, void* Ins
 
 	return bAnyChanged;
 }
+
+

@@ -134,16 +134,19 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 	KillParticles();
 
 	// 파티클 스폰
-	if (!bSuppressSpawning)
-	{
-		int32 SpawnCount = CurrentLODLevel->SpawnModule->GetSpawnCount(DeltaTime, SpawnFraction, EmitterTime);
+    if (!bSuppressSpawning)
+    {
+        int32 SpawnCount = 0;
+        if (CurrentLODLevel->SpawnModule)
+        {
+            SpawnCount = CurrentLODLevel->SpawnModule->GetSpawnCount(DeltaTime, SpawnFraction, EmitterTime);
+        }
 
-		if (SpawnCount > 0)
-		{
+        if (SpawnCount > 0)
+        {
 			// ActiveParticles는 실제로 Spawn할때 올림
 			Resize(ActiveParticles + SpawnCount);
 			SpawnParticles(SpawnCount, DeltaTime, DeltaTime / SpawnCount, OwnerComponent->GetWorldLocation(), FVector(0, 0, 0));
-
 		}
 	}
 
@@ -189,7 +192,8 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 	//위치 업데이트
 	BEGIN_UPDATE_LOOP
 		Particle.Location += Particle.Velocity * DeltaTime;
-		Particle.Rotation += Particle.RotationRate * DeltaTime;
+		
+		Particle.Rotation = Particle.Rotation * FQuat::Slerp(FQuat::Identity(), Particle.RotationRate, DeltaTime);
 	END_UPDATE_LOOP
 }
 void FParticleEmitterInstance::KillParticles()
@@ -313,7 +317,6 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, float StartTime, floa
 		PostSpawn(Particle, 0, StartTime - Increment * Index);
 		ActiveParticles++;
 	}
-	
 }
 
 void FParticleEmitterInstance::PostSpawn(FBaseParticle* InParticle, float InterpolationPercentage, float SpawnTime)
@@ -374,19 +377,75 @@ void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& 
 
 }
 
-void FParticleEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData)
+void FParticleEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData, const FSceneView* View)
 {
-	BEGIN_UPDATE_LOOP
+
+
+	ParticleIndicesForSort.clear();
+	switch (CurrentLODLevel->RequiredModule->SortMode)
+	{
+	case EParticleSortMode::AgeOldestFirst:
+		{
+			GenerateSortKey(ParticleIndicesForSort, [](const FBaseParticle& Particle)
+			{
+				// 키 값이 큰 것이 앞에 옴: RelativeTime이 크면 늙은 파티클이 앞에 옴
+				return Particle.RelativeTime;
+			});
+		}
+		break;
+	case EParticleSortMode::AgeNewestFirst:
+		{
+			GenerateSortKey(ParticleIndicesForSort, [](const FBaseParticle& Particle)
+			{
+				// 역으로 남은 시간 비율이 큰 것이 앞에 오도록 함: 새로 태어난 파티클이 앞에 옴
+				return 1.0f - Particle.RelativeTime * Particle.OneOverMaxLiftTime;
+			});
+		}
+		break;
+	case EParticleSortMode::DistToView:
+		{
+			GenerateSortKey(ParticleIndicesForSort, [&View](const FBaseParticle& Particle)
+			{
+				// 카메라로부터 거리 큰 것이 앞에 옴(제곱해도 결과 똑같으므로 루트 안 씌움)
+				return (View->ViewLocation - Particle.Location).SizeSquared();
+			});
+		}
+		break;
+	case EParticleSortMode::None:
+	default:
+		{
+			BEGIN_UPDATE_LOOP
+				FSpriteParticleInstance NewInstance;
+				NewInstance.Color = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, 1.0f);
+
+				NewInstance.LifeTime = Particle.Lifetime;
+				NewInstance.Position = Particle.Location;
+				NewInstance.Rotation = Particle.Rotation;
+				NewInstance.Size = Particle.Size;
+				ParticleInstanceData.Add(NewInstance);
+			END_UPDATE_LOOP
+			return; 
+		}
+	}
+	
+	
+	ParticleIndicesForSort.Sort([](const FParticleSortKey& A, const FParticleSortKey& B) {
+	return A.SortKey > B.SortKey;
+		});
+
+	for (int32 Index = 0; Index < ParticleIndicesForSort.Num(); Index++)
+	{
+		DECLARE_PARTICLE_PTR(Particle, ParticleData + ParticleIndicesForSort[Index].Index * ParticleStride)
 		FSpriteParticleInstance NewInstance;
-	NewInstance.Color = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, 1.0f);
+		NewInstance.Color = FVector4(Particle->Color.R, Particle->Color.G, Particle->Color.B, 1.0f);
 
-	NewInstance.LifeTime = Particle.Lifetime;
-	NewInstance.Position = Particle.Location;
-	NewInstance.Rotation = DegreesToRadians(Particle.Rotation);
-	NewInstance.Size = Particle.Size.X;
+		NewInstance.LifeTime = Particle->Lifetime;
+		NewInstance.Position = Particle->Location;
+		NewInstance.Rotation = Particle->Rotation;
+		NewInstance.Size = Particle->Size;
 
-	ParticleInstanceData.Add(NewInstance);
-	END_UPDATE_LOOP
+		ParticleInstanceData.Add(NewInstance);
+	}
 }
 
 
@@ -427,8 +486,8 @@ void FParticleSpriteEmitterInstance::FillMeshBatch(TArray<FMeshBatchElement>& Me
 {
 	FMeshBatchElement BatchElement;
 
-	ParticleInstanceData.Empty();
-	GetParticleInstanceData(ParticleInstanceData);
+	ParticleInstanceData.clear();
+	GetParticleInstanceData(ParticleInstanceData, View);
 	BatchElement.BlendType = EBlendType::Alpha;
 	BatchElement.BaseVertexIndex = 0;
 	BatchElement.Distance = (View->ViewLocation - EmitterLocation * OwnerComponent->GetWorldMatrix()).Size();
@@ -480,8 +539,8 @@ void FParticleMeshEmitterInstance::FillMeshBatch(TArray<FMeshBatchElement>& Mesh
 	BatchElement.BlendType = EBlendType::Opaque;
 	BatchElement.Distance = (View->ViewLocation - EmitterLocation * OwnerComponent->GetWorldMatrix()).Size();
 
-	ParticleInstanceData.Empty();
-	GetParticleInstanceData(ParticleInstanceData);
+	ParticleInstanceData.clear();
+	GetParticleInstanceData(ParticleInstanceData, View);
 
 	BatchElement.ParticleInstanceData = &ParticleInstanceData;  
 	BatchElement.InstanceStride = sizeof(FSpriteParticleInstance);

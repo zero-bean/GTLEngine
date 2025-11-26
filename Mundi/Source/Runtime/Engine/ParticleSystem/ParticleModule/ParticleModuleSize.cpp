@@ -9,3 +9,20 @@ void UParticleModuleSize::Spawn(const FSpawnContext& SpawnContext)
 	SpawnContext.ParticleBase->Size = StartSizeVector;
 
 }
+
+void UParticleModuleSize::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	if (bInIsLoading)
+	{
+		JSON StartSizeJson = InOutHandle["StartSize"];
+		StartSize.Serialize(true, StartSizeJson);
+	}
+	else
+	{
+		JSON StartSizeJson = JSON::Make(JSON::Class::Object);
+		StartSize.Serialize(false, StartSizeJson);
+		InOutHandle["StartSize"] = StartSizeJson;
+	}
+}

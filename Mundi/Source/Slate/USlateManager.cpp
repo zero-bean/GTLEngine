@@ -251,6 +251,45 @@ void USlateManager::CloseAnimationGraphEditor()
     AnimationGraphEditorWindow = nullptr;
 }
 
+void USlateManager::OpenParticleEditor(UParticleSystem* ParticleSystem)
+{
+    if (ParticleEditorWindow) { return; }
+
+    ParticleEditorWindow = new SParticleEditorWindow();
+
+    // Open as a detached window at a default size and position
+    const float ToolbarHeight = 50.0f;
+    const float AvailableHeight = Rect.GetHeight() - ToolbarHeight;
+    const float Width = Rect.GetWidth() * 0.85f;
+    const float Height = AvailableHeight * 0.85f;
+    const float x = Rect.Left + (Rect.GetWidth() - Width) * 0.5f;
+    const float y = Rect.Top + ToolbarHeight + (AvailableHeight - Height) * 0.5f;
+    ParticleEditorWindow->Initialize(x, y, Width, Height, World, Device);
+
+    // ParticleSystem이 전달되면 해당 시스템을 로드
+    if (ParticleSystem)
+    {
+        ParticleEditorWindow->LoadParticleSystem(ParticleSystem);
+    }
+}
+
+void USlateManager::CloseParticleEditor()
+{
+    if (ParticleEditorWindow)
+    {
+        delete ParticleEditorWindow;
+        ParticleEditorWindow = nullptr;
+    }
+}
+
+void USlateManager::CleanupParticleEditorWindow()
+{
+    if (ParticleEditorWindow && !ParticleEditorWindow->IsOpen())
+    {
+        CloseParticleEditor();
+    }
+}
+
 void USlateManager::SwitchLayout(EViewportLayoutMode NewMode)
 {
     if (NewMode == CurrentMode) return;
@@ -454,6 +493,12 @@ void USlateManager::Render()
     {
         AnimationGraphEditorWindow->OnRender();
     }
+
+    if (ParticleEditorWindow)
+    {
+        ParticleEditorWindow->OnRender();
+        CleanupParticleEditorWindow();
+    }
 }
 
 void USlateManager::RenderAfterUI()
@@ -461,6 +506,12 @@ void USlateManager::RenderAfterUI()
     if (SkeletalViewerWindow)
     {
         SkeletalViewerWindow->OnRenderViewport();
+    }
+
+    if (ParticleEditorWindow)
+    {
+        ParticleEditorWindow->OnRenderViewport();
+        CleanupParticleEditorWindow();
     }
 }
 
@@ -481,6 +532,12 @@ void USlateManager::Update(float DeltaSeconds)
     if (SkeletalViewerWindow)
     {
         SkeletalViewerWindow->OnUpdate(DeltaSeconds);
+    }
+
+    if (ParticleEditorWindow)
+    {
+        ParticleEditorWindow->OnUpdate(DeltaSeconds);
+        CleanupParticleEditorWindow();
     }
 
     // 콘솔 애니메이션 업데이트
@@ -542,57 +599,71 @@ void USlateManager::Update(float DeltaSeconds)
 
 void USlateManager::ProcessInput()
 {
+    CleanupParticleEditorWindow();
+
     const FVector2D MousePosition = INPUT.GetMousePosition();
+    const bool bOverlayBlockingMouse = UUIManager::GetInstance().IsOverlayCapturingMouse();
 
-    if (SkeletalViewerWindow && SkeletalViewerWindow->Rect.Contains(MousePosition))
+    if (!bOverlayBlockingMouse)
     {
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        if (ParticleEditorWindow && ParticleEditorWindow->Rect.Contains(MousePosition))
+        {
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            {
+                OnMouseDown(MousePosition, 0);
+            }
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+            {
+                OnMouseDown(MousePosition, 1);
+            }
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+            {
+                OnMouseUp(MousePosition, 0);
+            }
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+            {
+                OnMouseUp(MousePosition, 1);
+            }
+        }
+        else if (SkeletalViewerWindow && SkeletalViewerWindow->Rect.Contains(MousePosition))
+        {
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            {
+                OnMouseDown(MousePosition, 0);
+            }
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+            {
+                OnMouseDown(MousePosition, 1);
+            }
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+            {
+                OnMouseUp(MousePosition, 0);
+            }
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+            {
+                OnMouseUp(MousePosition, 1);
+            }
+        }
+
+        if (INPUT.IsMouseButtonPressed(LeftButton))
         {
             OnMouseDown(MousePosition, 0);
         }
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+        if (INPUT.IsMouseButtonPressed(RightButton))
         {
             OnMouseDown(MousePosition, 1);
         }
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+        if (INPUT.IsMouseButtonReleased(LeftButton))
         {
             OnMouseUp(MousePosition, 0);
         }
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+        if (INPUT.IsMouseButtonReleased(RightButton))
         {
             OnMouseUp(MousePosition, 1);
         }
-    }
 
-    if (INPUT.IsMouseButtonPressed(LeftButton))
-    {
-        const FVector2D MousePosition = INPUT.GetMousePosition();
-        {
-            OnMouseDown(MousePosition, 0);
-        }
+        OnMouseMove(MousePosition);
     }
-    if (INPUT.IsMouseButtonPressed(RightButton))
-    {
-        const FVector2D MousePosition = INPUT.GetMousePosition();
-        {
-            OnMouseDown(MousePosition, 1);
-        }
-    }
-    if (INPUT.IsMouseButtonReleased(LeftButton))
-    {
-        const FVector2D MousePosition = INPUT.GetMousePosition();
-        {
-            OnMouseUp(MousePosition, 0);
-        }
-    }
-    if (INPUT.IsMouseButtonReleased(RightButton))
-    {
-        const FVector2D MousePosition = INPUT.GetMousePosition();
-        {
-            OnMouseUp(MousePosition, 1);
-        }
-    }
-    OnMouseMove(MousePosition);
 
     // Alt + ` (억음 부호 키)로 콘솔 토글
     if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent) && ImGui::GetIO().KeyAlt)
@@ -607,9 +678,16 @@ void USlateManager::ProcessInput()
     }
 
     // ESC closes the Skeletal Mesh Viewer if open
-    if (ImGui::IsKeyPressed(ImGuiKey_Escape) && SkeletalViewerWindow)
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape))
     {
-        CloseSkeletalMeshViewer();
+        if (ParticleEditorWindow)
+        {
+            CloseParticleEditor();
+        }
+        else if (SkeletalViewerWindow)
+        {
+            CloseSkeletalMeshViewer();
+        }
     }
 
     // 단축키로 기즈모 모드 변경
@@ -619,6 +697,13 @@ void USlateManager::ProcessInput()
 
 void USlateManager::OnMouseMove(FVector2D MousePos)
 {
+    // Route to particle editor if hovered (check first since it's on top)
+    if (ParticleEditorWindow && ParticleEditorWindow->IsHover(MousePos))
+    {
+        ParticleEditorWindow->OnMouseMove(MousePos);
+        return;
+    }
+
     // Route to detached viewer if hovered
     if (SkeletalViewerWindow && SkeletalViewerWindow->IsHover(MousePos))
     {
@@ -638,6 +723,12 @@ void USlateManager::OnMouseMove(FVector2D MousePos)
 
 void USlateManager::OnMouseDown(FVector2D MousePos, uint32 Button)
 {
+    if (ParticleEditorWindow && ParticleEditorWindow->Rect.Contains(MousePos))
+    {
+        ParticleEditorWindow->OnMouseDown(MousePos, Button);
+        return;
+    }
+
     if (SkeletalViewerWindow && SkeletalViewerWindow->Rect.Contains(MousePos))
     {
         SkeletalViewerWindow->OnMouseDown(MousePos, Button);
@@ -677,6 +768,12 @@ void USlateManager::OnMouseUp(FVector2D MousePos, uint32 Button)
     {
         INPUT.SetCursorVisible(true);
         INPUT.ReleaseCursor();
+    }
+
+    if (ParticleEditorWindow && ParticleEditorWindow->Rect.Contains(MousePos))
+    {
+        ParticleEditorWindow->OnMouseUp(MousePos, Button);
+        // do not return; still allow panels to finish mouse up
     }
 
     if (SkeletalViewerWindow && SkeletalViewerWindow->Rect.Contains(MousePos))
@@ -756,6 +853,12 @@ void USlateManager::Shutdown()
     {
         delete AnimationGraphEditorWindow;
         AnimationGraphEditorWindow = nullptr;
+    }
+
+    if (ParticleEditorWindow)
+    {
+        delete ParticleEditorWindow;
+        ParticleEditorWindow = nullptr;
     }
 }
 

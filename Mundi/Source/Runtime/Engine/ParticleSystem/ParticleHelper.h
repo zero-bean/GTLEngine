@@ -2,20 +2,20 @@
 
 struct FBaseParticle
 {
-	FVector    Location;
+	FVector    Location{};
 	// 파티클의 현재 속도
-	FVector    Velocity;
-	float      RelativeTime;
-	float      Lifetime;
+	FVector    Velocity{};
+	float      RelativeTime = 0;
+	float      Lifetime = 0;
 	// 파티클이 원래 가지던 오리지널 속도(파티클 현재 속도를 2배로 하면 중력도 2배 적용)
 	// 배속은 현재 속도가 아닌 BaseVelocity에 적용되어야 함.
-	FVector    BaseVelocity;
-	float      Rotation;
-	float      RotationRate;
-	FVector    Size;
-	FLinearColor     Color;
+	FVector    BaseVelocity{};
+	FQuat      Rotation{};
+	FQuat      RotationRate{};
+	FVector    Size{};
+	FLinearColor     Color{};
 	// 나눗셈 연산 비싸서 미리 구함.
-	float OneOverMaxLiftTime;
+	float OneOverMaxLiftTime = 0;
 };
 
 // 모든 Particle에 대해 POD 오프셋 연산 똑같이 적용되므로 실수 방지를 위해 만든 매크로

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Object.h"
 #include "Windows/SGraphEditorWindow.h"
 #include "Windows/SWindow.h" // for FRect and SWindow types used by children
@@ -6,6 +6,7 @@
 #include "Windows/SSplitterH.h"
 #include "Windows/SViewportWindow.h"
 #include "Windows/SSkeletalMeshViewerWindow.h"
+#include "Windows/SParticleEditorWindow.h"
 
 class UAnimationGraph;
 class SAnimGraphEditorWindow;
@@ -85,7 +86,13 @@ public:
     bool IsSkeletalMeshViewerOpen() const { return SkeletalViewerWindow != nullptr; }
     bool IsAnimationGraphEditorOpen() const { return AnimationGraphEditorWindow != nullptr;}
 
+    // Particle Editor (detached window)
+    void OpenParticleEditor(class UParticleSystem* ParticleSystem = nullptr);
+    void CloseParticleEditor();
+    bool IsParticleEditorOpen() const { return ParticleEditorWindow != nullptr; }
+
 private:
+    void CleanupParticleEditorWindow();
     FRect Rect; // 이전엔 SWindow로부터 상속받던 영역 정보
 
     UWorld* World = nullptr;
@@ -132,6 +139,9 @@ private:
 
     // 애니메이션 그래프 편집기
     SGraphEditorWindow* AnimationGraphEditorWindow = nullptr;
+
+    // Particle Editor window
+    SParticleEditorWindow* ParticleEditorWindow = nullptr;
 
     // Content Browser (Bottom panel overlay with animation)
     UContentBrowserWindow* ContentBrowserWindow = nullptr;

@@ -16,6 +16,8 @@ public:
     UParticleLODLevel();
     ~UParticleLODLevel();
 
+    void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+
     int32 Level = 0;
     bool bEnabled = true;
 

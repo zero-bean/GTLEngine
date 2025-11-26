@@ -521,10 +521,25 @@ void UResourceManager::InitShaderILMap()
     // Slot 1 : Instance
     layout.Add({ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
     layout.Add({ "TEXCOORD", 1, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
-    layout.Add({ "TEXCOORD", 2, DXGI_FORMAT_R32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
+    layout.Add({ "TEXCOORD", 2, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
     layout.Add({ "TEXCOORD", 3, DXGI_FORMAT_R32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
-    layout.Add({ "TEXCOORD", 4, DXGI_FORMAT_R32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
+    layout.Add({ "TEXCOORD", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
 
+    ShaderToInputLayoutMap["Shaders/Particles/SpriteParticle.hlsl"] = layout;  
+    layout.clear();
+
+    layout.Add({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+    layout.Add({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+    layout.Add({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+    layout.Add({ "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+    layout.Add({ "MeshCOLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+
+    layout.Add({ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
+    layout.Add({ "TEXCOORD", 1, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
+    layout.Add({ "TEXCOORD", 2, DXGI_FORMAT_R32G32B32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
+    layout.Add({ "TEXCOORD", 3, DXGI_FORMAT_R32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
+    layout.Add({ "TEXCOORD", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 });
+    ShaderToInputLayoutMap["Shaders/Particles/SpriteParticle.hlsl#MESH_PARTICLE"] = layout;
     ShaderToInputLayoutMap["Shaders/Particles/SpriteParticle.hlsl"] = layout;
 
     layout.clear();
@@ -535,7 +550,7 @@ void UResourceManager::InitShaderILMap()
     ShaderToInputLayoutMap["Shaders/Particles/TrailParticle.hlsl"] = layout;
 }
 
-TArray<D3D11_INPUT_ELEMENT_DESC>& UResourceManager::GetProperInputLayout(const FString& InShaderName)
+TArray<D3D11_INPUT_ELEMENT_DESC>& UResourceManager::GetProperInputLayout(const FString& InShaderName, const TArray<FShaderMacro>& Macros)
 {
     auto it = ShaderToInputLayoutMap.find(InShaderName);
 
@@ -544,6 +559,10 @@ TArray<D3D11_INPUT_ELEMENT_DESC>& UResourceManager::GetProperInputLayout(const F
         throw std::runtime_error("Proper input layout not found for " + InShaderName);
     }
     
+    if (UShader::HasMacro(Macros, "MESH_PARTICLE"))
+    {
+        return ShaderToInputLayoutMap[InShaderName + "#MESH_PARTICLE"];
+    }
     return ShaderToInputLayoutMap[InShaderName];
 }
 
@@ -572,14 +591,43 @@ void UResourceManager::CreateTextBillboardTexture()
     Add<UTexture>("TextBillboard.dds", TextBillboardTexture);
 }
 
+UParticleSystem* UResourceManager::LoadParticleSystem(const FString& InFilePath)
+{
+	return Load<UParticleSystem>(InFilePath);
+}
+
+bool UResourceManager::SaveParticleSystem(UParticleSystem* InParticleSystem, const FString& InFilePath)
+{
+    if (!InParticleSystem || InFilePath.empty()) { return false; }
+
+	const FString NormalizedPath = NormalizePath(InFilePath);
+    if (!InParticleSystem->Save(NormalizedPath)) { return false; }
+
+	const uint8 TypeIndex = static_cast<uint8>(EResourceType::ParticleSystem);
+    if (TypeIndex >= Resources.size()) { return false; }
+
+	auto& Bucket = Resources[TypeIndex];
+
+	const FString PreviousPath = InParticleSystem->GetFilePath();
+	if (!PreviousPath.empty() && PreviousPath != NormalizedPath)
+	{
+		auto It = Bucket.find(PreviousPath);
+		if (It != Bucket.end() && It->second == InParticleSystem)
+		{
+			Bucket.Remove(PreviousPath);
+		}
+	}
+
+	Bucket[NormalizedPath] = InParticleSystem;
+	InParticleSystem->SetFilePath(NormalizedPath);
+	return true;
+}
+
 void UResourceManager::CheckAndReloadShaders(float DeltaTime)
 {
     // Throttle check frequency to reduce file system overhead
     ShaderCheckTimer += DeltaTime;
-    if (ShaderCheckTimer < ShaderCheckInterval)
-    {
-        return;
-    }
+    if (ShaderCheckTimer < ShaderCheckInterval) { return; }
     ShaderCheckTimer = 0.0f;
 
     // Get all shader resources

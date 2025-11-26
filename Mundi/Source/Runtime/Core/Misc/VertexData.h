@@ -443,9 +443,9 @@ struct FSpriteParticleInstance
 {
     FVector4 Color;
     FVector Position;
-    float Size;
+    FVector Size;
     float LifeTime;
-    float Rotation;
+    FQuat Rotation;
 
     void FillFrom(const FSpriteParticleInstance& Source);
 };

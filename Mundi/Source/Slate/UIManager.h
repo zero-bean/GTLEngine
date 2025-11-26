@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include <windows.h>
+#include <string>
+#include <vector>
 #include "Object.h"
 #include "Vector.h"
 
@@ -8,6 +10,12 @@ class UImGuiHelper;
 class UWidget;
 class UWorld;
 class UTargetActorTransformWidget;
+struct ImDrawData;
+struct FOverlayWindowEntry
+{
+	std::string Name;
+	bool bRequestsMouseCapture = false;
+};
 
 // Forward declarations for compatibility
 struct ID3D11Device;
@@ -40,6 +48,9 @@ public:
 	float GetDeltaTime() const { return CurrentDeltaTime; }
 	void Render();
 	void EndFrame();
+	void RenderDeferredOverlayWindows();
+	void RegisterOverlayWindow(const char* WindowName, bool bRequestsMouseCapture);
+	bool IsOverlayCapturingMouse() const;
 	bool RegisterUIWindow(UUIWindow* InWindow);
 	bool UnregisterUIWindow(UUIWindow* InWindow);
 
@@ -94,6 +105,9 @@ private:
 
 	// ImGui Helper
 	UImGuiHelper* ImGuiHelper = nullptr;
+	ImDrawData* DeferredOverlayDrawData = nullptr;
+	bool bHasDeferredOverlayDrawData = false;
+	std::vector<FOverlayWindowEntry> OverlayWindows;
 	
 	// Actor references
 	ACameraActor* CameraActorRef = nullptr;

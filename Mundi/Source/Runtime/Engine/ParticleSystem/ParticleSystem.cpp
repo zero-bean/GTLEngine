@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "ParticleSystem.h"
 #include "ParticleEmitter.h"
 #include "ParticleLODLevel.h"
@@ -12,9 +12,10 @@
 #include "ParticleModuleVelocity.h"
 #include "ParticleModuleRotation.h"
 #include "ParticleModuleTypeDataBeam.h"
+#include "JsonSerializer.h"
+#include "ObjectFactory.h"
+#include "PathUtils.h"
 #include "ParticleModuleTypeDataMesh.h"
-
-UParticleSystem* UParticleSystem::TestParticleSystem = nullptr;
 
 UParticleSystem::UParticleSystem()
 {
@@ -28,80 +29,137 @@ UParticleSystem::~UParticleSystem()
 	Emitters.Empty();
 }
 
-UParticleSystem* UParticleSystem::GetTestParticleSystem()
+void UParticleSystem::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
-	if (!TestParticleSystem)
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	auto ResetEmitters = [this]()
 	{
-		TestParticleSystem = NewObject<UParticleSystem>();
+		for (UParticleEmitter* Emitter : Emitters)
+		{
+			if (Emitter)
+			{
+				DeleteObject(Emitter);
+			}
+		}
+		Emitters.Empty();
+	};
 
-		UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
+	if (bInIsLoading)
+	{
+		ResetEmitters();
 
-		UParticleLODLevel* LODLevel = NewObject<UParticleLODLevel>();
+		JSON EmittersJson;
+		if (FJsonSerializer::ReadArray(InOutHandle, "Emitters", EmittersJson, nullptr, false))
+		{
+			for (uint32 Index = 0; Index < static_cast<uint32>(EmittersJson.size()); ++Index)
+			{
+				JSON EmitterJson = EmittersJson.at(Index);
 
-		Emitter->LODLevels.Add(LODLevel);
-		TestParticleSystem->Emitters.Add(Emitter);
+				FString TypeString;
+				FJsonSerializer::ReadString(EmitterJson, "Type", TypeString, "UParticleEmitter", false);
 
-		LODLevel->Level = 0;
-		LODLevel->bEnabled = true;
+				UClass* EmitterClass = !TypeString.empty() ? UClass::FindClass(TypeString) : nullptr;
+				if (!EmitterClass || !EmitterClass->IsChildOf(UParticleEmitter::StaticClass()))
+				{
+					EmitterClass = UParticleEmitter::StaticClass();
+				}
 
-		UParticleModuleRequired* Required = NewObject<UParticleModuleRequired>();
-		Required->Material = UResourceManager::GetInstance().Load<UMaterial>("Shaders/Particles/SpriteParticle.hlsl");
-		Required->EmitterDuration = 2.0f;
-		Required->EmitterLoops = 0;
-		
-		UParticleModuleSpawn* SpawnModule = NewObject<UParticleModuleSpawn>();
-		SpawnModule->SpawnRate.Operation = EDistributionMode::DOP_Constant;
-		SpawnModule->SpawnRate.Constant = 0.0f;
-
-		UParticleModuleColor* ColorModule = NewObject<UParticleModuleColor>();
-		ColorModule->StartColor.Operation = EDistributionMode::DOP_Uniform;
-		ColorModule->StartColor.Min = FVector(0.0f,0.0f,0.0f);
-		ColorModule->StartColor.Max = FVector(1.0f,1.0f,1.0f);
-
-		UParticleModuleTypeDataBeam* BeamType = NewObject<UParticleModuleTypeDataBeam>();
-		BeamType->BeamMethod = EBeamMethod::EBM_Target;
-		BeamType->BeamTaperMethod = EBeamTaperMethod::EBTM_None;
-		BeamType->TextureTile = 1;
-		BeamType->TextureTileDistance = 0.0f;
-		BeamType->Sheets = 1;
-		BeamType->MaxBeamCount = 1;
-		BeamType->Speed = 0.0f;
-		BeamType->BaseWidth = 5.0f;
-		BeamType->InterpolationPoints = 50;
-		BeamType->bAlwaysOn = 1;
-		BeamType->UpVectorStepSize = 0;
-		BeamType->Distance = FRawDistributionFloat(EDistributionMode::DOP_Constant, 0.0f, 0.0f, 0.0f);
-		BeamType->TaperFactor = FRawDistributionFloat(EDistributionMode::DOP_Uniform, 1.0f, 1.0f, 1.0f);
-		BeamType->TaperScale = FRawDistributionFloat(EDistributionMode::DOP_Uniform, 1.0f, 1.0f, 1.0f);
-		BeamType->SourcePosition = FVector(0.0f, 0.0f, 0.0f);
-		BeamType->TargetPosition = FVector(500.0f, 0.0f, 0.0f);
-		BeamType->SourceTangent = FVector(200.0f, 300.0f, 200.0f);
-		BeamType->TargetTangent = FVector(200.0f, -300.0f, -200.0f);
-
-		LODLevel->TypeDataModule = BeamType;
-		
-		LODLevel->Modules.Add(ColorModule);		
-		LODLevel->SpawnModules.Add(ColorModule);		
-		
-		LODLevel->SpawnModule = SpawnModule;
-		
-		LODLevel->RequiredModule = Required;
-
-		LODLevel->Modules.Add(ColorModule);
-		LODLevel->SpawnModules.Add(ColorModule);
-
-		Emitter->CacheEmitterModuleInfo();
-		// Update모듈 없음.		
+				if (UParticleEmitter* NewEmitter = Cast<UParticleEmitter>(ObjectFactory::NewObject(EmitterClass)))
+				{
+					NewEmitter->Serialize(true, EmitterJson);
+					NewEmitter->CacheEmitterModuleInfo();
+					Emitters.Add(NewEmitter);
+				}
+			}
+		}
 	}
+	else
+	{
+		InOutHandle["Version"] = 1;
 
-	return TestParticleSystem;
+		JSON EmittersJson = JSON::Make(JSON::Class::Array);
+		for (UParticleEmitter* Emitter : Emitters)
+		{
+			if (!Emitter)
+			{
+				continue;
+			}
+
+			JSON EmitterJson = JSON::Make(JSON::Class::Object);
+			EmitterJson["Type"] = Emitter->GetClass()->Name;
+			Emitter->Serialize(false, EmitterJson);
+			EmittersJson.append(EmitterJson);
+		}
+		InOutHandle["Emitters"] = EmittersJson;
+	}
 }
 
-void UParticleSystem::ReleaseTestParticleSystem()
+bool UParticleSystem::Load(const FString& InFilePath, ID3D11Device* /*InDevice*/)
 {
-	if (TestParticleSystem)
+	if (InFilePath.empty())
 	{
-		DeleteObject(TestParticleSystem);
-		TestParticleSystem = nullptr;
+		return false;
 	}
+
+	FWideString FilePath = UTF8ToWide(InFilePath);
+	JSON LoadedJson;
+	if (!FJsonSerializer::LoadJsonFromFile(LoadedJson, FilePath))
+	{
+		UE_LOG("UParticleSystem::Load - Failed to load %s", InFilePath.c_str());
+		return false;
+		//UParticleModuleSize* SizeModule = NewObject<UParticleModuleSize>();
+		//SizeModule->StartSize.Operation = EDistributionMode::DOP_Uniform;
+		//SizeModule->StartSize.Min = FVector(1.0f, 1.0f, 1.0f);
+		//SizeModule->StartSize.Max = FVector(3.0f, 3.0f, 3.0f);
+
+		//UParticleModuleSpawn* SpawnModule = NewObject<UParticleModuleSpawn>();
+		//SpawnModule->SpawnRate.Operation = EDistributionMode::DOP_Constant;
+		//SpawnModule->SpawnRate.Constant = 30.0f;
+
+		//UParticleModuleVelocity* VelocityModule = NewObject<UParticleModuleVelocity>();
+		//VelocityModule->StartVelocity.Operation = EDistributionMode::DOP_Uniform;
+		//VelocityModule->StartVelocity.Min = FVector(-10, -10, -10);
+		//VelocityModule->StartVelocity.Max = FVector(10, 10, 10);
+
+		//UParticleModuleRotation* RotationModule = NewObject<UParticleModuleRotation>();
+		//RotationModule->StartRotation.Operation = EDistributionMode::DOP_Uniform;
+		//RotationModule->StartRotation.Min = 0.0f;
+		//RotationModule->StartRotation.Max = 90.0f;
+		//
+		//UParticleModuleTypeDataMesh* MeshModule = NewObject<UParticleModuleTypeDataMesh>();
+		//MeshModule->StaticMesh = UResourceManager::GetInstance().Load<UStaticMesh>(GDataDir + "/Model/smokegrenade.obj");
+
+		//LODLevel->SpawnModule = SpawnModule;
+		//LODLevel->RequiredModule = Required;
+		//// SpriteInstance사용
+		//LODLevel->TypeDataModule = MeshModule;
+		//LODLevel->Modules.Add(ColorModule); LODLevel->Modules.Add(LifetimeModule); LODLevel->Modules.Add(LocationModule); 
+		//LODLevel->Modules.Add(SizeModule); LODLevel->Modules.Add(VelocityModule); LODLevel->Modules.Add(RotationModule);
+
+		//LODLevel->SpawnModules.Add(ColorModule); LODLevel->SpawnModules.Add(LifetimeModule); LODLevel->SpawnModules.Add(LocationModule);
+		//LODLevel->SpawnModules.Add(SizeModule); LODLevel->SpawnModules.Add(VelocityModule); LODLevel->SpawnModules.Add(RotationModule);
+
+		//Emitter->CacheEmitterModuleInfo();
+		// Update모듈 없음.
+		
+	}
+
+	Serialize(true, LoadedJson);
+	return true;
+}
+
+bool UParticleSystem::Save(const FString& InFilePath) const
+{
+	if (InFilePath.empty())
+	{
+		return false;
+	}
+
+	JSON RootJson = JSON::Make(JSON::Class::Object);
+	UParticleSystem* MutableThis = const_cast<UParticleSystem*>(this);
+	MutableThis->Serialize(false, RootJson);
+
+	FWideString FilePath = UTF8ToWide(InFilePath);
+	return FJsonSerializer::SaveJsonToFile(RootJson, FilePath);
 }

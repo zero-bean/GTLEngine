@@ -261,6 +261,7 @@ void UEditorEngine::Render()
     SLATE.Render();
     UI.EndFrame();
     SLATE.RenderAfterUI();
+    UI.RenderDeferredOverlayWindows();
 
     Renderer->EndFrame();
 }
