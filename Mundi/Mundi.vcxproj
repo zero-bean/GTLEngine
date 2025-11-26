@@ -661,7 +661,6 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClCompile Include="Generated\UParticleModuleTypeDataMesh.generated.cpp" />
     <ClCompile Include="Generated\UParticleModuleRotationRate.generated.cpp" />
     <ClCompile Include="Generated\UParticleModuleTypeDataBeam.generated.cpp" />
-    <ClCompile Include="Generated\UParticleModuleRotationRate.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
@@ -1139,7 +1138,6 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClInclude Include="Generated\UParticleModuleSpawn.generated.h" />
     <ClInclude Include="Generated\UParticleModuleVelocity.generated.h" />
     <ClInclude Include="Generated\UParticleModuleTypeDataMesh.generated.h" />
-    <ClInclude Include="Generated\UParticleModuleRotationRate.generated.h" />
     <ClInclude Include="Generated\UParticleModuleRotationRate.generated.h" />
     <ClInclude Include="Generated\UParticleModuleTypeDataBeam.generated.h" />
   </ItemGroup>

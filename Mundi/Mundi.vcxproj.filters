@@ -998,11 +998,22 @@
     <ClCompile Include="Generated\UParticleModuleTypeDataMesh.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataMesh.cpp" />
-    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataBase.cpp" />
-  <ClCompile Include="Generated\UParticleModuleTypeDataBeam.generated.cpp"><Filter>Generated</Filter></ClCompile></ItemGroup>
-    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotationRate.cpp" />
-  <ClCompile Include="Generated\UParticleModuleRotationRate.generated.cpp"><Filter>Generated</Filter></ClCompile></ItemGroup>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataMesh.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataBase.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleTypeDataBeam.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotationRate.cpp">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UParticleModuleRotationRate.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Source\Editor\BlueprintGraph\AnimationGraph.h">
@@ -2067,10 +2078,19 @@
     <ClInclude Include="Generated\UParticleModuleTypeDataMesh.generated.h">
       <Filter>Generated</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataMesh.h" />
-    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotationRate.h" />
-  <ClInclude Include="Generated\UParticleModuleRotationRate.generated.h"><Filter>Generated</Filter></ClInclude></ItemGroup>
-  <ClInclude Include="Generated\UParticleModuleTypeDataBeam.generated.h"><Filter>Generated</Filter></ClInclude></ItemGroup>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataMesh.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotationRate.h">
+      <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleRotationRate.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UParticleModuleTypeDataBeam.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+  </ItemGroup>
   <ItemGroup>
     <None Include="Tools\CodeGenerator\generate.py">
       <Filter>Tools\CodeGenerator</Filter>
