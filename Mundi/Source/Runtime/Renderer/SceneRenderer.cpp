@@ -99,8 +99,13 @@ void FSceneRenderer::Render()
 	RenderShadowMaps();
 	TIME_PROFILE_END(ShadowMapPass)
 	
+	// Wireframe ShowFlag가 켜져 있으면 Wireframe 모드로 렌더링
+	if (View->RenderSettings->IsShowFlagEnabled(EEngineShowFlags::SF_Wireframe))
+	{
+		RenderWireframePath();
+	}
 	// ViewMode에 따라 렌더링 경로 결정
-	if (View->RenderSettings->GetViewMode() == EViewMode::VMI_Lit_Phong ||
+	else if (View->RenderSettings->GetViewMode() == EViewMode::VMI_Lit_Phong ||
 		View->RenderSettings->GetViewMode() == EViewMode::VMI_Lit_Gouraud ||
 		View->RenderSettings->GetViewMode() == EViewMode::VMI_Lit_Lambert)
 	{
@@ -645,7 +650,8 @@ void FSceneRenderer::GatherVisibleProxies()
 	const bool bDrawLight = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Lighting);
 	const bool bUseAntiAliasing = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_FXAA);
 	const bool bUseBillboard = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Billboard);
-	const bool bUseIcon = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_EditorIcon);	
+	const bool bUseIcon = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_EditorIcon);
+	const bool bDrawParticles = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Particles);
 
 	// Helper lambda to collect components from an actor
 	auto CollectComponentsFromActor = [&](AActor* Actor, bool bIsEditorActor)
@@ -711,7 +717,10 @@ void FSceneRenderer::GatherVisibleProxies()
 					}
 					else if (UParticleSystemComponent* ParticleComponent = Cast<UParticleSystemComponent>(PrimitiveComponent))
 					{
-						Proxies.Particles.Add(ParticleComponent);
+						if (bDrawParticles)
+						{
+							Proxies.Particles.Add(ParticleComponent);
+						}
 					}
 					else if (UBillboardComponent* BillboardComponent = Cast<UBillboardComponent>(PrimitiveComponent); BillboardComponent && bUseBillboard)
 					{
@@ -1217,15 +1226,32 @@ void FSceneRenderer::RenderDebugPass()
 {
 	RHIDevice->OMSetRenderTargets(ERTVMode::SceneColorTarget);
 
-	// 그리드 라인 수집
+	// 그리드 및 축 라인 수집 (ShowFlag 별도 확인)
 	for (ULineComponent* LineComponent : Proxies.EditorLines)
 	{
 		if (!LineComponent || LineComponent->IsAlwaysOnTop())
 			continue;
-		
-        if (World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Grid))
+
+		// Grid 라인 - SF_Grid 플래그 체크
+		if (LineComponent->IsGridLine())
+		{
+			if (World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Grid))
+			{
+				LineComponent->CollectLineBatches(OwnerRenderer);
+			}
+		}
+		// Axis 라인 - 항상 표시 (별도 플래그 없음, GridActor의 bShowAxis로만 제어)
+		else if (LineComponent->IsAxisLine())
 		{
 			LineComponent->CollectLineBatches(OwnerRenderer);
+		}
+		// 기타 라인 (하위 호환)
+		else
+		{
+			if (World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Grid))
+			{
+				LineComponent->CollectLineBatches(OwnerRenderer);
+			}
 		}
 	}
 	OwnerRenderer->EndLineBatch(FMatrix::Identity());

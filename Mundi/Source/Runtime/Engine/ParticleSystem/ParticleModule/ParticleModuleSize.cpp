@@ -2,6 +2,12 @@
 #include "ParticleModuleSize.h"
 #include "ParticleEmitterInstances.h"
 
+UParticleModuleSize::UParticleModuleSize()
+{
+	bSpawn = true;
+	bUpdate = false;
+}
+
 void UParticleModuleSize::Spawn(const FSpawnContext& SpawnContext)
 {
 	// 이미터의 정규화된 시간(0.0~1.0)을 사용하여 커브 샘플링

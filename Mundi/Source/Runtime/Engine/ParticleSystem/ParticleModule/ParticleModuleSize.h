@@ -11,7 +11,7 @@ public:
 
 	FRawDistributionVector StartSize{ EDistributionMode::DOP_Uniform, FVector::Zero(), FVector(2,2,2), FVector(5,5,5) };
 
-	UParticleModuleSize() = default;
+	UParticleModuleSize();
 
 	void Spawn(const FSpawnContext& SpawnContext) override;
 

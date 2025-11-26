@@ -13,8 +13,10 @@
 #include "ParticleModuleLocation.h"
 #include "ParticleModuleVelocity.h"
 #include "ParticleModuleRotation.h"
+#include "ParticleModuleRotationRate.h"
 #include "ParticleSystemComponent.h"
 #include "ParticleModuleTypeDataMesh.h"
+#include "ParticleEmitterInstances.h"
 #include "ResourceManager.h"
 #include "Material.h"
 #include "Texture.h"
@@ -167,6 +169,7 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
         return;
     }
 
+    
     // Emitter 헤더 + Add Module 버튼
     ImGui::Text("Emitter %d Properties", ActiveState->SelectedEmitterIndex);
     ImGui::SameLine();
@@ -195,6 +198,12 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
     ImGui::PopStyleColor(3);
 
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+    FParticleEmitterInstance* Instance = ActiveState->PreviewComponent->EmitterInstances[ActiveState->SelectedEmitterIndex];
+    ImGui::Text("Active Particles: %d, Peak: %d, Max Particles: %d",
+        Instance->ActiveParticles,
+        Instance->CurrentActiveParticleCapacity,
+        SelectedEmitter->LODLevels[0]->RequiredModule->MaxActiveParticles);
     ImGui::Separator();
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
 
@@ -375,6 +384,17 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
         {
             AddModule(ActiveState, LODLevel, "UParticleModuleRotation");
         }
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+        ImGui::Text("Update Modules");
+        ImGui::Separator();
+        if (ImGui::MenuItem("RotationRate"))
+        {
+            AddModule(ActiveState, LODLevel, "UParticleModuleRotationRate");
+        }
+
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+        ImGui::Text("Type Data Modules");
+        ImGui::Separator();
         if (ImGui::MenuItem("Type Data Mesh"))
         {
             AddModule(ActiveState, LODLevel, "UParticleModuleTypeDataMesh");
@@ -763,6 +783,12 @@ void FParticleEditorDetailSection::AddModule(ParticleEditorState* State, UPartic
         RotationModule->StartRotation.Constant = 0.0f;
         NewModule = RotationModule;
     }
+    else if (strcmp(ModuleClassName, "UParticleModuleRotationRate") == 0)
+    {
+        UParticleModuleRotationRate* RotationRateModule = NewObject<UParticleModuleRotationRate>();
+        RotationRateModule->RotationRate.Operation = EDistributionMode::DOP_Curve;
+        NewModule = RotationRateModule;
+    }
     else if (strcmp(ModuleClassName, "UParticleModuleTypeDataMesh") == 0)
     {
         UParticleModuleTypeDataMesh* MeshModule = NewObject<UParticleModuleTypeDataMesh>();
@@ -792,7 +818,14 @@ void FParticleEditorDetailSection::AddModule(ParticleEditorState* State, UPartic
     if (!Cast<UParticleModuleTypeDataBase>(NewModule))
     {
         LODLevel->Modules.Add(NewModule);
-        LODLevel->SpawnModules.Add(NewModule);
+        if (NewModule->bSpawn)
+        {
+            LODLevel->SpawnModules.Add(NewModule);
+        }
+        if (NewModule->bUpdate)
+        {
+            LODLevel->UpdateModules.Add(NewModule);
+        }
         State->SelectedModuleSelection = EParticleDetailSelection::Module;
         State->SelectedModuleIndex = LODLevel->Modules.Num() - 1;
     }
@@ -1133,7 +1166,7 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
         DrawPropertyRow("Emitter Loops", [&]() { ImGui::DragInt("##EmitterLoops", &Module->EmitterLoops, 1, 0, 100); });
         DrawPropertyRow("Use Local Space", [&]() { ImGui::Checkbox("##UseLocalSpace", &Module->bUseLocalSpace); });
         ImGui::Separator();
-        ImGui::Text("Renderer");
+        ImGui::Text("Render");
         const char* SortModes[] = { "SORTMODE None", "SORTMODE Age Oldest First", "SORTMODE Age Newest First", "SORTMODE Distance To View" };
 
         DrawPropertyRow("Sort Mode", [&]()
@@ -1145,6 +1178,7 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
                 }
             });
         
+        DrawPropertyRow("MaxActiveParticles", [&]() {ImGui::DragInt("##EmitterCapacity", &Module->MaxActiveParticles, 1, 0, 1000); });
 
         ImGui::EndTable();
     }
@@ -1216,6 +1250,10 @@ void FParticleEditorDetailSection::DrawModuleProperties(UParticleModule* Module,
         else if (UParticleModuleRotation* RotMod = dynamic_cast<UParticleModuleRotation*>(Module))
         {
             DrawDistributionVector("Start Rotation (Degrees)", RotMod->StartRotation, -360.0f, 360.0f);
+        }
+        else if (UParticleModuleRotationRate* RotRateMod = dynamic_cast<UParticleModuleRotationRate*>(Module))
+        {
+            DrawDistributionVector("Rotation Rate (Degrees)", RotRateMod->RotationRate, -360.0f, 360.0f);
         }
 
         ImGui::PopID();

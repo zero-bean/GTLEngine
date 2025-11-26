@@ -7,12 +7,6 @@ class ParticleEditorState;
 class UTexture;
 struct ImVec2;
 
-enum class EEmitterType
-{
-    Sprite,
-    Mesh,
-    Beam
-};
 struct FParticleEditorSectionContext
 {
     SParticleEditorWindow& Window;
@@ -46,6 +40,7 @@ private:
     UTexture* IconNextFrame = nullptr;
     UTexture* IconColor = nullptr;
     UTexture* IconAxis = nullptr;
+    UTexture* IconGrid = nullptr;
     float IconSize = 40.0f;
 };
 
@@ -61,7 +56,7 @@ public:
     virtual void Draw(const FParticleEditorSectionContext& Context) override;
 
 private:
-    void CreateNewEmitter(ParticleEditorState* State, EEmitterType EmitterType);
+    void CreateNewEmitter(ParticleEditorState* State);
     void DeleteSelectedEmitter(ParticleEditorState* State);
 };
 

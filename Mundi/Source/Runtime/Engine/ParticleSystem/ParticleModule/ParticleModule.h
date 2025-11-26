@@ -39,6 +39,8 @@ public:
 
 	UParticleModule() = default;
 	bool bEnabled = true;
+	bool bUpdate = false;
+	bool bSpawn = true;
 
 	virtual void Spawn(const FSpawnContext& SpawnContext);
 	virtual void Update(const FUpdateContext& UpdateContext);

@@ -3,6 +3,12 @@
 #include "Distribution.h"
 #include "ParticleEmitterInstances.h"
 
+UParticleModuleLifetime::UParticleModuleLifetime()
+{
+	bSpawn = true;
+	bUpdate = false;
+}
+
 // UParticleModuleLifetime은 업데이트가 필요 없음
 void UParticleModuleLifetime::Spawn(const FSpawnContext& SpawnContext)
 {

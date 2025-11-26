@@ -34,9 +34,11 @@ public:
     DECLARE_DUPLICATE(AGridActor)
 private:
     void RegenerateGrid();
-    
-    ULineComponent* LineComponent;
-    
+
+    ULineComponent* LineComponent;  // 하위 호환용 (deprecated)
+    ULineComponent* GridLineComponent;  // Grid 전용
+    ULineComponent* AxisLineComponent;  // Axis 전용
+
     // Grid settings
     int32 GridSize = 100;
     float CellSize = 1.0f;

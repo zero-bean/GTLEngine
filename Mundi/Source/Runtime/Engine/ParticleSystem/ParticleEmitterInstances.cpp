@@ -38,7 +38,6 @@ FParticleEmitterInstance::~FParticleEmitterInstance()
 	}
 
 	ActiveParticles = 0;
-	MaxActiveParticles = 0;
 }
 
 void FParticleEmitterInstance::SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials)
@@ -98,7 +97,6 @@ void FParticleEmitterInstance::Init()
 
 	if (ParticleData == nullptr)
 	{
-		MaxActiveParticles = 0;
 		ActiveParticles = 0;
 	}
 
@@ -108,19 +106,18 @@ void FParticleEmitterInstance::Init()
 	{
 		if ((HightestLODLevel->PeakActiveParticles > 0) || (SpriteTemplate->InitialAllocationCount > 0))
 		{
-			// 초기 메모리 최대 100개 제한
 			if (SpriteTemplate->InitialAllocationCount > 0)
 			{
-				Resize(FMath::Min(SpriteTemplate->InitialAllocationCount, 100));
+				Resize(FMath::Min(SpriteTemplate->InitialAllocationCount, HightestLODLevel->RequiredModule->MaxActiveParticles));
 			}
 			else
 			{
-				Resize(FMath::Min(HightestLODLevel->PeakActiveParticles, 100));
+				Resize(FMath::Min(HightestLODLevel->PeakActiveParticles, HightestLODLevel->RequiredModule->MaxActiveParticles));
 			}
 		}
 		else
 		{
-			Resize(10);
+			Resize(FMath::Min(10, HightestLODLevel->RequiredModule->MaxActiveParticles));
 		}
 	}
 }
@@ -134,7 +131,7 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 	KillParticles();
 
 	// 파티클 스폰
-    if (!bSuppressSpawning)
+    if (!bSuppressSpawning && !bEmitterIsDone)
     {
         int32 SpawnCount = 0;
         if (CurrentLODLevel->SpawnModule)
@@ -218,26 +215,28 @@ void FParticleEmitterInstance::KillParticles()
 // bSetMaxActiveCount: HightestLODLevel의 PeakActiveParticles를 위의 인자로 업데이트
 bool FParticleEmitterInstance::Resize(int32 NewMaxActiveParticles, bool bSetMaxActiveCount)
 {
+	NewMaxActiveParticles = std::min(CurrentLODLevel->RequiredModule->MaxActiveParticles, NewMaxActiveParticles);
 
-	if (NewMaxActiveParticles > MaxActiveParticles)
+	if (NewMaxActiveParticles > CurrentActiveParticleCapacity)
 	{
+		
 		ParticleData = (uint8*)std::realloc(ParticleData, ParticleStride * NewMaxActiveParticles);
 
 		if (ParticleIndices == nullptr)
 		{
 			// 초기 할당일 경우 인덱스 처음부터 새로 할당
-			MaxActiveParticles = 0;
+			CurrentActiveParticleCapacity = 0;
 		}
 		// 왜 +1? => 소팅할때 임시버퍼로 필요함
 		ParticleIndices = (uint16*)std::realloc(ParticleIndices, sizeof(uint16) * (NewMaxActiveParticles + 1));
 
 
-		for (int32 Index = MaxActiveParticles; Index < NewMaxActiveParticles; Index++)
+		for (int32 Index = CurrentActiveParticleCapacity; Index < NewMaxActiveParticles; Index++)
 		{
 			ParticleIndices[Index] = Index;
 		}
 
-		MaxActiveParticles = NewMaxActiveParticles;
+		CurrentActiveParticleCapacity = NewMaxActiveParticles;
 	}
 
 	if (bSetMaxActiveCount)
@@ -246,9 +245,9 @@ bool FParticleEmitterInstance::Resize(int32 NewMaxActiveParticles, bool bSetMaxA
 
 		if (HightestLODLevel)
 		{
-			if (MaxActiveParticles > HightestLODLevel->PeakActiveParticles)
+			if (CurrentActiveParticleCapacity > HightestLODLevel->PeakActiveParticles)
 			{
-				HightestLODLevel->PeakActiveParticles = MaxActiveParticles;
+				HightestLODLevel->PeakActiveParticles = CurrentActiveParticleCapacity;
 			}
 		}
 	}
@@ -287,8 +286,8 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, float StartTime, floa
 		return;
 
 	UParticleLODLevel* HightestLODLevel = SpriteTemplate->LODLevels[0];
-	uint32 AvailableCount = MaxActiveParticles - ActiveParticles;
-	uint32 SpawnCount = Count <= AvailableCount ? Count : AvailableCount;
+	int32 AvailableCount = HightestLODLevel->RequiredModule->MaxActiveParticles - ActiveParticles;
+	int32 SpawnCount = Count <= AvailableCount ? Count : AvailableCount;
 
 	for (int32 Index = 0; Index < SpawnCount; Index++)
 	{

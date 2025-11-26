@@ -7,9 +7,22 @@ IMPLEMENT_CLASS(AGridActor)
 
 AGridActor::AGridActor()
 {
+    // 하위 호환용 (deprecated)
     LineComponent = NewObject<ULineComponent>();
     LineComponent->SetupAttachment(RootComponent);
     AddOwnedComponent(LineComponent);
+
+    // Grid 전용 LineComponent
+    GridLineComponent = NewObject<ULineComponent>();
+    GridLineComponent->SetupAttachment(RootComponent);
+    GridLineComponent->SetIsGridLine(true);
+    AddOwnedComponent(GridLineComponent);
+
+    // Axis 전용 LineComponent
+    AxisLineComponent = NewObject<ULineComponent>();
+    AxisLineComponent->SetupAttachment(RootComponent);
+    AxisLineComponent->SetIsAxisLine(true);
+    AddOwnedComponent(AxisLineComponent);
 }
 
 void AGridActor::Initialize()
@@ -52,7 +65,7 @@ namespace
 
 void AGridActor::CreateGridLines(int32 InGridSize, float InCellSize, const FVector& Center)
 {
-    if (!LineComponent) return;
+    if (!GridLineComponent) return;
 
     const float gridTotalSize = InGridSize * InCellSize;
 
@@ -64,41 +77,45 @@ void AGridActor::CreateGridLines(int32 InGridSize, float InCellSize, const FVect
         const FVector4 color = GetGridLineColor(i);
 
         // X축 방향 라인
-        LineComponent->AddLine(FVector(pos, -gridTotalSize, 0.0f), FVector(pos, gridTotalSize, 0.0f), color);
+        GridLineComponent->AddLine(FVector(pos, -gridTotalSize, 0.0f), FVector(pos, gridTotalSize, 0.0f), color);
         // Y축 방향 라인
-        LineComponent->AddLine(FVector(-gridTotalSize, pos, 0.0f), FVector(gridTotalSize, pos, 0.0f), color);
+        GridLineComponent->AddLine(FVector(-gridTotalSize, pos, 0.0f), FVector(gridTotalSize, pos, 0.0f), color);
     }
 
     // 중앙 축 (X, Y)
-    LineComponent->AddLine(FVector(-gridTotalSize, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f), FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-    LineComponent->AddLine(FVector(0.0f, -gridTotalSize, 0.0f), FVector(0.0f, 0.0f, 0.0f), FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+    GridLineComponent->AddLine(FVector(-gridTotalSize, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f), FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+    GridLineComponent->AddLine(FVector(0.0f, -gridTotalSize, 0.0f), FVector(0.0f, 0.0f, 0.0f), FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 }
 
 void AGridActor::CreateAxisLines(float Length, const FVector& Origin)
 {
-    if (!LineComponent) return;
-        
+    if (!AxisLineComponent) return;
+
     // X축 - 빨강
-    LineComponent->AddLine(Origin, 
+    AxisLineComponent->AddLine(Origin,
                           Origin + FVector(Length * CellSize, 0.0f, 0.0f),
                           FVector4(1.0f, 0.0f, 0.0f, 1.0f));
-    
+
     // Y축 - 초록
-    LineComponent->AddLine(Origin, 
+    AxisLineComponent->AddLine(Origin,
                           Origin + FVector(0.0f, Length * CellSize, 0.0f),
                           FVector4(0.0f, 1.0f, 0.0f, 1.0f));
-    
+
     // Z축 - 파랑
-    LineComponent->AddLine(Origin, 
+    AxisLineComponent->AddLine(Origin,
                           Origin + FVector(0.0f, 0.0f, Length * CellSize),
                           FVector4(0.0f, 0.0f, 1.0f, 1.0f));
 }
 
 void AGridActor::ClearLines()
 {
-    if (LineComponent)
+    if (GridLineComponent)
     {
-        LineComponent->ClearLines();
+        GridLineComponent->ClearLines();
+    }
+    if (AxisLineComponent)
+    {
+        AxisLineComponent->ClearLines();
     }
 }
 

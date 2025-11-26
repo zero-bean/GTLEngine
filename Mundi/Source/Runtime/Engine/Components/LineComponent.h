@@ -36,6 +36,13 @@ public:
     void SetAlwaysOnTop(bool bInAlwaysOnTop) { bAlwaysOnTop = bInAlwaysOnTop; }
     bool IsAlwaysOnTop() const { return bAlwaysOnTop; }
 
+    // Line type (for Grid/Axis separation)
+    void SetIsGridLine(bool bInIsGrid) { bIsGridLine = bInIsGrid; }
+    bool IsGridLine() const { return bIsGridLine; }
+
+    void SetIsAxisLine(bool bInIsAxis) { bIsAxisLine = bInIsAxis; }
+    bool IsAxisLine() const { return bIsAxisLine; }
+
     // ───── 복사 관련 ────────────────────────────
     void DuplicateSubObjects() override;
     DECLARE_DUPLICATE(ULineComponent)
@@ -44,4 +51,6 @@ private:
     TArray<ULine*> Lines;
     bool bLinesVisible = true;
     bool bAlwaysOnTop = false;
+    bool bIsGridLine = false;  // Grid 라인인지 여부
+    bool bIsAxisLine = false;  // Axis 라인인지 여부
  };
