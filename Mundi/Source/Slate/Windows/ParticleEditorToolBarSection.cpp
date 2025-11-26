@@ -115,10 +115,20 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
             if (!SelectedFile.empty())
             {
                 FString LoadPath = SelectedFile.string();
+                std::filesystem::path filePath(LoadPath);
+
+                if (Context.Window.ExistName(filePath.stem().string()))
+                {
+                    UE_LOG("%s: 에셋이 탭에 이미 존재합니다", filePath.stem().string());
+                    ImGui::PopStyleColor(3);
+                    ImGui::PopStyleVar(3);
+                    ImGui::EndChild();
+                    return;
+                }
 
                 // 새 파티클 시스템 생성
-                UParticleSystem* LoadedSystem = NewObject<UParticleSystem>();
-                if (LoadedSystem && LoadedSystem->Load(LoadPath, nullptr))
+                UParticleSystem* LoadedSystem = UResourceManager::GetInstance().Load<UParticleSystem>(LoadPath);
+                if (LoadedSystem)
                 {
                     // 새 탭 생성 - CreateNewTab이 내부적으로 ActiveState를 업데이트함
                     Context.Window.CreateNewTab();
@@ -127,15 +137,17 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
                     ParticleEditorState* NewState = Context.Window.GetActiveState();
                     if (NewState)
                     {
-                        // 기존 시스템이 있다면 제거 (소유권이 있는 경우만)
-                        if (NewState->CurrentParticleSystem && NewState->bOwnsParticleSystem)
-                        {
-                            DeleteObject(NewState->CurrentParticleSystem);
-                        }
+                        //// 기존 시스템이 있다면 제거 (소유권이 있는 경우만)
+                        //if (NewState->CurrentParticleSystem && NewState->bOwnsParticleSystem)
+                        //{
+                        //    DeleteObject(NewState->CurrentParticleSystem);
+                        //}
 
                         NewState->CurrentParticleSystem = LoadedSystem;
                         NewState->bOwnsParticleSystem = true; // 로드한 시스템은 우리가 소유
                         NewState->LoadedParticleSystemPath = LoadPath;
+
+
 
                         // 첫 번째 Emitter 선택 (있으면)
                         if (LoadedSystem->Emitters.Num() > 0)
@@ -148,7 +160,6 @@ void FParticleEditorToolBarSection::Draw(const FParticleEditorSectionContext& Co
                         }
 
                         // 탭 이름을 파일명으로 업데이트
-                        std::filesystem::path filePath(LoadPath);
                         NewState->Name = filePath.stem().string();
 
                         // 프리뷰 액터 업데이트

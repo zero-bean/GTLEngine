@@ -6,6 +6,11 @@ class UParticleLODLevel;
 class UParticleModule;
 struct FBaseParticle;
 
+struct FDistanceSortKey
+{
+	uint16 Index;
+	float Distance;
+};
 
 struct FParticleEmitterInstance
 {
@@ -59,6 +64,9 @@ public:
 	// 테스트용 텍스처
 	ID3D11ShaderResourceView* InstanceSRV = nullptr;
 
+	// 파티클 거리순 정렬 위한 인덱스 배열
+	TArray<FDistanceSortKey> ParticleIndicesForSort;
+
 	float EmitterTime = 0.0f;
 
 	// 이미터 루프 다 끝났는지 확인(끝나도 파티클이 남아있을 수 있음, 소멸 여부는 HasComplete함수가 결정)
@@ -68,7 +76,7 @@ public:
 	~FParticleEmitterInstance();
 
 	virtual void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials);
-	virtual void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData);
+	virtual void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData, const FSceneView* View);
 	virtual void FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) = 0;
 
 	void Init();
@@ -103,7 +111,7 @@ public:
 	UQuad* Quad = nullptr;
 
 	TArray<FSpriteParticleInstance> ParticleInstanceData;
-
+	
 	// ParticleSystemComponent 헤더가 방대해질 가능성이 높음, 인터페이스를 만들어야 함.
 	FParticleSpriteEmitterInstance(UParticleSystemComponent* InComponent);
 

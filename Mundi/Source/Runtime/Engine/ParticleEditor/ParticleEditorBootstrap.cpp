@@ -159,11 +159,11 @@ void ParticleEditorBootstrap::DestroyEditorState(ParticleEditorState*& State)
     State->DestroyPreviewActor();
 
     // 파티클 시스템 정리 (소유권이 있는 경우만 삭제)
-    if (State->CurrentParticleSystem && State->bOwnsParticleSystem)
+    /*if (State->CurrentParticleSystem && State->bOwnsParticleSystem)
     {
         ObjectFactory::DeleteObject(State->CurrentParticleSystem);
         State->CurrentParticleSystem = nullptr;
-    }
+    }*/
 
     if (State->Viewport) { delete State->Viewport; State->Viewport = nullptr; }
     if (State->Client) { delete State->Client; State->Client = nullptr; }

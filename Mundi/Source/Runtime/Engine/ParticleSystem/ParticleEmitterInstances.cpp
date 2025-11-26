@@ -316,7 +316,6 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, float StartTime, floa
 		PostSpawn(Particle, 0, StartTime - Increment * Index);
 		ActiveParticles++;
 	}
-	
 }
 
 void FParticleEmitterInstance::PostSpawn(FBaseParticle* InParticle, float InterpolationPercentage, float SpawnTime)
@@ -377,19 +376,34 @@ void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& 
 
 }
 
-void FParticleEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData)
+void FParticleEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData, const FSceneView* View)
 {
+	ParticleIndicesForSort.clear();
 	BEGIN_UPDATE_LOOP
-		FSpriteParticleInstance NewInstance;
-	NewInstance.Color = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, 1.0f);
-
-	NewInstance.LifeTime = Particle.Lifetime;
-	NewInstance.Position = Particle.Location;
-	NewInstance.Rotation = Particle.Rotation;
-	NewInstance.Size = Particle.Size;
-
-	ParticleInstanceData.Add(NewInstance);
+		FDistanceSortKey Key;
+		Key.Distance = (View->ViewLocation - Particle.Location).Size();
+		Key.Index = CurrentIndex;
+		ParticleIndicesForSort.Add(Key);
 	END_UPDATE_LOOP
+
+	// 카메라로부터 먼 파티클이 앞에 옴
+	ParticleIndicesForSort.Sort([](const FDistanceSortKey& A, const FDistanceSortKey& B) {
+	return A.Distance > B.Distance;
+		});
+
+	for (int32 Index = 0; Index < ParticleIndicesForSort.Num(); Index++)
+	{
+		DECLARE_PARTICLE_PTR(Particle, ParticleData + ParticleIndicesForSort[Index].Index * ParticleStride)
+		FSpriteParticleInstance NewInstance;
+		NewInstance.Color = FVector4(Particle->Color.R, Particle->Color.G, Particle->Color.B, 1.0f);
+
+		NewInstance.LifeTime = Particle->Lifetime;
+		NewInstance.Position = Particle->Location;
+		NewInstance.Rotation = Particle->Rotation;
+		NewInstance.Size = Particle->Size;
+
+		ParticleInstanceData.Add(NewInstance);
+	}
 }
 
 
@@ -430,8 +444,8 @@ void FParticleSpriteEmitterInstance::FillMeshBatch(TArray<FMeshBatchElement>& Me
 {
 	FMeshBatchElement BatchElement;
 
-	ParticleInstanceData.Empty();
-	GetParticleInstanceData(ParticleInstanceData);
+	ParticleInstanceData.clear();
+	GetParticleInstanceData(ParticleInstanceData, View);
 	BatchElement.BlendType = EBlendType::Alpha;
 	BatchElement.BaseVertexIndex = 0;
 	BatchElement.Distance = (View->ViewLocation - EmitterLocation * OwnerComponent->GetWorldMatrix()).Size();
@@ -483,8 +497,8 @@ void FParticleMeshEmitterInstance::FillMeshBatch(TArray<FMeshBatchElement>& Mesh
 	BatchElement.BlendType = EBlendType::Opaque;
 	BatchElement.Distance = (View->ViewLocation - EmitterLocation * OwnerComponent->GetWorldMatrix()).Size();
 
-	ParticleInstanceData.Empty();
-	GetParticleInstanceData(ParticleInstanceData);
+	ParticleInstanceData.clear();
+	GetParticleInstanceData(ParticleInstanceData, View);
 
 	BatchElement.ParticleInstanceData = &ParticleInstanceData;  
 	BatchElement.InstanceStride = sizeof(FSpriteParticleInstance);

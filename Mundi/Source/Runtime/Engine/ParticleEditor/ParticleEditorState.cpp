@@ -49,15 +49,9 @@ void ParticleEditorState::CreatePreviewActor()
     {
         PreviewActor->SetRootComponent(PreviewComponent);
 
-        // 현재 파티클 시스템이 있으면 설정 (BeginPlay 전에 설정)
-        if (CurrentParticleSystem)
-        {
-            PreviewComponent->Template = CurrentParticleSystem;
-        }
-
         // 컴포넌트 등록 및 BeginPlay 호출
         PreviewActor->RegisterAllComponents(World);
-        PreviewComponent->BeginPlay();
+        PreviewComponent->SetTemplate(CurrentParticleSystem);
     }
 }
 
@@ -83,8 +77,6 @@ void ParticleEditorState::UpdatePreviewParticleSystem()
     if (CurrentParticleSystem)
     {
         // EndPlay 호출 후 SetTemplate, 그리고 다시 BeginPlay
-        PreviewComponent->EndPlay();
         PreviewComponent->SetTemplate(CurrentParticleSystem);
-        PreviewComponent->BeginPlay();
     }
 }

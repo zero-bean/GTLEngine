@@ -36,10 +36,6 @@ UParticleSystemComponent::~UParticleSystemComponent()
 
 void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 {
-	if (Template == InTemplate)
-	{
-		return;
-	}
 
 	if (InTemplate)
 	{
@@ -49,40 +45,19 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 
 		InitParticles();
 	}
+	else
+	{
+		DestroyEmitterInstances();
+	}
 
 }
 
 void UParticleSystemComponent::LoadParticleSystemFromAssetPath()
 {
-	// 기존 Template 정리
-	if (Template)
-	{
-		DeleteObject(Template);
-		Template = nullptr;
-	}
-
-	// ParticleSystemAssetPath가 비어있으면 (None 선택) Template을 nullptr로 유지
-	if (ParticleSystemAssetPath.empty())
-	{
-		// 파티클 인스턴스도 정리
-		DestroyEmitterInstances();
-		return;
-	}
-
+	
 	// 새 파티클 시스템 로드
-	UParticleSystem* NewSystem = NewObject<UParticleSystem>();
-	if (NewSystem && NewSystem->Load(ParticleSystemAssetPath, nullptr))
-	{
-		Template = NewSystem;
-		InitParticles();
-	}
-	else
-	{
-		if (NewSystem)
-		{
-			DeleteObject(NewSystem);
-		}
-	}
+	UParticleSystem* NewSystem = UResourceManager::GetInstance().Load<UParticleSystem>(ParticleSystemAssetPath);
+	SetTemplate(NewSystem);
 }
 
 void UParticleSystemComponent::DestroyEmitterInstances()
@@ -99,10 +74,20 @@ void UParticleSystemComponent::DestroyEmitterInstances()
 	EmitterInstances.Empty();
 }
 
+void UParticleSystemComponent::OnRegister(UWorld* InWorld)
+{
+	if (Owner)
+	{
+		Owner->SetTickInEditor(true);
+	}
+}
+
 void UParticleSystemComponent::BeginPlay()
 {
 	UPrimitiveComponent::BeginPlay();
 
+	// 얕은 복사된 인스턴스 리스트, Template 비움 -> 이후 새로 할당
+	EmitterInstances.Empty(); 
 	// AssetPath가 있으면 먼저 로드
 	if (!ParticleSystemAssetPath.empty())
 	{
@@ -148,8 +133,9 @@ void UParticleSystemComponent::InitParticles()
 
 	if (Template)
 	{
-		for (UParticleEmitter* Emitter : Template->Emitters)
+		for (uint32 Index = 0 ; Index < Template->Emitters.Num() ; Index++)
 		{
+			UParticleEmitter* Emitter = Template->Emitters[Index];
 			FParticleEmitterInstance* NewInstance = Emitter->CreateInstance(this);
 
 			// Required Module에서 Material의 텍스처 가져오기
@@ -175,4 +161,11 @@ void UParticleSystemComponent::InitParticles()
 void UParticleSystemComponent::ResetParticles()
 {
 	DestroyEmitterInstances();
+}
+
+void UParticleSystemComponent::DuplicateSubObjects()
+{
+	Super::DuplicateSubObjects();
+
+
 }
