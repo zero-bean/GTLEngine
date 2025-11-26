@@ -627,7 +627,6 @@ void FParticleEditorDetailSection::DeleteTypeModule(ParticleEditorState* State, 
     {
         State->GetSelectedEmitter()->CacheEmitterModuleInfo();
         State->PreviewComponent->EndPlay();
-        State->PreviewComponent->InitParticles();
         State->PreviewComponent->BeginPlay();
     }
     State->SelectedModuleSelection = EParticleDetailSelection::None;
@@ -758,7 +757,6 @@ void FParticleEditorDetailSection::AddModule(ParticleEditorState* State, UPartic
     {
         State->GetSelectedEmitter()->CacheEmitterModuleInfo();
         State->PreviewComponent->EndPlay();
-        State->PreviewComponent->InitParticles();
         State->PreviewComponent->BeginPlay();
     }
 
@@ -981,7 +979,6 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
                         if (Context.ActiveState && Context.ActiveState->PreviewComponent)
                         {
                             Context.ActiveState->PreviewComponent->EndPlay();
-                            Context.ActiveState->PreviewComponent->InitParticles();
                             Context.ActiveState->PreviewComponent->BeginPlay();
                         }
                     }

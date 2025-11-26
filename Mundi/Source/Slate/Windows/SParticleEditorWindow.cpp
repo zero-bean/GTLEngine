@@ -519,6 +519,18 @@ void SParticleEditorWindow::CloseTab(int Index)
     }
 }
 
+bool SParticleEditorWindow::ExistName(const FString& InName)
+{
+    for (int32 Index = 0; Index < Tabs.Num(); Index++)
+    {
+        if (InName == Tabs[Index]->Name)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void SParticleEditorWindow::CreateNewTab()
 {
     char label[32];

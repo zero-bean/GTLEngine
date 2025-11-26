@@ -25,6 +25,7 @@ public:
 
     void OnRenderViewport();
     void CreateNewTab();
+    bool ExistName(const FString& InName);
     void RequestColorPickerFocus();
     void LoadParticleSystem(class UParticleSystem* ParticleSystem);
 

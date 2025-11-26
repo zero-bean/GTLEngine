@@ -45,5 +45,6 @@ public:
 
 	void ResetParticles();
 
+	void DuplicateSubObjects() override;
 
 };
