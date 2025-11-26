@@ -984,6 +984,10 @@ void FParticleEditorDetailSection::DrawTypeDataBeamModuleProperties(class UParti
             ImGui::DragInt("##MaxBeamCount", &Module->MaxBeamCount, 0.1f, 1, 32);
         });
         DrawPropertyRow("Speed", [&]() { ImGui::DragFloat("##Speed", &Module->Speed, 1.0f, 0.0f, 10000.0f); });
+        DrawPropertyRow("Distance", [&]()
+        {
+            ImGui::DragFloat("##Distance", &Module->Distance, 0.1f, 0.0f, 1000.0f);
+        });
         DrawPropertyRow("Base Width", [&]()
         {
             ImGui::DragFloat("##BaseWidth", &Module->BaseWidth, 0.1f, 0.0f, 1000.0f);
@@ -1001,7 +1005,7 @@ void FParticleEditorDetailSection::DrawTypeDataBeamModuleProperties(class UParti
         {
             ImGui::DragInt("##UpVectorStepSize", &Module->UpVectorStepSize, 1.0f,
                            0, 16);
-        });
+        });        
         DrawPropertyRow("Source Position", [&]()
         {
             ImGui::DragFloat3("##SourcePos", &Module->SourcePosition.X, 0.1f);
@@ -1012,8 +1016,7 @@ void FParticleEditorDetailSection::DrawTypeDataBeamModuleProperties(class UParti
         });
         
         DrawPropertyRow("Source Tangent", [&]() { ImGui::DragFloat3("##SourceTan", &Module->SourceTangent.X, 0.1f); });
-        DrawPropertyRow("Target Tangent", [&]() { ImGui::DragFloat3("##TargetTan", &Module->TargetTangent.X, 0.1f); });
-        DrawDistributionFloat("Distance", Module->Distance, 0.0f, 10000.0f);
+        DrawPropertyRow("Target Tangent", [&]() { ImGui::DragFloat3("##TargetTan", &Module->TargetTangent.X, 0.1f); });        
         DrawDistributionFloat("Taper Factor", Module->TaperFactor, 0.0f, 1.0f);
         DrawDistributionFloat("Taper Scale", Module->TaperScale, 0.0f, 10.0f);
         ImGui::EndTable();

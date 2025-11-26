@@ -55,7 +55,7 @@ public:
     // 빔이 목표 지점까지 날아가는 속도, 0 이면 instance
     float Speed = 0.0f;
 
-    float BaseWidth = 1.0f;
+    float BaseWidth = 5.0f;
 
     // 시작점과 끝점 사이에 찍을 점의 갯수
     // segments 숫자
@@ -70,17 +70,16 @@ public:
     // N : 매 N번 째 점마다 계산한다는데 언리얼 주석에 unsupported라고 되어 있네
     int32 UpVectorStepSize = 0;
 
-    FRawDistributionFloat Distance;
+    float Distance = 0.0f;    
 
-    // 진행 정도에 따른 굵기
-    // 0 : 시작점, 1 : 끝점
-    FRawDistributionFloat TaperFactor;
+    // 진행 정도에 따른 굵기    
+    FRawDistributionFloat TaperFactor = FRawDistributionFloat(EDistributionMode::DOP_Constant, 1.0f, 0.0f, 1.0f);
     
-    FRawDistributionFloat TaperScale;
+    FRawDistributionFloat TaperScale = FRawDistributionFloat(EDistributionMode::DOP_Constant, 1.0f, 1.0f, 1.0f);
 
     // 언리얼은 모듈로 되어 있는데 간단한 구현을 위해 FVector 사용
     FVector SourcePosition = FVector::Zero();
-    FVector TargetPosition = FVector(0.0f, 0.0f, 100.0f);
+    FVector TargetPosition = FVector::Zero();
     FVector SourceTangent = FVector::Zero();
     FVector TargetTangent = FVector::Zero();
 

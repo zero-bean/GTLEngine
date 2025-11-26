@@ -8,6 +8,8 @@
 #include "ParticleSystemComponent.h"
 #include "ParticleModuleSpawn.h"
 #include "MeshBatchElement.h"
+#include "ParticleModuleColor.h"
+#include "ParticleModuleLifetime.h"
 #include "SceneView.h"
 #include "ParticleModuleTypeDataBeam.h"
 #include "ParticleModuleTypeDataMesh.h"
@@ -657,18 +659,40 @@ void FParticleBeamEmitterInstance::Init()
 	{
 		return;
 	}
-	
-	if (AActor* Owner = OwnerComponent->GetOwner())
+
+	// 소스포지션이 반영이 안되서 주석처리
+	// FParticleBeamEmitterInstance의 소스액터의 위치를 제어해야하는데 TypeDataBeam의 SourcePosition을 제어함 
+	// if (AActor* Owner = OwnerComponent->GetOwner())
+	// {
+	// 	SourceActor = Owner;
+	// }
+
+	FMatrix WorldMatrix = OwnerComponent->GetWorldMatrix();
+	if (SourceActor)
 	{
-		SourceActor = Owner;
+		SourcePosition = SourceActor->GetActorLocation();
+		SourceTangent = SourceActor->GetActorRotation().RotateVector(SourceTangent);
+	}
+	else
+	{
+		SourcePosition = WorldMatrix.TransformPosition(BeamTypeData->SourcePosition);
+		SourceTangent = WorldMatrix.TransformVector(BeamTypeData->SourceTangent);
 	}
 	
-	SourcePosition = SourceActor ? SourceActor->GetActorLocation() : BeamTypeData->SourcePosition;
-	
-	TargetPosition = TargetActor ? TargetActor->GetActorLocation() : BeamTypeData->TargetPosition;
-	
-	SourceTangent = BeamTypeData->SourceTangent;
-	TargetTangent = BeamTypeData->TargetTangent;
+	if (TargetActor)
+	{
+		TargetPosition = TargetActor->GetActorLocation();
+		TargetTangent = TargetActor->GetActorRotation().RotateVector(BeamTypeData->TargetTangent);
+	}
+	else if (BeamTypeData->BeamMethod == EBeamMethod::EBM_Distance)
+	{
+		TargetPosition = BeamTypeData->Distance;
+	}
+	else
+	{
+		TargetPosition = WorldMatrix.TransformPosition(BeamTypeData->TargetPosition);
+		TargetTangent = WorldMatrix.TransformVector(BeamTypeData->TargetTangent);
+	}
 
 	BaseWidth = BeamTypeData->BaseWidth;
 
@@ -682,33 +706,27 @@ void FParticleBeamEmitterInstance::Init()
 void FParticleBeamEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 {
 	FParticleEmitterInstance::Tick(DeltaTime, bSuppressSpawning);
-
+	
 	FMatrix WorldMatrix = OwnerComponent->GetWorldMatrix();
+	// 액터는 위치가 변할 수 있으니 Tick에서 위치 갱신
 	if (SourceActor)
 	{
 		// 액터는 월드 좌표
 		SourcePosition = SourceActor->GetActorLocation();
-		SourceTangent = SourceActor->GetActorRotation().RotateVector(BeamTypeData->SourceTangent);
-	}
-	else
-	{
-		// 월드 변환
-		SourcePosition = WorldMatrix.TransformPosition(BeamTypeData->SourcePosition);
-		SourceTangent = WorldMatrix.TransformPosition(BeamTypeData->SourceTangent);
 	}
 
-	if (TargetActor)
+	if (BeamTypeData->BeamMethod == EBeamMethod::EBM_Distance)
+	{
+		TargetPosition = BeamTypeData->Distance;
+	}
+	else if (TargetActor)
 	{
 		TargetPosition = TargetActor->GetActorLocation();
 		TargetTangent = TargetActor->GetActorRotation().RotateVector(BeamTypeData->TargetTangent);
 	}
-	else
-	{
-		TargetPosition = WorldMatrix.TransformPosition(BeamTypeData->TargetPosition);
-		TargetTangent = WorldMatrix.TransformPosition(BeamTypeData->TargetTangent);
-	}
 
 	BeamLength = FVector::Distance(SourcePosition, TargetPosition);
+	
 	if (BeamTypeData->Speed > 0)
 	{
 		CurrentTravelDistance += BeamTypeData->Speed * DeltaTime;
@@ -741,6 +759,7 @@ void FParticleBeamEmitterInstance::BuildBeamPoints()
 	}
 
 	TArray<FVector4> Colors;
+	float SizeScale = 1.0f;
 	if (ActiveParticles > 0 && ParticleData)
 	{
 		Colors.Reserve(ActiveParticles);
@@ -818,9 +837,23 @@ void FParticleBeamEmitterInstance::BuildBeamPoints()
 
 		// 두께
 		float Factor = BeamTypeData->TaperFactor.GetValue(Progress);
-		float Scale = BeamTypeData->TaperScale.GetValue(Factor);
-		// Point.Width = BaseWidth * Scale;
-		Point.Width = 10.0f;
+		float TaperProgress = 0.0f;
+		// 적용 위치
+		if (BeamTypeData->BeamTaperMethod == EBeamTaperMethod::EBTM_Full)
+		{
+			// 전체 구간에 적용
+			TaperProgress = Progress;
+		}
+		else if (BeamTypeData->BeamTaperMethod == EBeamTaperMethod::EBTM_Partial)
+		{
+			float Start = 1.0f - Factor;
+			float Length = FMath::Max(Factor, KINDA_SMALL_NUMBER);
+			TaperProgress = FMath::Clamp((Start - Progress) / Length, 0.0f, 1.0f);
+		}
+		float ScaleCurve = BeamTypeData->TaperScale.GetValue(TaperProgress);
+		float WidthScale = FMath::Lerp(1.0f, ScaleCurve, Factor);
+		Point.Width = BaseWidth * WidthScale;
+		// Point.Width = BaseWidth;
 
 		float ColorPos = Progress * static_cast<float>(ColorCount - 1);
 		int32 StartIndex = FMath::Clamp(static_cast<int32>(ColorPos), 0, ColorCount - 1);

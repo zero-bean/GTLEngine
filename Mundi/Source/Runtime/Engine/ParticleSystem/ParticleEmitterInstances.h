@@ -204,7 +204,6 @@ public:
 
 	float BeamLength;
 	
-	
 	FParticleBeamEmitterInstance(UParticleSystemComponent* InComponent);
 	~FParticleBeamEmitterInstance() override {};
 

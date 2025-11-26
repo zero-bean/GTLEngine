@@ -13,6 +13,9 @@
 #include "ParticleModuleRotationRate.h"
 #include "Distribution.h"
 #include <algorithm>
+#include "ParticleModuleTypeDataBeam.h"
+
+#include "ParticleModuleSpawn.h"
 
 void FParticleEditorCurveSection::Draw(const FParticleEditorSectionContext& Context)
 {
@@ -97,6 +100,18 @@ void FParticleEditorCurveSection::Draw(const FParticleEditorSectionContext& Cont
                 ImGui::TextWrapped("선택된 모듈은 커브 편집을 지원하지 않습니다.");
                 ImGui::TextWrapped("지원 모듈: Size, Color, Velocity, Rotation, Lifetime");
                 ImGui::PopStyleColor();
+            }
+        }
+        else if (ActiveState->SelectedModuleSelection == EParticleDetailSelection::Spawn && LODLevel->SpawnModule)
+        {
+            DrawFloatDistributionCurveEditor(&LODLevel->SpawnModule->SpawnRate, "SpawnRate", LODLevel->SpawnModule, 0.0f, 100.0f);
+        }
+        else if (ActiveState->SelectedModuleSelection == EParticleDetailSelection::BeamType && LODLevel->TypeDataModule)
+        {
+            if (auto* Beam = Cast<UParticleModuleTypeDataBeam>(LODLevel->TypeDataModule))
+            {
+                DrawFloatDistributionCurveEditor(&Beam->TaperFactor, "TaperFactor", &Beam, 0.0f, 1.0f);
+                DrawFloatDistributionCurveEditor(&Beam->TaperScale, "TaperScale", &Beam, 0.0f, 1.0f);
             }
         }
         else
@@ -551,7 +566,10 @@ void FParticleEditorCurveSection::DrawFloatDistributionCurveEditor(
     bool bIsLinear = !Distribution->Curve.bUseCubicInterpolation;
     if (bIsLinear)
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.6f, 0.8f, 1.0f));
-    if (ImGui::Button("Linear##Mode", ImVec2(70, 25)))
+
+    char LinearButtonID[64];
+    sprintf_s(LinearButtonID, "Linear##%s%p", ModuleName, ModulePtr);
+    if (ImGui::Button(LinearButtonID, ImVec2(70, 25)))
     {
         Distribution->Curve.bUseCubicInterpolation = false;
     }
@@ -563,7 +581,10 @@ void FParticleEditorCurveSection::DrawFloatDistributionCurveEditor(
     bool bIsCubic = Distribution->Curve.bUseCubicInterpolation;
     if (bIsCubic)
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.6f, 0.8f, 1.0f));
-    if (ImGui::Button("Cubic##Mode", ImVec2(70, 25)))
+
+    char CubicButtonID[64];
+    sprintf_s(CubicButtonID, "Cubic##%s%p", ModuleName, ModulePtr);
+    if (ImGui::Button(CubicButtonID, ImVec2(70, 25)))
     {
         Distribution->Curve.bUseCubicInterpolation = true;
     }

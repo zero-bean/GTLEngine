@@ -35,12 +35,10 @@ void UParticleModuleTypeDataBeam::Serialize(const bool bInIsLoading, JSON& InOut
           FJsonSerializer::ReadInt32(InOutHandle, "InterpolationPoints", InterpolationPoints, InterpolationPoints, false);
           FJsonSerializer::ReadInt32(InOutHandle, "bAlwaysOn", bAlwaysOn, bAlwaysOn, false);
           FJsonSerializer::ReadInt32(InOutHandle, "UpVectorStepSize", UpVectorStepSize, UpVectorStepSize, false);
+          FJsonSerializer::ReadFloat(InOutHandle, "Distance", Distance, Distance, false);
 
           BeamMethod = static_cast<EBeamMethod>(BeamMethodInt);
           BeamTaperMethod = static_cast<EBeamTaperMethod>(BeamTaperMethodInt);
-
-          JSON DistanceJson = InOutHandle["Distance"];
-          Distance.Serialize(true, DistanceJson);
 
           JSON TaperFactorJson = InOutHandle["TaperFactor"];
           TaperFactor.Serialize(true, TaperFactorJson);
@@ -66,10 +64,7 @@ void UParticleModuleTypeDataBeam::Serialize(const bool bInIsLoading, JSON& InOut
           InOutHandle["InterpolationPoints"] = InterpolationPoints;
           InOutHandle["bAlwaysOn"] = bAlwaysOn;
           InOutHandle["UpVectorStepSize"] = UpVectorStepSize;
-
-          JSON DistanceJson = JSON::Make(JSON::Class::Object);
-          Distance.Serialize(false, DistanceJson);
-          InOutHandle["Distance"] = DistanceJson;
+          InOutHandle["Distance"] = Distance;      
 
           JSON TaperFactorJson = JSON::Make(JSON::Class::Object);
           TaperFactor.Serialize(false, TaperFactorJson);
