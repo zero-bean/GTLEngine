@@ -3,6 +3,8 @@
 #include "ParticleEmitterInstances.h"
 #include "ParticleLODLevel.h"
 #include "ParticleModule.h"
+#include "ParticleSystemComponent.h"
+#include "ParticleModuleRequired.h"
 
 UParticleModuleRotation::UParticleModuleRotation()
 {
@@ -12,14 +14,28 @@ UParticleModuleRotation::UParticleModuleRotation()
 
 void UParticleModuleRotation::Spawn(const FSpawnContext& SpawnContext)
 {
-	// 이미터의 정규화된 시간(0.0~1.0)을 사용하여 커브 샘플링
-	float NormalizedTime = SpawnContext.GetNormalizedEmitterTime();
-	FVector StartRotationValue = StartRotation.GetValue(NormalizedTime, FMath::FRand());
-	if (!SpawnContext.Owner->CurrentLODLevel->TypeDataModule)
-		StartRotationValue.X = StartRotationValue.Y = 0;
+	if (bEnabled)
+	{
+		// 이미터의 정규화된 시간(0.0~1.0)을 사용하여 커브 샘플링
+		float NormalizedTime = SpawnContext.GetNormalizedEmitterTime();
+		FVector StartRotationValue = StartRotation.GetValue(NormalizedTime, FMath::FRand());
+		if (!SpawnContext.Owner->CurrentLODLevel->TypeDataModule)
+			StartRotationValue.X = StartRotationValue.Y = 0;
 
-	SpawnContext.ParticleBase->Rotation = FQuat::MakeFromEulerZYX(StartRotationValue);
-	SpawnContext.ParticleBase->RotationRate = FQuat::MakeFromEulerZYX(StartRotationValue);
+		if (SpawnContext.Owner->CurrentLODLevel->RequiredModule->bUseLocalSpace)
+		{
+			SpawnContext.ParticleBase->Rotation = FQuat::MakeFromEulerZYX(StartRotationValue);
+		}
+		else
+		{
+			SpawnContext.ParticleBase->Rotation = FQuat::MakeFromEulerZYX(StartRotationValue) * SpawnContext.Owner->OwnerComponent->GetWorldRotation();
+		}
+
+	}
+	else
+	{
+		SpawnContext.ParticleBase->Rotation = FQuat::Identity();
+	}
 }
 
 void UParticleModuleRotation::Serialize(const bool bInIsLoading, JSON& InOutHandle)

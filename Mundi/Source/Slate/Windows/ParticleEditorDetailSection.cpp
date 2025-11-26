@@ -916,8 +916,6 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
         ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, 170.0f);
         ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
-        DrawPropertyRow("Enabled", [&]() { ImGui::Checkbox("##RequiredEnabled", &Module->bEnabled); });
-
         // Material/Texture 선택
         DrawPropertyRow("Material", [&]()
         {

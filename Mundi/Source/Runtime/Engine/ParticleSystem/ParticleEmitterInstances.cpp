@@ -299,7 +299,7 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, float StartTime, floa
 		for (int32 ModuleIndex = 0; ModuleIndex < CurrentLODLevel->SpawnModules.Num(); ModuleIndex++)
 		{
 			UParticleModule* SpawnModule = CurrentLODLevel->SpawnModules[ModuleIndex];
-			if (SpawnModule->bEnabled)
+			if (SpawnModule)
 			{
 				// LOD레벨마다 독자적인 메모리를 관리하는 게 아니라 ParticleData를 공유함. 그래서
 				// LOD레벨이 다를 때 LOD 레벨 0에서의 모듈 오프셋을 알아야 초기화가 가능함.
@@ -387,10 +387,13 @@ void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& 
 	// ParticleSize만큼 해야함(페이로드 있을 수 있음)
 	std::memset(Particle, 0, ParticleSize);
 
-	Particle->Location = InitialLocation;
-	Particle->BaseVelocity = InitialVelocity;
-	Particle->Velocity = InitialVelocity;
-	Particle->RelativeTime = 0;
+	if (!CurrentLODLevel->RequiredModule->bUseLocalSpace)
+	{
+		Particle->Location = InitialLocation;
+		Particle->BaseVelocity = InitialVelocity;
+		Particle->Velocity = InitialVelocity;
+		Particle->RelativeTime = 0;
+	}
 
 }
 
@@ -437,6 +440,10 @@ void FParticleEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleIns
 
 		NewInstance.LifeTime = Particle.Lifetime;
 		NewInstance.Position = Particle.Location;
+		if (CurrentLODLevel->RequiredModule->bUseLocalSpace)
+		{
+			NewInstance.Position = OwnerComponent->GetWorldTransform().TransformPosition(NewInstance.Position);
+		}
 		NewInstance.Rotation = Particle.Rotation;
 		NewInstance.Size = Particle.Size;
 		ParticleInstanceData.Add(NewInstance);
@@ -458,6 +465,10 @@ void FParticleEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleIns
 
 		NewInstance.LifeTime = Particle->Lifetime;
 		NewInstance.Position = Particle->Location;
+		if (CurrentLODLevel->RequiredModule->bUseLocalSpace)
+		{
+			NewInstance.Position = OwnerComponent->GetWorldTransform().TransformPosition(NewInstance.Position);
+		}
 		NewInstance.Rotation = Particle->Rotation;
 		NewInstance.Size = Particle->Size;
 
