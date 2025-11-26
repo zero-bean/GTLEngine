@@ -1013,6 +1013,19 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
         DrawPropertyRow("Emitter Delay", [&]() { ImGui::DragFloat("##EmitterDelay", &Module->EmitterDelay, 0.1f, 0.0f, 100.0f); });
         DrawPropertyRow("Emitter Loops", [&]() { ImGui::DragInt("##EmitterLoops", &Module->EmitterLoops, 1, 0, 100); });
         DrawPropertyRow("Use Local Space", [&]() { ImGui::Checkbox("##UseLocalSpace", &Module->bUseLocalSpace); });
+        ImGui::Separator();
+        ImGui::Text("Renderer");
+        const char* SortModes[] = { "SORTMODE None", "SORTMODE Age Oldest First", "SORTMODE Age Newest First", "SORTMODE Distance To View" };
+
+        DrawPropertyRow("Sort Mode", [&]()
+            {
+                int32 CurrentMode = static_cast<int32>(Module->SortMode);
+                if (ImGui::Combo("##Particle_SORTMODE", &CurrentMode, SortModes, IM_ARRAYSIZE(SortModes)))
+                {
+                    Module->SortMode = static_cast<EParticleSortMode>(CurrentMode);
+                }
+            });
+        
 
         ImGui::EndTable();
     }

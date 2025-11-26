@@ -378,17 +378,58 @@ void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& 
 
 void FParticleEmitterInstance::GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData, const FSceneView* View)
 {
-	ParticleIndicesForSort.clear();
-	BEGIN_UPDATE_LOOP
-		FDistanceSortKey Key;
-		Key.Distance = (View->ViewLocation - Particle.Location).Size();
-		Key.Index = CurrentIndex;
-		ParticleIndicesForSort.Add(Key);
-	END_UPDATE_LOOP
 
-	// 카메라로부터 먼 파티클이 앞에 옴
-	ParticleIndicesForSort.Sort([](const FDistanceSortKey& A, const FDistanceSortKey& B) {
-	return A.Distance > B.Distance;
+
+	ParticleIndicesForSort.clear();
+	switch (CurrentLODLevel->RequiredModule->SortMode)
+	{
+	case EParticleSortMode::AgeOldestFirst:
+		{
+			GenerateSortKey(ParticleIndicesForSort, [](const FBaseParticle& Particle)
+			{
+				// 키 값이 큰 것이 앞에 옴: RelativeTime이 크면 늙은 파티클이 앞에 옴
+				return Particle.RelativeTime;
+			});
+		}
+		break;
+	case EParticleSortMode::AgeNewestFirst:
+		{
+			GenerateSortKey(ParticleIndicesForSort, [](const FBaseParticle& Particle)
+			{
+				// 역으로 남은 시간 비율이 큰 것이 앞에 오도록 함: 새로 태어난 파티클이 앞에 옴
+				return 1.0f - Particle.RelativeTime * Particle.OneOverMaxLiftTime;
+			});
+		}
+		break;
+	case EParticleSortMode::DistToView:
+		{
+			GenerateSortKey(ParticleIndicesForSort, [&View](const FBaseParticle& Particle)
+			{
+				// 카메라로부터 거리 큰 것이 앞에 옴(제곱해도 결과 똑같으므로 루트 안 씌움)
+				return (View->ViewLocation - Particle.Location).SizeSquared();
+			});
+		}
+		break;
+	case EParticleSortMode::None:
+	default:
+		{
+			BEGIN_UPDATE_LOOP
+				FSpriteParticleInstance NewInstance;
+				NewInstance.Color = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, 1.0f);
+
+				NewInstance.LifeTime = Particle.Lifetime;
+				NewInstance.Position = Particle.Location;
+				NewInstance.Rotation = Particle.Rotation;
+				NewInstance.Size = Particle.Size;
+				ParticleInstanceData.Add(NewInstance);
+			END_UPDATE_LOOP
+			return; 
+		}
+	}
+	
+	
+	ParticleIndicesForSort.Sort([](const FParticleSortKey& A, const FParticleSortKey& B) {
+	return A.SortKey > B.SortKey;
 		});
 
 	for (int32 Index = 0; Index < ParticleIndicesForSort.Num(); Index++)

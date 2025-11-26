@@ -1,15 +1,16 @@
 ﻿#pragma once
 #include "MeshBatchElement.h"
+#include "ParticleHelper.h"
 class UParticleEmitter;
 class UParticleSystemComponent;
 class UParticleLODLevel;
 class UParticleModule;
 struct FBaseParticle;
 
-struct FDistanceSortKey
+struct FParticleSortKey
 {
 	uint16 Index;
-	float Distance;
+	float SortKey;
 };
 
 struct FParticleEmitterInstance
@@ -65,7 +66,7 @@ public:
 	ID3D11ShaderResourceView* InstanceSRV = nullptr;
 
 	// 파티클 거리순 정렬 위한 인덱스 배열
-	TArray<FDistanceSortKey> ParticleIndicesForSort;
+	TArray<FParticleSortKey> ParticleIndicesForSort;
 
 	float EmitterTime = 0.0f;
 
@@ -74,6 +75,18 @@ public:
 
 	FParticleEmitterInstance(UParticleSystemComponent* InComponent);
 	~FParticleEmitterInstance();
+
+
+	template<typename KeyGetterFunction>
+	void GenerateSortKey(TArray<FParticleSortKey>& ParticleIndicesForSort, KeyGetterFunction KeyGetter)
+	{
+		BEGIN_UPDATE_LOOP
+			FParticleSortKey Key;
+		Key.SortKey = KeyGetter(Particle);
+		Key.Index = CurrentIndex;
+		ParticleIndicesForSort.Add(Key);
+		END_UPDATE_LOOP
+	}
 
 	virtual void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials);
 	virtual void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData, const FSceneView* View);

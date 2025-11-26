@@ -4,6 +4,14 @@
 
 class UMaterialInterface;
 
+enum class EParticleSortMode
+{
+	None,
+	AgeOldestFirst,
+	AgeNewestFirst,
+	DistToView
+};
+
 UCLASS()
 class UParticleModuleRequired : public UParticleModule
 {
@@ -24,6 +32,8 @@ public:
 	// ex) true인 경우: 촛불이 꽃힌 케이크가 움직일때 불꽃도 같이 케이크 따라 움직임
 	//     false인 경우: 자동차 배기가스는 분출된 이후 차를 따라가지 않음.
 	bool bUseLocalSpace = true;
+
+	EParticleSortMode SortMode = EParticleSortMode::None;
 
 	UParticleModuleRequired() = default;
 

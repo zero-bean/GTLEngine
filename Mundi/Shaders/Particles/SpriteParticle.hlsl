@@ -130,5 +130,5 @@ float4 mainPS(PS_INPUT Input) : SV_Target
         finalPixel.a *= (1.0f - Material.Transparency);
     }
 
-    return finalPixel;
+    return finalPixel * Input.Color;
 }
