@@ -14,6 +14,8 @@ uint32 UParticleModuleSpawn::RequiredBytesPerInstance()
 
 int32 UParticleModuleSpawn::GetSpawnCount(float DeltaTime, float& SpawnFraction, float EmitterTime)
 {
+	if (!bEnabled)
+		return 0;
     float SpawnRateValue = SpawnRate.GetValue(DeltaTime);
     float SpawnCountFloat = (SpawnRateValue * DeltaTime) + SpawnFraction;
 

@@ -59,7 +59,7 @@
               "bEnabled" : true
             }, {
               "SpawnLocation" : {
-                "constant" : [0.000000, 0.000000, 0.000000],
+                "constant" : [0.000000, 5.100000, 0.000000],
                 "curveX" : {
                   "keys" : [{
                       "time" : 0.000000,
@@ -87,15 +87,15 @@
                       "value" : 1.000000
                     }]
                 },
-                "max" : [1.000000, 1.000000, 1.000000],
-                "min" : [0.000000, 0.000000, 0.000000],
-                "operation" : 0
+                "max" : [32.599998, 30.100000, 20.000000],
+                "min" : [-30.799999, -33.599998, 20.000000],
+                "operation" : 1
               },
               "Type" : "UParticleModuleLocation",
               "bEnabled" : true
             }, {
               "StartSize" : {
-                "constant" : [1.000000, 1.000000, 1.000000],
+                "constant" : [7.700000, 7.800000, 1.000000],
                 "curveX" : {
                   "keys" : [{
                       "time" : 0.000000,
@@ -131,7 +131,7 @@
               "bEnabled" : true
             }, {
               "StartVelocity" : {
-                "constant" : [0.000000, 0.000000, 10.000000],
+                "constant" : [0.000000, 0.000000, -23.100000],
                 "curveX" : {
                   "keys" : [{
                       "time" : 0.000000,
@@ -195,11 +195,47 @@
                       "value" : 1.000000
                     }]
                 },
-                "max" : [90.000000, 0.000000, 0.000000],
-                "min" : [0.000000, 0.000000, 0.000000],
-                "operation" : 0
+                "max" : [90.000000, 0.000000, 105.599998],
+                "min" : [-59.799999, 0.000000, -98.500000],
+                "operation" : 1
               },
               "Type" : "UParticleModuleRotation",
+              "bEnabled" : true
+            }, {
+              "RotationRate" : {
+                "constant" : [0.000000, 0.000000, 0.000000],
+                "curveX" : {
+                  "keys" : [{
+                      "time" : 0.000000,
+                      "value" : 1.000000
+                    }, {
+                      "time" : 1.000000,
+                      "value" : 1.000000
+                    }]
+                },
+                "curveY" : {
+                  "keys" : [{
+                      "time" : 0.000000,
+                      "value" : 1.000000
+                    }, {
+                      "time" : 1.000000,
+                      "value" : 1.000000
+                    }]
+                },
+                "curveZ" : {
+                  "keys" : [{
+                      "time" : 0.000000,
+                      "value" : 1.000000
+                    }, {
+                      "time" : 1.000000,
+                      "value" : 1.000000
+                    }]
+                },
+                "max" : [0.000000, 0.000000, 56.599998],
+                "min" : [0.000000, 0.000000, -34.900002],
+                "operation" : 1
+              },
+              "Type" : "UParticleModuleRotationRate",
               "bEnabled" : true
             }],
           "PeakActiveParticles" : 0,
@@ -208,19 +244,19 @@
             "EmitterDuration" : 2.000000,
             "EmitterLoops" : 0,
             "MaterialData" : {
-              "DiffuseTexture" : "Data/Textures/GreenLight.png",
+              "DiffuseTexture" : "Data/Textures/Snow.png",
               "NormalTexture" : "",
               "ShaderPath" : "Shaders/UI/Billboard.hlsl",
               "SpecularTexture" : ""
             },
-            "MaxActiveParticles" : 58,
+            "MaxActiveParticles" : 1000,
             "Type" : "UParticleModuleRequired",
             "bEnabled" : true,
             "bUseLocalSpace" : false
           },
           "SpawnModule" : {
             "SpawnRate" : {
-              "constant" : 10.000000,
+              "constant" : 352.500000,
               "curve" : {
                 "keys" : [{
                     "time" : 0.000000,
@@ -239,7 +275,7 @@
           },
           "SpawnModuleIndices" : [0, 1, 2, 3, 4, 5],
           "Type" : "UParticleLODLevel",
-          "UpdateModuleIndices" : [],
+          "UpdateModuleIndices" : [6],
           "bEnabled" : true
         }],
       "MeshMaterials" : [],

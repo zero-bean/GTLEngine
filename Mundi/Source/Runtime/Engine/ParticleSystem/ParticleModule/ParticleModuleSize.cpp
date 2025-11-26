@@ -10,9 +10,13 @@ UParticleModuleSize::UParticleModuleSize()
 
 void UParticleModuleSize::Spawn(const FSpawnContext& SpawnContext)
 {
-	// 이미터의 정규화된 시간(0.0~1.0)을 사용하여 커브 샘플링
-	float NormalizedTime = SpawnContext.GetNormalizedEmitterTime();
-	FVector StartSizeVector = StartSize.GetValue(NormalizedTime, FMath::FRand());
+	FVector StartSizeVector{ 1,1,1 };
+	if (bEnabled)
+	{
+		// 이미터의 정규화된 시간(0.0~1.0)을 사용하여 커브 샘플링
+		float NormalizedTime = SpawnContext.GetNormalizedEmitterTime();
+		StartSizeVector = StartSize.GetValue(NormalizedTime, FMath::FRand());
+	}
 
 	SpawnContext.ParticleBase->Size = StartSizeVector;
 

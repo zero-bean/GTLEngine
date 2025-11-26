@@ -14,6 +14,7 @@
 #include "LightStats.h"
 #include "ShadowStats.h"
 #include "SkinningStats.h"
+#include "ParticleStats.h"
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "dwrite")
@@ -99,7 +100,7 @@ static void DrawTextBlock(
 
 void UStatsOverlayD2D::Draw()
 {
-	if (!bInitialized || (!bShowFPS && !bShowMemory && !bShowPicking && !bShowDecal && !bShowTileCulling && !bShowLights && !bShowShadow && !bShowSkinning) || !SwapChain)
+	if (!bInitialized || (!bShowFPS && !bShowMemory && !bShowPicking && !bShowDecal && !bShowTileCulling && !bShowLights && !bShowShadow && !bShowSkinning && !bShowParticle) || !SwapChain)
 		return;
 
 	ID2D1Factory1* D2dFactory = nullptr;
@@ -416,9 +417,55 @@ void UStatsOverlayD2D::Draw()
 			D2D1::ColorF(0, 0, 0, 0.6f),
 			D2D1::ColorF(D2D1::ColorF::DeepPink));
 
-		NextY += SkinningPanelHeight + Space;		
+		NextY += SkinningPanelHeight + Space;
 	}
-	
+
+	if (bShowParticle)
+	{
+		// FParticleStatManager로부터 통계 데이터를 가져옵니다.
+		const FParticleStats& ParticleStats = FParticleStatManager::GetInstance().GetStats();
+
+		// 메모리를 KB 단위로 계산
+		double MemoryKB = static_cast<double>(ParticleStats.TotalMemoryBytes) / 1024.0;
+		double MemoryMB = ParticleStats.GetTotalMemoryMB();
+
+
+		// 출력할 문자열 버퍼를 만듭니다.
+		wchar_t Buf[512];
+		if (MemoryMB >= 0.1)
+		{
+			swprintf_s(Buf, L"[Particle Stats]\nSystems: %u\nEmitters: %u\n\nActive: %u / %u \nPeak: %u\n\nMemory: %.2f MB",
+				ParticleStats.TotalParticleSystems,
+				ParticleStats.TotalEmitters,
+				ParticleStats.TotalActiveParticles,
+				ParticleStats.TotalMaxParticles,
+				ParticleStats.PeakParticles,
+				MemoryMB);
+		}
+		else
+		{
+			swprintf_s(Buf, L"[Particle Stats]\nSystems: %u\nEmitters: %u\n\nActive: %u / %u \nPeak: %u\n\nMemory: %.2f KB",
+				ParticleStats.TotalParticleSystems,
+				ParticleStats.TotalEmitters,
+				ParticleStats.TotalActiveParticles,
+				ParticleStats.TotalMaxParticles,
+				ParticleStats.PeakParticles,
+				MemoryKB);
+		}
+
+		// 텍스트를 여러 줄 표시해야 하므로 패널 높이를 늘립니다.
+		const float particlePanelHeight = 160.0f;
+		D2D1_RECT_F rc = D2D1::RectF(Margin, NextY, Margin + PanelWidth, NextY + particlePanelHeight);
+
+		// DrawTextBlock 함수를 호출하여 화면에 그립니다. 색상은 구분을 위해 핑크색으로 설정합니다.
+		DrawTextBlock(
+			D2dCtx, Dwrite, Buf, rc, 16.0f,
+			D2D1::ColorF(0, 0, 0, 0.6f),
+			D2D1::ColorF(D2D1::ColorF::HotPink));
+
+		NextY += particlePanelHeight + Space;
+	}
+
 	D2dCtx->EndDraw();
 	D2dCtx->SetTarget(nullptr);
 
@@ -512,4 +559,14 @@ void UStatsOverlayD2D::ToggleShadow()
 void UStatsOverlayD2D::ToggleSkinning()
 {
 	bShowSkinning = !bShowSkinning;
+}
+
+void UStatsOverlayD2D::SetShowParticle(bool b)
+{
+	bShowParticle = b;
+}
+
+void UStatsOverlayD2D::ToggleParticle()
+{
+	bShowParticle = !bShowParticle;
 }

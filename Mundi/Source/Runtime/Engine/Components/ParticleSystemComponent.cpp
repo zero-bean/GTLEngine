@@ -170,3 +170,10 @@ void UParticleSystemComponent::DuplicateSubObjects()
 
 
 }
+
+void UParticleSystemComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	LoadParticleSystemFromAssetPath();
+}

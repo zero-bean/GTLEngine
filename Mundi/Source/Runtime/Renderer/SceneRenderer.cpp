@@ -54,6 +54,8 @@
 #include "StatsOverlayD2D.h"
 #include "ParticleRenderer.h"
 #include "ParticleSystemComponent.h"
+#include "ParticleStats.h"
+#include "ParticleEmitterInstances.h"
 
 FSceneRenderer::FSceneRenderer(UWorld* InWorld, FSceneView* InView, URenderer* InOwnerRenderer)
 	: World(InWorld)
@@ -828,6 +830,46 @@ void FSceneRenderer::GatherVisibleProxies()
 	UPDATE_SKINNING_TYPE(World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_GPUSkinning))
 	//FSkinningStatManager::GetInstance().GatherSkinnningStats(Proxies.Meshes);
 	//FSkinningStatManager::GetInstance().UpdateSkinningType(World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_GPUSkinning));
+
+	// 파티클 통계 업데이트
+	FParticleStats ParticleStats;
+	ParticleStats.TotalParticleSystems = Proxies.Particles.Num();
+	for (UParticleSystemComponent* ParticleComponent : Proxies.Particles)
+	{
+		if (ParticleComponent && ParticleComponent->IsActive())
+		{
+			ParticleStats.TotalEmitters += ParticleComponent->EmitterInstances.Num();
+
+			for (FParticleEmitterInstance* EmitterInstance : ParticleComponent->EmitterInstances)
+			{
+				if (EmitterInstance)
+				{
+					ParticleStats.TotalActiveParticles += EmitterInstance->ActiveParticles;
+					ParticleStats.TotalMaxParticles += EmitterInstance->CurrentActiveParticleCapacity;
+
+					// 메모리 사용량 계산 - 실제 활성 파티클 기준
+					if (EmitterInstance->ActiveParticles > 0)
+					{
+						// 활성 파티클 데이터 메모리: ParticleStride * ActiveParticles
+						uint64 ActiveParticleDataSize = static_cast<uint64>(EmitterInstance->ParticleStride) * EmitterInstance->ActiveParticles;
+						ParticleStats.ActiveParticleDataMemory += ActiveParticleDataSize;
+
+						// ParticleIndices 메모리: sizeof(uint16) * ActiveParticles
+						uint64 IndicesSize = sizeof(uint16) * EmitterInstance->ActiveParticles;
+						ParticleStats.ActiveParticleDataMemory += IndicesSize;
+					}
+
+					// InstanceData 메모리: InstancePayloadSize (이미터당 고정)
+					if (EmitterInstance->InstancePayloadSize > 0)
+					{
+						ParticleStats.InstanceDataMemory += EmitterInstance->InstancePayloadSize;
+					}
+				}
+			}
+		}
+	}
+	ParticleStats.CalculateTotalMemory();
+	FParticleStatManager::GetInstance().UpdateStats(ParticleStats);
 
 	ShadowStats.CalculateTotal();
 	FShadowStatManager::GetInstance().UpdateStats(ShadowStats);
