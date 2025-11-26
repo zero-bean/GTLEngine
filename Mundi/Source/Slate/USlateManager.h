@@ -87,7 +87,7 @@ public:
     bool IsAnimationGraphEditorOpen() const { return AnimationGraphEditorWindow != nullptr;}
 
     // Particle Editor (detached window)
-    void OpenParticleEditor();
+    void OpenParticleEditor(class UParticleSystem* ParticleSystem = nullptr);
     void CloseParticleEditor();
     bool IsParticleEditorOpen() const { return ParticleEditorWindow != nullptr; }
 

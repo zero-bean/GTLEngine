@@ -75,6 +75,7 @@ ParticleEditorState* ParticleEditorBootstrap::CreateEditorState(const char* Name
 
     // 언리얼 방식: 빈 파티클 시스템에 기본 Sprite Emitter 1개 자동 생성
     State->CurrentParticleSystem = NewObject<UParticleSystem>();
+    State->bOwnsParticleSystem = true; // 우리가 생성했으므로 소유권 설정
     State->LoadedParticleSystemPath = "";
 
     // 기본 Sprite Emitter 생성
@@ -156,6 +157,13 @@ void ParticleEditorBootstrap::DestroyEditorState(ParticleEditorState*& State)
 
     // 프리뷰 액터 파괴
     State->DestroyPreviewActor();
+
+    // 파티클 시스템 정리 (소유권이 있는 경우만 삭제)
+    if (State->CurrentParticleSystem && State->bOwnsParticleSystem)
+    {
+        ObjectFactory::DeleteObject(State->CurrentParticleSystem);
+        State->CurrentParticleSystem = nullptr;
+    }
 
     if (State->Viewport) { delete State->Viewport; State->Viewport = nullptr; }
     if (State->Client) { delete State->Client; State->Client = nullptr; }

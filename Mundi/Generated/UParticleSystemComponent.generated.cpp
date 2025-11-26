@@ -35,6 +35,7 @@ const bool UParticleSystemComponent::bPropertiesRegistered = []() {
 
 BEGIN_PROPERTIES(UParticleSystemComponent)
     MARK_AS_COMPONENT("파티클 시스템 컴포넌트", "파티클 시스템 컴포넌트")
+    ADD_PROPERTY(FString, ParticleSystemAssetPath, "Particle", true)
     ADD_PROPERTY_PARTICLESYSTEM(UParticleSystem*, Template, "Particle", true)
 END_PROPERTIES()
 

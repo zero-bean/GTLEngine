@@ -43,7 +43,40 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 
 		InitParticles();
 	}
-	
+
+}
+
+void UParticleSystemComponent::LoadParticleSystemFromAssetPath()
+{
+	// 기존 Template 정리
+	if (Template)
+	{
+		DeleteObject(Template);
+		Template = nullptr;
+	}
+
+	// ParticleSystemAssetPath가 비어있으면 (None 선택) Template을 nullptr로 유지
+	if (ParticleSystemAssetPath.empty())
+	{
+		// 파티클 인스턴스도 정리
+		DestroyEmitterInstances();
+		return;
+	}
+
+	// 새 파티클 시스템 로드
+	UParticleSystem* NewSystem = NewObject<UParticleSystem>();
+	if (NewSystem && NewSystem->Load(ParticleSystemAssetPath, nullptr))
+	{
+		Template = NewSystem;
+		InitParticles();
+	}
+	else
+	{
+		if (NewSystem)
+		{
+			DeleteObject(NewSystem);
+		}
+	}
 }
 
 void UParticleSystemComponent::DestroyEmitterInstances()
@@ -60,8 +93,13 @@ void UParticleSystemComponent::DestroyEmitterInstances()
 
 void UParticleSystemComponent::BeginPlay()
 {
+	// AssetPath가 있으면 먼저 로드
+	if (!ParticleSystemAssetPath.empty())
+	{
+		LoadParticleSystemFromAssetPath();
+	}
 	// Template이 설정되어 있으면 파티클 초기화
-	if (Template)
+	else if (Template)
 	{
 		InitParticles();
 	}
@@ -132,5 +170,3 @@ void UParticleSystemComponent::ResetParticles()
 
 	EmitterInstances.Empty();
 }
-
-

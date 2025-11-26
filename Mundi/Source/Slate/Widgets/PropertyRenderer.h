@@ -20,6 +20,8 @@ public:
 	// 객체의 모든 프로퍼티를 카테고리별로 렌더링 (부모 클래스 프로퍼티 포함)
 	static void RenderAllPropertiesWithInheritance(UObject* Object);
 
+	static void RefreshParticleSystemCache();
+
 private:
 	// 타입별 렌더링 함수들
 	static bool RenderBoolProperty(const FProperty& Prop, void* Instance);
@@ -72,4 +74,6 @@ private:
 	static TArray<const char*> CachedSoundItems;
 	static TArray<FString> CachedScriptPaths;
 	static TArray<const char*> CachedScriptItems;
+	static TArray<FString> CachedParticleSystemPaths;
+	static TArray<FString> CachedParticleSystemItems;
 };

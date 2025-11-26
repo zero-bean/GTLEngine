@@ -181,6 +181,7 @@ bool UGameEngine::Startup(HINSTANCE hInstance)
     // 디바이스 리소스 및 렌더러 생성
     RHIDevice.Initialize(HWnd);
     Renderer = std::make_unique<URenderer>(&RHIDevice);
+    GPU_PROFILER.Initialize(&RHIDevice);
 
     // Initialize audio device for game runtime
     FAudioDevice::Initialize();
@@ -348,6 +349,9 @@ void UGameEngine::Shutdown()
     // IMPORTANT: Explicitly release Renderer before RHIDevice destructor runs
     // Renderer may hold references to D3D resources
     Renderer.reset();
+
+    // Shutdown GPU profiler before tearing down RHI
+    GPU_PROFILER.Shutdown();
 
     // Shutdown audio device
     FAudioDevice::Shutdown();
