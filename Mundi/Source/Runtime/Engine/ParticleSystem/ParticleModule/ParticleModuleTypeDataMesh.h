@@ -8,8 +8,11 @@ class UParticleModuleTypeDataMesh : public UParticleModuleTypeDataBase
 {
 
 public:
+	GENERATED_REFLECTION_BODY()
+
 	class UStaticMesh* StaticMesh = nullptr;
 
-	GENERATED_REFLECTION_BODY()
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+	
 	UParticleModuleTypeDataMesh() = default;
 };

@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <ItemGroup>
     <FxCompile Include="Shaders\PostProcess\GammaCorrection_PS.hlsl">
@@ -995,7 +995,12 @@
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRequired.cpp">
       <Filter>Source\Runtime\Engine\ParticleSystem\ParticleModule</Filter>
     </ClCompile>
-  <ClCompile Include="Generated\UParticleModuleTypeDataMesh.generated.cpp"><Filter>Generated</Filter></ClCompile></ItemGroup>
+    <ClCompile Include="Generated\UParticleModuleTypeDataMesh.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataMesh.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataBase.cpp" />
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Source\Editor\BlueprintGraph\AnimationGraph.h">
@@ -2057,7 +2062,11 @@
     <ClInclude Include="Source\Runtime\Core\Object\ObjectMacros.h">
       <Filter>Source\Runtime\Core\Object</Filter>
     </ClInclude>
-  <ClInclude Include="Generated\UParticleModuleTypeDataMesh.generated.h"><Filter>Generated</Filter></ClInclude></ItemGroup>
+    <ClInclude Include="Generated\UParticleModuleTypeDataMesh.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataMesh.h" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="Tools\CodeGenerator\generate.py">
       <Filter>Tools\CodeGenerator</Filter>
