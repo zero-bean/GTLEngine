@@ -2,6 +2,12 @@
 #include "ParticleModuleLocation.h"
 #include "ParticleEmitterInstances.h"
 
+UParticleModuleLocation::UParticleModuleLocation()
+{
+	bSpawn = true;
+	bUpdate = false;
+}
+
 // UParticleModuleLocation은 업데이트가 필요 없음, 생성될 좌표만 결정
 void UParticleModuleLocation::Spawn(const FSpawnContext& SpawnContext)
 {

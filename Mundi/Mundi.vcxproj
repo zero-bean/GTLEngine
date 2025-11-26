@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_StandAlone|x64">
@@ -404,6 +404,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLocation.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRequired.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotation.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotationRate.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSize.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSpawn.cpp" />
     <ClCompile Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataBase.cpp" />
@@ -649,7 +650,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClCompile Include="Generated\UParticleModuleSpawn.generated.cpp" />
     <ClCompile Include="Generated\UParticleModuleVelocity.generated.cpp" />
     <ClCompile Include="Generated\UParticleModuleTypeDataMesh.generated.cpp" />
-  </ItemGroup>
+  <ClCompile Include="Generated\UParticleModuleRotationRate.generated.cpp" /></ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -906,6 +907,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleLocation.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRequired.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotation.h" />
+    <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleRotationRate.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSize.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleSpawn.h" />
     <ClInclude Include="Source\Runtime\Engine\ParticleSystem\ParticleModule\ParticleModuleTypeDataBase.h" />
@@ -1122,7 +1124,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(SolutionDir)Scripts\UploadSymbol
     <ClInclude Include="Generated\UParticleModuleSpawn.generated.h" />
     <ClInclude Include="Generated\UParticleModuleVelocity.generated.h" />
     <ClInclude Include="Generated\UParticleModuleTypeDataMesh.generated.h" />
-  </ItemGroup>
+  <ClInclude Include="Generated\UParticleModuleRotationRate.generated.h" /></ItemGroup>
   <ItemGroup>
     <None Include="Tools\CodeGenerator\generate.py" />
     <None Include="Tools\CodeGenerator\lua_generator.py" />

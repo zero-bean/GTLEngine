@@ -11,5 +11,5 @@ public:
 	GENERATED_REFLECTION_BODY()
 
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
-	UParticleModuleTypeDataBase() = default;
+	UParticleModuleTypeDataBase();
 };

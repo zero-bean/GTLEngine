@@ -22,6 +22,12 @@ struct FBaseParticle
 #define DECLARE_PARTICLE_PTR(Name, Address)									\
 	FBaseParticle* Name = (FBaseParticle*)(Address);
 
+#define DECLARE_PARTICLE_DATA_FROM_OWNER(UpdateConstext)							\
+uint32 ActiveParticles = UpdateContext.Owner->ActiveParticles;						\
+uint16* ParticleIndices = UpdateContext.Owner->ParticleIndices;						\
+uint8* ParticleData = UpdateContext.Owner->ParticleData;							\
+uint32 ParticleStride = UpdateContext.Owner->ParticleStride;
+
 // 페이로드는 필요시 별도로 오프셋을 계산해서 수정해야함.
 #define BEGIN_UPDATE_LOOP															\
 for(int Index = ActiveParticles - 1 ; Index >= 0; Index--)							\

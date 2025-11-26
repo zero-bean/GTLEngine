@@ -10,6 +10,7 @@
 #include "ParticleModuleVelocity.h"
 #include "ParticleModuleLifetime.h"
 #include "ParticleModuleRotation.h"
+#include "ParticleModuleRotationRate.h"
 #include "Distribution.h"
 #include <algorithm>
 
@@ -79,6 +80,11 @@ void FParticleEditorCurveSection::Draw(const FParticleEditorSectionContext& Cont
             else if (UParticleModuleRotation* RotationModule = Cast<UParticleModuleRotation>(SelectedModule))
             {
                 DrawVectorDistributionCurveEditor(&RotationModule->StartRotation, "Rotation", RotationModule, 0.0f, 360.0f);
+            }
+            // RotationRate 모듈
+            else if (UParticleModuleRotationRate* RotationRateModule = Cast<UParticleModuleRotationRate>(SelectedModule))
+            {
+                DrawVectorDistributionCurveEditor(&RotationRateModule->RotationRate, "RotationRate", RotationRateModule, 0.0f, 360.0f);
             }
             // Lifetime 모듈 (Float)
             else if (UParticleModuleLifetime* LifetimeModule = Cast<UParticleModuleLifetime>(SelectedModule))

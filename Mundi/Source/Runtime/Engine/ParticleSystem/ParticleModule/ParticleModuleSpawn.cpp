@@ -1,6 +1,12 @@
 ﻿#include "pch.h"
 #include "ParticleModuleSpawn.h"
 
+UParticleModuleSpawn::UParticleModuleSpawn()
+{
+	bSpawn = false;
+	bUpdate = false;
+}
+
 uint32 UParticleModuleSpawn::RequiredBytesPerInstance()
 {
     return sizeof(FParticleSpawnInstanceData);

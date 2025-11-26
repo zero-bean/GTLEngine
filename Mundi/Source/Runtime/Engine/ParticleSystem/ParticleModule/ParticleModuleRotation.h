@@ -11,7 +11,7 @@ public:
 
 	FRawDistributionVector StartRotation{ EDistributionMode::DOP_Uniform, 45.0f, 0.0f, 90.0f };
 
-	UParticleModuleRotation() = default;
+	UParticleModuleRotation();
 
 	void Spawn(const FSpawnContext& SpawnContext) override;
 
