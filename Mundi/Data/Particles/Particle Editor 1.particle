@@ -4,6 +4,60 @@
       "LODLevels" : [{
           "Level" : 0,
           "Modules" : [{
+              "LifeTime" : {
+                "constant" : 1.000000,
+                "curve" : {
+                  "keys" : [{
+                      "time" : 0.000000,
+                      "value" : 1.000000
+                    }, {
+                      "time" : 1.000000,
+                      "value" : 1.000000
+                    }]
+                },
+                "max" : 2.000000,
+                "min" : 1.000000,
+                "operation" : 1
+              },
+              "Type" : "UParticleModuleLifetime",
+              "bEnabled" : true
+            }, {
+              "StartSize" : {
+                "constant" : [1.000000, 1.000000, 1.000000],
+                "curveX" : {
+                  "keys" : [{
+                      "time" : 0.000000,
+                      "value" : 1.000000
+                    }, {
+                      "time" : 1.000000,
+                      "value" : 1.000000
+                    }]
+                },
+                "curveY" : {
+                  "keys" : [{
+                      "time" : 0.000000,
+                      "value" : 1.000000
+                    }, {
+                      "time" : 1.000000,
+                      "value" : 1.000000
+                    }]
+                },
+                "curveZ" : {
+                  "keys" : [{
+                      "time" : 0.000000,
+                      "value" : 1.000000
+                    }, {
+                      "time" : 1.000000,
+                      "value" : 1.000000
+                    }]
+                },
+                "max" : [5.000000, 5.000000, 5.000000],
+                "min" : [2.000000, 2.000000, 2.000000],
+                "operation" : 0
+              },
+              "Type" : "UParticleModuleSize",
+              "bEnabled" : true
+            }, {
               "StartColor" : {
                 "constant" : [1.000000, 1.000000, 1.000000],
                 "curveX" : {
@@ -40,25 +94,7 @@
               "Type" : "UParticleModuleColor",
               "bEnabled" : true
             }, {
-              "LifeTime" : {
-                "constant" : 2.000000,
-                "curve" : {
-                  "keys" : [{
-                      "time" : 0.000000,
-                      "value" : 1.000000
-                    }, {
-                      "time" : 1.000000,
-                      "value" : 1.000000
-                    }]
-                },
-                "max" : 1.000000,
-                "min" : 0.000000,
-                "operation" : 0
-              },
-              "Type" : "UParticleModuleLifetime",
-              "bEnabled" : true
-            }, {
-              "SpawnLocation" : {
+              "StartRotation" : {
                 "constant" : [0.000000, 0.000000, 0.000000],
                 "curveX" : {
                   "keys" : [{
@@ -87,92 +123,11 @@
                       "value" : 1.000000
                     }]
                 },
-                "max" : [1.000000, 1.000000, 1.000000],
+                "max" : [90.000000, 0.000000, 0.000000],
                 "min" : [0.000000, 0.000000, 0.000000],
                 "operation" : 0
               },
-              "Type" : "UParticleModuleLocation",
-              "bEnabled" : true
-            }, {
-              "StartSize" : {
-                "constant" : [1.000000, 1.000000, 1.000000],
-                "curveX" : {
-                  "keys" : [{
-                      "time" : 0.000000,
-                      "value" : 1.000000
-                    }, {
-                      "time" : 0.134722,
-                      "value" : 4.434783
-                    }, {
-                      "time" : 0.208333,
-                      "value" : 8.260869
-                    }, {
-                      "time" : 0.601389,
-                      "value" : 9.565218
-                    }, {
-                      "time" : 0.804167,
-                      "value" : 0.826087
-                    }, {
-                      "time" : 1.000000,
-                      "value" : 0.000000
-                    }]
-                },
-                "curveY" : {
-                  "keys" : [{
-                      "time" : 0.000000,
-                      "value" : 1.000000
-                    }, {
-                      "time" : 0.195833,
-                      "value" : 5.913043
-                    }, {
-                      "time" : 0.580556,
-                      "value" : 9.695652
-                    }, {
-                      "time" : 0.791667,
-                      "value" : 3.695652
-                    }, {
-                      "time" : 1.000000,
-                      "value" : 0.000000
-                    }]
-                },
-                "curveZ" : {
-                  "keys" : [{
-                      "time" : 0.000000,
-                      "value" : 1.000000
-                    }, {
-                      "time" : 0.129167,
-                      "value" : 0.782609
-                    }, {
-                      "time" : 0.206944,
-                      "value" : 6.304348
-                    }, {
-                      "time" : 0.319444,
-                      "value" : 3.652174
-                    }, {
-                      "time" : 0.465278,
-                      "value" : 6.000000
-                    }, {
-                      "time" : 0.601389,
-                      "value" : 1.565217
-                    }, {
-                      "time" : 0.686111,
-                      "value" : 5.913043
-                    }, {
-                      "time" : 0.783333,
-                      "value" : 1.304348
-                    }, {
-                      "time" : 0.879167,
-                      "value" : 5.478261
-                    }, {
-                      "time" : 1.000000,
-                      "value" : 3.434783
-                    }]
-                },
-                "max" : [5.000000, 5.000000, 5.000000],
-                "min" : [2.000000, 2.000000, 2.000000],
-                "operation" : 2
-              },
-              "Type" : "UParticleModuleSize",
+              "Type" : "UParticleModuleRotation",
               "bEnabled" : true
             }, {
               "StartVelocity" : {
@@ -211,7 +166,7 @@
               "Type" : "UParticleModuleVelocity",
               "bEnabled" : true
             }, {
-              "StartRotation" : {
+              "RotationRate" : {
                 "constant" : [0.000000, 0.000000, 0.000000],
                 "curveX" : {
                   "keys" : [{
@@ -226,6 +181,9 @@
                   "keys" : [{
                       "time" : 0.000000,
                       "value" : 1.000000
+                    }, {
+                      "time" : 0.451389,
+                      "value" : 248.719284
                     }, {
                       "time" : 1.000000,
                       "value" : 1.000000
@@ -244,7 +202,7 @@
                 "min" : [0.000000, 0.000000, 0.000000],
                 "operation" : 2
               },
-              "Type" : "UParticleModuleRotation",
+              "Type" : "UParticleModuleRotationRate",
               "bEnabled" : true
             }],
           "PeakActiveParticles" : 0,
@@ -253,18 +211,19 @@
             "EmitterDuration" : 2.000000,
             "EmitterLoops" : 0,
             "MaterialData" : {
-              "DiffuseTexture" : "Data/Textures/gameover.png",
+              "DiffuseTexture" : "",
               "NormalTexture" : "",
               "ShaderPath" : "Shaders/UI/Billboard.hlsl",
               "SpecularTexture" : ""
             },
+            "MaxActiveParticles" : 52,
             "Type" : "UParticleModuleRequired",
             "bEnabled" : true,
-            "bUseLocalSpace" : false
+            "bUseLocalSpace" : true
           },
           "SpawnModule" : {
             "SpawnRate" : {
-              "constant" : 10.000000,
+              "constant" : 30.400000,
               "curve" : {
                 "keys" : [{
                     "time" : 0.000000,
@@ -281,9 +240,15 @@
             "Type" : "UParticleModuleSpawn",
             "bEnabled" : true
           },
-          "SpawnModuleIndices" : [0, 1, 2, 3, 4, 5],
+          "SpawnModuleIndices" : [0, 1, 2, 3, 4],
           "Type" : "UParticleLODLevel",
-          "UpdateModuleIndices" : [],
+          "TypeDataModule" : {
+            "StaticMesh" : {
+              "StaticMeshPath" : "Data/Model/smokegrenade.obj"
+            },
+            "Type" : "UParticleModuleTypeDataMesh"
+          },
+          "UpdateModuleIndices" : [5],
           "bEnabled" : true
         }],
       "MeshMaterials" : [],

@@ -11,7 +11,7 @@ public:
 
 	FRawDistributionVector StartColor{ EDistributionMode::DOP_Uniform, FVector(), FVector(), FVector(1,1,1)};
 
-	UParticleModuleColor() = default;
+	UParticleModuleColor();
 
 	void Spawn(const FSpawnContext& SpawnContext) override;
 

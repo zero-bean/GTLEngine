@@ -12,7 +12,7 @@ public:
 
 	FRawDistributionFloat LifeTime{ EDistributionMode::DOP_Uniform, 1.0f, 0.0f, 1.0f };
 
-	UParticleModuleLifetime() = default;
+	UParticleModuleLifetime();
 
 	void Spawn(const FSpawnContext& SpawnContext) override;
 

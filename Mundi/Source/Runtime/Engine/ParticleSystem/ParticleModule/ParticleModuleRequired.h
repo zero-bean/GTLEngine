@@ -38,7 +38,7 @@ public:
 
 	EParticleSortMode SortMode = EParticleSortMode::None;
 
-	UParticleModuleRequired() = default;
+	UParticleModuleRequired();
 
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 };

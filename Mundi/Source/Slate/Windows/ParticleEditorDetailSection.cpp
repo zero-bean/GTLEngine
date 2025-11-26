@@ -13,6 +13,7 @@
 #include "ParticleModuleLocation.h"
 #include "ParticleModuleVelocity.h"
 #include "ParticleModuleRotation.h"
+#include "ParticleModuleRotationRate.h"
 #include "ParticleSystemComponent.h"
 #include "ParticleModuleTypeDataMesh.h"
 #include "ParticleEmitterInstances.h"
@@ -372,6 +373,17 @@ void FParticleEditorDetailSection::Draw(const FParticleEditorSectionContext& Con
         {
             AddModule(ActiveState, LODLevel, "UParticleModuleRotation");
         }
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+        ImGui::Text("Update Modules");
+        ImGui::Separator();
+        if (ImGui::MenuItem("RotationRate"))
+        {
+            AddModule(ActiveState, LODLevel, "UParticleModuleRotationRate");
+        }
+
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+        ImGui::Text("Type Data Modules");
+        ImGui::Separator();
         if (ImGui::MenuItem("Type Data Mesh"))
         {
             AddModule(ActiveState, LODLevel, "UParticleModuleTypeDataMesh");
@@ -746,6 +758,12 @@ void FParticleEditorDetailSection::AddModule(ParticleEditorState* State, UPartic
         RotationModule->StartRotation.Constant = 0.0f;
         NewModule = RotationModule;
     }
+    else if (strcmp(ModuleClassName, "UParticleModuleRotationRate") == 0)
+    {
+        UParticleModuleRotationRate* RotationRateModule = NewObject<UParticleModuleRotationRate>();
+        RotationRateModule->RotationRate.Operation = EDistributionMode::DOP_Curve;
+        NewModule = RotationRateModule;
+    }
     else if (strcmp(ModuleClassName, "UParticleModuleTypeDataMesh") == 0)
     {
         UParticleModuleTypeDataMesh* MeshModule = NewObject<UParticleModuleTypeDataMesh>();
@@ -769,7 +787,14 @@ void FParticleEditorDetailSection::AddModule(ParticleEditorState* State, UPartic
     if (!Cast<UParticleModuleTypeDataBase>(NewModule))
     {
         LODLevel->Modules.Add(NewModule);
-        LODLevel->SpawnModules.Add(NewModule);
+        if (NewModule->bSpawn)
+        {
+            LODLevel->SpawnModules.Add(NewModule);
+        }
+        if (NewModule->bUpdate)
+        {
+            LODLevel->UpdateModules.Add(NewModule);
+        }
         State->SelectedModuleSelection = EParticleDetailSelection::Module;
         State->SelectedModuleIndex = LODLevel->Modules.Num() - 1;
     }
@@ -1106,6 +1131,10 @@ void FParticleEditorDetailSection::DrawModuleProperties(UParticleModule* Module,
         else if (UParticleModuleRotation* RotMod = dynamic_cast<UParticleModuleRotation*>(Module))
         {
             DrawDistributionVector("Start Rotation (Degrees)", RotMod->StartRotation, -360.0f, 360.0f);
+        }
+        else if (UParticleModuleRotationRate* RotRateMod = dynamic_cast<UParticleModuleRotationRate*>(Module))
+        {
+            DrawDistributionVector("Rotation Rate (Degrees)", RotRateMod->RotationRate, -360.0f, 360.0f);
         }
 
         ImGui::PopID();

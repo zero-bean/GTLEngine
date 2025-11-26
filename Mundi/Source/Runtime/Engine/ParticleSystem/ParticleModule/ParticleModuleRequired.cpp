@@ -1,6 +1,12 @@
 ﻿#include "pch.h"
 #include "ParticleModuleRequired.h"
 
+UParticleModuleRequired::UParticleModuleRequired()
+{
+	bUpdate = false;
+	bSpawn = false;
+}
+
 void UParticleModuleRequired::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
 	Super::Serialize(bInIsLoading, InOutHandle);

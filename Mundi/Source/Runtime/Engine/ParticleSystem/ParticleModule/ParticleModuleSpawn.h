@@ -18,7 +18,7 @@ public:
 
 	FRawDistributionFloat SpawnRate{ EDistributionMode::DOP_Constant, 10.0f, 0.0f, 0.0f };
 	
-	UParticleModuleSpawn() = default;
+	UParticleModuleSpawn();
 
 	uint32 RequiredBytesPerInstance() override;
 
