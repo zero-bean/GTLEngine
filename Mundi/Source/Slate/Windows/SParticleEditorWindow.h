@@ -26,6 +26,7 @@ public:
     void OnRenderViewport();
     void CreateNewTab();
     void RequestColorPickerFocus();
+    void LoadParticleSystem(class UParticleSystem* ParticleSystem);
 
     bool IsOpen() const { return bIsOpen; }
     void Close() { bIsOpen = false; }

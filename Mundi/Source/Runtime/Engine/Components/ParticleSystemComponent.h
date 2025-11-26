@@ -18,6 +18,9 @@ public:
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 
 	UPROPERTY(EditAnywhere, Category = "Particle")
+	FString ParticleSystemAssetPath;
+
+	UPROPERTY(EditAnywhere, Category = "Particle")
 	UParticleSystem* Template = nullptr;
 
 	void CollectMeshBatches(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
@@ -27,6 +30,8 @@ public:
 	~UParticleSystemComponent();
 
 	void SetTemplate(UParticleSystem* InTemplate);
+
+	void LoadParticleSystemFromAssetPath();
 
 	void DestroyEmitterInstances();
 

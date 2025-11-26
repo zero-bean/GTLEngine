@@ -251,7 +251,7 @@ void USlateManager::CloseAnimationGraphEditor()
     AnimationGraphEditorWindow = nullptr;
 }
 
-void USlateManager::OpenParticleEditor()
+void USlateManager::OpenParticleEditor(UParticleSystem* ParticleSystem)
 {
     if (ParticleEditorWindow) { return; }
 
@@ -265,6 +265,12 @@ void USlateManager::OpenParticleEditor()
     const float x = Rect.Left + (Rect.GetWidth() - Width) * 0.5f;
     const float y = Rect.Top + ToolbarHeight + (AvailableHeight - Height) * 0.5f;
     ParticleEditorWindow->Initialize(x, y, Width, Height, World, Device);
+
+    // ParticleSystem이 전달되면 해당 시스템을 로드
+    if (ParticleSystem)
+    {
+        ParticleEditorWindow->LoadParticleSystem(ParticleSystem);
+    }
 }
 
 void USlateManager::CloseParticleEditor()

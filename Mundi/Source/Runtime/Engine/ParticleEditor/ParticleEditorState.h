@@ -26,6 +26,7 @@ public:
 
     // Particle system and emitter references
     UParticleSystem* CurrentParticleSystem = nullptr;
+    bool bOwnsParticleSystem = false; // True if we created it and should delete it
     FString LoadedParticleSystemPath;
     int32 SelectedEmitterIndex = -1;
 

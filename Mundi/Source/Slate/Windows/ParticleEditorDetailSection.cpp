@@ -743,21 +743,60 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
         // Material/Texture 선택
         DrawPropertyRow("Material", [&]()
         {
-            // 현재 Material 경로 표시
-            const char* CurrentMaterialName = Module->Material ? Module->Material->GetFilePath().c_str() : "None";
+            // 현재 Material 경로에서 파일명만 추출
+            FString CurrentMaterialPath = "";
+            FString CurrentMaterialFileName = "None";
+
+            if (Module->Material)
+            {
+                CurrentMaterialPath = Module->Material->GetFilePath();
+                if (!CurrentMaterialPath.empty())
+                {
+                    // 파일명만 추출 (경로 제거)
+                    std::filesystem::path filePath(CurrentMaterialPath);
+                    CurrentMaterialFileName = filePath.filename().string();
+                }
+                else
+                {
+                    // 동적으로 생성된 Material의 경우 텍스처 파일명 표시
+                    const FMaterialInfo& MatInfo = Module->Material->GetMaterialInfo();
+                    if (!MatInfo.DiffuseTextureFileName.empty())
+                    {
+                        std::filesystem::path texPath(MatInfo.DiffuseTextureFileName);
+                        CurrentMaterialFileName = texPath.filename().string();
+                        CurrentMaterialPath = MatInfo.DiffuseTextureFileName;
+                    }
+                }
+            }
 
             // 버튼 크기 계산
             float availableWidth = ImGui::GetContentRegionAvail().x;
             float buttonWidth = 60.0f;
             float textWidth = availableWidth - buttonWidth - 8.0f;
 
-            // Material 이름 표시 (읽기 전용)
+            // Material 파일명 표시 (읽기 전용, 비활성화)
             ImGui::PushItemWidth(textWidth);
-            ImGui::InputText("##MaterialPath", const_cast<char*>(CurrentMaterialName), strlen(CurrentMaterialName) + 1, ImGuiInputTextFlags_ReadOnly);
+            ImGui::BeginDisabled(true);
+            char buffer[512];
+            strncpy_s(buffer, sizeof(buffer), CurrentMaterialFileName.c_str(), _TRUNCATE);
+            ImGui::InputText("##MaterialPath", buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
+            ImGui::EndDisabled();
+
+            // 호버 시 전체 경로를 툴팁으로 표시
+            if (ImGui::IsItemHovered() && Module->Material && !CurrentMaterialPath.empty())
+            {
+                ImGui::BeginTooltip();
+                ImGui::TextUnformatted(CurrentMaterialPath.c_str());
+                ImGui::EndTooltip();
+            }
+
             ImGui::PopItemWidth();
 
-            // Browse 버튼
+            // Browse 버튼 - 배경색을 더 진하게
             ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
             if (ImGui::Button("Browse##MaterialBrowse", ImVec2(buttonWidth, 0)))
             {
                 // 스프라이트 타입: 텍스처 선택 후 Billboard Material 생성
@@ -823,6 +862,7 @@ void FParticleEditorDetailSection::DrawRequiredModuleProperties(UParticleModuleR
                     }
                 }
             }
+            ImGui::PopStyleColor(3);  // Browse 버튼 색상 복원
         });
 
         DrawPropertyRow("Emitter Duration", [&]() { ImGui::DragFloat("##EmitterDuration", &Module->EmitterDuration, 0.1f, 0.0f, 100.0f); });

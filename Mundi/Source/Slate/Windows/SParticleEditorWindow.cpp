@@ -7,6 +7,17 @@
 #include "UIManager.h"
 #include "ParticleEditorState.h"
 #include "ParticleEditorBootstrap.h"
+#include "ParticleSystem.h"
+#include "ParticleEmitter.h"
+#include "ParticleLODLevel.h"
+#include "ParticleModule/ParticleModuleRequired.h"
+#include "ParticleModule/ParticleModuleSpawn.h"
+#include "ParticleModule/ParticleModuleLifetime.h"
+#include "ParticleModule/ParticleModuleSize.h"
+#include "ParticleModule/ParticleModuleColor.h"
+#include "ResourceManager.h"
+#include "Material.h"
+#include "Shader.h"
 
 SParticleEditorWindow::SParticleEditorWindow()
 {
@@ -524,6 +535,122 @@ void SParticleEditorWindow::SetColorPickerSpawnPosition(const FVector2D& ScreenP
 {
     ColorPickerSpawnPos = ScreenPos;
     bColorPickerSpawnPosValid = true;
+}
+
+void SParticleEditorWindow::LoadParticleSystem(UParticleSystem* ParticleSystem)
+{
+    if (!ActiveState)
+    {
+        return;
+    }
+
+    // 기존 파티클 시스템 제거 (단, 우리가 소유한 경우만)
+    if (ActiveState->CurrentParticleSystem && ActiveState->bOwnsParticleSystem)
+    {
+        DeleteObject(ActiveState->CurrentParticleSystem);
+        ActiveState->CurrentParticleSystem = nullptr;
+        ActiveState->bOwnsParticleSystem = false;
+    }
+    else
+    {
+        // 소유하지 않은 경우 참조만 제거
+        ActiveState->CurrentParticleSystem = nullptr;
+        ActiveState->bOwnsParticleSystem = false;
+    }
+
+    // None이 전달된 경우 기본 빈 파티클 시스템 생성
+    if (!ParticleSystem)
+    {
+        // ParticleEditorBootstrap::CreateEditorState와 동일한 방식으로 기본 시스템 생성
+        ActiveState->CurrentParticleSystem = NewObject<UParticleSystem>();
+        ActiveState->bOwnsParticleSystem = true; // 우리가 생성했으므로 소유권 설정
+        ActiveState->LoadedParticleSystemPath = "";
+
+        // 기본 Sprite Emitter 생성
+        UParticleEmitter* DefaultEmitter = NewObject<UParticleEmitter>();
+
+        // LOD Level 0 생성
+        UParticleLODLevel* LODLevel = NewObject<UParticleLODLevel>();
+        LODLevel->Level = 0;
+        LODLevel->bEnabled = true;
+        DefaultEmitter->LODLevels.Add(LODLevel);
+
+        // Required Module (필수)
+        UParticleModuleRequired* Required = NewObject<UParticleModuleRequired>();
+
+        // 기본 Material 생성
+        UMaterial* DefaultMaterial = NewObject<UMaterial>();
+        UShader* BillboardShader = UResourceManager::GetInstance().Load<UShader>("Shaders/UI/Billboard.hlsl");
+        if (BillboardShader)
+        {
+            DefaultMaterial->SetShader(BillboardShader);
+        }
+        Required->Material = DefaultMaterial;
+        Required->EmitterDuration = 2.0f;
+        Required->EmitterLoops = 0;
+        LODLevel->RequiredModule = Required;
+
+        // Spawn Module (필수)
+        UParticleModuleSpawn* SpawnModule = NewObject<UParticleModuleSpawn>();
+        SpawnModule->SpawnRate.Operation = EDistributionMode::DOP_Constant;
+        SpawnModule->SpawnRate.Constant = 30.0f;
+        LODLevel->SpawnModule = SpawnModule;
+
+        // 기본 모듈들 추가
+        UParticleModuleLifetime* LifetimeModule = NewObject<UParticleModuleLifetime>();
+        LifetimeModule->LifeTime.Operation = EDistributionMode::DOP_Uniform;
+        LifetimeModule->LifeTime.Min = 1.0f;
+        LifetimeModule->LifeTime.Max = 2.0f;
+
+        UParticleModuleSize* SizeModule = NewObject<UParticleModuleSize>();
+        SizeModule->StartSize.Operation = EDistributionMode::DOP_Constant;
+        SizeModule->StartSize.Constant = FVector(1.0f, 1.0f, 1.0f);
+
+        UParticleModuleColor* ColorModule = NewObject<UParticleModuleColor>();
+        ColorModule->StartColor.Operation = EDistributionMode::DOP_Constant;
+        ColorModule->StartColor.Constant = FVector(1.0f, 1.0f, 1.0f);
+
+        // Modules 배열에 추가
+        LODLevel->Modules.Add(LifetimeModule);
+        LODLevel->Modules.Add(SizeModule);
+        LODLevel->Modules.Add(ColorModule);
+
+        // SpawnModules 배열에 추가
+        LODLevel->SpawnModules.Add(LifetimeModule);
+        LODLevel->SpawnModules.Add(SizeModule);
+        LODLevel->SpawnModules.Add(ColorModule);
+
+        LODLevel->TypeDataModule = nullptr;
+
+        // Emitter 정보 캐싱
+        DefaultEmitter->CacheEmitterModuleInfo();
+
+        // ParticleSystem에 기본 Emitter 추가
+        ActiveState->CurrentParticleSystem->Emitters.Add(DefaultEmitter);
+
+        // 첫 번째 Emitter 자동 선택
+        ActiveState->SelectedEmitterIndex = 0;
+    }
+    else
+    {
+        // 파티클 시스템 참조 설정 (외부에서 전달받은 것이므로 소유권 없음)
+        ActiveState->CurrentParticleSystem = ParticleSystem;
+        ActiveState->bOwnsParticleSystem = false; // 외부 참조이므로 소유권 없음
+        ActiveState->LoadedParticleSystemPath = "";
+
+        // 첫 번째 Emitter 선택 (있으면)
+        if (ParticleSystem->Emitters.Num() > 0)
+        {
+            ActiveState->SelectedEmitterIndex = 0;
+        }
+        else
+        {
+            ActiveState->SelectedEmitterIndex = -1;
+        }
+    }
+
+    // 프리뷰 업데이트
+    ActiveState->UpdatePreviewParticleSystem();
 }
 
 bool SParticleEditorWindow::DrawSplitter(const char* Id, bool bVertical, float Length, 
