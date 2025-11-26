@@ -651,9 +651,16 @@ void SParticleEditorWindow::LoadParticleSystem(UParticleSystem* ParticleSystem)
     }
     else
     {
-        // 파티클 시스템 참조 설정 (외부에서 전달받은 것이므로 소유권 없음)
-        ActiveState->CurrentParticleSystem = ParticleSystem;
-        ActiveState->bOwnsParticleSystem = false; // 외부 참조이므로 소유권 없음
+        // JSON을 통한 Deep Copy
+        JSON TempJson = JSON::Make(JSON::Class::Object);
+        ParticleSystem->Serialize(false, TempJson); // 저장
+
+        // 새로운 ParticleSystem 생성 및 로드
+        UParticleSystem* CopiedSystem = NewObject<UParticleSystem>();
+        CopiedSystem->Serialize(true, TempJson); // 복원
+
+        ActiveState->CurrentParticleSystem = CopiedSystem;
+        ActiveState->bOwnsParticleSystem = true; // 우리가 복사본을 생성했으므로 소유권 설정
         ActiveState->LoadedParticleSystemPath = "";
 
         // 첫 번째 Emitter 선택 (있으면)
