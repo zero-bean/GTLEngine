@@ -11,7 +11,7 @@ void UParticleSystemComponent::CollectMeshBatches(TArray<FMeshBatchElement>& Mes
 	for (FParticleEmitterInstance* EmitterInstance : EmitterInstances)
 	{
 		EmitterInstance->FillMeshBatch(MeshBatch, View);
-	}
+	}	
 }
 
 UParticleSystemComponent::UParticleSystemComponent()
@@ -102,7 +102,7 @@ void UParticleSystemComponent::InitParticles()
 		{
 			FParticleEmitterInstance* NewInstance = Emitter->CreateInstance(this);
 			// 테스트용 텍스처
-			NewInstance->InstanceSRV = UResourceManager::GetInstance().Load<UTexture>(GDataDir + "/Textures/jin.png")->GetShaderResourceView();
+			// NewInstance->InstanceSRV = UResourceManager::GetInstance().Load<UTexture>(GDataDir + "/Textures/jin.png")->GetShaderResourceView();
 
 			NewInstance->Init();
 

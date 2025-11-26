@@ -12,6 +12,7 @@ class UBillboardComponent;
 class UPrimitiveComponent;
 class UCameraComponent;
 class FSceneView;
+class FDynamicVertexBuffer;
 
 struct FMaterialSlot;
 
@@ -51,9 +52,11 @@ public:
 
 	void SetCurrentCamera(ACameraActor* InCamera) { CurrentCamera = InCamera; }
 	ACameraActor* GetCurrentCamera() const { return CurrentCamera; }
+	FDynamicVertexBuffer* GetDynamicVertexBuffer() const { return DynamicVertexBuffer; }
 
 private:
 	D3D11RHI* RHIDevice;    // NOTE: 개발 편의성을 위해서 DX11를 종속적으로 사용한다 (URHIDevice를 사용하지 않음)
+	FDynamicVertexBuffer* DynamicVertexBuffer = nullptr;
 
 	// Current viewport size (per FViewport draw); 0 if unset
 

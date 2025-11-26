@@ -1,8 +1,8 @@
 #pragma once
 #include "ParticleModuleTypeDataBase.h"
+#include "Distribution.h"
 #include "UParticleModuleTypeDataBeam.generated.h"
 
-struct FRawDistributionFloat;
 
 // 빔 종류
 enum class EBeamMethod : uint8
@@ -27,8 +27,7 @@ enum class EBeamTaperMethod : uint8
 };
 
 UCLASS(DisplayName = "빔 파티클 모듈 타입 데이터", Description = "")
-class
-UParticleModuleTypeDataBeam : public UParticleModuleTypeDataBase
+class UParticleModuleTypeDataBeam : public UParticleModuleTypeDataBase
 {
 public:
     GENERATED_REFLECTION_BODY()
@@ -76,8 +75,9 @@ public:
     FRawDistributionFloat TaperScale;
 
     // 언리얼은 모듈로 되어 있는데 간단한 구현을 위해 FVector 사용
-    FVector Source;
-    FVector Target;
+    FVector SourcePosition;
+    FVector TargetPosition;
+    FVector SourceTangent;
+    FVector TargetTangent;
 
-    FVector4 Color;
 };

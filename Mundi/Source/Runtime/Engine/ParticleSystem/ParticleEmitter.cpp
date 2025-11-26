@@ -31,7 +31,7 @@ FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemCompon
 	FParticleEmitterInstance* NewInstance = nullptr;
 	if (LODLevels[0]->TypeDataModule)
 	{
-		NewInstance = new FParticleMeshEmitterInstance(InOwnerComponent);
+		NewInstance = new FParticleBeamEmitterInstance(InOwnerComponent);
 	}
 	else
 	{

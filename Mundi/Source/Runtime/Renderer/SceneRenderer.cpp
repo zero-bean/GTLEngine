@@ -40,6 +40,8 @@
 #include "ResourceManager.h"
 #include "../RHI/ConstantBufferType.h"
 #include <chrono>
+
+#include "DynamicVertexBuffer.h"
 #include "TileLightCuller.h"
 #include "LineComponent.h"
 #include "LightStats.h"
@@ -1346,10 +1348,16 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 	for (const FMeshBatchElement& Batch : InMeshBatches)
 	{
 		// --- 필수 요소 유효성 검사 ---
-		if (!Batch.VertexShader || !Batch.PixelShader || !Batch.VertexBuffer || !Batch.IndexBuffer || Batch.VertexStride == 0)
+		bool bHasStaticMesh = Batch.VertexBuffer != nullptr;
+		bool bHasDymicMesh = (Batch.DynamicVertexData != nullptr) && (Batch.DynamicVertexCount > 0);
+		bool bHasShader = Batch.VertexShader && Batch.PixelShader && Batch.InputLayout;
+		bool bHasGeometry = (bHasStaticMesh || bHasDymicMesh);
+		bool bValidIndex = (!Batch.bUseIndexBuffer || Batch.IndexBuffer);
+		bool bValidStride = Batch.VertexStride > 0;
+
+		if (!(bHasGeometry && bHasShader && bValidIndex && bValidStride))
 		{
-			// 셰이더나 버퍼, 스트라이드 정보가 없으면 그릴 수 없음
-			//UE_LOG("[%s] 머티리얼에 셰이더가 컴파일에 실패했거나 없습니다!", Batch.Material->GetFilePath().c_str());	// NOTE: 로그가 매 프레임 떠서 셰이더 컴파일 에러 로그를 볼 수 없어서 주석 처리
+			UE_LOG("[FSceneRenderer/DrawMeshBatches] 렌더링 요소가 유효하지 않음");
 			continue;
 		}
 
@@ -1447,10 +1455,11 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 		}
 
 		// 3. IA (Input Assembler) 상태 변경
-		if (Batch.VertexBuffer != CurrentVertexBuffer ||
+		if (!Batch.DynamicVertexData &&
+			(Batch.VertexBuffer != CurrentVertexBuffer ||
 			Batch.IndexBuffer != CurrentIndexBuffer ||
 			Batch.VertexStride != CurrentVertexStride ||
-			Batch.PrimitiveTopology != CurrentTopology)
+			Batch.PrimitiveTopology != CurrentTopology))
 		{
 			UINT Stride = Batch.VertexStride;
 			UINT Offset = 0;
@@ -1466,6 +1475,12 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 			CurrentVertexBuffer = Batch.VertexBuffer;
 			CurrentIndexBuffer = Batch.IndexBuffer;
 			CurrentVertexStride = Batch.VertexStride;
+			CurrentTopology = Batch.PrimitiveTopology;
+		}
+		// 동적 메시인 경우 토폴로지 검사
+		else if (Batch.DynamicVertexData && Batch.PrimitiveTopology != CurrentTopology)
+		{
+			RHIDevice->GetDeviceContext()->IASetPrimitiveTopology(Batch.PrimitiveTopology);
 			CurrentTopology = Batch.PrimitiveTopology;
 		}
 
@@ -1494,6 +1509,33 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 			RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual);
 			RHIDevice->OMSetBlendState(false);
 			RHIDevice->RSSetState(ERasterizerMode::Solid);
+		}
+		// 빔, 리본
+		else if (Batch.DynamicVertexData && Batch.DynamicVertexCount > 0)
+		{
+			if (Batch.BlendType != EBlendType::Opaque)
+			{
+				RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqualReadOnly);
+				RHIDevice->OMSetBlendState(true);
+				RHIDevice->RSSetState(ERasterizerMode::Solid_NoCull);
+			}
+			FDynamicVertexBuffer* DynamicVertexBuffer = OwnerRenderer->GetDynamicVertexBuffer();
+			uint32 VertexOffset = 0;			
+			if (void* DataPtr = DynamicVertexBuffer->Lock(Batch.DynamicVertexCount, Batch.VertexStride, VertexOffset))
+			{
+				memcpy(DataPtr, Batch.DynamicVertexData, Batch.DynamicVertexCount * Batch.VertexStride);
+				DynamicVertexBuffer->Unlock();
+
+				UINT Stride = Batch.VertexStride;
+				UINT Offset = 0;
+				ID3D11Buffer* VertexBuffer = DynamicVertexBuffer->GetVertexBuffer();
+				RHIDevice->GetDeviceContext()->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+				RHIDevice->GetDeviceContext()->Draw(Batch.DynamicVertexCount, VertexOffset);
+
+				RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual);
+				RHIDevice->OMSetBlendState(false);
+				RHIDevice->RSSetState(ERasterizerMode::Solid);
+			}			
 		}
 		else
 		{

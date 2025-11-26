@@ -34,6 +34,7 @@
 
 #include <Windows.h>
 #include "DirectionalLightComponent.h"
+#include "DynamicVertexBuffer.h"
 
 #define MAX_PARTICLES 1000
 
@@ -43,6 +44,11 @@ URenderer::URenderer(D3D11RHI* InDevice) : RHIDevice(InDevice)
 
 	constexpr uint32 InstanceBytes = sizeof(FSpriteParticleInstance) * MAX_PARTICLES;
 	InDevice->CreateVertexBufferWithSize(InDevice->GetDevice(), &ParticleInstanceBuffer, InstanceBytes, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
+	DynamicVertexBuffer = new FDynamicVertexBuffer;
+	if (DynamicVertexBuffer)
+	{
+		DynamicVertexBuffer->Initialize(InDevice);
+	}
 }
 
 URenderer::~URenderer()
@@ -54,6 +60,11 @@ URenderer::~URenderer()
 	if (ParticleInstanceBuffer)
 	{
 		ParticleInstanceBuffer->Release();
+	}
+
+	if (DynamicVertexBuffer)
+	{
+		delete DynamicVertexBuffer;
 	}
 }
 

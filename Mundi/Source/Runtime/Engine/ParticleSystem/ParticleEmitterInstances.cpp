@@ -552,39 +552,155 @@ FParticleBeamEmitterInstance::FParticleBeamEmitterInstance(UParticleSystemCompon
 
 void FParticleBeamEmitterInstance::GetParticleInstanceData(TArray<FBeamParticleInstance>& ParticleInstanceData)
 {
-	// loop 안돔, 이미 BuildMesh에서 계산 완료
-	ParticleInstanceData = RenderVertices;
+	BEGIN_UPDATE_LOOP
+	
+	END_UPDATE_LOOP
+}
+
+void FParticleBeamEmitterInstance::Init()
+{
+	FParticleEmitterInstance::Init();
+	
+	if (CurrentLODLevel && CurrentLODLevel->TypeDataModule)
+	{
+		BeamTypeData = dynamic_cast<UParticleModuleTypeDataBeam*>(CurrentLODLevel->TypeDataModule);
+	}
+	
+	if (!BeamTypeData)
+	{
+		return;
+	}
+	
+	SourcePosition = SourceActor ? SourceActor->GetActorLocation() : BeamTypeData->SourcePosition;
+	
+	TargetPosition = TargetActor ? TargetActor->GetActorLocation() : BeamTypeData->TargetPosition;
+	
+	SourceTangent = BeamTypeData->SourceTangent;
+	TargetTangent = BeamTypeData->TargetTangent;
+
+	BaseWidth = BeamTypeData->BaseWidth;
+
+	BeamLength = FVector::Distance(SourcePosition, TargetPosition);
+	// 스피드가 0보다 작으면 자라지 않고 바로 생성
+	CurrentTravelDistance = (BeamTypeData->Speed > 0) ? 0.0f : FLT_MAX;
+
+	BuildBeamPoints();
+}
+
+void FParticleBeamEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
+{
+	FParticleEmitterInstance::Tick(DeltaTime, bSuppressSpawning);
+
+	FMatrix WorldMatrix = OwnerComponent->GetWorldMatrix();
+	if (SourceActor)
+	{
+		// 액터는 월드 좌표
+		SourcePosition = SourceActor->GetActorLocation();
+		SourceTangent = SourceActor->GetActorRotation().RotateVector(BeamTypeData->SourceTangent);
+	}
+	else
+	{
+		// 월드 변환
+		SourcePosition = WorldMatrix.TransformPosition(BeamTypeData->SourcePosition);
+		SourceTangent = WorldMatrix.TransformPosition(BeamTypeData->SourceTangent);
+	}
+
+	if (TargetActor)
+	{
+		TargetPosition = TargetActor->GetActorLocation();
+		TargetTangent = TargetActor->GetActorRotation().RotateVector(BeamTypeData->TargetTangent);
+	}
+	else
+	{
+		TargetPosition = WorldMatrix.TransformPosition(BeamTypeData->TargetPosition);
+		TargetTangent = WorldMatrix.TransformPosition(BeamTypeData->TargetTangent);
+	}
+
+	BeamLength = FVector::Distance(SourcePosition, TargetPosition);
+	if (BeamTypeData->Speed > 0)
+	{
+		CurrentTravelDistance += BeamTypeData->Speed * DeltaTime;
+
+		CurrentTravelDistance = FMath::Min(CurrentTravelDistance, BeamLength);
+	}
+	else
+	{
+		CurrentTravelDistance = FLT_MAX;
+	}
+
+	BuildBeamPoints();
 }
 
 void FParticleBeamEmitterInstance::BuildBeamPoints()
 {
+	// InterpolationPoints가 0 이하이면 TotalPoints가 2 이하가 된다.
+	// TotalPoints는 시작점, 끝점이 무조건 존재해야 하므로 최소 2 이상
+	int32 Count = FMath::Max(BeamTypeData->InterpolationPoints, 0);
 	// 보간 점 + 시작점 + 끝 점
-	int32 TotalPoints = BeamTypeData->InterpolationPoints + 2;
+	int32 TotalPoints = Count + 2;	
 	
 	BeamPoints.Empty();
 	BeamPoints.SetNum(TotalPoints);
 
+	float EstimatedTotalLength = BeamLength;
+	if (EstimatedTotalLength < KINDA_SMALL_NUMBER)
+	{
+		EstimatedTotalLength = 1.0f;
+	}
+
 	// 베지어 곡선의 각 정점
-	FVector P0 = SourcePosition;
-	FVector P1 = SourcePosition + SourceTangent;
-	FVector P2 = TargetPosition - TargetTangent;
-	FVector P3 = TargetPosition;
+	const FVector P0 = SourcePosition;
+	const FVector P1 = SourcePosition + SourceTangent;
+	const FVector P2 = TargetPosition - TargetTangent;
+	const FVector P3 = TargetPosition;	
+	auto BezierCurve = [&](float t) -> FVector
+	{
+		// 3차 베지어 곡선
+		// {(1-t)^3 * P0} + {3(1-t)^2 * t * P1} + {3(1-t) * t^2 * P2} + {t^3 * P3}
+		float InvT = 1.0f - t;
+		float W0 = InvT * InvT * InvT;
+		float W1 = 3.0f * InvT * InvT * t;
+		float W2 = 3.0f * InvT * t * t;
+		float W3 = t * t * t;
+
+		return (P0 * W0) + (P1 * W1) + (P2 * W2)+ (P3 * W3);
+	};
 	for (int32 i = 0; i < TotalPoints; i++)
 	{
 		FBeamPoint& Point = BeamPoints[i];
 		
-		// 진행률
-		float Progress = static_cast<float>(i) / static_cast<float>(TotalPoints - 1);
+		// 진행률, 함수 시작 시 TotalPoints가 최소 2를 보장하도록 해서 zero divide는 없다.
+		float Progress = static_cast<float>(i) / static_cast<float>(TotalPoints - 1);		
+		float PointDistance = EstimatedTotalLength * Progress;
 
-		// 3차 베지어 곡선
-		// {(1-t)^3 * P0} + {3(1-t)^2 * t * P1} + {3(1-t) * t^2 * P2} + {t^3 * P3}
-		float InvProgress = 1.0f - Progress;
-		float Weight0 = InvProgress * InvProgress * InvProgress;
-		float Weight1 = 3.0f * InvProgress * InvProgress * Progress;
-		float Weight2 = 3.0f * InvProgress * Progress * Progress;
-		float Weight3 = Progress * Progress * Progress;
+		bool bStopGeneration = false;
+		
+		if (PointDistance > CurrentTravelDistance)
+		{
+			if (i > 0)
+			{
+				// 이전 점의 정보
+				float PrevProgress = static_cast<float>(i - 1) / static_cast<float>(TotalPoints - 1);
+				float PrevDistance = EstimatedTotalLength * PrevProgress;
 
-		Point.Position = (P0 * Weight0) + (P1 * Weight1) + (P2 * Weight2) + (P3 * Weight3);
+				// 초과된 구간 내에서의 Alpha
+				float SegmentLength = PointDistance - PrevDistance;
+				float Alpha = (SegmentLength > KINDA_SMALL_NUMBER)
+					              ? (CurrentTravelDistance - PrevDistance) / SegmentLength
+					              : 0.0f;
+				Progress = FMath::Lerp(PrevProgress, Progress, Alpha);
+
+				bStopGeneration = true;				
+			}
+			else
+			{
+				// 시작점에 도달도 못했다면 종료
+				BeamPoints.Empty();
+				return;
+			}			
+		}
+
+		Point.Position = BezierCurve(Progress);
 		
 		// TODO 노이즈 추가
 
@@ -595,6 +711,12 @@ void FParticleBeamEmitterInstance::BuildBeamPoints()
 		float Factor = BeamTypeData->TaperFactor.GetValue(Progress);
 		float Scale = BeamTypeData->TaperScale.GetValue(Factor);
 		Point.Width = BaseWidth * Scale;
+
+		if (bStopGeneration)
+		{
+			BeamPoints.SetNum(i + 1);
+			break;
+		}
 	}
 }
 
@@ -627,19 +749,73 @@ void FParticleBeamEmitterInstance::BuildBeamMesh(const FVector& CameraPosition)
 
 		FVector CameraDirection = (CameraPosition - CurrentPosition).GetSafeNormal();
 		FVector Right = FVector::Cross(Forward, CameraDirection).GetSafeNormal();
+		float RightLengthSq = Right.SizeSquared();
+		if (RightLengthSq < KINDA_SMALL_NUMBER)
+		{
+			if (FMath::Abs(Forward.Z) < 0.9f)
+			{
+				Right = FVector::Cross(Forward, FVector(0.0f, 0.0f, 1.0f));
+			}
+			else
+			{
+				Right = FVector::Cross(Forward, FVector(1.0f, 0.0f, 0.0f));
+			}
+			Right = Right.GetSafeNormal();
+		}
 
 		float HalfWidth = BeamPoints[i].Width * 0.5f;
 
 		FBeamParticleInstance TopVertex, BottomVertex;
 		TopVertex.Position = CurrentPosition + (Right * HalfWidth);
 		TopVertex.UV = FVector2D(BeamPoints[i].TexCoord, 0.0f);
-		TopVertex.Color = BeamTypeData->Color;
 
 		BottomVertex.Position = CurrentPosition - (Right * HalfWidth);
 		BottomVertex.UV = FVector2D(BeamPoints[i].TexCoord, 1.0f);
-		BottomVertex.Color = BeamTypeData->Color;
 
 		RenderVertices.Add(TopVertex);
 		RenderVertices.Add(BottomVertex);
 	}
+}
+
+void FParticleBeamEmitterInstance::FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View)
+{
+	BuildBeamMesh(View->ViewLocation);
+
+	if (RenderVertices.Num() < 2)
+	{
+		return;
+	}
+
+	FMeshBatchElement BatchElement;
+	BatchElement.BlendType = EBlendType::Additive;
+
+	FVector BeamCenter = (SourcePosition + TargetPosition) * 0.5f;
+	BatchElement.Distance = (View->ViewLocation - BeamCenter).Size();
+
+	BatchElement.VertexBuffer = nullptr;
+	BatchElement.IndexBuffer = nullptr;
+	BatchElement.bUseIndexBuffer = false;
+	BatchElement.WorldMatrix = FMatrix::Identity();
+	
+	// TODO Instancing 안쓰는 플래그 추가
+	BatchElement.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;	
+	BatchElement.VertexStride = sizeof(FBeamParticleInstance);
+	BatchElement.DynamicVertexData = RenderVertices.GetData();
+	BatchElement.DynamicVertexCount = RenderVertices.Num();
+
+	// 인덱스 안씀. TriangleStrip으로 알아서 생성
+	BatchElement.IndexCount = 0;
+	UShader* Shader = UResourceManager::GetInstance().Load<UShader>("Shaders/Particles/TrailParticle.hlsl");
+	TArray<FShaderMacro> ShaderMacros;
+	ShaderMacros.Add({"BEAM_PARTICLE", "1"});
+	FShaderVariant* ShaderVariant = Shader->GetOrCompileShaderVariant(ShaderMacros);
+
+	if (ShaderVariant)
+	{
+		BatchElement.VertexShader = ShaderVariant->VertexShader;
+		BatchElement.PixelShader = ShaderVariant->PixelShader;
+		BatchElement.InputLayout = ShaderVariant->InputLayout;
+	}	
+
+	MeshBatch.Add(BatchElement);
 }

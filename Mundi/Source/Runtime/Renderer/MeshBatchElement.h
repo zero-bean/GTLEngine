@@ -73,6 +73,10 @@ struct FMeshBatchElement
 	ID3D11ShaderResourceView* GPUSkinMatrixSRV = nullptr;
 	ID3D11ShaderResourceView* GPUSkinNormalMatrixSRV = nullptr;
 
+	void* DynamicVertexData = nullptr;
+	uint32 DynamicVertexCount = 0;
+	bool bUseIndexBuffer = true;
+
 	// --- 기본 생성자 ---
 	FMeshBatchElement() = default;
 

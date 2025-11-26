@@ -68,15 +68,15 @@ public:
 	bool bEmitterIsDone = false;
 
 	FParticleEmitterInstance(UParticleSystemComponent* InComponent);
-	~FParticleEmitterInstance();
+	virtual ~FParticleEmitterInstance();
 
 	virtual void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials);
 	virtual void GetParticleInstanceData(TArray<FSpriteParticleInstance>& ParticleInstanceData);
 	virtual void FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) = 0;
 
-	void Init();
+	virtual void Init();
 
-	void Tick(float DeltaTime, bool bSuppressSpawning);
+	virtual void Tick(float DeltaTime, bool bSuppressSpawning);
 
 	void UpdateParticles(float DeltaTime);
 	
@@ -109,6 +109,7 @@ public:
 
 	// ParticleSystemComponent 헤더가 방대해질 가능성이 높음, 인터페이스를 만들어야 함.
 	FParticleSpriteEmitterInstance(UParticleSystemComponent* InComponent);
+	~FParticleSpriteEmitterInstance() override {};
 
 	void FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
 };
@@ -126,6 +127,7 @@ public:
 	TArray<UMaterialInterface*> CurrentMaterials;
 
 	FParticleMeshEmitterInstance(UParticleSystemComponent* InComponent);
+	~FParticleMeshEmitterInstance() override {};
 
 	void SetMeshMaterials(TArray<UMaterialInterface*>& MeshMaterials) override;
 	void FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
@@ -143,6 +145,9 @@ struct FParticleBeamEmitterInstance : FParticleEmitterInstance
 		float TexCoord;
 	};
 public:
+	// 캐싱용 변수
+	// FParticleEmitterInstance의 CurrentLODLevel에서 TypeDataModule을 매번 Casting하지 않고
+	// 처음 한 번 캐스팅 해서 사용
 	UParticleModuleTypeDataBeam* BeamTypeData;
 
 	// 액터가 존재하면 액터의 위치로 갱신
@@ -169,16 +174,21 @@ public:
 	float BaseWidth;
 
 	TArray<FBeamParticleInstance> RenderVertices;
+
+	float BeamLength;
 	
 	FParticleBeamEmitterInstance(UParticleSystemComponent* InComponent);
-
-	void Init();
-
-	void Tick(float DeltaTime, bool bSuppressSpawning);
+	~FParticleBeamEmitterInstance() override {};
 
 	void GetParticleInstanceData(TArray<FBeamParticleInstance>& ParticleInstanceData);
+
+	void Init() override;
+
+	void Tick(float DeltaTime, bool bSuppressSpawning) override;
 
 	void BuildBeamPoints();
 
 	void BuildBeamMesh(const FVector& CameraPosition);
+
+	void FillMeshBatch(TArray<FMeshBatchElement>& MeshBatch, const FSceneView* View) override;
 };
