@@ -7,6 +7,8 @@
 #include "PlatformCrashHandler.h"
 #include <ObjManager.h>
 
+#include "Source/Runtime/Physics/PhysicsSystem.h"
+
 float UEditorEngine::ClientWidth = 1024.0f;
 float UEditorEngine::ClientHeight = 1024.0f;
 
@@ -185,6 +187,9 @@ bool UEditorEngine::Startup(HINSTANCE hInstance)
     RHIDevice.Initialize(HWnd);
     Renderer = std::make_unique<URenderer>(&RHIDevice);
 
+    // Physics 초기화
+    FPhysicsSystem::Get().Initialize();
+
     // Audio Device 초기화
     FAudioDevice::Initialize();
           
@@ -230,6 +235,9 @@ void UEditorEngine::Tick(float DeltaSeconds)
         //    WorldContext.World->Tick(DeltaSeconds, WorldContext.WorldType);
         //}
     }
+
+    // 물리 업데이트 (위치 다시 고민해보기)
+    FPhysicsSystem::Get().UpdateSimulation(DeltaSeconds);
     
     SLATE.Update(DeltaSeconds);
     UI.Update(DeltaSeconds);
@@ -316,6 +324,7 @@ void UEditorEngine::MainLoop()
 
             bChangedPieToEditor = false;
         }
+
         // 크래시 모드가 활성화되면 매 프레임마다 랜덤 객체 삭제
         FPlatformCrashHandler::TickCrashMode();
         Tick(DeltaSeconds);
@@ -352,7 +361,8 @@ void UEditorEngine::Shutdown()
 
     // AudioDevice 종료
     FAudioDevice::Shutdown();
-     
+    
+    FPhysicsSystem::Get().Shutdown();
     // IMPORTANT: Explicitly release Renderer before RHIDevice destructor runs
     // Renderer may hold references to D3D resources
     Renderer.reset();
