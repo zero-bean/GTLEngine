@@ -1,8 +1,14 @@
 ﻿#include "pch.h"
 #include "RenderTexture.h"
+#include "RHIDevice.h"
 
 IMPLEMENT_CLASS(URenderTexture)
 
+
+void URenderTexture::InitResolution(D3D11RHI* RHIDevice, const float InResolution)
+{
+	InitResolution(RHIDevice->GetDevice(), InResolution, RHIDevice->GetFrameBufferTex());
+}
 void URenderTexture::InitResolution(ID3D11Device* Device, const float InResolution, ID3D11Texture2D* FrameBufferTex)
 {
 	if (InResolution <= 0)
@@ -19,6 +25,10 @@ void URenderTexture::InitResolution(ID3D11Device* Device, const float InResoluti
 		TexHeight = static_cast<uint32>(std::round(TexDesc.Height * InResolution));
 		CreateResources(Device, TexWidth, TexHeight);
 	}
+}
+void URenderTexture::InitFixedSize(D3D11RHI* RHIDevice, const uint32 InWidth, const uint32 InHeight)
+{
+	InitFixedSize(RHIDevice->GetDevice(), InWidth, InHeight);
 }
 void URenderTexture::InitFixedSize(ID3D11Device* Device, const uint32 InWidth, const uint32 InHeight)
 {

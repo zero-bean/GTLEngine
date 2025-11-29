@@ -8,6 +8,7 @@ enum ERenderTexSizeType
 	Fixed			//고정
 };
 
+class D3D11RHI;
 using namespace Microsoft::WRL;
 class URenderTexture : public UObject
 {
@@ -17,7 +18,9 @@ public:
 	~URenderTexture() = default;
 	
 	void InitResolution(ID3D11Device* Device, const float InResolution, ID3D11Texture2D* FrameBufferTex);
+	void InitResolution(D3D11RHI* RHIDevice, const float InResolution);
 	void InitFixedSize(ID3D11Device* Device, const uint32 InWidth, const uint32 InHeight);
+	void InitFixedSize(D3D11RHI* RHIDevice, const uint32 InWidth, const uint32 InHeight);
 
 	float GetResolution() const { return Resolution; }
 	ERenderTexSizeType GetType() const { return RenderTexSizeType; }

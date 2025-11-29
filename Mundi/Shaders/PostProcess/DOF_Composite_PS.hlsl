@@ -1,5 +1,7 @@
-Texture2D g_DepthTex : register(t0);
-Texture2D g_SceneColorTex : register(t1);
+Texture2D g_SceneColorTex : register(t0);
+Texture2D g_COCTex : register(t1);
+Texture2D g_NearBlurTex : register(t2);
+Texture2D g_FarBlurTex : register(t3);
 
 SamplerState g_LinearClampSample : register(s0);
 SamplerState g_PointClampSample : register(s1);
@@ -49,11 +51,17 @@ float GetLinearDepth(float NDCDepth)
 
 float4 mainPS(PS_INPUT input) : SV_Target
 {
-    float FocusDepth = 10.0f;
-    float FocusRange = 5.0f;
-    float Depth = g_DepthTex.Sample(g_LinearClampSample, input.texCoord).r;
-    float LinearDepth = GetLinearDepth(Depth);
-    float4 SceneColor = g_SceneColorTex.Sample(g_LinearClampSample, input.texCoord);
+    uint TexWidth, TexHeight;
+    g_SceneColorTex.GetDimensions(TexWidth, TexHeight);
+    float2 uv = float2(input.position.x / TexWidth, input.position.y / TexHeight);
     
-    return float4(SceneColor, SceneColor, SceneColor, 1);
+    float2 COC = g_COCTex.Sample(g_PointClampSample, uv).rg;
+
+    float Origin = 1 - COC.r - COC.g;
+    float3 SceneColor = g_SceneColorTex.Sample(g_LinearClampSample, uv);
+    float3 NearColor = g_NearBlurTex.Sample(g_LinearClampSample, uv);
+    float3 FarColor = g_FarBlurTex.Sample(g_LinearClampSample, uv);
+    
+    float3 FinalColor = SceneColor * Origin + NearColor * COC.r + FarColor * COC.g;
+    return float4(FinalColor, 1);
 }

@@ -216,12 +216,24 @@ struct FPointLightShadowBufferType
     FVector Padding;                // 16바이트 정렬
 };
 
-struct FGaussianCB
+struct FDOFGaussianCB
 {
     float Weight;
     uint32 Range;
     uint32 bHorizontal;
-    float padding;
+    uint32 bNear;
+
+    FDOFGaussianCB(float InWeight, bool InbHorizontal, bool InbNear)
+    {
+        Weight = InWeight;
+        Range = static_cast<int>(Weight * 3);  // ±3σ 범위
+        if (Range < 3)
+        {
+            Range = 3;
+        }
+        bHorizontal = InbHorizontal == false ? 0 : 1;
+        bNear = InbNear == false ? 0 : 1;
+    }
 };
 struct FDepthOfFieldCB
 {
@@ -253,7 +265,7 @@ MACRO(CameraBufferType)             \
 MACRO(FLightBufferType)             \
 MACRO(FViewportConstants)           \
 MACRO(FTileCullingBufferType)       \
-MACRO(FGaussianCB)                  \
+MACRO(FDOFGaussianCB)                  \
 MACRO(FPointLightShadowBufferType)
 
 // 16 바이트 패딩 어썰트
@@ -281,7 +293,7 @@ CONSTANT_BUFFER_INFO(FLightBufferType, 8, true, true)
 CONSTANT_BUFFER_INFO(FViewportConstants, 10, true, true)   // 뷰 포트 크기에 따라 전체 화면 복사를 보정하기 위해 설정 (10번 고유번호로 사용)
 CONSTANT_BUFFER_INFO(FTileCullingBufferType, 11, false, true)  // b11, PS only (UberLit.hlsl과 일치)
 CONSTANT_BUFFER_INFO(FPointLightShadowBufferType, 12, true, true)
-CONSTANT_BUFFER_INFO(FGaussianCB, 2, false, true)
+CONSTANT_BUFFER_INFO(FDOFGaussianCB, 2, false, true)
 
 
 
