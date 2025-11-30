@@ -161,15 +161,16 @@ void FBodyInstance::SetSimulatePhysics(bool bInSimulatePhysics)
 
     if (PxRigidDynamic* DynamicActor = GetDynamicActor())
     {
-        DynamicActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, !bInSimulatePhysics);
         if (bInSimulatePhysics)
         {
+            DynamicActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
             DynamicActor->wakeUp();
         }
         else
         {
             DynamicActor->setLinearVelocity(PxVec3(0));
             DynamicActor->setAngularVelocity(PxVec3(0));
+            DynamicActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
         }
     }
 }
@@ -298,7 +299,8 @@ void FBodyInstance::SetNotifyRigidBodyCollision(bool bInNotifyRigidBodyCollision
 void FBodyInstance::SetUseCCD(bool bInUseCCD)
 {
     if (bUseCCD == bInUseCCD) { return; }
-    
+
+    bUseCCD = bInUseCCD;
     if (PxRigidDynamic* DynamicActor = GetDynamicActor())
     {
         DynamicActor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, bUseCCD);
@@ -445,6 +447,8 @@ void FBodyInstance::SetLinearVelocity(const FVector& Velocity, bool bAddToCurren
 {
     if (PxRigidDynamic* DynamicActor = GetDynamicActor())
     {
+        if (DynamicActor->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC)
+            return;  // Kinematic이면 무시
         PxVec3 PVel = PhysXConvert::ToPx(Velocity);
         if (bAddToCurrent)
         {
@@ -467,6 +471,9 @@ void FBodyInstance::SetAngularVelocity(const FVector& AngularVelocity, bool bAdd
 {
     if (PxRigidDynamic* DynamicActor = GetDynamicActor())
     {
+        if (DynamicActor->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC)
+            return;  // Kinematic이면 무시
+
         PxVec3 PVel = PhysXConvert::AngularToPx(AngularVelocity);
         if (bAddToCurrent)
         {
