@@ -1181,6 +1181,9 @@
     <ClCompile Include="Generated\ASphereActor.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Generated\UPhysicalMaterial.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Generated\UParticleModuleSizeScaleBySpeed.generated.h">
@@ -2485,6 +2488,9 @@
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Generated\ASphereActor.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UPhysicalMaterial.generated.h">
       <Filter>Generated</Filter>
     </ClInclude>
   </ItemGroup>

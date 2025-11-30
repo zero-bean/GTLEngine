@@ -421,6 +421,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\BodySetup.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\BoxElem.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\ConstraintInstance.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysicalMaterial.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysicsAsset.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysicsTypes.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysScene.cpp" />
@@ -711,6 +712,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Generated\ABoxActor.generated.cpp" />
     <ClCompile Include="Generated\ACapsuleActor.generated.cpp" />
     <ClCompile Include="Generated\ASphereActor.generated.cpp" />
+    <ClCompile Include="Generated\UPhysicalMaterial.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
@@ -963,6 +965,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\ConstraintInstance.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\FBodySetup.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\FConstraintSetup.h" />
+    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\PhysicalMaterial.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\PhysicsAsset.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\PhysicsTypes.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\PhysScene.h" />
@@ -1285,6 +1288,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClInclude Include="Generated\ABoxActor.generated.h" />
     <ClInclude Include="Generated\ACapsuleActor.generated.h" />
     <ClInclude Include="Generated\ASphereActor.generated.h" />
+    <ClInclude Include="Generated\UPhysicalMaterial.generated.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTools\CodeGenerator\generate.py" />

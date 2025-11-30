@@ -33,6 +33,11 @@ bool InitGamePhys()
         return false;
     }
 
+    if (!GPhysicalMaterial)
+    {
+        GPhysicalMaterial = NewObject<UPhysicalMaterial>();
+    }
+
     GPhysXVisualDebugger = PxCreatePvd(*GPhysXFoundation);
 
     // @note 언리얼 엔진은 cm 단위를 활용하지만, 퓨처 엔진은 m 단위를 활용한다.
@@ -95,6 +100,7 @@ void TermGamePhys()
     if (GPhysXCooking)        { GPhysXCooking->release(); GPhysXCooking = nullptr; }
     if (GPhysXSDK)            { PxCloseExtensions(); }
     if (GPhysXSDK)            { GPhysXSDK->release(); GPhysXSDK = nullptr; }
+    if (GPhysicalMaterial)    { DeleteObject(GPhysicalMaterial); GPhysicalMaterial = nullptr; }
 
     // PVD 연결 해제 후 transport 해제 (순서 중요)
     if (GPhysXVisualDebugger)

@@ -1,23 +1,14 @@
 #include "pch.h"
 #include "BodySetup.h"
 
+#include "PhysicalMaterial.h"
+
 UBodySetup::UBodySetup()
 {
-    if (GPhysXSDK)
-    {
-        // @todo 임시 머티리얼 사용, 이후 별도의 머티리얼 관리자가 필요함
-        PhysMaterial = GPhysXSDK->createMaterial(0.5f, 0.5f, 0.5f);
-    }
 } 
 
 UBodySetup::~UBodySetup()
 {
-    // PhysX 머티리얼 해제 (레퍼런스 카운팅)
-    if (PhysMaterial)
-    {
-        PhysMaterial->release();
-        PhysMaterial = nullptr;
-    }
 }
 
 void UBodySetup::AddShapesToRigidActor_AssumesLocked(FBodyInstance* OwningInstance, const FVector& Scale3D, PxRigidActor* PDestActor)
@@ -27,10 +18,11 @@ void UBodySetup::AddShapesToRigidActor_AssumesLocked(FBodyInstance* OwningInstan
         return;
     }
 
-    PxMaterial* MaterialToUse = PhysMaterial;
-    if (!MaterialToUse)
+    PxMaterial* PhysMaterialToUse = PhysMaterial->GetPxMaterial();
+    if (!PhysMaterialToUse)
     {
-        return; 
+        assert(GPhysicalMaterial);
+        PhysMaterialToUse = GPhysicalMaterial->GetPxMaterial();
     }
 
     // ====================================================================
@@ -45,7 +37,7 @@ void UBodySetup::AddShapesToRigidActor_AssumesLocked(FBodyInstance* OwningInstan
 
         PxBoxGeometry BoxGeom = BoxElem.GetPxGeometry(Scale3D);
 
-        PxShape* NewShape = GPhysXSDK->createShape(BoxGeom, *MaterialToUse, true);
+        PxShape* NewShape = GPhysXSDK->createShape(BoxGeom, *PhysMaterialToUse, true);
 
         if (NewShape)
         {
@@ -90,7 +82,7 @@ void UBodySetup::AddShapesToRigidActor_AssumesLocked(FBodyInstance* OwningInstan
 
         PxSphereGeometry SphereGeom = SphereElem.GetPxGeometry(Scale3D);
 
-        PxShape* NewShape = GPhysXSDK->createShape(SphereGeom, *MaterialToUse, true);
+        PxShape* NewShape = GPhysXSDK->createShape(SphereGeom, *PhysMaterialToUse, true);
         if (NewShape)
         {
             FTransform ElemTM = SphereElem.GetTransform();
@@ -118,7 +110,7 @@ void UBodySetup::AddShapesToRigidActor_AssumesLocked(FBodyInstance* OwningInstan
 
         PxCapsuleGeometry CapsuleGeom = SphylElem.GetPxGeometry(Scale3D);
 
-        PxShape* NewShape = GPhysXSDK->createShape(CapsuleGeom, *MaterialToUse, true);
+        PxShape* NewShape = GPhysXSDK->createShape(CapsuleGeom, *PhysMaterialToUse, true);
         if (NewShape)
         {
             FTransform ElemTM = SphylElem.GetTransform();

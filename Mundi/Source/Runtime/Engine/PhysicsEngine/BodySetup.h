@@ -3,6 +3,7 @@
 #include "AggregateGeom.h"
 #include "UBodySetup.generated.h"
 
+class UPhysicalMaterial;
 struct FBodyInstance;
 
 UCLASS()
@@ -35,7 +36,8 @@ public:
 	FKAggregateGeom AggGeom;
 
     /** 밀도, 마찰 등과 관련된 정보를 포함하는 물리 재질 */
-    PxMaterial* PhysMaterial;
+	UPROPERTY()
+	UPhysicalMaterial* PhysMaterial;
 
     void AddShapesToRigidActor_AssumesLocked(
         FBodyInstance* OwningInstance,
