@@ -3,186 +3,36 @@
 #include "PhysicalMaterial.h"
 #include "PhysXConversion.h"
 #include "BodySetup.h"
+#include "PhysicsScene.h"
+#include "PrimitiveComponent.h"
 using namespace physx;
 
-// --- 생성자/소멸자 ---
-
-FBodyInstance::FBodyInstance()
-    : OwnerComponent(nullptr)
-    , bIsTrigger(false)
-{
-}
-
-FBodyInstance::FBodyInstance(UPrimitiveComponent* Owner)
-    : OwnerComponent(Owner)
-    , bIsTrigger(false)
-{
-}
-
+FBodyInstance::FBodyInstance() = default;
 FBodyInstance::~FBodyInstance()
 {
     TermBody();
 }
 
-// --- 초기화/해제 ---
-
-void FBodyInstance::InitBody(const FTransform& Transform, const PxGeometry& Geometry, UPhysicalMaterial* PhysMat)
+void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPrimitiveComponent* PrimComp, FPhysicsScene* InRBScene)
 {
-    // 이미 있으면 삭제하고 다시 생성
-    TermBody();
-
-    FPhysicsSystem& System = FPhysicsSystem::Get();
-    PxPhysics* Physics = System.GetPhysics();
-    PxScene* Scene = System.GetScene();
-
-    // 좌표계 변환 적용
-    PxTransform PTransform = PhysXConvert::ToPx(Transform);
-
-    // Actor 생성 (Static vs Dynamic)
-    if (bSimulatePhysics)
+    if (!Setup || !Setup->HasValidShapes())
     {
-        PxRigidDynamic* DynamicActor = Physics->createRigidDynamic(PTransform);
-        DynamicActor->setLinearDamping(LinearDamping);
-        DynamicActor->setAngularDamping(AngularDamping);
-        DynamicActor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, !bEnableGravity);
-
-        // CCD 설정
-        if (bUseCCD)
-        {
-            DynamicActor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
-        }
-
-        // 시작 상태
-        if (!bStartAwake)
-        {
-            DynamicActor->putToSleep();
-        }
-
-        RigidActor = DynamicActor;
-    }
-    else
-    {
-        RigidActor = Physics->createRigidStatic(PTransform);
+        UE_LOG("[FBodyInstance] InitBody failed: Invalid BodySetup");
+        return;
     }
 
+    OwnerComponent = PrimComp;
+    Scale3D = Transform.Scale3D;
+    
+    RigidActor = CreateInternalActor(Transform);
     if (!RigidActor) return;
 
-    // 재질 가져오기 (없으면 기본 재질)
-    PxMaterial* Material = System.GetDefaultMaterial();
-    UPhysicalMaterial* UsedPhysMat = PhysMaterialOverride ? PhysMaterialOverride : PhysMat;
-    if (UsedPhysMat && UsedPhysMat->MatHandle)
-    {
-        Material = UsedPhysMat->MatHandle;
-    }
+    UPhysicalMaterial* MatToUse = PhysMaterialOverride ? PhysMaterialOverride : Setup->PhysMaterial;
+    Setup->CreatePhysicsShapes(this, Scale3D, MatToUse);
+    ApplyBodySetupSettings(Setup);
 
-    // Shape 생성 및 부착
-    PxShape* Shape = Physics->createShape(Geometry, *Material);
-    if (Shape)
-    {
-        if (bIsTrigger)
-        {
-            Shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
-            Shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
-        }
-        else
-        {
-            Shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
-            Shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
-        }
-
-        // Scene Query 활성화
-        Shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
-
-        RigidActor->attachShape(*Shape);
-        Shapes.Add(Shape);
-        Shape->release(); // Actor가 소유권을 가짐
-    }
-
-    // 질량 계산
-    UpdateMassProperties();
-
-    // DOF 잠금 적용
-    ApplyDOFLock();
-
-    // UserData 연결
-    RigidActor->userData = static_cast<void*>(this);
-
-    // 씬에 추가
-    Scene->addActor(*RigidActor);
-}
-
-void FBodyInstance::InitBodyFromSetup(const FTransform& Transform, UBodySetup* InBodySetup,
-                                       UPhysicalMaterial* PhysMat, const FVector& Scale3D)
-{
-    if (!InBodySetup || !InBodySetup->HasValidShapes())
-    {
-        UE_LOG("[FBodyInstance] InitBodyFromSetup failed: Invalid BodySetup or no shapes");
-        return;
-    }
-
-    // 이미 있으면 삭제하고 다시 생성
-    TermBody();
-
-    FPhysicsSystem& System = FPhysicsSystem::Get();
-    PxPhysics* Physics = System.GetPhysics();
-    PxScene* Scene = System.GetScene();
-
-    // 좌표계 변환 적용
-    PxTransform PTransform = PhysXConvert::ToPx(Transform);
-
-    // Actor 생성 (Static vs Dynamic)
-    if (bSimulatePhysics)
-    {
-        PxRigidDynamic* DynamicActor = Physics->createRigidDynamic(PTransform);
-        DynamicActor->setLinearDamping(LinearDamping);
-        DynamicActor->setAngularDamping(AngularDamping);
-        DynamicActor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, !bEnableGravity);
-
-        // CCD 설정
-        if (bUseCCD)
-        {
-            DynamicActor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
-        }
-
-        // 시작 상태
-        if (!bStartAwake)
-        {
-            DynamicActor->putToSleep();
-        }
-
-        RigidActor = DynamicActor;
-    }
-    else
-    {
-        RigidActor = Physics->createRigidStatic(PTransform);
-    }
-
-    if (!RigidActor)
-    {
-        UE_LOG("[FBodyInstance] InitBodyFromSetup failed: Could not create RigidActor");
-        return;
-    }
-
-    // BodySetup에서 모든 Shape 생성 및 부착
-    InBodySetup->CreatePhysicsShapes(this, Scale3D, PhysMat);
-
-    // UBodySetupCore 설정 적용 (PhysicsType, CollisionResponse, CollisionTraceFlag)
-    ApplyBodySetupSettings(InBodySetup);
-
-    // 질량 계산
-    UpdateMassProperties();
-
-    // DOF 잠금 적용
-    ApplyDOFLock();
-
-    // UserData 연결
-    RigidActor->userData = static_cast<void*>(this);
-
-    // 씬에 추가
-    Scene->addActor(*RigidActor);
-
-    UE_LOG("[FBodyInstance] InitBodyFromSetup success: %d shapes created",
-           Shapes.Num());
+    // 나중에는 InRBScene을 Finalize 함수에 넘겨줘야 함
+    FinalizeInternalActor(/*InRBScene*/);
 }
 
 void FBodyInstance::TermBody()
@@ -196,7 +46,60 @@ void FBodyInstance::TermBody()
     Shapes.Empty();
 }
 
-// --- Transform ---
+
+PxRigidDynamic* FBodyInstance::GetDynamicActor() const
+{
+    if (RigidActor)
+    {
+        return RigidActor->is<PxRigidDynamic>();
+    }
+    return nullptr;
+}
+
+physx::PxRigidDynamic* FBodyInstance::CreateInternalActor(const FTransform& Transform)
+{
+    TermBody();
+
+    FPhysicsSystem& System = FPhysicsSystem::Get();
+    PxPhysics* Physics = System.GetPhysics();
+    
+    PxTransform PTransform = PhysXConvert::ToPx(Transform); // 좌표 변환
+    PxRigidDynamic* NewActor = Physics->createRigidDynamic(PTransform); // 일단 무조건 Movable 가정
+
+    if (NewActor)
+    {
+        NewActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, !bSimulatePhysics);
+        NewActor->setLinearDamping(LinearDamping);
+        NewActor->setAngularDamping(AngularDamping);
+        NewActor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, !bEnableGravity);
+
+        if (bUseCCD)
+        {
+            NewActor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+        }
+
+        if (bSimulatePhysics && !bStartAwake)
+        {
+            NewActor->putToSleep();
+        }
+    }
+
+    return NewActor;
+}
+
+void FBodyInstance::FinalizeInternalActor()
+{
+    if (!RigidActor) { return; }
+
+    FPhysicsSystem& System = FPhysicsSystem::Get();
+    PxScene* Scene = System.GetScene();
+
+    UpdateMassProperties();
+    UpdateDOFLock();
+    RigidActor->userData = static_cast<void*>(this);
+    Scene->addActor(*RigidActor);
+}
+
 
 FTransform FBodyInstance::GetWorldTransform() const
 {
@@ -205,7 +108,7 @@ FTransform FBodyInstance::GetWorldTransform() const
         // PhysX → 프로젝트 좌표계 변환
         return PhysXConvert::FromPx(RigidActor->getGlobalPose());
     }
-    return FTransform();
+    return {};
 }
 
 void FBodyInstance::SetWorldTransform(const FTransform& NewTransform, bool bTeleport)
@@ -250,11 +153,197 @@ FQuat FBodyInstance::GetWorldRotation() const
     return FQuat::Identity();
 }
 
-// --- 물리 상태 ---
-
-bool FBodyInstance::IsDynamic() const
+void FBodyInstance::SetSimulatePhysics(bool bInSimulatePhysics)
 {
-    return RigidActor && RigidActor->is<PxRigidDynamic>() != nullptr;
+    if (bSimulatePhysics == bInSimulatePhysics) { return; }
+    bSimulatePhysics = bInSimulatePhysics;
+
+    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
+    {
+        DynamicActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, !bInSimulatePhysics);
+        if (bInSimulatePhysics)
+        {
+            DynamicActor->wakeUp();
+        }
+        else
+        {
+            DynamicActor->setLinearVelocity(PxVec3(0));
+            DynamicActor->setAngularVelocity(PxVec3(0));
+        }
+    }
+}
+
+void FBodyInstance::SetEnableGravity(bool bInEnableGravity)
+{
+    bEnableGravity = bInEnableGravity;
+
+    if (RigidActor)
+    {
+        RigidActor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, !bInEnableGravity);
+    }
+}
+
+void FBodyInstance::SetStartAwake(bool bInStartAwake)
+{
+    bStartAwake = bInStartAwake;
+}
+
+void FBodyInstance::SetOverrideMass(bool bInOverrideMass)
+{
+    if (bOverrideMass == bInOverrideMass) { return; }
+    bOverrideMass = bInOverrideMass;
+    UpdateMassProperties();
+}
+
+void FBodyInstance::SetMassInKg(float InMassInKg)
+{
+    if (MassInKg == InMassInKg) { return; }
+    MassInKg = InMassInKg;
+    UpdateMassProperties();
+}
+
+float FBodyInstance::GetBodyMass() const
+{
+    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
+    {
+        return DynamicActor->getMass();
+    }
+    return 0.0f;
+}
+
+FVector FBodyInstance::GetBodyInertiaTensor() const
+{
+    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
+    {
+        // 관성 텐서도 좌표계 변환 필요
+        return PhysXConvert::FromPx(DynamicActor->getMassSpaceInertiaTensor());
+    }
+    return FVector::Zero();
+}
+
+void FBodyInstance::UpdateMassProperties()
+{
+    PxRigidDynamic* DynamicActor = GetDynamicActor();
+    if (!DynamicActor) { return; }
+
+    if (bOverrideMass)
+    {
+        PxRigidBodyExt::setMassAndUpdateInertia(*DynamicActor, MassInKg);
+    }
+    else
+    {
+        float Density = 1000.0f; // 기본 밀도 (kg/m^3)
+        if (UPhysicalMaterial* UsedMat = PhysMaterialOverride)
+        {
+            Density = UsedMat->Density;
+        }
+        PxRigidBodyExt::updateMassAndInertia(*DynamicActor, Density);
+    }
+}
+
+void FBodyInstance::SetLinearDamping(float InLinearDamping)
+{
+    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
+    {
+        DynamicActor->setLinearDamping(InLinearDamping);
+    }
+}
+
+void FBodyInstance::SetAngularDamping(float InAngularDamping)
+{
+    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
+    {
+        DynamicActor->setAngularDamping(InAngularDamping);
+    }
+}
+
+void FBodyInstance::SetCollisionEnabled(bool bEnabled)
+{
+    if (!RigidActor || bEnabled == bCollisionEnabled) { return; }
+    bCollisionEnabled = bEnabled;
+
+    for (int32 i = 0; i < Shapes.Num(); ++i)
+    {
+        if (Shapes[i])
+        {
+            Shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, bCollisionEnabled && !bIsTrigger);
+            Shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, bCollisionEnabled);
+        }
+    }
+}
+
+void FBodyInstance::SetTrigger(bool bInIsTrigger)
+{
+    if (bInIsTrigger == bIsTrigger) { return; }
+
+    bIsTrigger = bInIsTrigger;
+    for (int32 i = 0; i < Shapes.Num(); ++i)
+    {
+        if (Shapes[i])
+        {
+            Shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, bCollisionEnabled && !bIsTrigger);
+            Shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, bCollisionEnabled);
+        }
+    }
+}
+
+void FBodyInstance::SetNotifyRigidBodyCollision(bool bInNotifyRigidBodyCollision)
+{
+    if (bInNotifyRigidBodyCollision == bNotifyRigidBodyCollision) { return; }
+    bNotifyRigidBodyCollision = bInNotifyRigidBodyCollision;
+    // TODO - 충돌 이벤트 발생 안시키게
+}
+
+void FBodyInstance::SetUseCCD(bool bInUseCCD)
+{
+    if (bUseCCD == bInUseCCD) { return; }
+    
+    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
+    {
+        DynamicActor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, bUseCCD);
+    }
+}
+
+void FBodyInstance::UpdateDOFLock()
+{
+    PxRigidDynamic* DynamicActor = GetDynamicActor();
+    if (!DynamicActor) return;
+
+    PxRigidDynamicLockFlags LockFlags;
+    if (bLockXLinear) LockFlags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_Z;
+    if (bLockXAngular) LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z;
+    // 프로젝트 Y → PhysX X
+    if (bLockYLinear) LockFlags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_X;
+    if (bLockYAngular) LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_X;
+    // 프로젝트 Z → PhysX Y
+    if (bLockZLinear) LockFlags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_Y;
+    if (bLockZAngular) LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y;
+
+    DynamicActor->setRigidDynamicLockFlags(LockFlags);
+}
+
+void FBodyInstance::SetLinearLock(bool bX, bool bY, bool bZ)
+{
+    bLockXLinear = bX; bLockYLinear = bY; bLockZLinear = bZ;
+    UpdateDOFLock();
+}
+
+void FBodyInstance::SetAngularLock(bool bX, bool bY, bool bZ)
+{
+    bLockXAngular = bX; bLockYAngular = bY; bLockZAngular = bZ;
+    UpdateDOFLock();
+}
+
+void FBodyInstance::SetSleepThresholdMultiplier(float InSleepThresholdMultiplier)
+{
+    if (InSleepThresholdMultiplier == SleepThresholdMultiplier) { return; }
+    SleepThresholdMultiplier = InSleepThresholdMultiplier;
+    
+    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
+    {
+        constexpr float SleepThreshold = 0.005f;
+        DynamicActor->setSleepThreshold(SleepThreshold * SleepThresholdMultiplier);
+    }
 }
 
 bool FBodyInstance::IsAwake() const
@@ -281,8 +370,6 @@ void FBodyInstance::PutToSleep()
         DynamicActor->putToSleep();
     }
 }
-
-// --- 힘/토크/속도 ---
 
 void FBodyInstance::AddForce(const FVector& Force, bool bAccelChange)
 {
@@ -387,118 +474,24 @@ void FBodyInstance::SetAngularVelocity(const FVector& AngularVelocity, bool bAdd
         DynamicActor->setAngularVelocity(PVel);
     }
 }
-
-// --- 질량 ---
-
-float FBodyInstance::GetBodyMass() const
-{
-    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
-    {
-        return DynamicActor->getMass();
-    }
-    return 0.0f;
-}
-
-void FBodyInstance::SetMassOverride(float InMassInKg, bool bNewOverrideMass)
-{
-    MassInKg = InMassInKg;
-    bOverrideMass = bNewOverrideMass;
-    UpdateMassProperties();
-}
-
-FVector FBodyInstance::GetBodyInertiaTensor() const
-{
-    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
-    {
-        // 관성 텐서도 좌표계 변환 필요
-        return PhysXConvert::FromPx(DynamicActor->getMassSpaceInertiaTensor());
-    }
-    return FVector::Zero();
-}
-
-// --- 충돌 설정 ---
-
-void FBodyInstance::SetCollisionEnabled(bool bEnabled)
-{
-    if (!RigidActor) return;
-
-    for (int32 i = 0; i < Shapes.Num(); ++i)
-    {
-        if (Shapes[i])
-        {
-            Shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, bEnabled && !bIsTrigger);
-            Shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, bEnabled);
-        }
-    }
-}
-
-void FBodyInstance::SetSimulatePhysics(bool bNewSimulate)
-{
-    if (bSimulatePhysics == bNewSimulate) return;
-
-    bSimulatePhysics = bNewSimulate;
-
-    // 런타임 중 변경은 Body 재생성이 필요
-    // 간단한 구현: 현재는 플래그만 변경
-    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
-    {
-        DynamicActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, !bNewSimulate);
-    }
-}
-
-void FBodyInstance::SetEnableGravity(bool bNewEnableGravity)
-{
-    bEnableGravity = bNewEnableGravity;
-
-    if (RigidActor)
-    {
-        RigidActor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, !bNewEnableGravity);
-    }
-}
-
 // --- UBodySetupCore 설정 적용 ---
 
 void FBodyInstance::ApplyBodySetupSettings(const UBodySetupCore* BodySetupCore)
 {
     if (!BodySetupCore) return;
 
-    // 1. PhysicsType 적용 (Simulated/Kinematic/Default)
+    // PhysicsType 적용 (Simulated/Kinematic/Default)
     ApplyPhysicsType(BodySetupCore->PhysicsType);
 
-    // 2. CollisionResponse 적용 (충돌 활성/비활성)
+    // CollisionResponse 적용 (충돌 활성/비활성)
     ApplyCollisionResponse(BodySetupCore->CollisionResponse);
-
-    // 3. CollisionTraceFlag 저장 (Shape 플래그에 적용)
-    CollisionTraceFlag = BodySetupCore->CollisionTraceFlag;
-
+    
     // Shape 플래그 적용
     for (int32 i = 0; i < Shapes.Num(); ++i)
     {
         if (!Shapes[i]) continue;
-
-        switch (CollisionTraceFlag)
-        {
-        case ECollisionTraceFlag::UseSimpleCollision:
-            // 단순 충돌만: 시뮬레이션 O, 쿼리 X
-            Shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, !bIsTrigger);
-            Shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
-            break;
-
-        case ECollisionTraceFlag::UseComplexCollision:
-            // 복잡 충돌만: 시뮬레이션 X, 쿼리 O
-            Shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
-            Shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
-            break;
-
-        case ECollisionTraceFlag::UseSimpleAsComplex:
-        case ECollisionTraceFlag::UseComplexAsSimple:
-        case ECollisionTraceFlag::UseDefault:
-        default:
-            // 기본: 둘 다 활성
-            Shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, !bIsTrigger);
-            Shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
-            break;
-        }
+        Shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, !bIsTrigger);
+        Shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
     }
 }
 
@@ -552,111 +545,4 @@ void FBodyInstance::ApplyCollisionResponse(EBodyCollisionResponse::Type Response
             Shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
         }
     }
-}
-
-// --- DOF 잠금 ---
-// 주의: DOF 잠금은 PhysX 좌표계 기준으로 적용됨
-// 프로젝트 좌표계와 다르므로 축 매핑 필요
-
-void FBodyInstance::ApplyDOFLock()
-{
-    PxRigidDynamic* DynamicActor = GetDynamicActor();
-    if (!DynamicActor) return;
-
-    PxRigidDynamicLockFlags LockFlags;
-
-    // 프로젝트 좌표계 → PhysX 좌표계 축 매핑
-    // 프로젝트 X → PhysX Z
-    // 프로젝트 Y → PhysX X
-    // 프로젝트 Z → PhysX Y
-
-    switch (DOFMode)
-    {
-    case EDOFMode::YZPlane:
-        // 프로젝트 X축 고정 → PhysX Z축 고정
-        LockFlags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_Z;
-        LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_X;
-        LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y;
-        break;
-    case EDOFMode::XZPlane:
-        // 프로젝트 Y축 고정 → PhysX X축 고정
-        LockFlags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_X;
-        LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y;
-        LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z;
-        break;
-    case EDOFMode::XYPlane:
-        // 프로젝트 Z축 고정 → PhysX Y축 고정
-        LockFlags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_Y;
-        LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_X;
-        LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z;
-        break;
-    case EDOFMode::SixDOF:
-    case EDOFMode::CustomPlane:
-        // 개별 플래그 사용 (축 매핑 적용)
-        // 프로젝트 X → PhysX Z
-        if (bLockXLinear) LockFlags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_Z;
-        if (bLockXAngular) LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z;
-        // 프로젝트 Y → PhysX X
-        if (bLockYLinear) LockFlags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_X;
-        if (bLockYAngular) LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_X;
-        // 프로젝트 Z → PhysX Y
-        if (bLockZLinear) LockFlags |= PxRigidDynamicLockFlag::eLOCK_LINEAR_Y;
-        if (bLockZAngular) LockFlags |= PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y;
-        break;
-    default:
-        break;
-    }
-
-    DynamicActor->setRigidDynamicLockFlags(LockFlags);
-}
-
-// --- Private 헬퍼 함수 ---
-
-void FBodyInstance::UpdateMassProperties()
-{
-    PxRigidDynamic* DynamicActor = GetDynamicActor();
-    if (!DynamicActor) return;
-
-    if (bOverrideMass)
-    {
-        PxRigidBodyExt::setMassAndUpdateInertia(*DynamicActor, MassInKg);
-    }
-    else
-    {
-        float Density = 1000.0f; // 기본 밀도 (kg/m^3)
-        UPhysicalMaterial* UsedMat = PhysMaterialOverride;
-        if (UsedMat)
-        {
-            Density = UsedMat->Density;
-        }
-        PxRigidBodyExt::updateMassAndInertia(*DynamicActor, Density);
-    }
-}
-
-void FBodyInstance::ApplyPhysicsSettings()
-{
-    if (PxRigidDynamic* DynamicActor = GetDynamicActor())
-    {
-        DynamicActor->setLinearDamping(LinearDamping);
-        DynamicActor->setAngularDamping(AngularDamping);
-
-        if (MaxLinearVelocity > 0.0f)
-        {
-            DynamicActor->setMaxLinearVelocity(MaxLinearVelocity);
-        }
-        if (MaxAngularVelocity > 0.0f)
-        {
-            // PhysX는 rad/s 사용
-            DynamicActor->setMaxAngularVelocity(PhysXConvert::DegreesToRadians(MaxAngularVelocity));
-        }
-    }
-}
-
-PxRigidDynamic* FBodyInstance::GetDynamicActor() const
-{
-    if (RigidActor)
-    {
-        return RigidActor->is<PxRigidDynamic>();
-    }
-    return nullptr;
 }

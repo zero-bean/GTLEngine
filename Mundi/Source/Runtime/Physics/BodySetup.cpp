@@ -90,7 +90,7 @@ void UBodySetup::CreatePhysicsShapes(FBodyInstance* BodyInstance, const FVector&
         PxShape* Shape = CreateSphereShape(Elem, Scale3D, Material);
         if (Shape)
         {
-            ConfigureShapeFlags(Shape, Elem.GetCollisionEnabled(), BodyInstance->bIsTrigger);
+            ConfigureShapeFlags(Shape, Elem.GetCollisionEnabled(), BodyInstance->IsTrigger());
             BodyInstance->RigidActor->attachShape(*Shape);
             BodyInstance->Shapes.Add(Shape);
             Shape->release(); // Actor가 소유권을 가짐
@@ -106,7 +106,7 @@ void UBodySetup::CreatePhysicsShapes(FBodyInstance* BodyInstance, const FVector&
         PxShape* Shape = CreateBoxShape(Elem, Scale3D, Material);
         if (Shape)
         {
-            ConfigureShapeFlags(Shape, Elem.GetCollisionEnabled(), BodyInstance->bIsTrigger);
+            ConfigureShapeFlags(Shape, Elem.GetCollisionEnabled(), BodyInstance->IsTrigger());
             BodyInstance->RigidActor->attachShape(*Shape);
             BodyInstance->Shapes.Add(Shape);
             Shape->release();
@@ -122,7 +122,7 @@ void UBodySetup::CreatePhysicsShapes(FBodyInstance* BodyInstance, const FVector&
         PxShape* Shape = CreateCapsuleShape(Elem, Scale3D, Material);
         if (Shape)
         {
-            ConfigureShapeFlags(Shape, Elem.GetCollisionEnabled(), BodyInstance->bIsTrigger);
+            ConfigureShapeFlags(Shape, Elem.GetCollisionEnabled(), BodyInstance->IsTrigger());
             BodyInstance->RigidActor->attachShape(*Shape);
             BodyInstance->Shapes.Add(Shape);
             Shape->release();

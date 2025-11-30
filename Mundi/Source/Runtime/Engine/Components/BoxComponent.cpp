@@ -6,6 +6,8 @@
 #include "BoxComponent.h"
 #include "SphereComponent.h"
 #include "Actor.h"
+#include "BodySetup.h"
+#include "BoxElem.h"
 #include "Sphere.h"
 #include "World.h"
 #include "CollisionManager.h"
@@ -275,11 +277,23 @@ bool UBoxComponent::ContainsPoint(const FVector& Point) const
 	return bInsideX && bInsideY && bInsideZ;
 }
 
-PxGeometry* UBoxComponent::GetPhysicsGeometry()
+UBodySetup* UBoxComponent::GetBodySetup()
 {
-	FVector WorldScale = GetWorldScale(); 
-	float X = BoxExtent.X * std::abs(WorldScale.X);
-	float Y = BoxExtent.Y * std::abs(WorldScale.Y);
-	float Z = BoxExtent.Z * std::abs(WorldScale.Z);
-	return new physx::PxBoxGeometry(X, Y, Z);
+	if (BodySetup == nullptr)
+	{
+		BodySetup = NewObject<UBodySetup>();
+	}
+	BodySetup->AggGeom.BoxElems.Empty();
+
+	FKBoxElem BoxElem;
+    
+	BoxElem.X = BoxExtent.X * 2.0f;
+	BoxElem.Y = BoxExtent.Y * 2.0f;
+	BoxElem.Z = BoxExtent.Z * 2.0f;
+    
+	BoxElem.Center = FVector::Zero();
+	BoxElem.Rotation = FQuat::Identity();
+	BodySetup->AggGeom.BoxElems.Add(BoxElem);
+
+	return BodySetup;
 }

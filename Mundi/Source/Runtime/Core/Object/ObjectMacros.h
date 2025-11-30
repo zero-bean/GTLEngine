@@ -7,6 +7,8 @@
 #include "Distribution.h"
 #include <type_traits>
 
+#include "Source/Runtime/Physics/BodyInstance.h"
+
 // ===== 타입 자동 감지 템플릿 =====
 
 // 기본 타입 감지 템플릿
@@ -85,6 +87,15 @@ struct TPropertyTypeTraits<FDistributionColor>
 	static constexpr EPropertyType GetType()
 	{
 		return EPropertyType::DistributionColor;
+	}
+};
+
+template<>
+struct TPropertyTypeTraits<FBodyInstance>
+{
+	static constexpr EPropertyType GetType()
+	{
+		return EPropertyType::BodyInstance;
 	}
 };
 
