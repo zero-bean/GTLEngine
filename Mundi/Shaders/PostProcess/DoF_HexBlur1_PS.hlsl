@@ -13,6 +13,7 @@ float4 mainPS(float4 position : SV_Position, float2 texcoord : TEXCOORD0) : SV_T
     float4 cocSample = g_CoCTexture.Sample(g_LinearSampler, texcoord);
     float farCoC = cocSample.r;
     float nearCoC = cocSample.g;
+    float centerDepth = cocSample.a;  // 현재 픽셀의 깊이
 
     // Near, Far 중 더 큰 CoC 값을 블러 반경으로 사용
     float cocRadius = max(nearCoC, farCoC);
@@ -24,22 +25,47 @@ float4 mainPS(float4 position : SV_Position, float2 texcoord : TEXCOORD0) : SV_T
         originalColor.a = cocSample.a;
         return originalColor;
     }
-    
+
     float4 finalColor = float4(0.0, 0.0, 0.0, 0.0);
     float totalWeight = 0.0;
-    
+
     int sampleCount = FDepthOfFieldBuffer.BlurSampleCount;
     if (sampleCount == 0) sampleCount = 1;
 
     float blurScale = cocRadius * FDepthOfFieldBuffer.MaxCoc;
 
+    // 깊이 가중치 임계값 (조정 가능)
+    // 0.001 = 매우 엄격 (블러 거의 없음, 윤곽선 완벽 보호)
+    // 0.01 = 엄격 (윤곽선 보호, 적당한 블러)
+    // 0.05 = 보통 (부드러운 전환)
+    // 0.1 = 관대 (자연스러운 블러, 약한 보호)
+    float depthThreshold = 0.01;
+
     [loop]
     for (int i = -sampleCount; i <= sampleCount; ++i)
     {
-        float weight = (sampleCount - abs(i)) / (float)sampleCount;
         float2 offset = BLUR_DIRECTION * (i / (float)sampleCount) * blurScale * ScreenSize.zw;
-        finalColor += g_InputTexture.Sample(g_LinearSampler, texcoord + offset) * weight;
-        totalWeight += weight;
+        float2 sampleUV = texcoord + offset;
+
+        // 샘플 위치의 깊이 읽기
+        float4 sampleCoc = g_CoCTexture.Sample(g_LinearSampler, sampleUV);
+        float sampleDepth = sampleCoc.a;
+
+        // 거리 기반 가중치 (기존)
+        float distanceWeight = 1.0 - abs(i) / (float)sampleCount;
+
+        // 깊이 차이 기반 가중치 (새로 추가)
+        float depthDiff = abs(centerDepth - sampleDepth);
+        float depthWeight = exp(-depthDiff / depthThreshold);
+
+        // 최종 가중치 = 거리 × 깊이
+        float finalWeight = distanceWeight * depthWeight;
+
+        // 색상 샘플링
+        float4 sampleColor = g_InputTexture.Sample(g_LinearSampler, sampleUV);
+
+        finalColor += sampleColor * finalWeight;
+        totalWeight += finalWeight;
     }
 
     if (totalWeight > 0.0)
@@ -50,8 +76,8 @@ float4 mainPS(float4 position : SV_Position, float2 texcoord : TEXCOORD0) : SV_T
     {
         finalColor = g_InputTexture.Sample(g_LinearSampler, texcoord);
     }
-    
+
     finalColor.a = cocSample.a;
-    
+
     return finalColor;
 }
