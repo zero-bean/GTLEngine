@@ -5,10 +5,8 @@
 #include "PrimitiveComponent.h"
 
 // 커스텀 Simulation Filter Shader
-// FilterData.word0: 충돌 그룹 (같은 랙돌은 같은 값)
-// FilterData.word1: 충돌 마스크
-// FilterData.word2: 랙돌 ID (0이면 일반 오브젝트, 0이 아니면 랙돌)
-PxFilterFlags RagdollFilterShader(
+// 랙돌 내 자체 충돌은 PxAggregate(selfCollision=false)로 처리
+PxFilterFlags CustomFilterShader(
     PxFilterObjectAttributes attributes0, PxFilterData filterData0,
     PxFilterObjectAttributes attributes1, PxFilterData filterData1,
     PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
@@ -18,19 +16,6 @@ PxFilterFlags RagdollFilterShader(
     {
         pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
         return PxFilterFlag::eDEFAULT;
-    }
-
-    // 둘 다 랙돌이고 같은 랙돌 ID를 가지면 충돌 무시
-    if (filterData0.word2 != 0 && filterData0.word2 == filterData1.word2)
-    {
-        UE_LOG("[Filter] SUPPRESS: word2=%u == %u", filterData0.word2, filterData1.word2);
-        return PxFilterFlag::eSUPPRESS;
-    }
-
-    // 디버그: 충돌 발생 시 로그
-    if (filterData0.word2 != 0 || filterData1.word2 != 0)
-    {
-        UE_LOG("[Filter] COLLIDE: word2=%u vs %u", filterData0.word2, filterData1.word2);
     }
 
     // 기본 충돌 처리
@@ -91,7 +76,7 @@ void FPhysScene::InitPhysScene()
         UE_LOG("[PhysX Error] PhysX Dispatcher가 초기화되지 않았습니다.");
     }
     SceneDesc.cpuDispatcher = GPhysXDispatcher;
-    SceneDesc.filterShader = RagdollFilterShader;
+    SceneDesc.filterShader = CustomFilterShader;
 
     SceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
     SceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
@@ -183,6 +168,12 @@ void FPhysScene::SyncComponentsToBodies()
         // BodyInstance 유효성 검사: RigidActor가 일치하는지 확인
         // (정리 중인 바디이거나 잘못된 포인터인 경우 방지)
         if (!BodyInstance->IsValidBodyInstance() || BodyInstance->RigidActor != RigidActor)
+        {
+            continue;
+        }
+
+        // 랙돌 바디는 SyncBonesFromPhysics()에서 별도 처리됨
+        if (BodyInstance->bIsRagdollBody)
         {
             continue;
         }

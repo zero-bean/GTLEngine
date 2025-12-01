@@ -484,6 +484,7 @@ void USkeletalMeshComponent::InitRagdoll(FPhysScene* InPhysScene)
     }
 
     const int32 NumBones = Skeleton->Bones.Num();
+    const int32 NumBodySetups = PhysicsAsset->BodySetups.Num();
 
     // Bodies 배열 초기화 (본 개수만큼, nullptr로)
     Bodies.SetNum(NumBones);
@@ -492,14 +493,14 @@ void USkeletalMeshComponent::InitRagdoll(FPhysScene* InPhysScene)
         Bodies[i] = nullptr;
     }
 
-    // 이 랙돌의 고유 ID 생성 (같은 랙돌 내 바디끼리 충돌 방지용)
-    // 컴포넌트의 포인터 주소를 사용하여 고유성 보장
-    static uint32 NextRagdollId = 1;
-    uint32 ThisRagdollId = NextRagdollId++;
-    if (NextRagdollId == 0) NextRagdollId = 1;  // 0은 일반 오브젝트용으로 예약
+    // PxAggregate 생성 (자체 충돌 비활성화: selfCollision = false)
+    if (GPhysXSDK)
+    {
+        Aggregate = GPhysXSDK->createAggregate(NumBodySetups, false);  // false = 자체 충돌 비활성화
+    }
 
     // PhysicsAsset의 각 BodySetup에 대해 FBodyInstance 생성
-    for (int32 BodyIdx = 0; BodyIdx < PhysicsAsset->BodySetups.Num(); ++BodyIdx)
+    for (int32 BodyIdx = 0; BodyIdx < NumBodySetups; ++BodyIdx)
     {
         UBodySetup* BodySetup = PhysicsAsset->BodySetups[BodyIdx];
         if (!BodySetup)
@@ -524,12 +525,18 @@ void USkeletalMeshComponent::InitRagdoll(FPhysScene* InPhysScene)
         NewBody->bSimulatePhysics = bSimulatePhysics;
         NewBody->LinearDamping = 0.1f;     // 기본 감쇠
         NewBody->AngularDamping = 0.05f;
-        NewBody->RagdollId = ThisRagdollId;  // 같은 랙돌은 같은 ID
+        NewBody->bIsRagdollBody = true;    // 랙돌 바디 표시
 
-        // 바디 초기화
-        NewBody->InitBody(BodySetup, BoneWorldTransform, this, PhysScene);
+        // 바디 초기화 (Aggregate에 추가)
+        NewBody->InitBody(BodySetup, BoneWorldTransform, this, PhysScene, Aggregate);
 
         Bodies[BoneIndex] = NewBody;
+    }
+
+    // Aggregate를 Scene에 추가
+    if (Aggregate && PhysScene && PhysScene->GetPxScene())
+    {
+        PhysScene->GetPxScene()->addAggregate(*Aggregate);
     }
 
     // Constraints 생성
@@ -619,6 +626,17 @@ void USkeletalMeshComponent::TermRagdoll()
         }
     }
     Bodies.Empty();
+
+    // Aggregate 해제
+    if (Aggregate)
+    {
+        if (PhysScene && PhysScene->GetPxScene())
+        {
+            PhysScene->GetPxScene()->removeAggregate(*Aggregate);
+        }
+        Aggregate->release();
+        Aggregate = nullptr;
+    }
 
     bRagdollInitialized = false;
     PhysScene = nullptr;

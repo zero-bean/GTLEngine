@@ -2,24 +2,6 @@
 #include "BodySetup.h"
 #include "BodyInstance.h"
 
-// Shape에 FilterData 설정 헬퍼 함수
-static void SetShapeFilterData(PxShape* Shape, FBodyInstance* OwningInstance)
-{
-    if (!Shape || !OwningInstance)
-    {
-        return;
-    }
-
-    PxFilterData FilterData;
-    FilterData.word0 = 1;  // 충돌 그룹 (기본값)
-    FilterData.word1 = 1;  // 충돌 마스크 (기본값)
-    FilterData.word2 = OwningInstance->RagdollId;  // 랙돌 ID (0이면 일반 오브젝트)
-    FilterData.word3 = 0;  // 예약
-
-    Shape->setSimulationFilterData(FilterData);
-
-    UE_LOG("[FilterData] RagdollId=%u set on shape", OwningInstance->RagdollId);
-}
 
 UBodySetup::UBodySetup()
 {
@@ -95,9 +77,6 @@ void UBodySetup::AddShapesToRigidActor_AssumesLocked(FBodyInstance* OwningInstan
                 NewShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
             }
 
-            // 랙돌 충돌 필터 설정
-            SetShapeFilterData(NewShape, OwningInstance);
-
             PDestActor->attachShape(*NewShape);
 
             NewShape->release();
@@ -126,9 +105,6 @@ void UBodySetup::AddShapesToRigidActor_AssumesLocked(FBodyInstance* OwningInstan
 
             NewShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
             NewShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
-
-            // 랙돌 충돌 필터 설정
-            SetShapeFilterData(NewShape, OwningInstance);
 
             PDestActor->attachShape(*NewShape);
             NewShape->release();
@@ -169,9 +145,6 @@ void UBodySetup::AddShapesToRigidActor_AssumesLocked(FBodyInstance* OwningInstan
 
             NewShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
             NewShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
-
-            // 랙돌 충돌 필터 설정
-            SetShapeFilterData(NewShape, OwningInstance);
 
             PDestActor->attachShape(*NewShape);
             NewShape->release();

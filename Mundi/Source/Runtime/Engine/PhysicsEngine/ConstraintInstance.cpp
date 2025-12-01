@@ -162,9 +162,6 @@ void FConstraintInstance::ConfigureJointLimits(const FConstraintSetup& Setup)
         return;
     }
 
-    UE_LOG("[Joint] ConfigureJointLimits: Swing1=%.1f, Swing2=%.1f, TwistMin=%.1f, TwistMax=%.1f",
-           Setup.Swing1Limit, Setup.Swing2Limit, Setup.TwistLimitMin, Setup.TwistLimitMax);
-
     // 각도를 라디안으로 변환 (PhysX는 최소 0.01 라디안 필요)
     const float MinAngle = 0.01f;  // 약 0.57도
     float Swing1Rad = FMath::Max(MinAngle, DegreesToRadians(Setup.Swing1Limit));

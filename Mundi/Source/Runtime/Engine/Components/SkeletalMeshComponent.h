@@ -12,6 +12,8 @@ struct FBodyInstance;
 struct FConstraintInstance;
 class FPhysScene;
 
+namespace physx { class PxAggregate; }
+
 UCLASS(DisplayName="스켈레탈 메시 컴포넌트", Description="스켈레탈 메시를 렌더링하는 컴포넌트입니다")
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {

@@ -21,8 +21,9 @@ struct FBodyInstance
      * @param Transform     월드 트랜스폼
      * @param Component     바디를 소유한 컴포넌트
      * @param InRBScene     바디가 속할 물리 씬
+     * @param InAggregate   Aggregate (nullptr이면 Scene에 직접 추가, 아니면 Aggregate에 추가)
      */
-    void InitBody(UBodySetup* Setup, const FTransform& Transform, UPrimitiveComponent* Component, FPhysScene* InRBScene);
+    void InitBody(UBodySetup* Setup, const FTransform& Transform, UPrimitiveComponent* Component, FPhysScene* InRBScene, physx::PxAggregate* InAggregate = nullptr);
 
     /** 바디를 씬에서 제거하고 자원을 해제한다. */
     void TermBody();
@@ -95,6 +96,9 @@ public:
     /** True일 경우, MassInKgOverride를 사용 */
     bool bOverrideMass;
 
-    /** 랙돌 ID (같은 랙돌 내 바디끼리 충돌 방지용, 0이면 일반 오브젝트) */
-    uint32 RagdollId = 0;
+    /** 이 바디가 속한 Aggregate (nullptr이면 Scene에 직접 추가됨) */
+    physx::PxAggregate* OwningAggregate = nullptr;
+
+    /** True일 경우, 랙돌 바디 (SyncComponentsToBodies에서 제외됨) */
+    bool bIsRagdollBody = false;
 };

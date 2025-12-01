@@ -62,7 +62,7 @@ FBodyInstance::~FBodyInstance()
     TermBody();
 }
 
-void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPrimitiveComponent* Component, FPhysScene* InRBScene)
+void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPrimitiveComponent* Component, FPhysScene* InRBScene, PxAggregate* InAggregate)
 {
     if (!Setup || !InRBScene || !GPhysXSDK)
     {
@@ -88,7 +88,7 @@ void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPr
     }
     else
     {
-        RigidActor = GPhysXSDK->createRigidStatic(PhysicsTransform);    
+        RigidActor = GPhysXSDK->createRigidStatic(PhysicsTransform);
     }
 
     if (!RigidActor)
@@ -120,9 +120,17 @@ void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPr
         DynamicActor->setAngularDamping(AngularDamping);
     }
 
-    if (PhysScene->GetPxScene())
+    // Aggregate가 있으면 Aggregate에 추가 (Scene에는 Aggregate가 추가될 때 함께 추가됨)
+    // Aggregate가 없으면 Scene에 직접 추가
+    if (InAggregate)
     {
-        PhysScene->GetPxScene()->addActor(*RigidActor); 
+        InAggregate->addActor(*RigidActor);
+        OwningAggregate = InAggregate;  // Aggregate 참조 저장
+    }
+    else if (PhysScene->GetPxScene())
+    {
+        PhysScene->GetPxScene()->addActor(*RigidActor);
+        OwningAggregate = nullptr;
     }
 }
 
@@ -133,17 +141,26 @@ void FBodyInstance::TermBody()
         // userData를 먼저 클리어하여 dangling pointer 방지
         RigidActor->userData = nullptr;
 
-        // Actor가 실제로 scene에 추가되어 있는지 확인 후 제거
-        // (InitBody 실패 또는 이미 제거된 경우 대비)
-        PxScene* ActorScene = RigidActor->getScene();
-        if (ActorScene)
+        if (PhysScene)
         {
-            if (PhysScene)
+            // 시뮬레이션 중이면 완료될 때까지 대기
+            PhysScene->WaitPhysScene();
+        }
+
+        // Aggregate에 속한 Actor는 Aggregate에서 제거
+        // Aggregate가 없으면 Scene에서 직접 제거
+        if (OwningAggregate)
+        {
+            OwningAggregate->removeActor(*RigidActor);
+            OwningAggregate = nullptr;
+        }
+        else
+        {
+            PxScene* ActorScene = RigidActor->getScene();
+            if (ActorScene)
             {
-                // 시뮬레이션 중이면 완료될 때까지 대기
-                PhysScene->WaitPhysScene();
+                ActorScene->removeActor(*RigidActor);
             }
-            ActorScene->removeActor(*RigidActor);
         }
 
         RigidActor->release();
