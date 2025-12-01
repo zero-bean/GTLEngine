@@ -24,6 +24,13 @@ void FPhysicsSystem::Initialize()
         return;
     }
 
+    // Vehicle SDK 초기화
+    if (!PxInitVehicleSDK(*mPhysics))
+    {
+        UE_LOG("[error][FPhysicsSystem]: PxInitVehicleSDK Error");
+        return;
+    }
+
     PxCookingParams Params(Scale);
     Params.meshWeldTolerance = 0.1f; 
     Params.meshPreprocessParams |= PxMeshPreprocessingFlag::eWELD_VERTICES;
@@ -55,6 +62,9 @@ void FPhysicsSystem::Shutdown()
 
     // 디스패처 해제
     if (mDispatcher)    mDispatcher->release();
+
+    // Vehicle SDK 해제
+    PxCloseVehicleSDK();
 
     // Physics 해제
     if (mPhysics)       mPhysics->release();
