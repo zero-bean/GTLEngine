@@ -1,6 +1,7 @@
 #pragma once
 #include "SViewerWindow.h"
 #include "Source/Runtime/Engine/Viewer/PhysicsAssetEditorState.h"
+#include "Source/Runtime/Engine/PhysicsEngine/EAggCollisionShape.h"
 #include <functional>
 
 class FViewport;
@@ -95,7 +96,7 @@ public:
 	// ────────────────────────────────────────────────
 	// 바디/제약 조건 작업
 	// ────────────────────────────────────────────────
-	void AutoGenerateBodies();
+	void AutoGenerateBodies(EAggCollisionShape PrimitiveType, float MinBoneSize);
 	void AddBodyToBone(int32 BoneIndex);
 	void RemoveSelectedBody();
 	void AddConstraintBetweenBodies(int32 ParentBodyIndex, int32 ChildBodyIndex);

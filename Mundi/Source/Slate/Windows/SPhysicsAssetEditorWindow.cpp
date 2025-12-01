@@ -2014,15 +2014,21 @@ FString SPhysicsAssetEditorWindow::ExtractFileName(const FString& Path)
 // 바디/제약 조건 작업
 // ────────────────────────────────────────────────────────────────
 
-void SPhysicsAssetEditorWindow::AutoGenerateBodies()
+void SPhysicsAssetEditorWindow::AutoGenerateBodies(EAggCollisionShape PrimitiveType, float MinBoneSize)
 {
+	constexpr float kBoneWeightThreshold = 0.1f;  // 10% 미만 영향 무시
+
 	PhysicsAssetEditorState* State = GetActivePhysicsState();
 	if (!State || !State->EditingAsset || !State->CurrentMesh) return;
 
-	const FSkeleton* Skeleton = State->CurrentMesh->GetSkeleton();
+	const FSkeletalMeshData* MeshData = State->CurrentMesh->GetSkeletalMeshData();
+	if (!MeshData) return;
+
+	const FSkeleton* Skeleton = &MeshData->Skeleton;
 	if (!Skeleton || Skeleton->Bones.IsEmpty()) return;
 
 	UPhysicsAsset* Asset = State->EditingAsset;
+	const int32 BoneCount = static_cast<int32>(Skeleton->Bones.size());
 
 	// 기존 상태 완전 초기화
 	Asset->ClearAll();
@@ -2032,58 +2038,238 @@ void SPhysicsAssetEditorWindow::AutoGenerateBodies()
 	State->CachedSelectedBodyIndex = -1;
 	State->CachedSelectedConstraintIndex = -1;
 
-	// 본 길이 계산을 위한 자식 본 맵 구축
+	// ────────────────────────────────────────────────
+	// 1단계: 각 본의 월드 위치 캐싱
+	// ────────────────────────────────────────────────
+	TArray<FVector> BoneWorldPositions;
+	BoneWorldPositions.SetNum(BoneCount);
+	for (int32 i = 0; i < BoneCount; ++i)
+	{
+		const FMatrix& BindPose = Skeleton->Bones[i].BindPose;
+		BoneWorldPositions[i] = FVector(BindPose.M[3][0], BindPose.M[3][1], BindPose.M[3][2]);
+	}
+
+	// ────────────────────────────────────────────────
+	// 2단계: 본별 Vertex 수집 (Weight Threshold 기반)
+	// ────────────────────────────────────────────────
+	TArray<TArray<FVector>> BoneLocalVertices;
+	BoneLocalVertices.SetNum(BoneCount);
+
+	for (const FSkinnedVertex& V : MeshData->Vertices)
+	{
+		for (int32 i = 0; i < 4; ++i)
+		{
+			if (V.BoneWeights[i] >= kBoneWeightThreshold)
+			{
+				uint32 BoneIdx = V.BoneIndices[i];
+				if (BoneIdx < static_cast<uint32>(BoneCount))
+				{
+					// 본 위치 기준 상대 위치 (단순 뺄셈)
+					FVector LocalPos = V.Position - BoneWorldPositions[BoneIdx];
+					BoneLocalVertices[BoneIdx].Add(LocalPos);
+				}
+			}
+		}
+	}
+
+	// ────────────────────────────────────────────────
+	// 3단계: 자식 본 맵 구축 (본 방향 계산용)
+	// ────────────────────────────────────────────────
 	TArray<TArray<int32>> ChildrenMap;
-	ChildrenMap.SetNum(static_cast<int32>(Skeleton->Bones.size()));
-	for (int32 i = 0; i < static_cast<int32>(Skeleton->Bones.size()); ++i)
+	ChildrenMap.SetNum(BoneCount);
+	for (int32 i = 0; i < BoneCount; ++i)
 	{
 		int32 ParentIdx = Skeleton->Bones[i].ParentIndex;
-		if (ParentIdx >= 0 && ParentIdx < static_cast<int32>(Skeleton->Bones.size()))
+		if (ParentIdx >= 0 && ParentIdx < BoneCount)
 		{
 			ChildrenMap[ParentIdx].Add(i);
 		}
 	}
 
-	// 모든 본에 대해 바디 생성
-	for (int32 i = 0; i < static_cast<int32>(Skeleton->Bones.size()); ++i)
+	// ────────────────────────────────────────────────
+	// 4단계: 본별 Shape 생성 (본 방향 기준)
+	// ────────────────────────────────────────────────
+	int32 GeneratedBodies = 0;
+
+	for (int32 BoneIdx = 0; BoneIdx < BoneCount; ++BoneIdx)
 	{
-		const FBone& Bone = Skeleton->Bones[i];
+		const TArray<FVector>& Vertices = BoneLocalVertices[BoneIdx];
+		const FBone& Bone = Skeleton->Bones[BoneIdx];
 
-		// 본 위치 (BindPose 행렬의 Translation 부분: M[3][0..2])
-		FVector BonePos(Bone.BindPose.M[3][0], Bone.BindPose.M[3][1], Bone.BindPose.M[3][2]);
-
-		// 본 길이 계산 (자식 본까지의 거리 또는 기본값)
-		float BoneLength = 0.05f; // 기본값 (리프 본용)
-		if (!ChildrenMap[i].IsEmpty())
+		// Vertex가 부족하면 스킵
+		if (Vertices.Num() < 3)
 		{
-			// 첫 번째 자식까지의 거리 계산
-			int32 ChildIdx = ChildrenMap[i][0];
-			const FBone& ChildBone = Skeleton->Bones[ChildIdx];
-			FVector ChildPos(ChildBone.BindPose.M[3][0], ChildBone.BindPose.M[3][1], ChildBone.BindPose.M[3][2]);
-			BoneLength = (ChildPos - BonePos).Size();
+			continue;
 		}
 
-		// 최소/최대 크기 제한 (더 보수적으로)
-		BoneLength = std::max(0.02f, std::min(BoneLength, 0.5f));
+		// ────────────────────────────────────────────────
+		// 본 방향 계산
+		// ────────────────────────────────────────────────
+		FVector BoneDir(1, 0, 0);  // 기본 방향
 
-		// 바디 생성
-		int32 BodyIndex = Asset->AddBody(Bone.Name, i);
-		if (BodyIndex >= 0)
+		if (!ChildrenMap[BoneIdx].IsEmpty())
 		{
-			UBodySetup* Body = Asset->BodySetups[BodyIndex];
-			if (Body)
+			// 자식이 있으면: 현재 본 → 첫 번째 자식 본 방향
+			int32 ChildIdx = ChildrenMap[BoneIdx][0];
+			FVector ChildPos = BoneWorldPositions[ChildIdx];
+			FVector CurrentPos = BoneWorldPositions[BoneIdx];
+			FVector Dir = ChildPos - CurrentPos;
+			if (Dir.SizeSquared() > KINDA_SMALL_NUMBER)
 			{
-				// AggGeom에 캡슐 Shape 추가
-				FKSphylElem NewCapsule;
-				NewCapsule.Radius = BoneLength * 0.1f;       // 본 길이의 10%를 반지름으로
-				NewCapsule.Length = BoneLength * 0.7f;       // 본 길이의 70%를 전체 길이로
-				Body->AggGeom.SphylElems.Add(NewCapsule);
+				BoneDir = Dir.GetNormalized();
 			}
 		}
+		else if (Bone.ParentIndex >= 0)
+		{
+			// 리프 본: 부모 본 → 현재 본 방향
+			FVector ParentPos = BoneWorldPositions[Bone.ParentIndex];
+			FVector CurrentPos = BoneWorldPositions[BoneIdx];
+			FVector Dir = CurrentPos - ParentPos;
+			if (Dir.SizeSquared() > KINDA_SMALL_NUMBER)
+			{
+				BoneDir = Dir.GetNormalized();
+			}
+		}
+
+		// ────────────────────────────────────────────────
+		// 정점을 본 방향 축에 투영하여 길이/반경 계산
+		// ────────────────────────────────────────────────
+		float MinProj = FLT_MAX, MaxProj = -FLT_MAX;
+		float MaxRadial = 0.0f;
+		FVector CenterSum = FVector::Zero();
+
+		for (const FVector& V : Vertices)
+		{
+			CenterSum += V;
+
+			// 본 방향으로 투영 (길이)
+			float Proj = FVector::Dot(V, BoneDir);
+			MinProj = std::min(MinProj, Proj);
+			MaxProj = std::max(MaxProj, Proj);
+
+			// 본 방향 수직 거리 (반경)
+			FVector Radial = V - BoneDir * Proj;
+			MaxRadial = std::max(MaxRadial, Radial.Size());
+		}
+
+		FVector Center = CenterSum / static_cast<float>(Vertices.Num());
+		float Length = MaxProj - MinProj;
+		float Radius = MaxRadial;
+
+		// Min Bone Size 체크
+		float MaxExtent = std::max(Length, Radius * 2.0f);
+		if (MaxExtent < MinBoneSize)
+		{
+			continue;
+		}
+
+		// 바디 생성
+		int32 BodyIndex = Asset->AddBody(Bone.Name, BoneIdx);
+		if (BodyIndex < 0) continue;
+
+		UBodySetup* Body = Asset->BodySetups[BodyIndex];
+		if (!Body) continue;
+
+		// ────────────────────────────────────────────────
+		// Primitive Type별 Shape 생성
+		// ────────────────────────────────────────────────
+		switch (PrimitiveType)
+		{
+		case EAggCollisionShape::Sphere:
+		{
+			FKSphereElem Sphere;
+			Sphere.Center = Center;
+			Sphere.Radius = std::max(Length * 0.5f, Radius);
+			Body->AggGeom.SphereElems.Add(Sphere);
+			break;
+		}
+
+		case EAggCollisionShape::Sphyl:  // Capsule
+		{
+			FKSphylElem Capsule;
+			Capsule.Center = Center;
+
+			// 캡슐 길이 조정 (양 끝 반구 부분 제외)
+			Capsule.Length = std::max(0.0f, Length - 2.0f * Radius);
+			Capsule.Radius = std::max(0.001f, Radius);
+
+			// 본 로컬 좌표계에서 본 방향 계산 (BoneDir을 본 로컬로 변환)
+			const FMatrix& InvBindPose = Skeleton->Bones[BoneIdx].InverseBindPose;
+			FVector LocalBoneDir = InvBindPose.TransformVector(BoneDir);
+			if (LocalBoneDir.SizeSquared() > KINDA_SMALL_NUMBER)
+			{
+				LocalBoneDir = LocalBoneDir.GetNormalized();
+			}
+			else
+			{
+				LocalBoneDir = FVector(0, 0, 1);  // fallback
+			}
+
+			// 캡슐 회전: 기본 Z축 → 본 로컬 방향으로 회전
+			FVector DefaultAxis(0, 0, 1);
+			float DotVal = FVector::Dot(DefaultAxis, LocalBoneDir);
+
+			if (DotVal > 0.9999f)
+			{
+				Capsule.Rotation = FQuat::Identity();
+			}
+			else if (DotVal < -0.9999f)
+			{
+				Capsule.Rotation = FQuat::FromAxisAngle(FVector(1, 0, 0), PI);
+			}
+			else
+			{
+				FVector CrossVal = FVector::Cross(DefaultAxis, LocalBoneDir);
+				float W = 1.0f + DotVal;
+				Capsule.Rotation = FQuat(CrossVal.X, CrossVal.Y, CrossVal.Z, W).GetNormalized();
+			}
+
+			Body->AggGeom.SphylElems.Add(Capsule);
+			break;
+		}
+
+		case EAggCollisionShape::Box:
+		{
+			FKBoxElem Box;
+			Box.Center = Center;
+			// 본 방향 = Z축, 나머지 = Radius
+			Box.X = std::max(0.001f, Radius * 2.0f);
+			Box.Y = std::max(0.001f, Radius * 2.0f);
+			Box.Z = std::max(0.001f, Length);
+
+			// Box 회전: 기본 Z축 → 본 방향으로 회전
+			FVector DefaultAxisBox(0, 0, 1);
+			float DotValBox = FVector::Dot(DefaultAxisBox, BoneDir);
+			if (DotValBox > 0.9999f)
+			{
+				Box.Rotation = FQuat::Identity();
+			}
+			else if (DotValBox < -0.9999f)
+			{
+				Box.Rotation = FQuat::FromAxisAngle(FVector(1, 0, 0), PI);
+			}
+			else
+			{
+				FVector CrossValBox = FVector::Cross(DefaultAxisBox, BoneDir);
+				float W = 1.0f + DotValBox;
+				Box.Rotation = FQuat(CrossValBox.X, CrossValBox.Y, CrossValBox.Z, W).GetNormalized();
+			}
+
+			Body->AggGeom.BoxElems.Add(Box);
+			break;
+		}
+
+		default:
+			break;
+		}
+
+		++GeneratedBodies;
 	}
 
-	// 부모-자식 본 사이에 제약 조건 생성
-	for (int32 i = 0; i < static_cast<int32>(Skeleton->Bones.size()); ++i)
+	// ────────────────────────────────────────────────
+	// 6단계: 부모-자식 본 사이에 제약 조건 생성
+	// ────────────────────────────────────────────────
+	for (int32 i = 0; i < BoneCount; ++i)
 	{
 		int32 ParentBoneIdx = Skeleton->Bones[i].ParentIndex;
 		if (ParentBoneIdx < 0) continue;
@@ -2104,8 +2290,8 @@ void SPhysicsAssetEditorWindow::AutoGenerateBodies()
 	State->ClearSelection();
 	State->HideGizmo();
 
-	UE_LOG("[SPhysicsAssetEditorWindow] Auto-generated %d bodies and %d constraints",
-		(int)Asset->BodySetups.size(), (int)Asset->ConstraintSetups.size());
+	UE_LOG("[SPhysicsAssetEditorWindow] Auto-generated %d bodies and %d constraints (vertex-based)",
+		GeneratedBodies, (int)Asset->ConstraintSetups.size());
 }
 
 void SPhysicsAssetEditorWindow::AddBodyToBone(int32 BoneIndex)
