@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "AggregateGeom.h"
 #include "UBodySetup.generated.h"
@@ -31,12 +31,12 @@ public:
 	// 충돌 형상
 	// ====================================================================
 
-	/** 단순화된 충돌 표현 */
+	/** 단순화된 충돌 표현 (Shape 편집은 별도 UI에서 처리) */
 	UPROPERTY()
 	FKAggregateGeom AggGeom;
 
     /** 밀도, 마찰 등과 관련된 정보를 포함하는 물리 재질 */
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, Category="Physics")
 	UPhysicalMaterial* PhysicalMaterial;
 
     void AddShapesToRigidActor_AssumesLocked(
