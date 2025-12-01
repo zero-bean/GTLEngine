@@ -111,6 +111,18 @@ void USkeletalMeshComponent::SetSkeletalMesh(const FString& PathFileName)
     }
 }
 
+void USkeletalMeshComponent::DuplicateSubObjects()
+{
+    USkinnedMeshComponent::DuplicateSubObjects();
+
+    Bodies.Empty();
+    Constraints.Empty();
+
+    bRagdollInitialized = false;
+    Aggregate = nullptr;
+    PhysScene = nullptr;
+}
+
 void USkeletalMeshComponent::SetAnimInstance(UAnimInstance* InInstance)
 {
     AnimInstance = InInstance;

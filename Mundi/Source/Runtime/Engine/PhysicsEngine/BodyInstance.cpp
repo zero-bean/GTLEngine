@@ -8,6 +8,7 @@ FBodyInstance::FBodyInstance()
     , BodySetup(nullptr)
     , PhysScene(nullptr)
     , RigidActor(nullptr)
+    , PhysicalMaterialOverride(nullptr)
     , Scale3D(FVector(1.f, 1.f, 1.f))
     , bSimulatePhysics(false)
     , LinearDamping(0.01f)
@@ -22,6 +23,7 @@ FBodyInstance::FBodyInstance(const FBodyInstance& Other)
     , BodySetup(nullptr)        // InitBody에서 새로 설정됨
     , PhysScene(nullptr)        // InitBody에서 새로 설정됨
     , RigidActor(nullptr)       // InitBody에서 새로 생성됨
+    , PhysicalMaterialOverride(Other.PhysicalMaterialOverride)
     , Scale3D(Other.Scale3D)
     , bSimulatePhysics(Other.bSimulatePhysics)
     , LinearDamping(Other.LinearDamping)
@@ -40,6 +42,7 @@ FBodyInstance& FBodyInstance::operator=(const FBodyInstance& Other)
         TermBody();
 
         // 값 복사 (런타임 포인터 제외)
+        PhysicalMaterialOverride = Other.PhysicalMaterialOverride;
         Scale3D = Other.Scale3D;
         bSimulatePhysics = Other.bSimulatePhysics;
         LinearDamping = Other.LinearDamping;

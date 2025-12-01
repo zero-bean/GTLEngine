@@ -25,6 +25,7 @@ public:
 
     void TickComponent(float DeltaTime) override;
     void SetSkeletalMesh(const FString& PathFileName) override;
+    void DuplicateSubObjects() override;
 
     // PhysicsAsset 디버그 시각화
     void RenderDebugVolume(URenderer* Renderer) const override;
