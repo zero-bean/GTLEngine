@@ -3681,6 +3681,9 @@ bool UPropertyRenderer::RenderDistributionColorProperty(const FProperty& Prop, v
 
 bool UPropertyRenderer::RenderBodyInstanceProperty(const FProperty& Prop, void* Instance)
 {
+	UPrimitiveComponent* Primitive = static_cast<UPrimitiveComponent*>(Instance);
+	if (!Primitive || !Primitive->CanSimulatingPhysics()) { return false; }
+	
     FBodyInstance* BodyInstance = Prop.GetValuePtr<FBodyInstance>(Instance);
     if (!BodyInstance || !BodyInstance->IsValidBodyInstance()) { return false; }
 
