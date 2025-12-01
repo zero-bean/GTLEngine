@@ -1,6 +1,7 @@
 ﻿#pragma once
-#include "FConstraintInstance.generated.h"
 #include "extensions/PxJoint.h"
+#include "extensions/PxD6Joint.h"
+#include "FConstraintInstance.generated.h"
 
 /**
  * EAngularConstraintMotion
@@ -101,4 +102,41 @@ struct FConstraintInstance
 
     // --- 생성자 ---
     FConstraintInstance() = default;
+
+    // --- Joint 생성/해제 ---
+
+    /**
+     * PxD6Joint 생성 및 초기화
+     * @param Body1 - 첫 번째 바디 (부모)
+     * @param Body2 - 두 번째 바디 (자식)
+     * @param Frame1 - Body1 로컬 기준 조인트 프레임
+     * @param Frame2 - Body2 로컬 기준 조인트 프레임
+     */
+    void InitConstraint(
+        struct FBodyInstance* Body1,
+        struct FBodyInstance* Body2,
+        const FTransform& Frame1,
+        const FTransform& Frame2
+    );
+
+    /**
+     * PxJoint 해제
+     */
+    void TermConstraint();
+
+    /**
+     * Joint 유효성 검사
+     */
+    bool IsValidConstraint() const { return PxJoint != nullptr; }
+
+private:
+    /**
+     * 선형 제한 설정 적용
+     */
+    void ConfigureLinearLimits(physx::PxD6Joint* Joint);
+
+    /**
+     * 각도 제한 설정 적용
+     */
+    void ConfigureAngularLimits(physx::PxD6Joint* Joint);
 };
