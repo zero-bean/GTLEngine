@@ -64,6 +64,15 @@ void USkeletonTreeWidget::RenderWidget()
 			RenderBoneNode(i, 0);
 		}
 	}
+
+	// 빈 공간 클릭 시 선택 해제
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)
+		&& ImGui::IsMouseClicked(ImGuiMouseButton_Left)
+		&& !ImGui::IsAnyItemHovered())
+	{
+		EditorState->ClearSelection();
+		EditorState->SelectedBoneIndex = -1;
+	}
 }
 
 void USkeletonTreeWidget::RebuildCache()
@@ -158,7 +167,8 @@ void USkeletonTreeWidget::RenderBoneNode(int32 BoneIndex, int32 Depth)
 	{
 		NodeFlags |= ImGuiTreeNodeFlags_Leaf;
 	}
-	if (EditorState->SelectedBoneIndex == BoneIndex)
+	// 본 선택 표시: 바디 선택 모드이고 해당 본이 선택된 경우
+	if (EditorState->bBodySelectionMode && EditorState->SelectedBoneIndex == BoneIndex)
 	{
 		NodeFlags |= ImGuiTreeNodeFlags_Selected;
 	}
@@ -197,22 +207,67 @@ void USkeletonTreeWidget::RenderBoneNode(int32 BoneIndex, int32 Depth)
 	// 컨텍스트 메뉴
 	if (ImGui::BeginPopupContextItem())
 	{
+		// 우클릭 시 해당 본 선택
+		EditorState->SelectedBoneIndex = BoneIndex;
+		if (bHasBody)
+		{
+			EditorState->SelectBody(BodyIndex);
+		}
+
 		if (!bHasBody)
 		{
+			// === 바디가 없는 본 ===
+
+			// Add Body (기본 캡슐로 생성)
 			if (ImGui::MenuItem("Add Body"))
 			{
-				EditorState->SelectedBoneIndex = BoneIndex;
+				OnAddBody.Broadcast(BoneIndex);
 			}
 		}
 		else
 		{
+			// === 바디가 있는 본 ===
+
 			if (ImGui::MenuItem("Select Body"))
 			{
 				EditorState->SelectBody(BodyIndex);
 			}
-			if (ImGui::MenuItem("Remove Body"))
+
+			ImGui::Separator();
+
+			// Add Primitive 서브메뉴
+			if (ImGui::BeginMenu("Add Primitive"))
 			{
-				// TODO: 바디 제거 기능
+				if (ImGui::MenuItem("Box"))
+				{
+					OnAddPrimitive.Broadcast(BodyIndex, 0);
+				}
+				if (ImGui::MenuItem("Sphere"))
+				{
+					OnAddPrimitive.Broadcast(BodyIndex, 1);
+				}
+				if (ImGui::MenuItem("Capsule"))
+				{
+					OnAddPrimitive.Broadcast(BodyIndex, 2);
+				}
+				ImGui::EndMenu();
+			}
+
+			ImGui::Separator();
+
+			// Add Constraint to... 서브메뉴 (모든 Body 목록)
+			if (ImGui::BeginMenu("Add Constraint to..."))
+			{
+				RenderConstraintTargetMenu(BodyIndex);
+				ImGui::EndMenu();
+			}
+
+			ImGui::Separator();
+
+			// Delete Body
+			if (ImGui::MenuItem("Delete Body"))
+			{
+				OnRemoveBody.Broadcast(BodyIndex);
 			}
 		}
 		ImGui::EndPopup();
@@ -319,9 +374,68 @@ void USkeletonTreeWidget::RenderConstraintNode(int32 ConstraintIndex)
 		EditorState->SelectConstraint(ConstraintIndex);
 	}
 
+	// 컨텍스트 메뉴
+	if (ImGui::BeginPopupContextItem())
+	{
+		// 우클릭 시 해당 컨스트레인트 선택
+		EditorState->SelectConstraint(ConstraintIndex);
+
+		if (ImGui::MenuItem("Delete Constraint"))
+		{
+			OnRemoveConstraint.Broadcast(ConstraintIndex);
+		}
+		ImGui::EndPopup();
+	}
+
 	if (bNodeOpen)
 	{
 		ImGui::TreePop();
+	}
+}
+
+void USkeletonTreeWidget::RenderConstraintTargetMenu(int32 SourceBodyIndex)
+{
+	if (!EditorState || !EditorState->EditingAsset) return;
+
+	bool bHasItems = false;
+
+	// 모든 Body 목록 표시
+	for (int32 i = 0; i < static_cast<int32>(EditorState->EditingAsset->BodySetups.size()); ++i)
+	{
+		if (i == SourceBodyIndex) continue;  // 자기 자신 제외
+
+		UBodySetup* TargetBody = EditorState->EditingAsset->BodySetups[i];
+		if (!TargetBody) continue;
+
+		bHasItems = true;
+
+		// 이미 Constraint가 있는지 확인 (양방향)
+		int32 ExistingConstraint = EditorState->EditingAsset->FindConstraintIndex(SourceBodyIndex, i);
+		int32 ExistingConstraintReverse = EditorState->EditingAsset->FindConstraintIndex(i, SourceBodyIndex);
+		bool bAlreadyConnected = (ExistingConstraint >= 0 || ExistingConstraintReverse >= 0);
+
+		// 메뉴 아이템
+		FString Label = TargetBody->BoneName.ToString();
+		if (bAlreadyConnected)
+		{
+			Label += " (connected)";
+			ImGui::BeginDisabled();
+		}
+
+		if (ImGui::MenuItem(Label.c_str()))
+		{
+			OnAddConstraint.Broadcast(SourceBodyIndex, i);
+		}
+
+		if (bAlreadyConnected)
+		{
+			ImGui::EndDisabled();
+		}
+	}
+
+	if (!bHasItems)
+	{
+		ImGui::TextDisabled("No other bodies available");
 	}
 }
 

@@ -157,6 +157,7 @@ void FPhysScene::SyncComponentsToBodies()
         }
 
         FTransform NewTransform = BodyInstance->GetUnrealWorldTransform();
-        OwnerComp->SetWorldTransform(NewTransform);
+        NewTransform.Scale3D = OwnerComp->GetWorldScale();
+        OwnerComp->SetWorldTransform(NewTransform, EUpdateTransformFlags::SkipPhysicsUpdate, ETeleportType::None);
     }
 }

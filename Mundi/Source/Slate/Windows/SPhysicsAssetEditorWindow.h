@@ -1,6 +1,7 @@
 #pragma once
 #include "SViewerWindow.h"
 #include "Source/Runtime/Engine/Viewer/PhysicsAssetEditorState.h"
+#include <functional>
 
 class FViewport;
 class FViewportClient;
@@ -14,6 +15,7 @@ struct FConstraintSetup;
 class USkeletonTreeWidget;
 class UBodyPropertiesWidget;
 class UConstraintPropertiesWidget;
+class UToolsWidget;
 
 /**
  * SPhysicsAssetEditorWindow
@@ -85,6 +87,11 @@ private:
 	void SavePhysicsAssetAs();
 	void LoadPhysicsAsset();
 
+	// 미저장 변경사항 확인 후 액션 실행 (비동기)
+	void CheckUnsavedChangesAndExecute(std::function<void()> Action);
+	std::function<void()> PendingAction;  // 다이얼로그 후 실행할 액션
+
+public:
 	// ────────────────────────────────────────────────
 	// 바디/제약 조건 작업
 	// ────────────────────────────────────────────────
@@ -93,7 +100,10 @@ private:
 	void RemoveSelectedBody();
 	void AddConstraintBetweenBodies(int32 ParentBodyIndex, int32 ChildBodyIndex);
 	void RemoveSelectedConstraint();
+	void RegenerateSelectedBody();
+	void AddPrimitiveToBody(int32 BodyIndex, int32 PrimitiveType);  // 0=Box, 1=Sphere, 2=Capsule
 
+private:
 	// ────────────────────────────────────────────────
 	// 레이아웃
 	// ────────────────────────────────────────────────
@@ -106,6 +116,7 @@ private:
 	USkeletonTreeWidget* SkeletonTreeWidget = nullptr;
 	UBodyPropertiesWidget* BodyPropertiesWidget = nullptr;
 	UConstraintPropertiesWidget* ConstraintPropertiesWidget = nullptr;
+	UToolsWidget* ToolsWidget = nullptr;
 
 	void CreateSubWidgets();
 	void DestroySubWidgets();
@@ -118,4 +129,10 @@ private:
 	{
 		return static_cast<PhysicsAssetEditorState*>(ActiveState);
 	}
+
+	// 메시 로드 및 Physics Asset 초기화
+	void LoadMeshAndResetPhysics(PhysicsAssetEditorState* State, const FString& MeshPath);
+
+	// 파일 경로에서 파일명만 추출
+	static FString ExtractFileName(const FString& Path);
 };

@@ -19,12 +19,14 @@
 #include "Source/Runtime/AssetManagement/Line.h"
 #include "Source/Runtime/AssetManagement/LinesBatch.h"
 #include "Source/Editor/PlatformProcess.h"
+#include "Source/Slate/Widgets/ModalDialog.h"
 #include "ResourceManager.h"
 
 // Sub Widgets
 #include "Source/Slate/Widgets/PhysicsAssetEditor/SkeletonTreeWidget.h"
 #include "Source/Slate/Widgets/PhysicsAssetEditor/BodyPropertiesWidget.h"
 #include "Source/Slate/Widgets/PhysicsAssetEditor/ConstraintPropertiesWidget.h"
+#include "Source/Slate/Widgets/PhysicsAssetEditor/ToolsWidget.h"
 
 // Gizmo
 #include "Source/Editor/Gizmo/GizmoActor.h"
@@ -47,6 +49,9 @@ namespace
 	constexpr float M_PI = 3.14159265358979f;
 	constexpr int32 CircleSegments = 16;
 	constexpr int32 CapsuleVerticalLines = 8;
+	constexpr int32 ConeSegments = 12;        // 원뿔 세그먼트 수
+	constexpr int32 SphereRings = 3;          // 구체 링 수
+	constexpr float ConstraintSphereRadius = 0.02f;  // 조인트 구체 크기
 }
 
 /**
@@ -163,6 +168,395 @@ static void GenerateCapsuleLineCoordinates(
 		OutEndPoints.Add(Top + Dir2 * Radius);
 		OutStartPoints.Add(Bottom + Dir1 * Radius);
 		OutEndPoints.Add(Bottom + Dir2 * Radius);
+	}
+}
+
+// ────────────────────────────────────────────────────────────────
+// Constraint 시각화 헬퍼 함수들
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * 조인트 위치에 작은 구체(Sphere) 와이어프레임 생성
+ */
+static void GenerateConstraintSphereLines(
+	const FVector& Center,
+	float Radius,
+	const FVector4& Color,
+	FLinesBatch& OutBatch)
+{
+	// 3개 평면에 원 그리기
+	for (int32 j = 0; j < CircleSegments; ++j)
+	{
+		float Angle1 = (j / static_cast<float>(CircleSegments)) * 2.0f * M_PI;
+		float Angle2 = ((j + 1) / static_cast<float>(CircleSegments)) * 2.0f * M_PI;
+		float Cos1 = cos(Angle1), Sin1 = sin(Angle1);
+		float Cos2 = cos(Angle2), Sin2 = sin(Angle2);
+
+		// XY 평면
+		OutBatch.Add(Center + FVector(Cos1 * Radius, Sin1 * Radius, 0),
+		             Center + FVector(Cos2 * Radius, Sin2 * Radius, 0), Color);
+		// XZ 평면
+		OutBatch.Add(Center + FVector(Cos1 * Radius, 0, Sin1 * Radius),
+		             Center + FVector(Cos2 * Radius, 0, Sin2 * Radius), Color);
+		// YZ 평면
+		OutBatch.Add(Center + FVector(0, Cos1 * Radius, Sin1 * Radius),
+		             Center + FVector(0, Cos2 * Radius, Sin2 * Radius), Color);
+	}
+}
+
+/**
+ * Swing Limit 원뿔(Cone) 시각화 생성
+ * @param JointPos 조인트 위치
+ * @param JointRotation 조인트 회전 (부모→자식 방향)
+ * @param Swing1Limit Y축 회전 제한 (degrees)
+ * @param Swing2Limit Z축 회전 제한 (degrees)
+ * @param ConeLength 원뿔 길이
+ */
+static void GenerateSwingConeLimitLines(
+	const FVector& JointPos,
+	const FQuat& JointRotation,
+	float Swing1Limit,
+	float Swing2Limit,
+	float ConeLength,
+	const FVector4& Color,
+	FLinesBatch& OutBatch)
+{
+	// 각도를 라디안으로 변환
+	float Swing1Rad = Swing1Limit * M_PI / 180.0f;
+	float Swing2Rad = Swing2Limit * M_PI / 180.0f;
+
+	// 원뿔 베이스 원의 점들 계산
+	TArray<FVector> ConeBasePoints;
+	ConeBasePoints.Reserve(ConeSegments);
+
+	for (int32 i = 0; i < ConeSegments; ++i)
+	{
+		float Angle = (i / static_cast<float>(ConeSegments)) * 2.0f * M_PI;
+
+		// 타원형 원뿔 (Swing1 = Y축, Swing2 = Z축)
+		float RadiusY = ConeLength * tan(Swing1Rad);
+		float RadiusZ = ConeLength * tan(Swing2Rad);
+
+		// 로컬 좌표에서 원뿔 베이스 점
+		FVector LocalPoint(
+			ConeLength,  // X축 방향이 원뿔 축
+			RadiusY * cos(Angle),
+			RadiusZ * sin(Angle)
+		);
+
+		// 월드 좌표로 변환
+		FVector WorldPoint = JointPos + JointRotation.RotateVector(LocalPoint);
+		ConeBasePoints.Add(WorldPoint);
+	}
+
+	// 원뿔 베이스 원 그리기
+	for (int32 i = 0; i < ConeSegments; ++i)
+	{
+		int32 NextIdx = (i + 1) % ConeSegments;
+		OutBatch.Add(ConeBasePoints[i], ConeBasePoints[NextIdx], Color);
+	}
+
+	// 조인트에서 원뿔 베이스까지 선 그리기 (4개 주요 방향)
+	for (int32 i = 0; i < ConeSegments; i += ConeSegments / 4)
+	{
+		OutBatch.Add(JointPos, ConeBasePoints[i], Color);
+	}
+}
+
+/**
+ * Twist Limit 원호(Arc) 시각화 생성
+ * @param JointPos 조인트 위치
+ * @param JointRotation 조인트 회전
+ * @param TwistMin 최소 회전 (degrees)
+ * @param TwistMax 최대 회전 (degrees)
+ * @param ArcRadius 원호 반지름
+ */
+static void GenerateTwistLimitLines(
+	const FVector& JointPos,
+	const FQuat& JointRotation,
+	float TwistMin,
+	float TwistMax,
+	float ArcRadius,
+	const FVector4& Color,
+	FLinesBatch& OutBatch)
+{
+	// 각도를 라디안으로 변환
+	float TwistMinRad = TwistMin * M_PI / 180.0f;
+	float TwistMaxRad = TwistMax * M_PI / 180.0f;
+
+	// Twist 각도 범위
+	float TwistRange = TwistMaxRad - TwistMinRad;
+	int32 NumSegments = FMath::Max(4, static_cast<int32>(TwistRange / (M_PI / 8.0f)));
+
+	// X축 기준으로 YZ 평면에 원호 그리기
+	TArray<FVector> ArcPoints;
+	ArcPoints.Reserve(NumSegments + 1);
+
+	for (int32 i = 0; i <= NumSegments; ++i)
+	{
+		float T = static_cast<float>(i) / static_cast<float>(NumSegments);
+		float Angle = TwistMinRad + T * TwistRange;
+
+		// 로컬 좌표에서 원호 점 (X축이 Twist 축)
+		FVector LocalPoint(
+			0.0f,
+			ArcRadius * cos(Angle),
+			ArcRadius * sin(Angle)
+		);
+
+		// 월드 좌표로 변환
+		FVector WorldPoint = JointPos + JointRotation.RotateVector(LocalPoint);
+		ArcPoints.Add(WorldPoint);
+	}
+
+	// 원호 그리기
+	for (int32 i = 0; i < ArcPoints.Num() - 1; ++i)
+	{
+		OutBatch.Add(ArcPoints[i], ArcPoints[i + 1], Color);
+	}
+
+	// 시작/끝 라인 (조인트 중심에서)
+	if (ArcPoints.Num() >= 2)
+	{
+		OutBatch.Add(JointPos, ArcPoints[0], Color);
+		OutBatch.Add(JointPos, ArcPoints.Last(), Color);
+	}
+}
+
+/**
+ * Constraint 전체 시각화 생성 (라인 기반 - 와이어프레임)
+ */
+static void GenerateConstraintVisualization(
+	const FConstraintSetup& Constraint,
+	const FVector& ParentPos,
+	const FVector& ChildPos,
+	const FQuat& JointRotation,
+	bool bSelected,
+	FLinesBatch& OutBatch)
+{
+	// 색상 설정
+	FVector4 SphereColor = bSelected ? FVector4(1.0f, 1.0f, 0.0f, 1.0f) : FVector4(1.0f, 0.6f, 0.0f, 1.0f);  // 노란/주황
+	FVector4 SwingColor = bSelected ? FVector4(0.0f, 1.0f, 0.5f, 1.0f) : FVector4(0.0f, 0.8f, 0.4f, 1.0f);   // 초록 (Swing)
+	FVector4 TwistColor = bSelected ? FVector4(0.5f, 0.5f, 1.0f, 1.0f) : FVector4(0.3f, 0.3f, 0.8f, 1.0f);   // 파랑 (Twist)
+	FVector4 LineColor = bSelected ? FVector4(1.0f, 1.0f, 0.0f, 1.0f) : FVector4(1.0f, 0.5f, 0.0f, 1.0f);    // 연결선
+
+	// 조인트 위치 = 자식 본 위치
+	FVector JointPos = ChildPos;
+
+	// 1. 조인트 위치에 구체 그리기
+	float SphereRadius = bSelected ? ConstraintSphereRadius * 1.5f : ConstraintSphereRadius;
+	GenerateConstraintSphereLines(JointPos, SphereRadius, SphereColor, OutBatch);
+
+	// 2. 부모-자식 연결선
+	OutBatch.Add(ParentPos, ChildPos, LineColor);
+
+	// 3. 원뿔 길이 계산 (부모-자식 거리의 30%)
+	float Distance = (ChildPos - ParentPos).Size();
+	float ConeLength = FMath::Max(0.05f, Distance * 0.3f);
+
+	// 4. Swing Limit 원뿔 (각도가 유의미할 때만)
+	if (Constraint.Swing1Limit > 1.0f || Constraint.Swing2Limit > 1.0f)
+	{
+		GenerateSwingConeLimitLines(JointPos, JointRotation,
+			Constraint.Swing1Limit, Constraint.Swing2Limit, ConeLength, SwingColor, OutBatch);
+	}
+
+	// 5. Twist Limit 원호 (각도가 유의미할 때만)
+	float TwistRange = Constraint.TwistLimitMax - Constraint.TwistLimitMin;
+	if (TwistRange > 1.0f && TwistRange < 359.0f)
+	{
+		float ArcRadius = ConeLength * 0.5f;
+		GenerateTwistLimitLines(JointPos, JointRotation,
+			Constraint.TwistLimitMin, Constraint.TwistLimitMax, ArcRadius, TwistColor, OutBatch);
+	}
+}
+
+// ────────────────────────────────────────────────────────────────
+// Constraint 면(삼각형) 기반 시각화 헬퍼 함수들
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * Swing Limit 원뿔(Cone) 면 기반 시각화 생성
+ */
+static void GenerateSwingConeMesh(
+	const FVector& JointPos,
+	const FQuat& JointRotation,
+	float Swing1Limit,
+	float Swing2Limit,
+	float ConeLength,
+	const FVector4& Color,
+	TArray<FVector>& OutVertices,
+	TArray<uint32>& OutIndices,
+	TArray<FVector4>& OutColors)
+{
+	// 각도를 라디안으로 변환 (89도로 클램프하여 tan 폭발 방지)
+	float Swing1Rad = FMath::Min(Swing1Limit, 89.0f) * M_PI / 180.0f;
+	float Swing2Rad = FMath::Min(Swing2Limit, 89.0f) * M_PI / 180.0f;
+
+	// 원뿔 베이스 원의 점들 계산
+	uint32 BaseVertexIndex = static_cast<uint32>(OutVertices.size());
+
+	// 원뿔 꼭지점 (조인트 위치)
+	OutVertices.push_back(JointPos);
+	OutColors.push_back(Color);
+	uint32 ApexIndex = BaseVertexIndex;
+
+	// 원뿔 베이스 점들
+	for (int32 i = 0; i <= ConeSegments; ++i)
+	{
+		float Angle = (i / static_cast<float>(ConeSegments)) * 2.0f * M_PI;
+
+		// 타원형 원뿔 (Swing1 = Y축, Swing2 = Z축)
+		float RadiusY = ConeLength * tan(Swing1Rad);
+		float RadiusZ = ConeLength * tan(Swing2Rad);
+
+		// 로컬 좌표에서 원뿔 베이스 점
+		FVector LocalPoint(
+			ConeLength,  // X축 방향이 원뿔 축
+			RadiusY * cos(Angle),
+			RadiusZ * sin(Angle)
+		);
+
+		// 월드 좌표로 변환
+		FVector WorldPoint = JointPos + JointRotation.RotateVector(LocalPoint);
+		OutVertices.push_back(WorldPoint);
+		OutColors.push_back(Color);
+	}
+
+	// 원뿔 측면 삼각형 (꼭지점 → 베이스 원 순환)
+	for (int32 i = 0; i < ConeSegments; ++i)
+	{
+		uint32 BaseI = BaseVertexIndex + 1 + i;
+		uint32 BaseNext = BaseVertexIndex + 1 + ((i + 1) % (ConeSegments + 1));
+
+		// 삼각형: Apex → BaseI → BaseNext
+		OutIndices.push_back(ApexIndex);
+		OutIndices.push_back(BaseI);
+		OutIndices.push_back(BaseNext);
+	}
+}
+
+/**
+ * Twist Limit 부채꼴(Fan) 면 기반 시각화 생성
+ */
+static void GenerateTwistFanMesh(
+	const FVector& JointPos,
+	const FQuat& JointRotation,
+	float TwistMin,
+	float TwistMax,
+	float ArcRadius,
+	const FVector4& Color,
+	TArray<FVector>& OutVertices,
+	TArray<uint32>& OutIndices,
+	TArray<FVector4>& OutColors)
+{
+	// 각도를 라디안으로 변환
+	float TwistMinRad = TwistMin * M_PI / 180.0f;
+	float TwistMaxRad = TwistMax * M_PI / 180.0f;
+
+	// Twist 각도 범위
+	float TwistRange = TwistMaxRad - TwistMinRad;
+	int32 NumSegments = FMath::Max(4, static_cast<int32>(TwistRange / (M_PI / 8.0f)));
+
+	uint32 BaseVertexIndex = static_cast<uint32>(OutVertices.size());
+
+	// 중심점 (조인트 위치)
+	OutVertices.push_back(JointPos);
+	OutColors.push_back(Color);
+	uint32 CenterIndex = BaseVertexIndex;
+
+	// 원호 점들
+	for (int32 i = 0; i <= NumSegments; ++i)
+	{
+		float T = static_cast<float>(i) / static_cast<float>(NumSegments);
+		float Angle = TwistMinRad + T * TwistRange;
+
+		// 로컬 좌표에서 원호 점 (X축이 Twist 축)
+		FVector LocalPoint(
+			0.0f,
+			ArcRadius * cos(Angle),
+			ArcRadius * sin(Angle)
+		);
+
+		// 월드 좌표로 변환
+		FVector WorldPoint = JointPos + JointRotation.RotateVector(LocalPoint);
+		OutVertices.push_back(WorldPoint);
+		OutColors.push_back(Color);
+	}
+
+	// 부채꼴 삼각형들 (중심 → 원호 점들)
+	for (int32 i = 0; i < NumSegments; ++i)
+	{
+		uint32 ArcI = BaseVertexIndex + 1 + i;
+		uint32 ArcNext = BaseVertexIndex + 1 + i + 1;
+
+		// 삼각형: Center → ArcI → ArcNext
+		OutIndices.push_back(CenterIndex);
+		OutIndices.push_back(ArcI);
+		OutIndices.push_back(ArcNext);
+	}
+}
+
+/**
+ * Constraint 전체 면 기반 시각화 생성
+ */
+static void GenerateConstraintMeshVisualization(
+	const FConstraintSetup& Constraint,
+	const FVector& ParentPos,
+	const FVector& ChildPos,
+	const FQuat& JointRotation,
+	bool bSelected,
+	TArray<FVector>& OutVertices,
+	TArray<uint32>& OutIndices,
+	TArray<FVector4>& OutColors,
+	FLinesBatch& OutLineBatch)
+{
+	// 색상 설정 (반투명)
+	FVector4 SwingColor = bSelected
+		? FVector4(0.0f, 1.0f, 0.5f, 0.4f)   // 선택: 밝은 초록
+		: FVector4(0.0f, 0.8f, 0.4f, 0.25f);  // 기본: 초록 (25% 투명)
+	FVector4 TwistColor = bSelected
+		? FVector4(0.5f, 0.5f, 1.0f, 0.4f)   // 선택: 밝은 파랑
+		: FVector4(0.3f, 0.3f, 0.8f, 0.25f);  // 기본: 파랑 (25% 투명)
+	FVector4 LineColor = bSelected
+		? FVector4(1.0f, 1.0f, 0.0f, 1.0f)   // 선택: 노랑
+		: FVector4(1.0f, 0.5f, 0.0f, 1.0f);  // 기본: 주황
+
+	// 조인트 위치 = 자식 본 위치
+	FVector JointPos = ChildPos;
+
+	// 1. 부모-자식 연결선 (라인으로 유지)
+	OutLineBatch.Add(ParentPos, ChildPos, LineColor);
+
+	// 2. 조인트 위치에 십자 마커 (라인)
+	float MarkerSize = bSelected ? 0.03f : 0.02f;
+	FVector XAxis = JointRotation.RotateVector(FVector(1, 0, 0)) * MarkerSize;
+	FVector YAxis = JointRotation.RotateVector(FVector(0, 1, 0)) * MarkerSize;
+	FVector ZAxis = JointRotation.RotateVector(FVector(0, 0, 1)) * MarkerSize;
+	OutLineBatch.Add(JointPos - XAxis, JointPos + XAxis, FVector4(1, 0, 0, 1));  // X축: 빨강
+	OutLineBatch.Add(JointPos - YAxis, JointPos + YAxis, FVector4(0, 1, 0, 1));  // Y축: 초록
+	OutLineBatch.Add(JointPos - ZAxis, JointPos + ZAxis, FVector4(0, 0, 1, 1));  // Z축: 파랑
+
+	// 3. 원뿔 길이 계산 (부모-자식 거리 기반)
+	float Distance = (ChildPos - ParentPos).Size();
+	float ConeLength = FMath::Max(0.02f, Distance * 0.3f);  // 본 거리의 30%
+
+	// 4. Swing Limit 원뿔 면 (각도가 유의미할 때만)
+	if (Constraint.Swing1Limit > 1.0f || Constraint.Swing2Limit > 1.0f)
+	{
+		GenerateSwingConeMesh(JointPos, JointRotation,
+			Constraint.Swing1Limit, Constraint.Swing2Limit, ConeLength, SwingColor,
+			OutVertices, OutIndices, OutColors);
+	}
+
+	// 5. Twist Limit 부채꼴 면 (각도가 유의미할 때만)
+	float TwistRange = Constraint.TwistLimitMax - Constraint.TwistLimitMin;
+	if (TwistRange > 1.0f && TwistRange < 359.0f)
+	{
+		float ArcRadius = ConeLength * 0.5f;
+		GenerateTwistFanMesh(JointPos, JointRotation,
+			Constraint.TwistLimitMin, Constraint.TwistLimitMax, ArcRadius, TwistColor,
+			OutVertices, OutIndices, OutColors);
 	}
 }
 
@@ -506,9 +900,23 @@ void SPhysicsAssetEditorWindow::OnUpdate(float DeltaSeconds)
 	if (SkeletonTreeWidget) SkeletonTreeWidget->Update();
 	if (BodyPropertiesWidget) BodyPropertiesWidget->Update();
 	if (ConstraintPropertiesWidget) ConstraintPropertiesWidget->Update();
+	if (ToolsWidget) ToolsWidget->Update();
+
+	// Delete 키로 선택 항목 삭제
+	PhysicsAssetEditorState* State = GetActivePhysicsState();
+	if (State && ImGui::IsKeyPressed(ImGuiKey_Delete) && !ImGui::GetIO().WantTextInput)
+	{
+		if (State->bBodySelectionMode && State->SelectedBodyIndex >= 0)
+		{
+			RemoveSelectedBody();
+		}
+		else if (!State->bBodySelectionMode && State->SelectedConstraintIndex >= 0)
+		{
+			RemoveSelectedConstraint();
+		}
+	}
 
 	// Shape 프리뷰 업데이트
-	PhysicsAssetEditorState* State = GetActivePhysicsState();
 	if (State)
 	{
 		// ─────────────────────────────────────────────────
@@ -570,7 +978,8 @@ void SPhysicsAssetEditorWindow::OnUpdate(float DeltaSeconds)
 
 void SPhysicsAssetEditorWindow::PreRenderViewportUpdate()
 {
-	// 뷰포트 렌더 전 처리
+	// 삼각형 배치는 ULineComponent를 통해 처리됨 (RebuildShapeLines에서 설정)
+	// 별도 처리 불필요
 }
 
 void SPhysicsAssetEditorWindow::OnSave()
@@ -626,13 +1035,18 @@ void SPhysicsAssetEditorWindow::RenderTabsAndToolbar(EViewerType CurrentViewerTy
 
 		if (ImGui::BeginTabItem(TabDisplayName.c_str(), &open))
 		{
-			ActiveTabIndex = i;
-			ActiveState = State;
+			if (ActiveState != State)
+			{
+				ActiveTabIndex = i;
+				ActiveState = State;
+				UpdateSubWidgetEditorState();  // 탭 전환 시 sub widget 상태 즉시 갱신
+			}
 			ImGui::EndTabItem();
 		}
 		if (!open)
 		{
 			CloseTab(i);
+			UpdateSubWidgetEditorState();  // 탭 닫힌 직후 sub widget 상태 갱신 (dangling pointer 방지)
 			ImGui::EndTabBar();
 			return;
 		}
@@ -675,67 +1089,66 @@ void SPhysicsAssetEditorWindow::RenderLeftPanel(float PanelWidth)
 	ImGuiStyle& style = ImGui::GetStyle();
 
 	// ─────────────────────────────────────────────────
-	// ASSET BROWSER 섹션 (메시 로드)
+	// SELECT MESH 섹션 (로드된 메시 목록에서 선택)
 	// ─────────────────────────────────────────────────
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6);
-	ImGui::Text("ASSET BROWSER");
+	ImGui::Text("SELECT MESH");
 	ImGui::Dummy(ImVec2(0, 6));
 	ImGui::Separator();
 	ImGui::Dummy(ImVec2(0, 6));
 
-	ImGui::PushItemWidth(-1.0f);
-	ImGui::InputTextWithHint("##MeshPath", "Browse for FBX file...", State->MeshPathBuffer, sizeof(State->MeshPathBuffer));
-	ImGui::PopItemWidth();
+	// 현재 선택된 메시 표시
+	FString CurrentMeshName = State->LoadedMeshPath.empty() ? "(None)" : ExtractFileName(State->LoadedMeshPath);
+	ImGui::Text("Current: %s", CurrentMeshName.c_str());
 	ImGui::Dummy(ImVec2(0, 4));
 
-	float innerPadding = 8.0f;
-	float availWidth = PanelWidth - innerPadding * 2.0f;
-	float buttonHeight = 30.0f;
-	float buttonWidth = (availWidth - 6.0f) * 0.5f;
+	// 메시 목록 스크롤 영역
+	float meshListHeight = 120.0f;
+	ImGui::BeginChild("MeshList", ImVec2(0, meshListHeight), true);
 
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.23f, 0.25f, 0.27f, 1.00f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.28f, 0.30f, 0.33f, 1.00f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.19f, 0.21f, 0.23f, 1.00f));
-	if (ImGui::Button("Browse...", ImVec2(buttonWidth, buttonHeight)))
+	// SkeletalMesh 목록 (ResourceManager에서 가져오기)
+	TArray<FString> MeshPaths = UResourceManager::GetInstance().GetAllFilePaths<USkeletalMesh>();
+
+	if (MeshPaths.IsEmpty())
 	{
-		auto widePath = FPlatformProcess::OpenLoadFileDialog(UTF8ToWide(GDataDir), L"fbx", L"FBX Files");
-		if (!widePath.empty())
-		{
-			std::string s = WideToUTF8(widePath.wstring());
-			strncpy_s(State->MeshPathBuffer, s.c_str(), sizeof(State->MeshPathBuffer) - 1);
-		}
+		ImGui::TextDisabled("No skeletal meshes loaded");
+		ImGui::TextDisabled("Load FBX files first");
 	}
-	ImGui::PopStyleColor(3);
-
-	ImGui::SameLine(0.0f, 4.0f);
-
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.29f, 0.44f, 0.63f, 1.00f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.36f, 0.51f, 0.72f, 1.00f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.22f, 0.36f, 0.51f, 1.00f));
-	if (ImGui::Button("Load FBX", ImVec2(buttonWidth, buttonHeight)))
+	else
 	{
-		FString Path = State->MeshPathBuffer;
-		if (!Path.empty())
+		for (const FString& Path : MeshPaths)
 		{
-			USkeletalMesh* Mesh = UResourceManager::GetInstance().Load<USkeletalMesh>(Path);
-			if (Mesh && State->PreviewActor)
+			bool bSelected = (State->LoadedMeshPath == Path);
+
+			// 파일명만 표시
+			FString DisplayName = ExtractFileName(Path);
+
+			if (ImGui::Selectable(DisplayName.c_str(), bSelected))
 			{
-				State->PreviewActor->SetSkeletalMesh(Path);
-				State->CurrentMesh = Mesh;
-				State->LoadedMeshPath = Path;
-
-				// Physics Asset에 메시 경로 저장
-				if (State->EditingAsset)
+				// 현재 메시와 다르면 변경
+				if (!bSelected)
 				{
-					State->EditingAsset->SkeletalMeshPath = Path;
-					State->bIsDirty = true;
+					// 미저장 확인 후 메시 로드
+					CheckUnsavedChangesAndExecute([this, Path]()
+					{
+						PhysicsAssetEditorState* S = GetActivePhysicsState();
+						if (S)
+						{
+							LoadMeshAndResetPhysics(S, Path);
+						}
+					});
 				}
+			}
 
-				OnSkeletalMeshLoaded(State, Path);
+			// 툴팁으로 전체 경로 표시
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("%s", Path.c_str());
 			}
 		}
 	}
-	ImGui::PopStyleColor(3);
+
+	ImGui::EndChild();
 
 	ImGui::Dummy(ImVec2(0, 8));
 	ImGui::Separator();
@@ -815,7 +1228,6 @@ void SPhysicsAssetEditorWindow::RenderLeftPanel(float PanelWidth)
 	float graphHeight = ImGui::GetContentRegionAvail().y;
 	ImGui::BeginChild("GraphScroll", ImVec2(0, graphHeight), false);
 
-	if (State->EditingAsset)
 	{
 		// Bodies 리스트
 		if (ImGui::TreeNodeEx("Bodies", ImGuiTreeNodeFlags_DefaultOpen))
@@ -900,28 +1312,57 @@ void SPhysicsAssetEditorWindow::RenderRightPanel()
 	PhysicsAssetEditorState* State = GetActivePhysicsState();
 	if (!State || !State->EditingAsset) return;
 
-	// 패널 헤더
+	float totalHeight = ImGui::GetContentRegionAvail().y;
+	float splitterHeight = 4.0f;
+
+	// === DETAILS 섹션 (상단 60%) ===
+	float detailsHeight = totalHeight * 0.6f - splitterHeight * 0.5f;
+
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6);
-	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.30f, 0.30f, 0.30f, 0.8f));
-	ImGui::Text("PROPERTIES");
-	ImGui::PopStyleColor();
+	ImGui::Text("DETAILS");
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
 
-	// 선택된 바디 또는 제약 조건의 속성 표시 (Sub Widget 인스턴스 사용)
-	if (State->bBodySelectionMode && State->SelectedBodyIndex >= 0)
+	ImGui::BeginChild("DetailsPanel", ImVec2(0, detailsHeight - 40), false);
 	{
-		if (BodyPropertiesWidget) BodyPropertiesWidget->RenderWidget();
+		// 선택된 바디 또는 제약 조건의 속성 표시
+		if (State->bBodySelectionMode && State->SelectedBodyIndex >= 0)
+		{
+			if (BodyPropertiesWidget) BodyPropertiesWidget->RenderWidget();
+		}
+		else if (!State->bBodySelectionMode && State->SelectedConstraintIndex >= 0)
+		{
+			if (ConstraintPropertiesWidget) ConstraintPropertiesWidget->RenderWidget();
+		}
+		else
+		{
+			ImGui::TextDisabled("Select a body or constraint to view details");
+		}
 	}
-	else if (!State->bBodySelectionMode && State->SelectedConstraintIndex >= 0)
+	ImGui::EndChild();
+
+	// === 수평 분할선 ===
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 0.8f));
+	ImGui::Button("##Splitter", ImVec2(-1, splitterHeight));
+	ImGui::PopStyleColor(2);
+
+	// === TOOLS 섹션 (하단 40%) ===
+	ImGui::Spacing();
+	ImGui::Text("TOOLS");
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	ImGui::BeginChild("ToolsPanel", ImVec2(0, 0), false);
 	{
-		if (ConstraintPropertiesWidget) ConstraintPropertiesWidget->RenderWidget();
+		if (ToolsWidget)
+		{
+			ToolsWidget->RenderWidget();
+		}
 	}
-	else
-	{
-		ImGui::TextDisabled("Select a body or constraint to edit properties");
-	}
+	ImGui::EndChild();
 }
 
 void SPhysicsAssetEditorWindow::RenderBottomPanel()
@@ -936,7 +1377,6 @@ void SPhysicsAssetEditorWindow::OnSkeletalMeshLoaded(ViewerState* State, const F
 
 	// Physics Asset에 스켈레탈 메시 경로 저장
 	PhysicsState->EditingAsset->SkeletalMeshPath = Path;
-	PhysicsState->bIsDirty = true;
 	PhysicsState->RequestLinesRebuild();
 
 	UE_LOG("[SPhysicsAssetEditorWindow] Skeletal mesh loaded: %s", Path.c_str());
@@ -951,7 +1391,7 @@ void SPhysicsAssetEditorWindow::RenderToolbar()
 	PhysicsAssetEditorState* State = GetActivePhysicsState();
 	if (!State) return;
 
-	// 저장 버튼
+	// 파일 관련 버튼
 	if (ImGui::Button("Save"))
 	{
 		SavePhysicsAsset();
@@ -964,55 +1404,16 @@ void SPhysicsAssetEditorWindow::RenderToolbar()
 	}
 	ImGui::SameLine();
 
-	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-	ImGui::SameLine();
-
-	// 자동 생성 버튼
-	bool bCanAutoGenerate = State->CurrentMesh != nullptr;
-	if (!bCanAutoGenerate) ImGui::BeginDisabled();
-	if (ImGui::Button("Auto-Generate"))
+	if (ImGui::Button("Load"))
 	{
-		AutoGenerateBodies();
+		LoadPhysicsAsset();
 	}
-	if (!bCanAutoGenerate) ImGui::EndDisabled();
-	ImGui::SameLine();
-
-	// 바디 추가/제거 버튼
-	bool bCanAddBody = State->SelectedBoneIndex >= 0;
-	if (!bCanAddBody) ImGui::BeginDisabled();
-	if (ImGui::Button("Add Body"))
-	{
-		AddBodyToBone(State->SelectedBoneIndex);
-	}
-	if (!bCanAddBody) ImGui::EndDisabled();
-	ImGui::SameLine();
-
-	bool bCanRemoveBody = State->bBodySelectionMode && State->SelectedBodyIndex >= 0;
-	if (!bCanRemoveBody) ImGui::BeginDisabled();
-	if (ImGui::Button("Remove Body"))
-	{
-		RemoveSelectedBody();
-	}
-	if (!bCanRemoveBody) ImGui::EndDisabled();
 	ImGui::SameLine();
 
 	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 	ImGui::SameLine();
 
-	// 제약 조건 제거 버튼
-	bool bCanRemoveConstraint = !State->bBodySelectionMode && State->SelectedConstraintIndex >= 0;
-	if (!bCanRemoveConstraint) ImGui::BeginDisabled();
-	if (ImGui::Button("Remove Constraint"))
-	{
-		RemoveSelectedConstraint();
-	}
-	if (!bCanRemoveConstraint) ImGui::EndDisabled();
-	ImGui::SameLine();
-
-	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-	ImGui::SameLine();
-
-	// 표시 옵션
+	// 표시 옵션만 유지 (Add Body, Remove Body, Auto-Generate 등은 Tools 패널과 컨텍스트 메뉴로 이동)
 	if (ImGui::Checkbox("Bodies", &State->bShowBodies))
 	{
 		if (State->BodyPreviewLineComponent)
@@ -1094,39 +1495,84 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 	}
 
 	// ─────────────────────────────────────────────────
-	// 제약 조건 라인 재구성 (FLinesBatch 기반 - DOD)
+	// 제약 조건 시각화 재구성 (면 기반 + 라인)
 	// ─────────────────────────────────────────────────
 	State->ConstraintLinesBatch.Clear();
-	State->ConstraintLinesBatch.Reserve(static_cast<int32>(State->EditingAsset->ConstraintSetups.size()));
+	State->ConstraintTrianglesBatch.Clear();
 
-	for (int32 i = 0; i < static_cast<int32>(State->EditingAsset->ConstraintSetups.size()); ++i)
+	// 예상 크기 예약
+	int32 NumConstraints = static_cast<int32>(State->EditingAsset->ConstraintSetups.size());
+	State->ConstraintLinesBatch.Reserve(NumConstraints * 10);  // 연결선 + 축 마커
+	State->ConstraintTrianglesBatch.Reserve(NumConstraints * 50, NumConstraints * 100);  // 원뿔 + 부채꼴
+
+	for (int32 i = 0; i < NumConstraints; ++i)
 	{
 		const FConstraintSetup& Constraint = State->EditingAsset->ConstraintSetups[i];
 		if (Constraint.ParentBodyIndex < 0 || Constraint.ChildBodyIndex < 0) continue;
 		if (Constraint.ParentBodyIndex >= static_cast<int32>(State->EditingAsset->BodySetups.size())) continue;
 		if (Constraint.ChildBodyIndex >= static_cast<int32>(State->EditingAsset->BodySetups.size())) continue;
 
-		FVector4 Color = (!State->bBodySelectionMode && State->SelectedConstraintIndex == i)
-			? FVector4(1.0f, 1.0f, 0.0f, 1.0f) : FVector4(1.0f, 0.5f, 0.0f, 1.0f);
-
-		FVector ParentPos, ChildPos;
 		UBodySetup* ParentBody = State->EditingAsset->BodySetups[Constraint.ParentBodyIndex];
 		UBodySetup* ChildBody = State->EditingAsset->BodySetups[Constraint.ChildBodyIndex];
+		if (!ParentBody || !ChildBody) continue;
 
-		if (MeshComp && ParentBody && ChildBody)
+		FVector ParentPos = FVector::Zero();
+		FVector ChildPos = FVector::Zero();
+		FQuat JointRotation = FQuat::Identity();
+
+		if (MeshComp)
 		{
-			ParentPos = MeshComp->GetBoneWorldTransform(ParentBody->BoneIndex).Translation;
-			ChildPos = MeshComp->GetBoneWorldTransform(ChildBody->BoneIndex).Translation;
+			FTransform ParentTransform = MeshComp->GetBoneWorldTransform(ParentBody->BoneIndex);
+			FTransform ChildTransform = MeshComp->GetBoneWorldTransform(ChildBody->BoneIndex);
+
+			ParentPos = ParentTransform.Translation;
+			ChildPos = ChildTransform.Translation;
+
+			// 조인트 회전 계산: 부모→자식 방향을 X축으로
+			FVector Direction = (ChildPos - ParentPos);
+			if (Direction.SizeSquared() > KINDA_SMALL_NUMBER)
+			{
+				Direction = Direction.GetNormalized();
+				// 기본 X축(1,0,0)을 Direction으로 회전하는 쿼터니언 계산
+				FVector From(1.0f, 0.0f, 0.0f);
+				FVector To = Direction;
+				float Dot = FVector::Dot(From, To);
+
+				if (Dot > 0.9999f)
+				{
+					JointRotation = FQuat::Identity();
+				}
+				else if (Dot < -0.9999f)
+				{
+					// 반대 방향: Y축 기준 180도 회전
+					JointRotation = FQuat(0.0f, 1.0f, 0.0f, 0.0f);
+				}
+				else
+				{
+					FVector Cross = FVector::Cross(From, To);
+					JointRotation = FQuat(Cross.X, Cross.Y, Cross.Z, 1.0f + Dot);
+					JointRotation.Normalize();
+				}
+			}
 		}
 
-		State->ConstraintLinesBatch.Add(ParentPos, ChildPos, Color);
+		bool bSelected = (!State->bBodySelectionMode && State->SelectedConstraintIndex == i);
+
+		// 면 기반 시각화 사용
+		GenerateConstraintMeshVisualization(
+			Constraint, ParentPos, ChildPos, JointRotation, bSelected,
+			State->ConstraintTrianglesBatch.Vertices,
+			State->ConstraintTrianglesBatch.Indices,
+			State->ConstraintTrianglesBatch.Colors,
+			State->ConstraintLinesBatch);
 	}
 
-	// ULineComponent에 배치 데이터 설정
+	// ULineComponent에 라인 배치 데이터 설정 (연결선 + 축 마커)
 	if (ConstraintLineComp)
 	{
 		ConstraintLineComp->ClearLines();  // 기존 ULine 정리
 		ConstraintLineComp->SetDirectBatch(State->ConstraintLinesBatch);
+		ConstraintLineComp->SetTriangleBatch(State->ConstraintTrianglesBatch);  // 삼각형 배치도 설정
 		ConstraintLineComp->SetLineVisible(State->bShowConstraints);
 	}
 }
@@ -1262,22 +1708,152 @@ void SPhysicsAssetEditorWindow::SavePhysicsAsset()
 
 void SPhysicsAssetEditorWindow::SavePhysicsAssetAs()
 {
-	// 파일 다이얼로그 (추후 구현)
-	// 현재는 기본 경로로 저장
 	PhysicsAssetEditorState* State = GetActivePhysicsState();
 	if (!State || !State->EditingAsset) return;
 
-	FString DefaultPath = "Data/PhysicsAssets/NewPhysicsAsset.json";
-	if (PhysicsAssetEditorBootstrap::SavePhysicsAsset(State->EditingAsset, DefaultPath))
+	// 파일 저장 다이얼로그 열기 (.physicsasset 확장자)
+	auto widePath = FPlatformProcess::OpenSaveFileDialog(
+		UTF8ToWide(GDataDir),
+		L"physicsasset",
+		L"Physics Asset Files"
+	);
+
+	if (widePath.empty()) return;
+
+	FString FilePath = WideToUTF8(widePath.wstring());
+
+	if (PhysicsAssetEditorBootstrap::SavePhysicsAsset(State->EditingAsset, FilePath))
 	{
-		State->CurrentFilePath = DefaultPath;
+		State->CurrentFilePath = FilePath;
 		State->bIsDirty = false;
+		UE_LOG("[SPhysicsAssetEditorWindow] Physics Asset saved: %s", FilePath.c_str());
 	}
 }
 
 void SPhysicsAssetEditorWindow::LoadPhysicsAsset()
 {
-	// 파일 다이얼로그 (추후 구현)
+	CheckUnsavedChangesAndExecute([this]()
+	{
+		// 파일 열기 다이얼로그 (.physicsasset 확장자)
+		auto widePath = FPlatformProcess::OpenLoadFileDialog(
+			UTF8ToWide(GDataDir),
+			L"physicsasset",
+			L"Physics Asset Files"
+		);
+
+		if (widePath.empty()) return;
+
+		FString FilePath = WideToUTF8(widePath.wstring());
+
+		UPhysicsAsset* LoadedAsset = PhysicsAssetEditorBootstrap::LoadPhysicsAsset(FilePath);
+		if (LoadedAsset)
+		{
+			PhysicsAssetEditorState* State = GetActivePhysicsState();
+			if (State)
+			{
+				State->EditingAsset = LoadedAsset;
+				State->CurrentFilePath = FilePath;
+				State->ClearSelection();
+				State->RequestLinesRebuild();
+				State->HideGizmo();
+
+				// 연결된 스켈레탈 메시 로드
+				if (!LoadedAsset->SkeletalMeshPath.empty())
+				{
+					USkeletalMesh* Mesh = UResourceManager::GetInstance().Load<USkeletalMesh>(
+						LoadedAsset->SkeletalMeshPath);
+					if (Mesh && State->PreviewActor)
+					{
+						State->PreviewActor->SetSkeletalMesh(LoadedAsset->SkeletalMeshPath);
+						State->CurrentMesh = Mesh;
+						State->LoadedMeshPath = LoadedAsset->SkeletalMeshPath;
+						State->RequestLinesRebuild();
+					}
+				}
+
+				// 파일에서 로드한 것이므로 dirty 아님
+				State->bIsDirty = false;
+				UE_LOG("[SPhysicsAssetEditorWindow] Physics Asset loaded: %s", FilePath.c_str());
+			}
+		}
+	});
+}
+
+void SPhysicsAssetEditorWindow::CheckUnsavedChangesAndExecute(std::function<void()> Action)
+{
+	PhysicsAssetEditorState* State = GetActivePhysicsState();
+	if (!State || !State->bIsDirty)
+	{
+		// 변경사항 없으면 바로 실행
+		if (Action) Action();
+		return;
+	}
+
+	// 모달 다이얼로그 표시
+	PendingAction = Action;
+	FModalDialog::Get().Show(
+		"저장 확인",
+		"저장되지 않은 변경사항이 있습니다.\n저장하시겠습니까?",
+		EModalType::YesNoCancel,
+		[this](EModalResult Result)
+		{
+			if (Result == EModalResult::Yes)
+			{
+				SavePhysicsAsset();
+				if (PendingAction) PendingAction();
+			}
+			else if (Result == EModalResult::No)
+			{
+				if (PendingAction) PendingAction();
+			}
+			// Cancel이면 아무것도 안 함
+			PendingAction = nullptr;
+		}
+	);
+}
+
+void SPhysicsAssetEditorWindow::LoadMeshAndResetPhysics(PhysicsAssetEditorState* State, const FString& MeshPath)
+{
+	if (!State) return;
+
+	// SkeletalMesh 로드
+	USkeletalMesh* Mesh = UResourceManager::GetInstance().Load<USkeletalMesh>(MeshPath);
+	if (Mesh && State->PreviewActor)
+	{
+		State->PreviewActor->SetSkeletalMesh(MeshPath);
+		State->CurrentMesh = Mesh;
+		State->LoadedMeshPath = MeshPath;
+
+		// 새 Physics Asset 생성 (기존 캐시된 에셋 수정하지 않음)
+		State->EditingAsset = NewObject<UPhysicsAsset>();
+		State->EditingAsset->SkeletalMeshPath = MeshPath;
+		State->CurrentFilePath.clear();  // 새 에셋이므로 파일 경로 초기화
+		State->bIsDirty = false;  // 새 에셋이므로 수정되지 않은 상태
+
+		// 상태 초기화
+		State->ClearSelection();
+		State->RequestLinesRebuild();
+		State->HideGizmo();
+
+		OnSkeletalMeshLoaded(State, MeshPath);
+
+		UE_LOG("[SPhysicsAssetEditorWindow] Mesh loaded and physics reset: %s", MeshPath.c_str());
+	}
+}
+
+FString SPhysicsAssetEditorWindow::ExtractFileName(const FString& Path)
+{
+	size_t lastSlash = Path.find_last_of("/\\");
+	FString FileName = (lastSlash != FString::npos) ? Path.substr(lastSlash + 1) : Path;
+
+	// 확장자 제거
+	size_t dotPos = FileName.find_last_of('.');
+	if (dotPos != FString::npos)
+	{
+		FileName = FileName.substr(0, dotPos);
+	}
+
+	return FileName;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -1466,6 +2042,101 @@ void SPhysicsAssetEditorWindow::RemoveSelectedConstraint()
 	}
 }
 
+void SPhysicsAssetEditorWindow::RegenerateSelectedBody()
+{
+	PhysicsAssetEditorState* State = GetActivePhysicsState();
+	if (!State || State->SelectedBodyIndex < 0) return;
+	if (!State->EditingAsset || !State->CurrentMesh) return;
+
+	UBodySetup* Body = State->EditingAsset->BodySetups[State->SelectedBodyIndex];
+	if (!Body) return;
+
+	int32 BoneIndex = Body->BoneIndex;
+
+	// 기존 Shape 모두 삭제
+	Body->AggGeom.SphereElems.Empty();
+	Body->AggGeom.BoxElems.Empty();
+	Body->AggGeom.SphylElems.Empty();
+
+	// 본 길이 기반으로 새 캡슐 생성
+	const FSkeleton* Skeleton = State->CurrentMesh->GetSkeleton();
+	if (!Skeleton || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Skeleton->Bones.size())) return;
+
+	const FBone& Bone = Skeleton->Bones[BoneIndex];
+	FVector BonePos(Bone.BindPose.M[3][0], Bone.BindPose.M[3][1], Bone.BindPose.M[3][2]);
+
+	// 본 길이 계산 (자식 본까지의 거리)
+	float BoneLength = 0.05f;  // 기본값
+	for (size_t i = 0; i < Skeleton->Bones.size(); ++i)
+	{
+		if (Skeleton->Bones[i].ParentIndex == BoneIndex)
+		{
+			const FBone& ChildBone = Skeleton->Bones[i];
+			FVector ChildPos(ChildBone.BindPose.M[3][0], ChildBone.BindPose.M[3][1], ChildBone.BindPose.M[3][2]);
+			BoneLength = (ChildPos - BonePos).Size();
+			break;
+		}
+	}
+
+	// 최소/최대 크기 제한
+	BoneLength = std::max(0.02f, std::min(BoneLength, 0.5f));
+
+	// 캡슐 생성
+	FKSphylElem NewCapsule;
+	NewCapsule.Radius = BoneLength * 0.1f;
+	NewCapsule.Length = BoneLength * 0.7f;
+	Body->AggGeom.SphylElems.Add(NewCapsule);
+
+	State->bIsDirty = true;
+	State->RequestLinesRebuild();
+}
+
+void SPhysicsAssetEditorWindow::AddPrimitiveToBody(int32 BodyIndex, int32 PrimitiveType)
+{
+	PhysicsAssetEditorState* State = GetActivePhysicsState();
+	if (!State || !State->EditingAsset) return;
+	if (BodyIndex < 0 || BodyIndex >= static_cast<int32>(State->EditingAsset->BodySetups.size())) return;
+
+	UBodySetup* Body = State->EditingAsset->BodySetups[BodyIndex];
+	if (!Body) return;
+
+	switch (PrimitiveType)
+	{
+	case 0:  // Box
+	{
+		FKBoxElem NewBox;
+		NewBox.X = 10.0f;
+		NewBox.Y = 10.0f;
+		NewBox.Z = 10.0f;
+		NewBox.Center = FVector(0, 0, 0);
+		NewBox.Rotation = FQuat::Identity();
+		Body->AggGeom.BoxElems.Add(NewBox);
+		break;
+	}
+	case 1:  // Sphere
+	{
+		FKSphereElem NewSphere;
+		NewSphere.Radius = 5.0f;
+		NewSphere.Center = FVector(0, 0, 0);
+		Body->AggGeom.SphereElems.Add(NewSphere);
+		break;
+	}
+	case 2:  // Capsule
+	{
+		FKSphylElem NewCapsule;
+		NewCapsule.Radius = 3.0f;
+		NewCapsule.Length = 10.0f;
+		NewCapsule.Center = FVector(0, 0, 0);
+		NewCapsule.Rotation = FQuat::Identity();
+		Body->AggGeom.SphylElems.Add(NewCapsule);
+		break;
+	}
+	}
+
+	State->bIsDirty = true;
+	State->RequestLinesRebuild();
+}
+
 // ────────────────────────────────────────────────────────────────
 // 마우스 입력 (베이스 클래스의 bone picking 제거)
 // ────────────────────────────────────────────────────────────────
@@ -1642,17 +2313,59 @@ void SPhysicsAssetEditorWindow::CreateSubWidgets()
 	SkeletonTreeWidget = NewObject<USkeletonTreeWidget>();
 	SkeletonTreeWidget->Initialize();
 
+	// SkeletonTreeWidget 콜백 연결
+	SkeletonTreeWidget->OnAddBody.Add([this](int32 BoneIndex) {
+		AddBodyToBone(BoneIndex);
+	});
+
+	SkeletonTreeWidget->OnRemoveBody.Add([this](int32 BodyIndex) {
+		PhysicsAssetEditorState* State = GetActivePhysicsState();
+		if (State)
+		{
+			State->SelectBody(BodyIndex);
+			RemoveSelectedBody();
+		}
+	});
+
+	SkeletonTreeWidget->OnAddPrimitive.Add([this](int32 BodyIndex, int32 PrimitiveType) {
+		AddPrimitiveToBody(BodyIndex, PrimitiveType);
+	});
+
+	SkeletonTreeWidget->OnAddConstraint.Add([this](int32 BodyIndex1, int32 BodyIndex2) {
+		AddConstraintBetweenBodies(BodyIndex1, BodyIndex2);
+	});
+
+	SkeletonTreeWidget->OnRemoveConstraint.Add([this](int32 ConstraintIndex) {
+		PhysicsAssetEditorState* State = GetActivePhysicsState();
+		if (State)
+		{
+			State->SelectConstraint(ConstraintIndex);
+			RemoveSelectedConstraint();
+		}
+	});
+
 	BodyPropertiesWidget = NewObject<UBodyPropertiesWidget>();
 	BodyPropertiesWidget->Initialize();
 
 	ConstraintPropertiesWidget = NewObject<UConstraintPropertiesWidget>();
 	ConstraintPropertiesWidget->Initialize();
+
+	ToolsWidget = NewObject<UToolsWidget>();
+	ToolsWidget->Initialize();
+	ToolsWidget->SetEditorWindow(this);
 }
 
 void SPhysicsAssetEditorWindow::DestroySubWidgets()
 {
 	if (SkeletonTreeWidget)
 	{
+		// 콜백 정리
+		SkeletonTreeWidget->OnAddBody.Clear();
+		SkeletonTreeWidget->OnRemoveBody.Clear();
+		SkeletonTreeWidget->OnAddPrimitive.Clear();
+		SkeletonTreeWidget->OnAddConstraint.Clear();
+		SkeletonTreeWidget->OnRemoveConstraint.Clear();
+
 		DeleteObject(SkeletonTreeWidget);
 		SkeletonTreeWidget = nullptr;
 	}
@@ -1665,6 +2378,11 @@ void SPhysicsAssetEditorWindow::DestroySubWidgets()
 	{
 		DeleteObject(ConstraintPropertiesWidget);
 		ConstraintPropertiesWidget = nullptr;
+	}
+	if (ToolsWidget)
+	{
+		DeleteObject(ToolsWidget);
+		ToolsWidget = nullptr;
 	}
 }
 
@@ -1682,6 +2400,10 @@ void SPhysicsAssetEditorWindow::UpdateSubWidgetEditorState()
 	if (ConstraintPropertiesWidget)
 	{
 		ConstraintPropertiesWidget->SetEditorState(State);
+	}
+	if (ToolsWidget)
+	{
+		ToolsWidget->SetEditorState(State);
 	}
 }
 
