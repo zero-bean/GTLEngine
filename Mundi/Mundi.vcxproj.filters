@@ -1220,6 +1220,7 @@
     <ClCompile Include="ThirdParty\include\ImGui\imgui_widgets.cpp">
       <Filter>ThirdParty\include\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Runtime\Physics\ConstraintInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Runtime\Core\Misc\DebugUtils.h">
@@ -2600,11 +2601,11 @@
     <ClInclude Include="ThirdParty\include\Lua\lualib.h">
       <Filter>ThirdParty\include\Lua</Filter>
     </ClInclude>
-    <ClInclude Include="VehicleDataStruct.h">
-      <Filter>Source\Runtime\Physics</Filter>
-    </ClInclude>
     <ClInclude Include="Generated\USkeletalMesh.generated.h">
       <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Physics\VehicleDataStruct.h">
+      <Filter>Source\Runtime\Physics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
