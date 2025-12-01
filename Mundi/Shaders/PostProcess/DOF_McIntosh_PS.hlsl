@@ -1,7 +1,5 @@
 Texture2D g_SceneColorTex : register(t0);
 Texture2D g_COCTex : register(t1);
-Texture2D g_NearBlurTex : register(t2);
-Texture2D g_FarBlurTex : register(t3);
 
 SamplerState g_LinearClampSample : register(s0);
 SamplerState g_PointClampSample : register(s1);
@@ -34,6 +32,13 @@ cbuffer DepthOfFieldCB : register(b2)
     float padding;
 }
 
+cbuffer DOFMcIntoshCB : register(b4)
+{
+    uint bHorizontal;
+    uint Range;
+    float2 McIntoshpadding;
+}
+
 
 cbuffer ViewportConstants : register(b10)
 {
@@ -47,29 +52,53 @@ cbuffer ViewportConstants : register(b10)
     float4 ScreenSize;
 }
 
-float GetLinearDepth(float NDCDepth)
+float GetLuminance(float3 InColor)
 {
-    float ViewZ = -Far * Near / (NDCDepth * (Far - Near) - Far);
-    return saturate((ViewZ - Near) / (Far - Near));
+    // ITU-R BT.709 표준에 따른 휘도 공식 (가장 일반적)
+    return dot(InColor, float3(0.2126, 0.7152, 0.0722));
 }
+
 
 float4 mainPS(PS_INPUT input) : SV_Target
 {
     uint TexWidth, TexHeight;
     g_SceneColorTex.GetDimensions(TexWidth, TexHeight);
     float2 uv = float2(input.position.x / TexWidth, input.position.y / TexHeight);
-    
+    float2 InvTexSize = float2(1.0f / TexWidth, 1.0f / TexHeight);
     float2 COC = g_COCTex.Sample(g_PointClampSample, uv).rg;
-
-    float Origin = 1 - COC.r - COC.g;
-    float3 SceneColor = g_SceneColorTex.Sample(g_LinearClampSample, uv);
-    float3 NearColor = g_NearBlurTex.Sample(g_LinearClampSample, uv);
-    float3 FarColor = g_FarBlurTex.Sample(g_LinearClampSample, uv);
     
-    float3 FinalColor = SceneColor * Origin + NearColor * COC.r + FarColor * COC.g;
+    float absCOC = max(COC.r, COC.g);
+    float2 UVDir = float2(0, InvTexSize.y);
+    
+    if(bHorizontal)
+    {
+        UVDir = float2(InvTexSize.x, 0);
+    }
+    
+    float MaxLuminance = 0;;
+    float3 MaxColor = float3(0, 0, 0);
+    float3 SceneColor;
+    int halfRange = Range / 2;
+    for (int i = -halfRange; i <= halfRange; ++i)
+    {
+        float2 CurUV = uv + UVDir * i;
+        float3 CurColor = g_SceneColorTex.Sample(g_PointClampSample, CurUV).rgb;
+        if(i == 0)
+        {
+            SceneColor = CurColor;
+        }
+        float Luminance = GetLuminance(CurColor) * absCOC;
+        if(Luminance > MaxLuminance)
+        {
+            MaxLuminance = Luminance;
+            MaxColor = CurColor;
+        }
+    }
     //return float4(SceneColor, 1);
-    //return float4(FarColor, 1);
-    //return float4(NearColor, 1);
-    //return float4(COC.rg,0, 1);
-    return float4(FinalColor, 1);
+    if (absCOC < 0.1f)
+    {
+        return float4(SceneColor, 1);
+    }
+    
+    return float4(MaxColor, 1);
 }

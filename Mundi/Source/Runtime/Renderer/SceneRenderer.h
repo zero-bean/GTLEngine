@@ -15,6 +15,7 @@ class FViewport;
 class URenderer;
 class D3D11RHI;
 class UPrimitiveComponent;
+class UDOFComponent;
 class UDecalComponent;
 class UHeightFogComponent;
 class UAmbientLightComponent;
@@ -64,6 +65,7 @@ struct FSceneGlobals
 	TArray<UDirectionalLightComponent*> DirectionalLights;
 	TArray<UAmbientLightComponent*> AmbientLights;
 	TArray<UHeightFogComponent*> Fogs;	// 첫 번째로 찾은 Fog를 사용함
+	TArray<UDOFComponent*> DOFs;
 };
 
 /**

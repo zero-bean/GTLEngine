@@ -26,7 +26,10 @@ cbuffer ViewProjBuffer : register(b1)
 
 cbuffer DepthOfFieldCB : register(b2)
 {
-    
+    float FocusDistance;
+    float FocusRange;
+    float COCSize;
+    float padding;
 }
 
 cbuffer ViewportConstants : register(b10)
@@ -54,14 +57,14 @@ float GetLinearDepth(float NDCDepth)
 
 float4 mainPS(PS_INPUT input) : SV_Target
 {
-    float FocusDepth = 5.0f;
-    float CocScale = 1.0f;
     float Depth = g_DepthTex.Sample(g_LinearClampSample, input.texCoord).r;
     float ViewDepth = GetViewDepth(Depth);
      
-    float COC = (ViewDepth - FocusDepth) / ViewDepth * CocScale;
-    float4 SceneColor = g_SceneColorTex.Sample(g_LinearClampSample, input.texCoord);
-
+    float COC = (ViewDepth - FocusDistance) / FocusRange;
+    
+    //float COC = (ViewDepth - FocusDistance);
+    //COC = smoothstep(0.0f, FocusRange, abs(COC)) * sign(COC);
+    
     float3 FinalColor = float3(0, 0, 0);
     if(COC < 0)
     {

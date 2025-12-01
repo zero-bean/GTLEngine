@@ -24,7 +24,14 @@ cbuffer ViewProjBuffer : register(b1)
     row_major float4x4 InverseProjectionMatrix;
 }
 
-cbuffer GaussianCB : register(b2)
+cbuffer DepthOfFieldCB : register(b2)
+{
+    float FocusDistance;
+    float FocusRange;
+    float COCSize;
+    float padding;
+}
+cbuffer DOFGaussianCB : register(b3)
 {
     float Weight;
     uint Range;
@@ -43,19 +50,6 @@ cbuffer ViewportConstants : register(b10)
     // z: 1.0f / Screen W,  w: 1.0f / Screen H
     float4 ScreenSize;
 }
-
-//static const float GaussianKernel[9] =
-//{
-//    1.0f, 2.0f, 1.0f,
-//    2.0f, 4.0f, 2.0f,
-//    1.0f, 2.0f, 1.0f,
-//};
-//static const float2 GaussianUV[9] =
-//{
-//    float2(-1, -1), float2(0, -1), float2(1, -1),
-//    float2(-1,  0), float2(0,  0), float2(1,  0),
-//    float2(-1,  1), float2(0,  1), float2(1,  1),
-//};
 
 float GetGaussian(float dis)
 {
@@ -81,14 +75,16 @@ float4 mainPS(PS_INPUT input) : SV_Target
         UVDir = float2(0, InvTexSize.y);
     }
     int halfRange = Range / 2;
+    float2 COC = g_COCTex.Sample(g_PointClampSample, uv).rg * COCSize;
+
     if(bNear)
     {
         for (int i = -halfRange; i <= halfRange; ++i)
         {
             float CurGaussian = GetGaussian(i);
-            float2 CurUV = uv + UVDir * i;
-            float2 COC = g_COCTex.Sample(g_PointClampSample, CurUV).rg;
-            if (COC.r > 0)
+            float2 CurUV = uv + UVDir * i * COC.r;
+            float2 CurCOC = g_COCTex.Sample(g_PointClampSample, CurUV).rg;
+            if (CurCOC.r > 0)
             {
                 float3 SampleColor = g_SceneColorTex.Sample(g_LinearClampSample, CurUV).rgb;
                 TotalGaussian += CurGaussian;
@@ -101,9 +97,9 @@ float4 mainPS(PS_INPUT input) : SV_Target
         for (int i = -halfRange; i <= halfRange; ++i)
         {
             float CurGaussian = GetGaussian(i);
-            float2 CurUV = uv + UVDir * i;
-            float2 COC = g_COCTex.Sample(g_PointClampSample, CurUV).rg;
-            if (COC.g > 0)
+            float2 CurUV = uv + UVDir * i * COC.g;
+            float2 CurCOC = g_COCTex.Sample(g_PointClampSample, CurUV).rg;
+            if (CurCOC.g > 0)
             {
                 float3 SampleColor = g_SceneColorTex.Sample(g_LinearClampSample, CurUV).rgb;
                 TotalGaussian += CurGaussian;

@@ -1147,6 +1147,9 @@
     <ClCompile Include="Generated\FConstraintSetup.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Generated\UDOFComponent.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Generated\UParticleModuleSizeScaleBySpeed.generated.h">
@@ -2409,6 +2412,9 @@
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Generated\FConstraintSetup.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UDOFComponent.generated.h">
       <Filter>Generated</Filter>
     </ClInclude>
   </ItemGroup>

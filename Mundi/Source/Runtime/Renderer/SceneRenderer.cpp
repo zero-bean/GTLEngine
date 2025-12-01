@@ -58,6 +58,7 @@
 #include "Modules/ParticleModuleTypeDataMesh.h"
 #include "Modules/ParticleModuleTypeDataBeam.h"
 #include "Modules/ParticleModuleTypeDataRibbon.h"
+#include "DOFComponent.h"
 
 FSceneRenderer::FSceneRenderer(UWorld* InWorld, FSceneView* InView, URenderer* InOwnerRenderer)
 	: World(InWorld)
@@ -721,6 +722,7 @@ void FSceneRenderer::GatherVisibleProxies()
 	const bool bDrawSkeletalMeshes = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_SkeletalMeshes);
 	const bool bDrawDecals = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Decals);
 	const bool bDrawFog = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Fog);
+	const bool bDrawDOF = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_DOF);
 	const bool bDrawLight = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Lighting);
 	const bool bUseAntiAliasing = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_FXAA);
 	const bool bUseBillboard = World->GetRenderSettings().IsShowFlagEnabled(EEngineShowFlags::SF_Billboard);
@@ -810,6 +812,11 @@ void FSceneRenderer::GatherVisibleProxies()
 					if (UHeightFogComponent* FogComponent = Cast<UHeightFogComponent>(Component); FogComponent && bDrawFog)
 					{
 						SceneGlobals.Fogs.Add(FogComponent);
+					}
+
+					else if (UDOFComponent* DOFComp = Cast<UDOFComponent>(Component); DOFComp && bDrawDOF)
+					{
+						SceneGlobals.DOFs.Add(DOFComp);
 					}
 
 					else if (UDirectionalLightComponent* LightComponent = Cast<UDirectionalLightComponent>(Component); LightComponent && bDrawLight)
@@ -1265,6 +1272,19 @@ void FSceneRenderer::RenderPostProcessingPasses()
 			FogPostProc.SourceObject = FogComponent;
 			FogPostProc.Priority = -1;
 			PostProcessModifiers.Add(FogPostProc);
+		}
+	}
+	if (0 < SceneGlobals.DOFs.Num())
+	{
+		UDOFComponent* DOFComp = SceneGlobals.DOFs[0];
+		if (DOFComp)
+		{
+			FPostProcessModifier DOFPostProc;
+			DOFPostProc.Type = EPostProcessEffectType::DOF;
+			DOFPostProc.bEnabled = DOFComp->IsActive() && DOFComp->IsVisible();
+			DOFPostProc.SourceObject = DOFComp;
+			DOFPostProc.Priority = -1;
+			PostProcessModifiers.Add(DOFPostProc);
 		}
 	}
 	

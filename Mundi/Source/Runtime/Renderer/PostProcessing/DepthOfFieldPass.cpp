@@ -2,13 +2,24 @@
 #include "DepthOfFieldPass.h"
 #include "../SceneView.h"
 #include "../../RHI/SwapGuard.h"
+#include "DOFComponent.h"
 
 const char* FDepthOfFieldPass::DOF_CompositePSPath = "Shaders/PostProcess/DOF_Composite_PS.hlsl";
+const char* FDepthOfFieldPass::DOF_McIntoshPSPath = "Shaders/PostProcess/DOF_McIntosh_PS.hlsl";
 const char* FDepthOfFieldPass::DOF_GaussianBlurPSPath = "Shaders/PostProcess/DOF_GaussianBlur_PS.hlsl";
 const char* FDepthOfFieldPass::DOF_CalcCOC_PSPath = "Shaders/PostProcess/DOF_CalcCOC_PS.hlsl";
 
 void FDepthOfFieldPass::Execute(const FPostProcessModifier& M, FSceneView* View, D3D11RHI* RHIDevice)
 {
+    UDOFComponent* Comp = nullptr;
+    if (Comp = Cast<UDOFComponent>(M.SourceObject))
+    {
+        
+    }
+    else
+    {
+        return;
+    }
     //Common
     FSwapGuard Swap(RHIDevice, /*FirstSlot*/0, /*NumSlotsToUnbind*/2);
     RHIDevice->OMSetDepthStencilState(EComparisonFunc::Always);
@@ -19,7 +30,6 @@ void FDepthOfFieldPass::Execute(const FPostProcessModifier& M, FSceneView* View,
     RHIDevice->GetDeviceContext()->PSSetSamplers(0, 2, Smps);
     ECameraProjectionMode ProjectionMode = View->ProjectionMode;
     RHIDevice->SetAndUpdateConstantBuffer(PostProcessBufferType(View->NearClip, View->FarClip, ProjectionMode == ECameraProjectionMode::Orthographic));
-   
     
     // 3) 셰이더
     UShader* FullScreenTriangleVS = UResourceManager::GetInstance().Load<UShader>(UResourceManager::FullScreenVSPath);
@@ -27,28 +37,79 @@ void FDepthOfFieldPass::Execute(const FPostProcessModifier& M, FSceneView* View,
     UShader* COCPS = UResourceManager::GetInstance().Load<UShader>(DOF_CalcCOC_PSPath);
     UShader* GaussianPS = UResourceManager::GetInstance().Load<UShader>(DOF_GaussianBlurPSPath);
     UShader* CompositePS = UResourceManager::GetInstance().Load<UShader>(DOF_CompositePSPath);
+    UShader* McIntoshPS = UResourceManager::GetInstance().Load<UShader>(DOF_McIntoshPSPath);
+
+    //CB
+    FDepthOfFieldCB DOFCB = FDepthOfFieldCB(Comp->FocusDistance, Comp->FocusRange, Comp->COCSize);
+    FDOFGaussianCB DOFGaussianCB = FDOFGaussianCB(Comp->GaussianBlurWeight, true, true);
+    RHIDevice->SetAndUpdateConstantBuffer(DOFCB);
+
+    //RT
+    URenderTexture* COCRT = RHIDevice->GetRenderTexture("DOF_COC");
+    URenderTexture* NearPing = RHIDevice->GetRenderTexture("DOF_NearPing");
+    URenderTexture* NearPong = RHIDevice->GetRenderTexture("DOF_NearPong");
+    URenderTexture* FarPing = RHIDevice->GetRenderTexture("DOF_FarPing");
+    URenderTexture* FarPong = RHIDevice->GetRenderTexture("DOF_FarPong");
+    URenderTexture* CompositeRT = RHIDevice->GetRenderTexture("DOF_Composite");
+    URenderTexture* HorizontalTempRT = RHIDevice->GetRenderTexture("HorizontalTemp");
+    HorizontalTempRT->InitResolution(RHIDevice, 1.0f);
+    COCRT->InitResolution(RHIDevice, 1.0f);
+    NearPing->InitResolution(RHIDevice, 1.0f);
+    NearPong->InitResolution(RHIDevice, 1.0f);
+    FarPing->InitResolution(RHIDevice, 1.0f);
+    FarPong->InitResolution(RHIDevice, 1.0f);
+    CompositeRT->InitResolution(RHIDevice, 1.0f);
 
     //CalcCOC
-    RHIDevice->PrepareShader(FullScreenTriangleVS, COCPS);
-    URenderTexture* COCRT = RHIDevice->GetRenderTexture("DOF_COC");
-    COCRT->InitResolution(RHIDevice, 1.0f);
-    RHIDevice->OMSetRenderTargets(COCRT);
-    TArray< ID3D11ShaderResourceView*> SRVs;
+    TArray<ID3D11ShaderResourceView*> SRVs;
     SRVs.push_back(RHIDevice->GetSRV(RHI_SRV_Index::SceneDepth));
     SRVs.push_back(RHIDevice->GetSRV(RHI_SRV_Index::SceneColorSource));
-    RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 2, SRVs.data());
-    RHIDevice->DrawFullScreenQuad();
-
-    //Blur
-    URenderTexture* NearBlurRT = RHIDevice->GetRenderTexture("DOF_NearBlur");
-    URenderTexture* FarBlurRT = RHIDevice->GetRenderTexture("DOF_FarBlur");
-    NearBlurRT->InitResolution(RHIDevice, 1.0f);
-    FarBlurRT->InitResolution(RHIDevice, 1.0f);
+    Pass(RHIDevice, SRVs, COCRT->GetRTV(), DOF_CalcCOC_PSPath);
+    
+    //Gaussian
+    //Horizontal Near
     SRVs.clear();
     SRVs.push_back(RHIDevice->GetSRV(RHI_SRV_Index::SceneColorSource));
     SRVs.push_back(COCRT->GetSRV());
-    Gaussian(RHIDevice, SRVs.data(), NearBlurRT->GetRTV(), 2.0f, true);
-    Gaussian(RHIDevice, SRVs.data(), FarBlurRT->GetRTV(), 4.0f, false);
+    RHIDevice->SetAndUpdateConstantBuffer(FDOFGaussianCB(Comp->GaussianBlurWeight, true, true));
+    Pass(RHIDevice, SRVs, NearPing->GetRTV(), DOF_GaussianBlurPSPath);
+    //Horizontal Far
+    RHIDevice->SetAndUpdateConstantBuffer(FDOFGaussianCB(Comp->GaussianBlurWeight, true, false));
+    Pass(RHIDevice, SRVs, FarPing->GetRTV(), DOF_GaussianBlurPSPath);
+    //Vertical Near
+    SRVs[0] = NearPing->GetSRV();
+    RHIDevice->SetAndUpdateConstantBuffer(FDOFGaussianCB(Comp->GaussianBlurWeight, false, true));
+    Pass(RHIDevice, SRVs, NearPong->GetRTV(), DOF_GaussianBlurPSPath);
+    //Vertical Far
+    SRVs[0] = FarPing->GetSRV();
+    RHIDevice->SetAndUpdateConstantBuffer(FDOFGaussianCB(Comp->GaussianBlurWeight, false, false));
+    Pass(RHIDevice, SRVs, FarPong->GetRTV(), DOF_GaussianBlurPSPath);
+
+    URenderTexture* LastNearSRV = NearPing;
+    URenderTexture* LastFarSRV = FarPing;
+    URenderTexture* LastNearRTV = NearPong;
+    URenderTexture* LastFarRTV = FarPong;
+
+    //McIntosh
+    for (int i = 0; i < Comp->McIntoshCount; i++)
+    {
+        //Horizontal Near
+        SRVs[0] = LastNearRTV->GetSRV();
+        RHIDevice->SetAndUpdateConstantBuffer(FDOFMcIntoshCB(1, Comp->McIntoshRange));
+        Pass(RHIDevice, SRVs, LastNearSRV->GetRTV(), DOF_McIntoshPSPath);
+        //Horizontal Far
+        SRVs[0] = LastFarRTV->GetSRV();
+        RHIDevice->SetAndUpdateConstantBuffer(FDOFMcIntoshCB(1, Comp->McIntoshRange));
+        Pass(RHIDevice, SRVs, LastFarSRV->GetRTV(), DOF_McIntoshPSPath);
+        //Vertical Near
+        SRVs[0] = LastNearSRV->GetSRV();
+        RHIDevice->SetAndUpdateConstantBuffer(FDOFMcIntoshCB(0, Comp->McIntoshRange));
+        Pass(RHIDevice, SRVs, LastNearRTV->GetRTV(), DOF_McIntoshPSPath);
+        //Vertical Far
+        SRVs[0] = LastFarSRV->GetSRV();
+        RHIDevice->SetAndUpdateConstantBuffer(FDOFMcIntoshCB(0, Comp->McIntoshRange));
+        Pass(RHIDevice, SRVs, LastFarRTV->GetRTV(), DOF_McIntoshPSPath);
+    }
 
     //Composite
     RHIDevice->PrepareShader(FullScreenTriangleVS, CompositePS);
@@ -56,8 +117,8 @@ void FDepthOfFieldPass::Execute(const FPostProcessModifier& M, FSceneView* View,
     SRVs.clear();
     SRVs.push_back(RHIDevice->GetSRV(RHI_SRV_Index::SceneColorSource));
     SRVs.push_back(COCRT->GetSRV());
-    SRVs.push_back(NearBlurRT->GetSRV());
-    SRVs.push_back(FarBlurRT->GetSRV());
+    SRVs.push_back(LastNearRTV->GetSRV());
+    SRVs.push_back(LastFarRTV->GetSRV());
     RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 4, SRVs.data());
     RHIDevice->DrawFullScreenQuad();
 
@@ -65,28 +126,12 @@ void FDepthOfFieldPass::Execute(const FPostProcessModifier& M, FSceneView* View,
     Swap.Commit();
 }
 
-
-
-
-void FDepthOfFieldPass::Gaussian(D3D11RHI* RHIDevice, ID3D11ShaderResourceView*const* SRVs, ID3D11RenderTargetView* RTV, float Weight, bool bNear)
+void FDepthOfFieldPass::Pass(D3D11RHI* RHIDevice, TArray<ID3D11ShaderResourceView*> SRVs, ID3D11RenderTargetView* RTV, const char* PSPath)
 {
-    //Horizontal
     UShader* FullScreenTriangleVS = UResourceManager::GetInstance().Load<UShader>(UResourceManager::FullScreenVSPath);
-    UShader* GaussianPS = UResourceManager::GetInstance().Load<UShader>(DOF_GaussianBlurPSPath);
-
-    RHIDevice->PrepareShader(FullScreenTriangleVS, GaussianPS);
-    RHIDevice->SetAndUpdateConstantBuffer(FDOFGaussianCB(Weight, true, bNear));
-    URenderTexture* GaussianHorizonRenderTexture = RHIDevice->GetRenderTexture("GaussianHorizon");
-    GaussianHorizonRenderTexture->InitResolution(RHIDevice, 1.0f);
-    RHIDevice->OMSetRenderTargets(GaussianHorizonRenderTexture);
-    RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 2, SRVs);
-    RHIDevice->DrawFullScreenQuad();
-
-    //Vertical
-    RHIDevice->SetAndUpdateConstantBuffer(FDOFGaussianCB(Weight, false, bNear));
+    UShader* PS = UResourceManager::GetInstance().Load<UShader>(PSPath);
+    RHIDevice->PrepareShader(FullScreenTriangleVS, PS);
     RHIDevice->GetDeviceContext()->OMSetRenderTargets(1, &RTV, nullptr);
-    TArray<ID3D11ShaderResourceView*> GaussianVerticalSRVs;
-    GaussianVerticalSRVs.push_back(GaussianHorizonRenderTexture->GetSRV());
-    RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, GaussianVerticalSRVs.data());
+    RHIDevice->GetDeviceContext()->PSSetShaderResources(0, SRVs.size(), SRVs.data());
     RHIDevice->DrawFullScreenQuad();
 }
