@@ -7,7 +7,6 @@ class FDepthOfFieldPass final : public IPostProcessPass
 {
 public:
     static const char* DOF_CompositePSPath;
-    static const char* DOF_McIntoshPSPath;
     static const char* DOF_GaussianBlurPSPath;
     static const char* DOF_CalcCOC_PSPath;
     static const char* DOF_COCGaussianBlurPSPath;

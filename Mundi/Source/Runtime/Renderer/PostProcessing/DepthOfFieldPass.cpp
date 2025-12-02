@@ -5,7 +5,6 @@
 #include "DOFComponent.h"
 
 const char* FDepthOfFieldPass::DOF_CompositePSPath = "Shaders/PostProcess/DOF_Composite_PS.hlsl";
-const char* FDepthOfFieldPass::DOF_McIntoshPSPath = "Shaders/PostProcess/DOF_McIntosh_PS.hlsl";
 const char* FDepthOfFieldPass::DOF_GaussianBlurPSPath = "Shaders/PostProcess/DOF_GaussianBlur_PS.hlsl";
 const char* FDepthOfFieldPass::DOF_CalcCOC_PSPath = "Shaders/PostProcess/DOF_CalcCOC_PS.hlsl";
 const char* FDepthOfFieldPass::DOF_COCGaussianBlurPSPath = "Shaders/PostProcess/DOF_COCGaussianBlur_PS.hlsl";
@@ -15,7 +14,7 @@ void FDepthOfFieldPass::Execute(const FPostProcessModifier& M, FSceneView* View,
     UDOFComponent* Comp = nullptr;
     if (Comp = Cast<UDOFComponent>(M.SourceObject))
     {
-        
+
     }
     else
     {
@@ -33,7 +32,7 @@ void FDepthOfFieldPass::Execute(const FPostProcessModifier& M, FSceneView* View,
     RHIDevice->SetAndUpdateConstantBuffer(PostProcessBufferType(View->NearClip, View->FarClip, ProjectionMode == ECameraProjectionMode::Orthographic));
 
     //CB
-    FDepthOfFieldCB DOFCB = FDepthOfFieldCB(Comp->FocusDistance, Comp->FocusRange, Comp->COCSize);
+    FDepthOfFieldCB DOFCB = FDepthOfFieldCB(Comp->FocusDistance, Comp->FocusRange, 1);
     FDOFGaussianCB DOFGaussianCB = FDOFGaussianCB(Comp->GaussianBlurWeight, true, true);
     RHIDevice->SetAndUpdateConstantBuffer(DOFCB);
 
@@ -60,12 +59,15 @@ void FDepthOfFieldPass::Execute(const FPostProcessModifier& M, FSceneView* View,
     SRVs.push_back(RHIDevice->GetSRV(RHI_SRV_Index::SceneDepth));
     SRVs.push_back(RHIDevice->GetSRV(RHI_SRV_Index::SceneColorSource));
     Pass(RHIDevice, SRVs, COCRT->GetRTV(), DOF_CalcCOC_PSPath);
-    
+
     //COCBlur
+
     SRVs.clear();
     SRVs.push_back(COCRT->GetSRV());
     RHIDevice->SetAndUpdateConstantBuffer(FDOFGaussianCB(Comp->GaussianBlurWeight, true, true));
     Pass(RHIDevice, SRVs, BluredCOCRT->GetRTV(), DOF_COCGaussianBlurPSPath);
+    SRVs[0] = nullptr;
+    RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, SRVs.data());
     SRVs[0] = BluredCOCRT->GetSRV();
     RHIDevice->SetAndUpdateConstantBuffer(FDOFGaussianCB(Comp->GaussianBlurWeight, false, true));
     Pass(RHIDevice, SRVs, COCRT->GetRTV(), DOF_COCGaussianBlurPSPath);
@@ -94,27 +96,6 @@ void FDepthOfFieldPass::Execute(const FPostProcessModifier& M, FSceneView* View,
     URenderTexture* LastNearRTV = NearPong;
     URenderTexture* LastFarRTV = FarPong;
 
-    //McIntosh
-    for (int i = 0; i < Comp->McIntoshCount; i++)
-    {
-        //Horizontal Near
-        SRVs[0] = LastNearRTV->GetSRV();
-        RHIDevice->SetAndUpdateConstantBuffer(FDOFMcIntoshCB(1, Comp->McIntoshRange));
-        Pass(RHIDevice, SRVs, LastNearSRV->GetRTV(), DOF_McIntoshPSPath);
-        //Horizontal Far
-        SRVs[0] = LastFarRTV->GetSRV();
-        RHIDevice->SetAndUpdateConstantBuffer(FDOFMcIntoshCB(1, Comp->McIntoshRange));
-        Pass(RHIDevice, SRVs, LastFarSRV->GetRTV(), DOF_McIntoshPSPath);
-        //Vertical Near
-        SRVs[0] = LastNearSRV->GetSRV();
-        RHIDevice->SetAndUpdateConstantBuffer(FDOFMcIntoshCB(0, Comp->McIntoshRange));
-        Pass(RHIDevice, SRVs, LastNearRTV->GetRTV(), DOF_McIntoshPSPath);
-        //Vertical Far
-        SRVs[0] = LastFarSRV->GetSRV();
-        RHIDevice->SetAndUpdateConstantBuffer(FDOFMcIntoshCB(0, Comp->McIntoshRange));
-        Pass(RHIDevice, SRVs, LastFarRTV->GetRTV(), DOF_McIntoshPSPath);
-    }
-
     //Composite
     UShader* FullScreenTriangleVS = UResourceManager::GetInstance().Load<UShader>(UResourceManager::FullScreenVSPath);
     UShader* CompositePS = UResourceManager::GetInstance().Load<UShader>(DOF_CompositePSPath);
@@ -133,6 +114,7 @@ void FDepthOfFieldPass::Execute(const FPostProcessModifier& M, FSceneView* View,
 
     ID3D11ShaderResourceView* nulls[4] = {};
     RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 4, nulls);
+    RHIDevice->GetDeviceContext()->OMSetRenderTargets(0, nullptr, nullptr);
 }
 
 void FDepthOfFieldPass::Pass(D3D11RHI* RHIDevice, TArray<ID3D11ShaderResourceView*> SRVs, ID3D11RenderTargetView* RTV, const char* PSPath)

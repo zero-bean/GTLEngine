@@ -353,16 +353,6 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\PostProcess\DOF_BokehBlur_PS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release_StandAlone|x64'">Pixel</ShaderType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_StandAlone|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">true</ExcludedFromBuild>
-    </FxCompile>
     <FxCompile Include="Shaders\PostProcess\DOF_COCGaussianBlur_PS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -373,7 +363,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\PostProcess\DOF_McIntosh_PS.hlsl">
+    <FxCompile Include="Shaders\PostProcess\DownSamplingPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">Pixel</ShaderType>
@@ -384,6 +374,16 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\GammaCorrection_PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release_StandAlone|x64'">Pixel</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_StandAlone|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\UpSampling.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug_StandAlone|x64'">Pixel</ShaderType>
