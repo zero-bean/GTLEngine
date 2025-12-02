@@ -8,7 +8,6 @@ UPrimitiveComponent::UPrimitiveComponent()
     : bGenerateOverlapEvents(true)
     , bSimulatePhysics(false)
 {
-    OnComponentHit.AddDynamic(this, &UPrimitiveComponent::OnHitDebug);
 }
 
 UPrimitiveComponent::~UPrimitiveComponent()
@@ -35,6 +34,8 @@ void UPrimitiveComponent::OnRegister(UWorld* InWorld)
 {
     Super::OnRegister(InWorld);
 
+    OnComponentHit.AddDynamic(this, &UPrimitiveComponent::OnHitDebug);
+    
     // UStaticMeshComponent라면 World Partition에 추가. (null 체크는 Register 내부에서 수행)
     if (InWorld)
     {

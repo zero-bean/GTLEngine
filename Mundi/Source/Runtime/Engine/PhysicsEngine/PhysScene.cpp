@@ -250,12 +250,11 @@ void FPhysScene::DispatchPhysNotifications_AssumesLocked()
 
     for (const FCollisionNotifyInfo& Notify : LocalNotifies)
     {
-        // @todo TWeakObjectPtr로 유효성 검증
-        AActor* Actor0 = Notify.Info0.Actor;
-        UPrimitiveComponent* Comp0 = Notify.Info0.Component;
+        AActor* Actor0 = Notify.Info0.Actor.Get();
+        UPrimitiveComponent* Comp0 = Notify.Info0.Component.Get();
 
-        AActor* Actor1 = Notify.Info1.Actor;
-        UPrimitiveComponent* Comp1 = Notify.Info1.Component;
+        AActor* Actor1 = Notify.Info1.Actor.Get();
+        UPrimitiveComponent* Comp1 = Notify.Info1.Component.Get();
 
         bool bIsValid0 = (Actor0 && Comp0);
         bool bIsValid1 = (Actor1 && Comp1);
