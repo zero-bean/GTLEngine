@@ -759,9 +759,6 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Generated\FKShapeElem.generated.cpp" />
     <ClCompile Include="Generated\FKSphereElem.generated.cpp" />
     <ClCompile Include="Generated\FKSphylElem.generated.cpp" />
-    <ClCompile Include="Generated\ABoxActor.generated.cpp" />
-    <ClCompile Include="Generated\ACapsuleActor.generated.cpp" />
-    <ClCompile Include="Generated\ASphereActor.generated.cpp" />
     <ClCompile Include="Generated\UPhysicalMaterial.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
