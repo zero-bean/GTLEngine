@@ -624,12 +624,6 @@ void UWorld::ProcessPendingKillActors()
 	}
 }
 
-AActor* UWorld::SpawnActor(UClass* Class)
-{
-	// 기본 Transform(원점)으로 스폰하는 메인 함수를 호출합니다.
-	return SpawnActor(Class, FTransform());
-}
-
 AActor* UWorld::FindActorByName(const FName& ActorName)
 {
 	if (!Level)

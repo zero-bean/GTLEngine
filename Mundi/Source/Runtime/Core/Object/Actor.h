@@ -6,6 +6,7 @@
 #include "LightManager.h"
 #include "Delegates.h"
 #include "AActor.generated.h"
+#include "HitResult.h"
 
 class UWorld;
 class USceneComponent;
@@ -23,7 +24,7 @@ public:
 
     DECLARE_DELEGATE(OnComponentBeginOverlap, UPrimitiveComponent*, UPrimitiveComponent*);
     DECLARE_DELEGATE(OnComponentEndOverlap, UPrimitiveComponent*, UPrimitiveComponent*);
-    DECLARE_DELEGATE(OnComponentHit, UPrimitiveComponent*, UPrimitiveComponent*);
+    DECLARE_DELEGATE(OnComponentHit, UPrimitiveComponent*, UPrimitiveComponent*, FHitResult);
 
     AActor(); 
 

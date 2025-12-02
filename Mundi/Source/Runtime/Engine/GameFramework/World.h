@@ -82,8 +82,7 @@ public:
     // 모든 액터의 모든 컴포넌트를 순회하여 ObjectName으로 '첫 번째' 컴포넌트를 찾아 반환합니다 (비용이 매우 크므로 매 프레임 호출을 권장하지 않습니다.)
     UActorComponent* FindComponentByName(const FName& ComponentName);
 
-    AActor* SpawnActor(UClass* Class, const FTransform& Transform);
-    AActor* SpawnActor(UClass* Class);
+    AActor* SpawnActor(UClass* Class, const FTransform& Transform = FTransform());
     AActor* SpawnPrefabActor(const FWideString& PrefabPath);
     void AddActorToLevel(AActor* Actor);
 

@@ -10,6 +10,7 @@
 #include "Material.h"
 #include "SceneView.h"
 #include "LuaBindHelpers.h"
+#include "SkeletalMeshComponent.h"
 // IMPLEMENT_CLASS is now auto-generated in .generated.cpp
 UStaticMeshComponent::UStaticMeshComponent()
 {
@@ -17,6 +18,20 @@ UStaticMeshComponent::UStaticMeshComponent()
 }
 
 UStaticMeshComponent::~UStaticMeshComponent() = default;
+
+void UStaticMeshComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	GetOwner()->OnComponentHit.AddDynamic(this, &UStaticMeshComponent::OnHit);
+}
+
+void UStaticMeshComponent::OnHit(UPrimitiveComponent* This, UPrimitiveComponent* Other, FHitResult HitResult)
+{
+	if (Other->IsA(UStaticMeshComponent::StaticClass()))
+	{
+		Other->GetOwner()->Destroy();
+	}
+}
 
 void UStaticMeshComponent::OnStaticMeshReleased(UStaticMesh* ReleasedMesh)
 {
