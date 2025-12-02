@@ -215,40 +215,17 @@ UPhysicsAsset* PhysicsAssetEditorBootstrap::LoadPhysicsAsset(const FString& File
 	// 경로를 상대 경로로 정규화
 	FString NormalizedFilePath = ResolveAssetRelativePath(NormalizePath(FilePath), "");
 
-	// ResourceManager에서 이미 로드된 Physics Asset 확인
-	UPhysicsAsset* ExistingAsset = UResourceManager::GetInstance().Get<UPhysicsAsset>(NormalizedFilePath);
-	if (ExistingAsset)
+	// ForceLoad로 항상 파일에서 로드 (캐시 무시, 에디터에서는 최신 파일 반영 필요)
+	UPhysicsAsset* LoadedAsset = UResourceManager::GetInstance().ForceLoad<UPhysicsAsset>(NormalizedFilePath);
+	if (LoadedAsset)
 	{
-		UE_LOG("[PhysicsAssetEditorBootstrap] LoadPhysicsAsset: 캐시된 에셋 반환: %s", NormalizedFilePath.c_str());
-		return ExistingAsset;
+		UE_LOG("[PhysicsAssetEditorBootstrap] LoadPhysicsAsset: 로드 성공: %s", NormalizedFilePath.c_str());
+	}
+	else
+	{
+		UE_LOG("[PhysicsAssetEditorBootstrap] LoadPhysicsAsset: 로드 실패: %s", NormalizedFilePath.c_str());
 	}
 
-	// FString을 FWideString으로 변환 (UTF-8 → UTF-16)
-	FWideString WidePath = UTF8ToWide(NormalizedFilePath);
-
-	// 파일에서 JSON 로드
-	JSON JsonHandle;
-	if (!FJsonSerializer::LoadJsonFromFile(JsonHandle, WidePath))
-	{
-		UE_LOG("[PhysicsAssetEditorBootstrap] LoadPhysicsAsset: 파일 로드 실패: %s", NormalizedFilePath.c_str());
-		return nullptr;
-	}
-
-	// 새로운 PhysicsAsset 객체 생성
-	UPhysicsAsset* LoadedAsset = NewObject<UPhysicsAsset>();
-	if (!LoadedAsset)
-	{
-		UE_LOG("[PhysicsAssetEditorBootstrap] LoadPhysicsAsset: PhysicsAsset 객체 생성 실패");
-		return nullptr;
-	}
-
-	// PhysicsAsset 역직렬화 (true = 로딩 모드)
-	LoadedAsset->Serialize(true, JsonHandle);
-
-	// ResourceManager에 등록
-	UResourceManager::GetInstance().Add<UPhysicsAsset>(NormalizedFilePath, LoadedAsset);
-
-	UE_LOG("[PhysicsAssetEditorBootstrap] LoadPhysicsAsset: 로드 성공: %s", NormalizedFilePath.c_str());
 	return LoadedAsset;
 }
 

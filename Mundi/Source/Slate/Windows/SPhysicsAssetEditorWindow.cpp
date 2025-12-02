@@ -6,6 +6,8 @@
 #include "FViewport.h"
 #include "FViewportClient.h"
 #include <filesystem>
+#include "PathUtils.h"
+#include "Widgets/PropertyRenderer.h"
 #include "Source/Runtime/Engine/Viewer/PhysicsAssetEditorBootstrap.h"
 #include "Source/Runtime/Engine/Viewer/EditorAssetPreviewContext.h"
 #include "Source/Runtime/Engine/PhysicsEngine/PhysicsAsset.h"
@@ -2063,6 +2065,11 @@ void SPhysicsAssetEditorWindow::SavePhysicsAsset()
 	if (PhysicsAssetEditorBootstrap::SavePhysicsAsset(State->EditingAsset, State->CurrentFilePath))
 	{
 		State->bIsDirty = false;
+
+		// ResourceManager에 등록/갱신 (캐시와 동기화)
+		UResourceManager::GetInstance().AddOrReplace<UPhysicsAsset>(State->CurrentFilePath, State->EditingAsset);
+
+		UE_LOG("[SPhysicsAssetEditorWindow] Physics Asset saved: %s", State->CurrentFilePath.c_str());
 	}
 }
 
@@ -2080,13 +2087,37 @@ void SPhysicsAssetEditorWindow::SavePhysicsAssetAs()
 
 	if (widePath.empty()) return;
 
-	FString FilePath = WideToUTF8(widePath.wstring());
+	// 경로 정규화
+	FString FilePath = ResolveAssetRelativePath(NormalizePath(WideToUTF8(widePath.wstring())), "");
+
+	// 원본 파일 경로와 dirty 상태 저장 (복구용)
+	FString OriginalFilePath = State->CurrentFilePath;
+	bool bWasDirty = State->bIsDirty;
 
 	if (PhysicsAssetEditorBootstrap::SavePhysicsAsset(State->EditingAsset, FilePath))
 	{
+		// 원본 파일이 있고 변경이 있었다면, 원본 캐시 복구
+		if (!OriginalFilePath.empty() && bWasDirty)
+		{
+			UResourceManager::GetInstance().ForceLoad<UPhysicsAsset>(OriginalFilePath);
+		}
+
+		// SaveAs는 새로운 인스턴스를 생성해야 함 (기존 파일과 분리)
+		UPhysicsAsset* NewAsset = static_cast<UPhysicsAsset*>(State->EditingAsset->Duplicate());
+		NewAsset->SetFilePath(FilePath);
+
+		// ResourceManager에 새 인스턴스 등록
+		UResourceManager::GetInstance().AddOrReplace<UPhysicsAsset>(FilePath, NewAsset);
+
+		// 에디터 상태를 새 인스턴스로 교체
+		State->EditingAsset = NewAsset;
 		State->CurrentFilePath = FilePath;
 		State->bIsDirty = false;
-		UE_LOG("[SPhysicsAssetEditorWindow] Physics Asset saved: %s", FilePath.c_str());
+
+		// 리소스 캐시 갱신 (새 파일이 선택 목록에 반영되도록)
+		UPropertyRenderer::ClearResourcesCache();
+
+		UE_LOG("[SPhysicsAssetEditorWindow] Physics Asset saved as: %s", FilePath.c_str());
 	}
 }
 
@@ -2275,15 +2306,115 @@ void SPhysicsAssetEditorWindow::AutoGenerateBodies(EAggCollisionShape PrimitiveT
 		{
 			++GeneratedBodies;
 		}
-		else
+		// Shape 생성 실패해도 body 유지 (PhysX에서 mass=0으로 kinematic 취급)
+		// Constraint anchor point로 사용 가능
+	}
+
+	// ────────────────────────────────────────────────
+	// Leaf body pruning (위상 정렬 방식)
+	// Shape가 없는 leaf body를 제거하고, 새로운 leaf가 되면 반복
+	// ────────────────────────────────────────────────
+	{
+		// 각 bone의 "body가 있는 자식" 수 계산
+		TArray<int32> ChildBodyCount;
+		ChildBodyCount.SetNum(BoneCount);
+		for (int32 i = 0; i < BoneCount; ++i)
 		{
-			// Shape 생성 실패 시 바디 제거
-			Asset->BodySetups.RemoveAt(BodyIndex);
+			ChildBodyCount[i] = 0;
+		}
+
+		// 자식 bone이 body를 가지고 있으면 부모의 count 증가
+		for (int32 i = 0; i < BoneCount; ++i)
+		{
+			int32 ParentBoneIdx = Skeleton->Bones[i].ParentIndex;
+			if (ParentBoneIdx >= 0 && Asset->FindBodyIndexByBone(i) >= 0)
+			{
+				ChildBodyCount[ParentBoneIdx]++;
+			}
+		}
+
+		// 제거할 bone index들을 추적
+		TArray<bool> BodiesToRemove;
+		BodiesToRemove.SetNum(BoneCount);
+		for (int32 i = 0; i < BoneCount; ++i)
+		{
+			BodiesToRemove[i] = false;
+		}
+
+		// Leaf body (자식 body가 없는)를 queue에 추가
+		TArray<int32> Queue;
+		for (int32 i = 0; i < BoneCount; ++i)
+		{
+			int32 BodyIdx = Asset->FindBodyIndexByBone(i);
+			if (BodyIdx >= 0 && ChildBodyCount[i] == 0)
+			{
+				Queue.Add(i);  // Bone index를 queue에 추가
+			}
+		}
+
+		int32 PrunedCount = 0;
+
+		// 위상 정렬 방식으로 처리
+		while (!Queue.IsEmpty())
+		{
+			int32 BoneIdx = Queue[0];
+			Queue.RemoveAt(0);
+
+			int32 BodyIdx = Asset->FindBodyIndexByBone(BoneIdx);
+			if (BodyIdx < 0) continue;
+			if (BodiesToRemove[BoneIdx]) continue;  // 이미 제거 대상
+
+			UBodySetup* Body = Asset->BodySetups[BodyIdx];
+			if (!Body) continue;
+
+			// Shape가 없으면 제거 대상
+			if (Body->AggGeom.GetElementCount() == 0)
+			{
+				BodiesToRemove[BoneIdx] = true;
+				PrunedCount++;
+
+				// 부모 bone의 자식 count 감소
+				int32 ParentBoneIdx = Skeleton->Bones[BoneIdx].ParentIndex;
+				if (ParentBoneIdx >= 0)
+				{
+					ChildBodyCount[ParentBoneIdx]--;
+
+					// 부모가 새로운 leaf가 되면 queue에 추가
+					if (ChildBodyCount[ParentBoneIdx] == 0)
+					{
+						int32 ParentBodyIdx = Asset->FindBodyIndexByBone(ParentBoneIdx);
+						if (ParentBodyIdx >= 0 && !BodiesToRemove[ParentBoneIdx])
+						{
+							Queue.Add(ParentBoneIdx);
+						}
+					}
+				}
+			}
+			// Shape가 있으면 제거하지 않음 (chain 유지)
+		}
+
+		// 제거 대상 body들을 역순으로 제거 (index 변경 방지)
+		for (int32 i = BoneCount - 1; i >= 0; --i)
+		{
+			if (BodiesToRemove[i])
+			{
+				int32 BodyIdx = Asset->FindBodyIndexByBone(i);
+				if (BodyIdx >= 0)
+				{
+					Asset->RemoveBody(BodyIdx);
+				}
+			}
+		}
+
+		if (PrunedCount > 0)
+		{
+			UE_LOG("[SPhysicsAssetEditorWindow] Pruned %d empty leaf bodies", PrunedCount);
 		}
 	}
 
 	// ────────────────────────────────────────────────
 	// 부모-자식 본 사이에 제약 조건 생성
+	// Pruning 후 중간 empty body는 유지되므로 직접 부모-자식 연결
 	// ────────────────────────────────────────────────
 	for (int32 i = 0; i < BoneCount; ++i)
 	{
@@ -2306,8 +2437,10 @@ void SPhysicsAssetEditorWindow::AutoGenerateBodies(EAggCollisionShape PrimitiveT
 	State->ClearSelection();
 	State->HideGizmo();
 
-	UE_LOG("[SPhysicsAssetEditorWindow] Auto-generated %d bodies and %d constraints (vertex-based)",
-		GeneratedBodies, (int)Asset->ConstraintSetups.size());
+	int32 TotalBodies = static_cast<int32>(Asset->BodySetups.size());
+	int32 EmptyBodies = TotalBodies - GeneratedBodies;
+	UE_LOG("[SPhysicsAssetEditorWindow] Auto-generated %d bodies (%d with shape, %d empty) and %d constraints",
+		TotalBodies, GeneratedBodies, EmptyBodies, (int)Asset->ConstraintSetups.size());
 }
 
 void SPhysicsAssetEditorWindow::AddBodyToBone(int32 BoneIndex, EAggCollisionShape PrimitiveType)

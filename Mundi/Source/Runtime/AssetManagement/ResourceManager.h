@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <filesystem>
 #include "ObjectFactory.h"
 #include "Object.h"
 #include "Shader.h"
@@ -48,6 +49,10 @@ public:
 	// --- 리소스 로드 및 접근 ---
 	template<typename T, typename... Args>
 	T* Load(const FString& InFilePath, Args&&... InArgs);
+
+	// 캐시 무시하고 파일에서 강제 로드 (에디터 리로드용)
+	template<typename T, typename... Args>
+	T* ForceLoad(const FString& InFilePath, Args&&... InArgs);
 
 	template<typename T>
 	bool Add(const FString& InFilePath, UObject* InObject);
@@ -230,6 +235,35 @@ inline T* UResourceManager::Load(const FString& InFilePath, Args && ...InArgs)
 		Resources[typeIndex][NormalizedPath] = Resource;
 		return Resource;
 	}
+}
+
+// 캐시 무시하고 파일에서 강제 로드 (에디터 리로드용)
+template<typename T, typename ...Args>
+inline T* UResourceManager::ForceLoad(const FString& InFilePath, Args && ...InArgs)
+{
+	if (InFilePath.empty())
+	{
+		return nullptr;
+	}
+
+	// 경로 정규화
+	FString NormalizedPath = NormalizePath(InFilePath);
+
+	// 파일 존재 여부 확인
+	if (!std::filesystem::exists(NormalizedPath))
+	{
+		return nullptr;
+	}
+
+	// 항상 새로 로드
+	T* Resource = NewObject<T>();
+	Resource->Load(NormalizedPath, Device, std::forward<Args>(InArgs)...);
+	Resource->SetFilePath(NormalizedPath);
+
+	// 캐시에 추가 또는 교체
+	AddOrReplace<T>(NormalizedPath, Resource);
+
+	return Resource;
 }
 
 template<>
