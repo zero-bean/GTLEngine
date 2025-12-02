@@ -103,7 +103,11 @@ void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPr
     RigidActor->userData = this;
 
     UPhysicalMaterial* PhysicalMaterial = GetSimplePhysicalMaterial();
-    Setup->AddShapesToRigidActor_AssumesLocked(this, Scale3D, RigidActor, PhysicalMaterial);
+    
+    {
+        SCOPED_SCENE_WRITE_LOCK(PhysScene->GetPxScene());    
+        Setup->AddShapesToRigidActor_AssumesLocked(this, Scale3D, RigidActor, PhysicalMaterial);
+    }
 
     if (IsDynamic())
     {
@@ -145,7 +149,7 @@ void FBodyInstance::TermBody()
         // userData를 먼저 클리어하여 dangling pointer 방지
         RigidActor->userData = nullptr;
 
-        if (PhysScene)
+        if (PhysScene && PhysScene->GetPxScene())
         {
             // 시뮬레이션 중이면 완료될 때까지 대기
             PhysScene->WaitPhysScene();

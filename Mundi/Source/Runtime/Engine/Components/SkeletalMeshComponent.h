@@ -171,7 +171,7 @@ public:
      * @brief 랙돌 시뮬레이션 활성화/비활성화
      * @param bEnable true: 랙돌 활성화 (물리 시뮬레이션), false: 애니메이션 모드
      */
-    void SetSimulatePhysics(bool bEnable);
+    virtual void SetSimulatePhysics(bool bEnable) override;
 
     /**
      * @brief 랙돌 시뮬레이션 중인지 확인
@@ -233,6 +233,11 @@ protected:
      * @brief 현재 본 트랜스폼을 물리 바디에 동기화 (랙돌 시작 시)
      */
     void SyncPhysicsFromBones();
+
+    /**
+     * @brief 초기 포즈에서 겹치는 바디 쌍을 검출하여 충돌 무시 설정
+     */
+    void SetupInitialOverlapFilters();
 
 public:
     
