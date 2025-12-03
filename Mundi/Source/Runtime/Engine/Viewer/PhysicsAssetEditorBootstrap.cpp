@@ -146,13 +146,21 @@ ViewerState* PhysicsAssetEditorBootstrap::CreateViewerState(const char* Name, UW
 			SelectedBodyLineComp->SetLineVisible(true);
 			State->SelectedBodyLineComponent = SelectedBodyLineComp;
 
-			// Constraint 시각화용 LineComponent 생성
+			// Constraint 시각화용 LineComponent 생성 (비선택 Constraint)
 			ULineComponent* ConstraintLineComp = NewObject<ULineComponent>();
 			ConstraintLineComp->SetAlwaysOnTop(true);
 			PreviewActor->AddOwnedComponent(ConstraintLineComp);
 			ConstraintLineComp->RegisterComponent(State->World);
 			ConstraintLineComp->SetLineVisible(true);
 			State->ConstraintLineComponent = ConstraintLineComp;
+
+			// 선택 Constraint용 LineComponent 생성
+			ULineComponent* SelectedConstraintLineComp = NewObject<ULineComponent>();
+			SelectedConstraintLineComp->SetAlwaysOnTop(true);
+			PreviewActor->AddOwnedComponent(SelectedConstraintLineComp);
+			SelectedConstraintLineComp->RegisterComponent(State->World);
+			SelectedConstraintLineComp->SetLineVisible(true);
+			State->SelectedConstraintLineComponent = SelectedConstraintLineComp;
 
 			// PrimitiveDrawInterface 생성 및 초기화
 			// PDI: 비선택 바디용
@@ -163,15 +171,20 @@ ViewerState* PhysicsAssetEditorBootstrap::CreateViewerState(const char* Name, UW
 			State->SelectedPDI = new FPrimitiveDrawInterface();
 			State->SelectedPDI->Initialize(SelectedBodyLineComp);
 
-			// ConstraintPDI: Constraint용
+			// ConstraintPDI: 비선택 Constraint용
 			State->ConstraintPDI = new FPrimitiveDrawInterface();
 			State->ConstraintPDI->Initialize(ConstraintLineComp);
+
+			// SelectedConstraintPDI: 선택 Constraint용
+			State->SelectedConstraintPDI = new FPrimitiveDrawInterface();
+			State->SelectedConstraintPDI->Initialize(SelectedConstraintLineComp);
 
 			// 초기 렌더링 플래그
 			State->bBoneTMCacheDirty = true;
 			State->bAllBodyLinesDirty = true;
 			State->bSelectedBodyLineDirty = true;
-			State->bConstraintLinesDirty = true;
+			State->bAllConstraintLinesDirty = true;
+			State->bSelectedConstraintLineDirty = true;
 
 			// 본 라인 표시 (ViewerState에서 상속)
 			State->bShowBones = true;
@@ -240,6 +253,11 @@ void PhysicsAssetEditorBootstrap::DestroyViewerState(ViewerState*& State)
 	{
 		delete PhysState->ConstraintPDI;
 		PhysState->ConstraintPDI = nullptr;
+	}
+	if (PhysState->SelectedConstraintPDI)
+	{
+		delete PhysState->SelectedConstraintPDI;
+		PhysState->SelectedConstraintPDI = nullptr;
 	}
 
 	// Viewport/Client 정리

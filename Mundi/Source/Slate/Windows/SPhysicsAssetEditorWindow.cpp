@@ -158,6 +158,14 @@ void SPhysicsAssetEditorWindow::OnUpdate(float DeltaSeconds)
 		State->LastSelectedBodyIndex = State->SelectedBodyIndex;
 	}
 
+	// 선택 컨스트레인트 변경 감지
+	if (State->SelectedConstraintIndex != State->LastSelectedConstraintIndex)
+	{
+		State->bAllConstraintLinesDirty = true;      // 이전 선택 컨스트레인트 색상 복원
+		State->bSelectedConstraintLineDirty = true;  // 새 선택 컨스트레인트 하이라이트
+		State->LastSelectedConstraintIndex = State->SelectedConstraintIndex;
+	}
+
 	// 본 라인 재구성
 	if (State->bShowBones && State->PreviewActor && State->bBoneLinesDirty)
 	{
@@ -196,9 +204,19 @@ void SPhysicsAssetEditorWindow::OnUpdate(float DeltaSeconds)
 	}
 
 	// Constraint 라인 재생성
-	if (State->bShowConstraints && State->bConstraintLinesDirty)
+	if (State->bShowConstraints)
 	{
-		RebuildConstraintLines();
+		// 1. 비선택 컨스트레인트 라인 갱신 (컨스트레인트 추가/삭제/선택 변경 시)
+		if (State->bAllConstraintLinesDirty)
+		{
+			RebuildUnselectedConstraintLines();
+		}
+
+		// 2. 선택 컨스트레인트 라인 갱신 (선택 변경/속성 편집 시)
+		if (State->bSelectedConstraintLineDirty)
+		{
+			RebuildSelectedConstraintLines();
+		}
 	}
 
 	// 시뮬레이션 업데이트
@@ -1752,7 +1770,7 @@ void SPhysicsAssetEditorWindow::RenderConstraintDetails(UPhysicsConstraintTempla
 	if (bChanged)
 	{
 		State->bIsDirty = true;
-		State->bConstraintLinesDirty = true;
+		State->bSelectedConstraintLineDirty = true;  // 선택된 컨스트레인트만 업데이트
 	}
 }
 
@@ -2303,6 +2321,10 @@ void SPhysicsAssetEditorWindow::StartSimulation()
 	{
 		State->ConstraintLineComponent->SetLineVisible(false);
 	}
+	if (State->SelectedConstraintLineComponent)
+	{
+		State->SelectedConstraintLineComponent->SetLineVisible(false);
+	}
 	if (State->PreviewActor)
 	{
 		if (ULineComponent* BoneLineComp = State->PreviewActor->GetBoneLineComponent())
@@ -2379,12 +2401,17 @@ void SPhysicsAssetEditorWindow::StopSimulation()
 	{
 		State->ConstraintLineComponent->SetLineVisible(true);
 	}
+	if (State->SelectedConstraintLineComponent)
+	{
+		State->SelectedConstraintLineComponent->SetLineVisible(true);
+	}
 
 	// 즉시 라인 재구성 (다음 프레임 지연 방지)
 	RebuildBoneTMCache();
 	RebuildUnselectedBodyLines();
 	RebuildSelectedBodyLines();
-	RebuildConstraintLines();
+	RebuildUnselectedConstraintLines();
+	RebuildSelectedConstraintLines();
 
 	UE_LOG("[PhysicsAssetEditor] 시뮬레이션 중지");
 }
@@ -2442,6 +2469,10 @@ void SPhysicsAssetEditorWindow::ResetPose()
 	{
 		State->ConstraintLineComponent->SetLineVisible(true);
 	}
+	if (State->SelectedConstraintLineComponent)
+	{
+		State->SelectedConstraintLineComponent->SetLineVisible(true);
+	}
 	if (State->PreviewActor)
 	{
 		if (ULineComponent* BoneLineComp = State->PreviewActor->GetBoneLineComponent())
@@ -2454,7 +2485,8 @@ void SPhysicsAssetEditorWindow::ResetPose()
 	RebuildBoneTMCache();
 	RebuildUnselectedBodyLines();
 	RebuildSelectedBodyLines();
-	RebuildConstraintLines();
+	RebuildUnselectedConstraintLines();
+	RebuildSelectedConstraintLines();
 	if (State->PreviewActor)
 	{
 		State->PreviewActor->RebuildBoneLines(State->SelectedBoneIndex);
@@ -2517,7 +2549,9 @@ void SPhysicsAssetEditorWindow::TickSimulation(float DeltaTime)
 	// === 5. 시각화 업데이트 플래그 설정 ===
 	State->bBoneTMCacheDirty = true;
 	State->bAllBodyLinesDirty = true;
-	State->bConstraintLinesDirty = true;
+	State->bSelectedBodyLineDirty = true;
+	State->bAllConstraintLinesDirty = true;
+	State->bSelectedConstraintLineDirty = true;
 	State->bBoneLinesDirty = true;
 }
 
@@ -2577,7 +2611,8 @@ void SPhysicsAssetEditorWindow::CreateAllBodies(int32 ShapeType)
 	State->bBoneTMCacheDirty = true;
 	State->bAllBodyLinesDirty = true;
 	State->bSelectedBodyLineDirty = true;
-	State->bConstraintLinesDirty = true;
+	State->bAllConstraintLinesDirty = true;
+	State->bSelectedConstraintLineDirty = true;
 
 	UE_LOG("[PhysicsAssetEditor] 모든 바디 생성 완료: %d개 바디, %d개 컨스트레인트",
 		BodyCount, ConstraintCount);
@@ -2602,7 +2637,8 @@ void SPhysicsAssetEditorWindow::RemoveAllBodies()
 	State->bBoneTMCacheDirty = true;
 	State->bAllBodyLinesDirty = true;
 	State->bSelectedBodyLineDirty = true;
-	State->bConstraintLinesDirty = true;
+	State->bAllConstraintLinesDirty = true;
+	State->bSelectedConstraintLineDirty = true;
 
 	UE_LOG("[PhysicsAssetEditor] 모든 바디 및 컨스트레인트 삭제됨");
 }
@@ -2842,12 +2878,150 @@ void SPhysicsAssetEditorWindow::RebuildSelectedBodyLines()
 	State->bSelectedBodyLineDirty = false;
 }
 
-void SPhysicsAssetEditorWindow::RebuildConstraintLines()
+// 단일 컨스트레인트의 시각화 라인을 그리는 헬퍼 함수
+static void DrawConstraintVisualization(
+	FPrimitiveDrawInterface* PDI,
+	const FConstraintInstance& Instance,
+	USkeletalMeshComponent* MeshComp,
+	const FSkeleton* Skeleton,
+	const FLinearColor& SwingColor,
+	const FLinearColor& TwistColor)
+{
+	const float ConeLength = 0.1f;  // 콘 길이 (미터)
+	const int32 Segments = 32;      // 콘 세그먼트 수
+
+	// 자식 본 (Bone2) 위치에서 Constraint 시각화
+	FName ChildBoneName = Instance.ConstraintBone2;
+	auto it = Skeleton->BoneNameToIndex.find(ChildBoneName.ToString());
+	if (it == Skeleton->BoneNameToIndex.end()) return;
+
+	int32 ChildBoneIndex = it->second;
+	FTransform ChildBoneTM = MeshComp->GetBoneWorldTransform(ChildBoneIndex);
+	ChildBoneTM.Rotation.Normalize();
+
+	FVector Origin = ChildBoneTM.Translation;
+
+	// 부모 본 방향 계산 (Twist 축)
+	FVector TwistAxis = FVector(1, 0, 0);  // 기본 X축
+	FName ParentBoneName = Instance.ConstraintBone1;
+	auto parentIt = Skeleton->BoneNameToIndex.find(ParentBoneName.ToString());
+	if (parentIt != Skeleton->BoneNameToIndex.end())
+	{
+		int32 ParentBoneIndex = parentIt->second;
+		FTransform ParentBoneTM = MeshComp->GetBoneWorldTransform(ParentBoneIndex);
+		FVector ToChild = Origin - ParentBoneTM.Translation;
+		if (ToChild.Size() > 0.001f)
+		{
+			TwistAxis = ToChild.GetNormalized();
+		}
+	}
+
+	// 로컬 축 계산 (Swing1 = Y축 기반, Swing2 = Z축 기반)
+	FVector Swing1Axis, Swing2Axis;
+	if (FMath::Abs(TwistAxis.Z) < 0.999f)
+	{
+		Swing1Axis = FVector::Cross(FVector(0, 0, 1), TwistAxis).GetNormalized();
+	}
+	else
+	{
+		Swing1Axis = FVector::Cross(FVector(1, 0, 0), TwistAxis).GetNormalized();
+	}
+	Swing2Axis = FVector::Cross(TwistAxis, Swing1Axis).GetNormalized();
+
+	// === Swing 콘 그리기 ===
+	float Swing1Rad = DegreesToRadians(Instance.Swing1LimitAngle);
+	float Swing2Rad = DegreesToRadians(Instance.Swing2LimitAngle);
+
+	if (Instance.AngularSwing1Motion != EAngularConstraintMotion::Locked ||
+		Instance.AngularSwing2Motion != EAngularConstraintMotion::Locked)
+	{
+		// 콘 윤곽선 (타원형)
+		TArray<FVector> ConePoints;
+		for (int32 i = 0; i <= Segments; ++i)
+		{
+			float Angle = 2.0f * PI * i / (float)Segments;
+			float SwingAngle1 = Swing1Rad * cosf(Angle);
+			float SwingAngle2 = Swing2Rad * sinf(Angle);
+			float TotalSwing = FMath::Sqrt(SwingAngle1 * SwingAngle1 + SwingAngle2 * SwingAngle2);
+
+			// 콘 표면 점 계산
+			float CosTotalSwing = cosf(TotalSwing);
+			float SinTotalSwing = sinf(TotalSwing);
+			float CosAngle = cosf(Angle);
+			float SinAngle = sinf(Angle);
+
+			FVector SwingDir = Swing1Axis * CosAngle + Swing2Axis * SinAngle;
+			FVector Dir = TwistAxis * CosTotalSwing + SwingDir * SinTotalSwing;
+			Dir.Normalize();
+
+			FVector Point = Origin + Dir * ConeLength;
+			ConePoints.Add(Point);
+		}
+
+		// 콘 테두리 라인
+		for (int32 i = 0; i < ConePoints.Num() - 1; ++i)
+		{
+			PDI->DrawLine(ConePoints[i], ConePoints[i + 1], SwingColor);
+		}
+
+		// 원점에서 콘 테두리로 연결선
+		for (int32 i = 0; i < 8; ++i)
+		{
+			int32 Idx = i * Segments / 8;
+			if (Idx < ConePoints.Num())
+			{
+				PDI->DrawLine(Origin, ConePoints[Idx], SwingColor);
+			}
+		}
+	}
+
+	// === Twist 아크 그리기 ===
+	if (Instance.AngularTwistMotion != EAngularConstraintMotion::Locked)
+	{
+		float TwistRad = DegreesToRadians(Instance.TwistLimitAngle);
+		float ArcRadius = ConeLength * 0.8f;  // 아크 반지름
+
+		// Twist 아크 (콘 끝 부분에 표시)
+		FVector ArcCenter = Origin + TwistAxis * (ConeLength * 0.01f);
+		int32 ArcSegments = 24;
+
+		TArray<FVector> ArcPoints;
+		for (int32 i = 0; i <= ArcSegments; ++i)
+		{
+			float t = (float)i / (float)ArcSegments;
+			float Angle = -TwistRad + 2.0f * TwistRad * t;
+
+			float CosAngle = cosf(Angle);
+			float SinAngle = sinf(Angle);
+			FVector ArcDir = Swing1Axis * CosAngle + Swing2Axis * SinAngle;
+			FVector Point = ArcCenter + ArcDir * ArcRadius;
+			ArcPoints.Add(Point);
+		}
+
+		// 아크 라인
+		for (int32 i = 0; i < ArcPoints.Num() - 1; ++i)
+		{
+			PDI->DrawLine(ArcPoints[i], ArcPoints[i + 1], TwistColor);
+		}
+
+		// 아크 중심에서 연결선 (4개)
+		if (ArcPoints.Num() > 0)
+		{
+			int32 NumPoints = ArcPoints.Num();
+			PDI->DrawLine(ArcCenter, ArcPoints[0], TwistColor);
+			PDI->DrawLine(ArcCenter, ArcPoints[NumPoints / 3], TwistColor);
+			PDI->DrawLine(ArcCenter, ArcPoints[NumPoints * 2 / 3], TwistColor);
+			PDI->DrawLine(ArcCenter, ArcPoints[NumPoints - 1], TwistColor);
+		}
+	}
+}
+
+void SPhysicsAssetEditorWindow::RebuildUnselectedConstraintLines()
 {
 	PhysicsAssetEditorState* State = GetActivePhysicsState();
 	if (!State || !State->ConstraintPDI) return;
 
-	// Constraint 라인 클리어
+	// 비선택 Constraint 라인 클리어
 	State->ConstraintPDI->Clear();
 
 	UPhysicsAsset* PhysAsset = State->EditingPhysicsAsset;
@@ -2868,146 +3042,82 @@ void SPhysicsAssetEditorWindow::RebuildConstraintLines()
 	if (!Skeleton || !MeshComp) return;
 
 	const FLinearColor SwingColor(1.0f, 0.0f, 0.0f, 1.0f);   // 빨간색 (Swing)
-	const FLinearColor TwistColor(0.0f, 0.0f, 1.0f, 1.0f);   // 초록색 (Twist)
-	const float ConeLength = 0.1f;							 // 콘 길이 (미터)
-	const int32 Segments = 32;								 // 콘 세그먼트 수
+	const FLinearColor TwistColor(0.0f, 0.0f, 1.0f, 1.0f);   // 파란색 (Twist)
 
-	// 모든 Constraint 순회
+	// 선택되지 않은 Constraint만 순회
 	int32 ConstraintCount = PhysAsset->GetConstraintCount();
 	for (int32 ConstraintIdx = 0; ConstraintIdx < ConstraintCount; ++ConstraintIdx)
 	{
+		// 선택된 컨스트레인트는 스킵
+		if (ConstraintIdx == State->SelectedConstraintIndex) continue;
+
 		UPhysicsConstraintTemplate* Constraint = PhysAsset->ConstraintSetup[ConstraintIdx];
 		if (!Constraint) continue;
 
-		const FConstraintInstance& Instance = Constraint->DefaultInstance;
-
-		// 자식 본 (Bone2) 위치에서 Constraint 시각화
-		FName ChildBoneName = Instance.ConstraintBone2;
-		auto it = Skeleton->BoneNameToIndex.find(ChildBoneName.ToString());
-		if (it == Skeleton->BoneNameToIndex.end()) continue;
-
-		int32 ChildBoneIndex = it->second;
-		FTransform ChildBoneTM = MeshComp->GetBoneWorldTransform(ChildBoneIndex);
-		ChildBoneTM.Rotation.Normalize();
-
-		FVector Origin = ChildBoneTM.Translation;
-
-		// 부모 본 방향 계산 (Twist 축)
-		FVector TwistAxis = FVector(1, 0, 0);  // 기본 X축
-		FName ParentBoneName = Instance.ConstraintBone1;
-		auto parentIt = Skeleton->BoneNameToIndex.find(ParentBoneName.ToString());
-		if (parentIt != Skeleton->BoneNameToIndex.end())
-		{
-			int32 ParentBoneIndex = parentIt->second;
-			FTransform ParentBoneTM = MeshComp->GetBoneWorldTransform(ParentBoneIndex);
-			FVector ToChild = Origin - ParentBoneTM.Translation;
-			if (ToChild.Size() > 0.001f)
-			{
-				TwistAxis = ToChild.GetNormalized();
-			}
-		}
-
-		// 로컬 축 계산 (Swing1 = Y축 기반, Swing2 = Z축 기반)
-		FVector Swing1Axis, Swing2Axis;
-		if (FMath::Abs(TwistAxis.Z) < 0.999f)
-		{
-			Swing1Axis = FVector::Cross(FVector(0, 0, 1), TwistAxis).GetNormalized();
-		}
-		else
-		{
-			Swing1Axis = FVector::Cross(FVector(1, 0, 0), TwistAxis).GetNormalized();
-		}
-		Swing2Axis = FVector::Cross(TwistAxis, Swing1Axis).GetNormalized();
-
-		// === Swing 콘 그리기 (빨간색) ===
-		float Swing1Rad = DegreesToRadians(Instance.Swing1LimitAngle);
-		float Swing2Rad = DegreesToRadians(Instance.Swing2LimitAngle);
-
-		if (Instance.AngularSwing1Motion != EAngularConstraintMotion::Locked ||
-			Instance.AngularSwing2Motion != EAngularConstraintMotion::Locked)
-		{
-			// 콘 윤곽선 (타원형)
-			TArray<FVector> ConePoints;
-			for (int32 i = 0; i <= Segments; ++i)
-			{
-				float Angle = 2.0f * PI * i / (float)Segments;
-				float SwingAngle1 = Swing1Rad * cosf(Angle);
-				float SwingAngle2 = Swing2Rad * sinf(Angle);
-				float TotalSwing = FMath::Sqrt(SwingAngle1 * SwingAngle1 + SwingAngle2 * SwingAngle2);
-
-				// 콘 표면 점 계산
-				float CosTotalSwing = cosf(TotalSwing);
-				float SinTotalSwing = sinf(TotalSwing);
-				float CosAngle = cosf(Angle);
-				float SinAngle = sinf(Angle);
-
-				FVector SwingDir = Swing1Axis * CosAngle + Swing2Axis * SinAngle;
-				FVector Dir = TwistAxis * CosTotalSwing + SwingDir * SinTotalSwing;
-				Dir.Normalize();
-
-				FVector Point = Origin + Dir * ConeLength;
-				ConePoints.Add(Point);
-			}
-
-			// 콘 테두리 라인
-			for (int32 i = 0; i < ConePoints.Num() - 1; ++i)
-			{
-				State->ConstraintPDI->DrawLine(ConePoints[i], ConePoints[i + 1], SwingColor);
-			}
-
-			// 원점에서 콘 테두리로 연결선
-			for (int32 i = 0; i < 8; ++i)
-			{
-				int32 Idx = i * Segments / 8;
-				if (Idx < ConePoints.Num())
-				{
-					State->ConstraintPDI->DrawLine(Origin, ConePoints[Idx], SwingColor);
-				}
-			}
-		}
-
-		// === Twist 아크 그리기 (초록색) ===
-		if (Instance.AngularTwistMotion != EAngularConstraintMotion::Locked)
-		{
-			float TwistRad = DegreesToRadians(Instance.TwistLimitAngle);
-			float ArcRadius = ConeLength * 0.8f;  // 아크 반지름
-
-			// Twist 아크 (콘 끝 부분에 표시)
-			FVector ArcCenter = Origin + TwistAxis * (ConeLength * 0.01f);
-			int32 ArcSegments = 24;
-
-			TArray<FVector> ArcPoints;
-			for (int32 i = 0; i <= ArcSegments; ++i)
-			{
-				float t = (float)i / (float)ArcSegments;
-				float Angle = -TwistRad + 2.0f * TwistRad * t;
-
-				float CosAngle = cosf(Angle);
-				float SinAngle = sinf(Angle);
-				FVector ArcDir = Swing1Axis * CosAngle + Swing2Axis * SinAngle;
-				FVector Point = ArcCenter + ArcDir * ArcRadius;
-				ArcPoints.Add(Point);
-			}
-
-			// 아크 라인
-			for (int32 i = 0; i < ArcPoints.Num() - 1; ++i)
-			{
-				State->ConstraintPDI->DrawLine(ArcPoints[i], ArcPoints[i + 1], TwistColor);
-			}
-
-			// 아크 중심에서 연결선 (4개)
-			if (ArcPoints.Num() > 0)
-			{
-				int32 NumPoints = ArcPoints.Num();
-				State->ConstraintPDI->DrawLine(ArcCenter, ArcPoints[0], TwistColor);
-				State->ConstraintPDI->DrawLine(ArcCenter, ArcPoints[NumPoints / 3], TwistColor);
-				State->ConstraintPDI->DrawLine(ArcCenter, ArcPoints[NumPoints * 2 / 3], TwistColor);
-				State->ConstraintPDI->DrawLine(ArcCenter, ArcPoints[NumPoints - 1], TwistColor);
-			}
-		}
+		DrawConstraintVisualization(
+			State->ConstraintPDI,
+			Constraint->DefaultInstance,
+			MeshComp,
+			Skeleton,
+			SwingColor,
+			TwistColor
+		);
 	}
 
-	State->bConstraintLinesDirty = false;
+	State->bAllConstraintLinesDirty = false;
+}
+
+void SPhysicsAssetEditorWindow::RebuildSelectedConstraintLines()
+{
+	PhysicsAssetEditorState* State = GetActivePhysicsState();
+	if (!State || !State->SelectedConstraintPDI) return;
+
+	// 선택 Constraint 라인 클리어
+	State->SelectedConstraintPDI->Clear();
+
+	UPhysicsAsset* PhysAsset = State->EditingPhysicsAsset;
+	if (!PhysAsset) return;
+
+	// 선택된 컨스트레인트가 없으면 리턴
+	if (State->SelectedConstraintIndex < 0 ||
+		State->SelectedConstraintIndex >= PhysAsset->GetConstraintCount())
+	{
+		State->bSelectedConstraintLineDirty = false;
+		return;
+	}
+
+	// 스켈레탈 메시 정보
+	USkeletalMeshComponent* MeshComp = nullptr;
+	USkeletalMesh* Mesh = nullptr;
+	if (State->PreviewActor)
+	{
+		MeshComp = State->PreviewActor->GetSkeletalMeshComponent();
+		if (MeshComp)
+		{
+			Mesh = MeshComp->GetSkeletalMesh();
+		}
+	}
+	const FSkeleton* Skeleton = Mesh ? Mesh->GetSkeleton() : nullptr;
+	if (!Skeleton || !MeshComp) return;
+
+	// 선택된 컨스트레인트용 밝은 색상
+	const FLinearColor SwingColor(1.0f, 0.5f, 0.0f, 1.0f);   // 주황색 (Swing)
+	const FLinearColor TwistColor(0.0f, 1.0f, 1.0f, 1.0f);   // 시안색 (Twist)
+
+	UPhysicsConstraintTemplate* Constraint = PhysAsset->ConstraintSetup[State->SelectedConstraintIndex];
+	if (Constraint)
+	{
+		DrawConstraintVisualization(
+			State->SelectedConstraintPDI,
+			Constraint->DefaultInstance,
+			MeshComp,
+			Skeleton,
+			SwingColor,
+			TwistColor
+		);
+	}
+
+	State->bSelectedConstraintLineDirty = false;
 }
 
 void SPhysicsAssetEditorWindow::SavePhysicsAsset()

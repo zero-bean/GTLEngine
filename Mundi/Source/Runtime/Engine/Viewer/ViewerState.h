@@ -198,24 +198,28 @@ struct PhysicsAssetEditorState : public ViewerState
     FString CurrentFilePath;    // Physics Asset 경로 (저장/불러오기용)
 
     // 시각화 라인 컴포넌트
-    class ULineComponent* BodyShapeLineComponent = nullptr;      // 비선택 바디용
-    class ULineComponent* SelectedBodyLineComponent = nullptr;   // 선택 바디용
-    class ULineComponent* ConstraintLineComponent = nullptr;     // Constraint용
+    class ULineComponent* BodyShapeLineComponent = nullptr;           // 비선택 바디용
+    class ULineComponent* SelectedBodyLineComponent = nullptr;        // 선택 바디용
+    class ULineComponent* ConstraintLineComponent = nullptr;          // 비선택 Constraint용
+    class ULineComponent* SelectedConstraintLineComponent = nullptr;  // 선택 Constraint용
 
     // 디버그 렌더링 인터페이스
-    FPrimitiveDrawInterface* PDI = nullptr;           // 비선택 바디용
-    FPrimitiveDrawInterface* SelectedPDI = nullptr;   // 선택 바디용
-    FPrimitiveDrawInterface* ConstraintPDI = nullptr; // Constraint용
+    FPrimitiveDrawInterface* PDI = nullptr;                    // 비선택 바디용
+    FPrimitiveDrawInterface* SelectedPDI = nullptr;            // 선택 바디용
+    FPrimitiveDrawInterface* ConstraintPDI = nullptr;          // 비선택 Constraint용
+    FPrimitiveDrawInterface* SelectedConstraintPDI = nullptr;  // 선택 Constraint용
 
     // BoneTM 캐시 (본 인덱스 -> 월드 트랜스폼)
     TMap<int32, FTransform> CachedBoneTM;
     bool bBoneTMCacheDirty = true;      // 캐시 무효화 플래그
 
     // Shape 라인 재생성 플래그 (세분화)
-    bool bAllBodyLinesDirty = true;     // 전체 바디 라인 재생성
-    bool bSelectedBodyLineDirty = true; // 선택 바디 라인만 재생성
-    bool bConstraintLinesDirty = true;  // Constraint 라인 재생성
-    int32 LastSelectedBodyIndex = -1;   // 이전 선택 바디 (변경 감지용)
+    bool bAllBodyLinesDirty = true;           // 전체 바디 라인 재생성
+    bool bSelectedBodyLineDirty = true;       // 선택 바디 라인만 재생성
+    bool bAllConstraintLinesDirty = true;     // 전체 Constraint 라인 재생성
+    bool bSelectedConstraintLineDirty = true; // 선택 Constraint 라인만 재생성
+    int32 LastSelectedBodyIndex = -1;         // 이전 선택 바디 (변경 감지용)
+    int32 LastSelectedConstraintIndex = -1;   // 이전 선택 컨스트레인트 (변경 감지용)
 
     // 패널 비율 (좌측: Hierarchy/Graph, 우측: Details/Tool)
     float LeftTopRatio = 0.6f;

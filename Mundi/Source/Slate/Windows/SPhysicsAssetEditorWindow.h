@@ -72,10 +72,11 @@ private:
 	void AutoCreateConstraints();
 
 	// 시각화 라인 재구성
-	void RebuildBoneTMCache();          // BoneTM 캐시 갱신
-	void RebuildUnselectedBodyLines();  // 비선택 바디 라인 (초록색)
-	void RebuildSelectedBodyLines();    // 선택 바디 라인 (노란색)
-	void RebuildConstraintLines();
+	void RebuildBoneTMCache();              // BoneTM 캐시 갱신
+	void RebuildUnselectedBodyLines();      // 비선택 바디 라인 (초록색)
+	void RebuildSelectedBodyLines();        // 선택 바디 라인 (노란색)
+	void RebuildUnselectedConstraintLines();// 비선택 컨스트레인트 라인
+	void RebuildSelectedConstraintLines();  // 선택 컨스트레인트 라인
 
 	// 파일 작업
 	void SavePhysicsAsset();
