@@ -3,13 +3,43 @@
 #include "InputComponent.h"
 
 AVehicle::AVehicle()
+    : CurrentForwardInput(0.0f)
+    , CurrentSteeringInput(0.0f)
 {
-    // ChassisMesh = CreateDefaultSubobject<UStaticMeshComponent>("ChassisMesh");
     ChassisMesh = CreateDefaultSubobject<UStaticMeshComponent>("ChassisMesh");
+    FString ChassisFileName = GDataDir + "/Model/Buggy/Buggy_Chassis.obj";
+    ChassisMesh->SetStaticMesh(ChassisFileName);
     SetRootComponent(ChassisMesh);
+    /** 디버그용 코드 */
+    {
+        if (ChassisMesh) { DeleteObject(ChassisMesh->BodySetup); }
+        
+        ChassisMesh->BodySetup = NewObject<UBodySetup>();
+
+        ChassisMesh->BodySetup->AggGeom.EmptyElements();
+
+        FKBoxElem BoxElem;
+
+        // @todo 하드코딩된 값 사용
+        BoxElem.X = 3.953f;
+        BoxElem.Y = 1.0f;
+        BoxElem.Z = 0.954f;
+
+        BoxElem.Center = FVector(0, 0, 0.723);
+        BoxElem.Rotation = FQuat::Identity();
+
+        ChassisMesh->BodySetup->AggGeom.BoxElems.Add(BoxElem);
+    }
     
     ChassisMesh->SetSimulatePhysics(true);
     // ChassisMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+    FString WheelFileName[4] = {
+        "/Model/Buggy/Buggy_Wheel_LF.obj",
+        "/Model/Buggy/Buggy_Wheel_RF.obj",
+        "/Model/Buggy/Buggy_Wheel_LB.obj",
+        "/Model/Buggy/Buggy_Wheel_RB.obj"
+    };
 
     WheelMeshes.SetNum(4);
     for (int i = 0; i < 4; i++)
@@ -17,9 +47,9 @@ AVehicle::AVehicle()
         FName WheelName = "WheelMesh_" + std::to_string(i);
         WheelMeshes[i] = CreateDefaultSubobject<UStaticMeshComponent>(WheelName);
         WheelMeshes[i]->SetupAttachment(ChassisMesh);
-
         WheelMeshes[i]->SetSimulatePhysics(false);
         // WheelMeshes[i]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        WheelMeshes[i]->SetStaticMesh(GDataDir + WheelFileName[i]);
     }
 
     VehicleMovement = CreateDefaultSubobject<UVehicleMovementComponent>("VehicleMovement");
@@ -27,7 +57,7 @@ AVehicle::AVehicle()
     SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
     SpringArm->SetupAttachment(ChassisMesh);
     SpringArm->TargetArmLength = 10.0f;
-    SpringArm->SetRelativeRotation(FQuat::MakeFromEulerZYX(FVector(0, 15, 0)));
+    SpringArm->SocketOffset = FVector(-10.0f, 0.0f, 10.0f);
 
     Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
     Camera->SetupAttachment(SpringArm);
@@ -46,6 +76,44 @@ void AVehicle::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
 
+    if (VehicleMovement)
+    {
+        VehicleMovement->SetSteeringInput(CurrentSteeringInput);
+
+        const float ForwardSpeed = VehicleMovement->GetForwardSpeed();
+        const float SpeedThreshold = 2.0f; // @note 속도가 이 값보다 낮으면 멈춘 것으로 간주
+
+        if (CurrentForwardInput > 0.0f)
+        {
+            VehicleMovement->SetGearToDrive();
+            VehicleMovement->SetThrottleInput(CurrentForwardInput);
+            VehicleMovement->SetBrakeInput(0.0f);
+        }
+        else if (CurrentForwardInput < 0.0f)
+        {
+            if (ForwardSpeed > SpeedThreshold) 
+            {
+                VehicleMovement->SetGearToDrive(); 
+                VehicleMovement->SetThrottleInput(0.0f);
+                VehicleMovement->SetBrakeInput(-CurrentForwardInput); 
+            }
+            else 
+            {
+                VehicleMovement->SetGearToReverse(); 
+                VehicleMovement->SetThrottleInput(-CurrentForwardInput);
+                VehicleMovement->SetBrakeInput(0.0f);
+            }
+        }
+        else
+        {
+            VehicleMovement->SetThrottleInput(0.0f);
+            VehicleMovement->SetBrakeInput(0.0f);
+        }
+    }
+
+    CurrentForwardInput = 0.0f;
+    CurrentSteeringInput = 0.0f;
+
     SyncWheelVisuals();
 }
 
@@ -56,7 +124,6 @@ void AVehicle::SetupPlayerInputComponent(UInputComponent* InInputComponent)
     if (!InInputComponent) return;
 
     // [축 바인딩] W/S로 가속/감속
-    // InputComponent.h의 BindAxis 템플릿 사용
     // W 키: Scale 1.0 -> 전진
     InInputComponent->BindAxis<AVehicle>("MoveForward_W", 'W', 1.0f, this, &AVehicle::MoveForward);
     // S 키: Scale -1.0 -> 후진/브레이크
@@ -75,38 +142,12 @@ void AVehicle::SetupPlayerInputComponent(UInputComponent* InInputComponent)
 
 void AVehicle::MoveForward(float Val)
 {
-    if (!VehicleMovement) return;
-
-    // W를 누르면 Val = 1.0 (스로틀)
-    // S를 누르면 Val = -1.0 (브레이크/후진)
-    // 둘 다 안 누르면 호출되지 않거나, InputManager 구현에 따라 0이 들어올 수 있음
-
-    if (Val > 0.0f)
-    {
-        // 전진
-        VehicleMovement->SetThrottleInput(Val);
-        VehicleMovement->SetBrakeInput(0.0f);
-    }
-    else if (Val < 0.0f)
-    {
-        // 후진 (브레이크를 밟는 로직)
-        VehicleMovement->SetThrottleInput(0.0f);
-        VehicleMovement->SetBrakeInput(-Val); // -(-1.0) = 1.0
-    }
-    else
-    {
-        // 입력 없음 (관성 주행)
-        VehicleMovement->SetThrottleInput(0.0f);
-        VehicleMovement->SetBrakeInput(0.0f);
-    }
+    CurrentForwardInput += Val;
 }
 
 void AVehicle::MoveRight(float Val)
 {
-    if (!VehicleMovement) return;
-
-    // A(-1.0) ~ D(1.0)
-    VehicleMovement->SetSteeringInput(Val);
+    CurrentSteeringInput += Val;
 }
 
 void AVehicle::HandbrakePressed()

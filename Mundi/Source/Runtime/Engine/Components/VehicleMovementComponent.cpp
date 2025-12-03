@@ -3,169 +3,113 @@
 #include "SceneComponent.h"
 #include "PrimitiveComponent.h"
 #include "BodyInstance.h"
+#include "Keyboard.h"
 #include "PhysScene.h"
 #include "Vehicle/VehicleWheel.h"
 
-using namespace physx;
+/** 차량 자신 (RayCast가 자기 자신을 맞추지 않기 위함) */
+static const PxU32 VEHICLE_SURFACE_TYPE_CHASSIS = 0xffff;
+static const float VEHICLE_MASS = 1500.0f;
+static const uint32 MAX_WHEELS = 4;
+
+/** 레이캐스트가 닿은 물체가 차량 자신이면 무시하기위한 필터 */
+static PxQueryHitType::Enum WheelRaycastPreFilter(
+    PxFilterData filterData0, // Ray (바퀴)
+    PxFilterData filterData1, // Hit Object (지형, 차체 등)
+    const void* constantBlock,
+    PxU32 constantBlockSize,
+    PxHitFlags& queryFlags)
+{
+    if (filterData1.word3 == VEHICLE_SURFACE_TYPE_CHASSIS)
+    {
+        return PxQueryHitType::eNONE;
+    }
+
+    return PxQueryHitType::eBLOCK; 
+}
+
+// ====================================================================
+// 입력용 스무딩 데이터
+// ====================================================================
+
+static PxVehiclePadSmoothingData gPadSmoothingData =
+{
+    { 6.0f, 6.0f, 12.0f, 1.0f, 1.0f },
+    { 10.0f, 10.0f, 12.0f, 5.0f, 5.0f }
+};
+
+static PxF32 gSteerVsForwardSpeedData[2 * 8] =
+{
+    0.0f, 0.75f, 5.0f, 0.75f, 30.0f, 0.125f, 120.0f, 0.1f,
+    PX_MAX_F32, PX_MAX_F32, PX_MAX_F32, PX_MAX_F32,
+    PX_MAX_F32, PX_MAX_F32, PX_MAX_F32, PX_MAX_F32
+};
+
+static PxFixedSizeLookupTable<8> gSteerVsForwardSpeedTable(gSteerVsForwardSpeedData, 4);
+
+// ====================================================================
+// 생성자 & 소멸자
+// ====================================================================
 
 UVehicleMovementComponent::UVehicleMovementComponent()
     : PVehicleDrive(nullptr)
     , PInputData(nullptr)
     , PWheelsSimData(nullptr)
-    , PDriveSimData(nullptr)
+    , FrictionPairs(nullptr)
+    , SuspensionBatchQuery(nullptr)
+    , BatchQueryResults(nullptr)
+    , BatchQueryTouchBuffer(nullptr)
 {
-    WheelSetups.SetNum(4); 
+    VehicleWheels.SetNum(MAX_WHEELS);
+    for (int32 i = 0; i < MAX_WHEELS; i++)
+    {
+        VehicleWheels[i] = NewObject<UVehicleWheel>();
+
+        // @todo 현재 하드코딩된 스티어링 각도 사용
+        if (i < 2) 
+        {
+            VehicleWheels[i]->SteerAngle = 45.0f; 
+        }
+        else
+        {
+            VehicleWheels[i]->SteerAngle = 0.0f; 
+        }
+    }
+    
+    // @todo 현재 하드코딩된 바퀴 설정 사용
+    FVector COM = FVector(0, 0, 0.723);
+    WheelSetups.SetNum(MAX_WHEELS);
+    WheelSetups[0].BoneOffset = FVector( 1.289f, -0.939f, 0.354f) - COM;
+    WheelSetups[1].BoneOffset = FVector( 1.289f,  0.939f, 0.354f) - COM;
+    WheelSetups[2].BoneOffset = FVector(-1.062f, -0.954f, 0.411f) - COM;
+    WheelSetups[3].BoneOffset = FVector(-1.062f,  0.954f, 0.411f) - COM;
+    for (int i = 0; i < MAX_WHEELS; i++)
+    {
+        VehicleWheels[i]->MaxSuspensionCompression = 0.1f;
+        VehicleWheels[i]->MaxSuspensionDroop = 0.1f;
+    }
 }
 
 UVehicleMovementComponent::~UVehicleMovementComponent()
 {
 }
 
+// ====================================================================
+// 언리얼 엔진 생명주기 (Lifecycle)
+// ====================================================================
+
 void UVehicleMovementComponent::InitializeComponent()
 {
     Super::InitializeComponent();
-    PInputData = new PxVehicleDrive4WRawInputData();
     
-    // [수정 1] 여기서 SetupVehicle 하지 않음 (너무 이름)
+    PInputData = new PxVehicleDrive4WRawInputData();
 }
 
 void UVehicleMovementComponent::BeginPlay()
 {
     Super::BeginPlay();
-    // [수정 1] BeginPlay에서 초기화 (물리 액터 생성 완료 보장)
+    
     SetupVehicle();
-}
-
-void UVehicleMovementComponent::SetupVehicle()
-{
-    // 기존 데이터 정리 (재초기화 대비)
-    if (PVehicleDrive) { PVehicleDrive->free(); PVehicleDrive = nullptr; }
-    if (PWheelsSimData) { PWheelsSimData->free(); PWheelsSimData = nullptr; }
-
-    UPrimitiveComponent* MeshComp = Cast<UPrimitiveComponent>(UpdatedComponent);
-    if (!MeshComp || !MeshComp->GetBodyInstance()) return;
-
-    FBodyInstance* BodyInst = MeshComp->GetBodyInstance();
-    // PhysX Actor가 없으면 리턴
-    if (!BodyInst->RigidActor) return;
-
-    PxRigidDynamic* RigidActor = BodyInst->RigidActor->is<PxRigidDynamic>();
-    if (!RigidActor) return;
-
-    // [중요] 기존 쉐이프 개수 저장 (이 뒤에 바퀴가 추가됨)
-    int32 WheelShapeStartIndex = RigidActor->getNbShapes(); 
-    
-    PxMaterial* WheelMat = nullptr;
-    if (GPhysicalMaterial) WheelMat = GPhysicalMaterial->GetPxMaterial();
-    if (!WheelMat) WheelMat = GPhysXSDK->createMaterial(0.5f, 0.5f, 0.5f); // 비상용 재질
-
-    // 1. RigidActor에 바퀴 Shape 4개 추가
-    for (int i = 0; i < 4; i++)
-    {
-        if (WheelSetups[i])
-        {
-            PxSphereGeometry WheelGeom(WheelSetups[i]->WheelRadius);
-            PxShape* NewWheelShape = GPhysXSDK->createShape(WheelGeom, *WheelMat);
-        
-            if (NewWheelShape)
-            {
-                float X = (i < 2) ? 1.5f : -1.5f;     // 앞/뒤 (차 크기에 맞춰 조정 필요)
-                float Y = (i % 2 == 0) ? -0.9f : 0.9f; // 좌/우
-                float Z = -0.2f; // 차체 중심보다 약간 아래
-
-                PxTransform LocalPose(PxVec3(X, Y, Z));
-                NewWheelShape->setLocalPose(LocalPose);
-                NewWheelShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
-                NewWheelShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
-
-                RigidActor->attachShape(*NewWheelShape);
-                NewWheelShape->release();
-            }
-        }
-    }
-
-    // 2. Wheel Sim Data 설정
-    PWheelsSimData = physx::PxVehicleWheelsSimData::allocate(4);
-    for (int i = 0; i < 4; i++)
-    {
-        if (WheelSetups[i])
-        {
-            PWheelsSimData->setWheelData(i, WheelSetups[i]->GetPxWheelData());
-            PWheelsSimData->setSuspensionData(i, WheelSetups[i]->GetPxSuspensionData());
-            
-            // Shape 위치와 동일한 오프셋 설정
-            float X = (i < 2) ? 1.5f : -1.5f;     
-            float Y = (i % 2 == 0) ? -0.9f : 0.9f;
-            float Z = -0.2f;
-            PWheelsSimData->setWheelCentreOffset(i, PxVec3(X, Y, Z)); 
-            
-            PWheelsSimData->setSuspTravelDirection(i, PxVec3(0, 0, -1));
-
-            // [수정 2] 매핑 인덱스 수정 (i -> WheelShapeStartIndex + i)
-            // 이걸 안 하면 0번(차체)을 바퀴로 인식해서 비틀립니다.
-            PWheelsSimData->setWheelShapeMapping(i, WheelShapeStartIndex + i);
-        }
-    }
-
-    // 3. Drive Sim Data 설정
-    physx::PxVehicleDriveSimData4W DriveSimData;
-    DriveSimData.setEngineData(EngineSetup.GetPxEngineData());
-    DriveSimData.setGearsData(PxVehicleGearsData());
-    
-    PxVehicleDifferential4WData DiffData;
-    DiffData.mType = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
-    DriveSimData.setDiffData(DiffData);
-
-    // 4. 차량 인스턴스 생성
-    PVehicleDrive = physx::PxVehicleDrive4W::allocate(4);
-    PVehicleDrive->setup(GPhysXSDK, RigidActor, *PWheelsSimData, DriveSimData, 0);
-
-    // [필수] Actor의 질량 재계산 (바퀴가 추가되었으므로)
-    PxRigidBodyExt::updateMassAndInertia(*RigidActor, 1500.0f);
-}
-
-void UVehicleMovementComponent::TickComponent(float DeltaSeconds)
-{
-    Super::TickComponent(DeltaSeconds);
-
-    if (!PVehicleDrive || !UpdatedComponent) return;
-
-    // [수정 4] Actor 유효성 정밀 검사
-    UPrimitiveComponent* MeshComp = Cast<UPrimitiveComponent>(UpdatedComponent);
-    if (!MeshComp) return;
-    
-    FBodyInstance* BodyInst = MeshComp->GetBodyInstance();
-    // 현재 메쉬의 실제 Actor와 차량이 들고 있는 Actor가 다르면 (재생성된 경우)
-    if (!BodyInst || BodyInst->RigidActor != PVehicleDrive->getRigidDynamicActor())
-    {
-        // 배우가 바뀌었으므로 재설정하거나 리턴 (여기선 안전하게 리턴하고 로그)
-        // SetupVehicle(); // 동적 재설정이 필요하면 호출
-        return; 
-    }
-
-    // 1. Raycast
-    PerformSuspensionRaycasts(DeltaSeconds);
-
-    // 2. Update
-    PxScene* Scene = PVehicleDrive->getRigidDynamicActor()->getScene();
-    PxVec3 Gravity = Scene ? Scene->getGravity() : PxVec3(0, 0, -9.81f);
-
-    // [수정 3] FrictionPairs 안전 초기화
-    static PxVehicleDrivableSurfaceToTireFrictionPairs* FrictionPairs = nullptr;
-    if (!FrictionPairs)
-    {
-        const PxMaterial* DefaultMat = GPhysicalMaterial->GetPxMaterial();
-
-        FrictionPairs = PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(1, 1);
-        FrictionPairs->setup(1, 1, &DefaultMat, nullptr);
-        FrictionPairs->setTypePairFriction(0, 0, 1.0f); // 기본 마찰 1.0
-    }
-
-    // 포인터가 null이 아님을 보장하고 호출
-    if (FrictionPairs)
-    {
-        PxVehicleUpdates(DeltaSeconds, Gravity, *FrictionPairs, 1, (PxVehicleWheels**)&PVehicleDrive, nullptr);
-    }
 }
 
 void UVehicleMovementComponent::OnRegister(UWorld* InWorld)
@@ -176,27 +120,431 @@ void UVehicleMovementComponent::OnRegister(UWorld* InWorld)
 void UVehicleMovementComponent::OnUnregister()
 {
     Super::OnUnregister();
-    if (PInputData) { delete PInputData; PInputData = nullptr; }
-    if (PWheelsSimData) { PWheelsSimData->free(); PWheelsSimData = nullptr; }
-    // PxVehicleDrive4W는 free()를 호출해야 함 (PxBase 상속)
-    if (PVehicleDrive) { PVehicleDrive->free(); PVehicleDrive = nullptr; }
+
+    ReleaseVehicle();
+    
+    if (PInputData)
+    {
+        delete PInputData;
+        PInputData = nullptr;
+    }
 }
+
+// ====================================================================
+// Vehicle 생성 및 초기화
+// ====================================================================
+
+void UVehicleMovementComponent::SetupVehicle()
+{
+    ReleaseVehicle();
+
+    PxRigidDynamic* RigidActor = GetValidDynamicActor();
+    if (!RigidActor)
+    {
+        return;
+    }
+
+    const float OldMass = RigidActor->getMass();
+    const float NewMass = VEHICLE_MASS; 
+    
+    RigidActor->setMass(NewMass);
+    
+    if (OldMass > 0.0f)
+    {
+        const float ScaleRatio = NewMass / OldMass;
+        PxVec3 InertiaTensor = RigidActor->getMassSpaceInertiaTensor();
+        RigidActor->setMassSpaceInertiaTensor(InertiaTensor * ScaleRatio);
+    }
+
+    SetupWheelShape(RigidActor);
+
+    SetupWheelSimulationData(RigidActor);
+
+    SetupDriveSimulationData(RigidActor);
+
+    SetupFrictionPairs();
+    
+    SetupBatchQuery();
+}
+
+void UVehicleMovementComponent::ReleaseVehicle()
+{
+    if (PVehicleDrive)
+    {
+        PVehicleDrive->free(); PVehicleDrive = nullptr;
+    }
+    
+    if (PWheelsSimData)
+    {
+        PWheelsSimData->free(); PWheelsSimData = nullptr;
+    }
+    
+    ReleaseBatchQuery();
+    
+    ReleaseFrictionPairs();
+}
+
+void UVehicleMovementComponent::SetupWheelShape(physx::PxRigidDynamic* RigidActor)
+{
+    const PxU32 NumShapes = RigidActor->getNbShapes();
+    TArray<PxShape*> Shapes;
+    Shapes.SetNum(NumShapes);
+    RigidActor->getShapes(Shapes.GetData(), NumShapes);
+
+    for (PxShape* Shape : Shapes)
+    {
+        PxFilterData QueryFilterData = Shape->getQueryFilterData();
+        QueryFilterData.word3 = VEHICLE_SURFACE_TYPE_CHASSIS;
+        Shape->setQueryFilterData(QueryFilterData);
+    }
+
+    PxMaterial* WheelMat = GPhysicalMaterial ? GPhysicalMaterial->GetPxMaterial() : nullptr;
+    if (!WheelMat)
+    {
+        return;
+    }
+
+    for (int32 i = 0; i < MAX_WHEELS; i++)
+    {
+        if (VehicleWheels[i])
+        {
+            PxSphereGeometry WheelGeom(VehicleWheels[i]->WheelRadius);
+
+            PxShape* NewWheelShape = PxRigidActorExt::createExclusiveShape(*RigidActor, WheelGeom, *WheelMat);
+
+            if (NewWheelShape)
+            {
+                PxVec3 Position = U2PVector(WheelSetups[i].BoneOffset + WheelSetups[i].VisualOffset);
+                NewWheelShape->setLocalPose(PxTransform(Position));
+
+                PxFilterData QueryData = NewWheelShape->getQueryFilterData();
+                QueryData.word3 = VEHICLE_SURFACE_TYPE_CHASSIS;
+                NewWheelShape->setQueryFilterData(QueryData);
+                NewWheelShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+                NewWheelShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
+            }
+        }
+    }
+}
+
+void UVehicleMovementComponent::SetupWheelSimulationData(physx::PxRigidDynamic* RigidActor)
+{
+    const PxU32 TotalShapes = RigidActor->getNbShapes();
+    const int32 WheelShapeStartIndex = TotalShapes - MAX_WHEELS;
+    assert(WheelShapeStartIndex >= 0);
+
+    PWheelsSimData = PxVehicleWheelsSimData::allocate(MAX_WHEELS);
+
+    const float TotalMass = RigidActor->getMass();
+    const PxVec3 BodyCMOffset = RigidActor->getCMassLocalPose().p;
+
+    PxF32 SprungMasses[MAX_WHEELS];
+    PxVec3 WheelOffsets[MAX_WHEELS];
+    TArray<uint32> ValidWheelIndices;
+
+    for (int32 i = 0; i < MAX_WHEELS; i++)
+    {
+        if (VehicleWheels[i])
+        {
+            WheelOffsets[ValidWheelIndices.Num()] = U2PVector(WheelSetups[i].BoneOffset);
+            ValidWheelIndices.Add(i);
+        }
+    }
+
+    PxVehicleComputeSprungMasses(ValidWheelIndices.Num(), WheelOffsets, BodyCMOffset, TotalMass, 2, SprungMasses);
+
+    for (int32 i = 0; i < MAX_WHEELS; i++)
+    {
+        int32 WheelIndex = ValidWheelIndices[i];
+        VehicleWheels[i]->SprungMass = SprungMasses[i];
+        PWheelsSimData->setSuspensionData(WheelIndex, VehicleWheels[i]->GetPxSuspensionData());
+    }
+
+    for (int32 i = 0; i < MAX_WHEELS; i++)
+    {
+        if (VehicleWheels[i])
+        {
+            PWheelsSimData->setWheelData(i, VehicleWheels[i]->GetPxWheelData());
+            PWheelsSimData->setTireData(i, PxVehicleTireData());
+            PWheelsSimData->setSuspensionData(i, VehicleWheels[i]->GetPxSuspensionData());
+
+            PxVec3 Offset = U2PVector(WheelSetups[i].BoneOffset);
+            PWheelsSimData->setWheelCentreOffset(i, Offset); 
+            PWheelsSimData->setSuspTravelDirection(i, PxVec3(0, 0, -1));
+            PWheelsSimData->setSuspForceAppPointOffset(i, Offset);
+            PWheelsSimData->setTireForceAppPointOffset(i, Offset);
+            PWheelsSimData->setWheelShapeMapping(i, WheelShapeStartIndex + i);
+        }
+    }
+}
+
+void UVehicleMovementComponent::SetupDriveSimulationData(physx::PxRigidDynamic* RigidActor)
+{
+    PxVehicleDriveSimData4W DriveSimData;
+    DriveSimData.setEngineData(EngineSetup.GetPxEngineData());
+    DriveSimData.setGearsData(TransmissionSetup.GetPxGearsData());
+    
+    PxVehicleClutchData ClutchData;
+    ClutchData.mStrength = 10.0f;
+    DriveSimData.setClutchData(ClutchData);
+
+    PxVehicleAutoBoxData AutoBoxData;
+    AutoBoxData.setDownRatios(PxVehicleGearsData::eFIRST, 0.5f);
+    AutoBoxData.setUpRatios(PxVehicleGearsData::eFIRST, 0.65f);
+    DriveSimData.setAutoBoxData(AutoBoxData);
+    
+    PxVehicleDifferential4WData DiffData;
+    DiffData.mType = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
+    DriveSimData.setDiffData(DiffData);
+
+    if (PWheelsSimData)
+    {
+        PxVec3 FL = PWheelsSimData->getWheelCentreOffset(0);
+        PxVec3 FR = PWheelsSimData->getWheelCentreOffset(1);
+        PxVec3 RL = PWheelsSimData->getWheelCentreOffset(2);
+        PxVec3 RR = PWheelsSimData->getWheelCentreOffset(3);
+
+        PxVehicleAckermannGeometryData Ackermann;
+        Ackermann.mAxleSeparation = PxAbs(FL.x - RL.x);
+        Ackermann.mFrontWidth = PxAbs(FL.y - FR.y);
+        Ackermann.mRearWidth = PxAbs(RL.y - RR.y);
+        DriveSimData.setAckermannGeometryData(Ackermann);
+    }
+
+    if (PWheelsSimData)
+    {
+        PVehicleDrive = PxVehicleDrive4W::allocate(4);
+    
+        PVehicleDrive->setup(GPhysXSDK, RigidActor, *PWheelsSimData, DriveSimData, 0);
+
+        PVehicleDrive->mDriveDynData.setUseAutoGears(true);
+        PVehicleDrive->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
+    }
+
+    RigidActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+    RigidActor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
+    
+    RigidActor->setLinearDamping(0.05f);
+    RigidActor->setAngularDamping(0.05f);
+}
+
+// ====================================================================
+// 배치 쿼리 (Raycast) 관리
+// ====================================================================
+
+void UVehicleMovementComponent::SetupBatchQuery()
+{
+    if (SuspensionBatchQuery &&
+        BatchQueryResults    &&
+        BatchQueryTouchBuffer) { return; }
+
+    if (!PVehicleDrive) { return; }
+    
+    PxScene* Scene = PVehicleDrive->getRigidDynamicActor()->getScene();
+    if (!Scene) { return; }
+
+    BatchQueryResults     = new PxRaycastQueryResult[MAX_WHEELS];
+    BatchQueryTouchBuffer = new PxRaycastHit[MAX_WHEELS];
+
+    PxBatchQueryDesc SqDesc(MAX_WHEELS, 0, 0);
+
+    SqDesc.queryMemory.userRaycastResultBuffer = BatchQueryResults;
+    SqDesc.queryMemory.userRaycastTouchBuffer  = BatchQueryTouchBuffer;
+    SqDesc.queryMemory.raycastTouchBufferSize  = MAX_WHEELS;
+
+    SqDesc.preFilterShader = WheelRaycastPreFilter;
+
+    SuspensionBatchQuery = Scene->createBatchQuery(SqDesc);
+}
+
+void UVehicleMovementComponent::ReleaseBatchQuery()
+{
+    if (SuspensionBatchQuery)
+    {
+        SuspensionBatchQuery->release();
+        SuspensionBatchQuery = nullptr;
+    }
+
+    if (BatchQueryResults)
+    {
+        delete[] BatchQueryResults;
+        BatchQueryResults = nullptr;
+    }
+
+    if (BatchQueryTouchBuffer)
+    {
+        delete[] BatchQueryTouchBuffer;
+        BatchQueryTouchBuffer = nullptr;
+    }
+}
+
+// ====================================================================
+// 마찰력 설정 (Helper)
+// ====================================================================
+
+void UVehicleMovementComponent::SetupFrictionPairs()
+{
+    if (FrictionPairs)
+    {
+        FrictionPairs->release();
+        FrictionPairs = nullptr;
+    }
+
+    PxMaterial* DefaultMat = nullptr;
+    if (GPhysicalMaterial)
+    {
+        DefaultMat = GPhysicalMaterial->GetPxMaterial();
+    }
+
+    if (!DefaultMat) { return; }
+
+    PxVehicleDrivableSurfaceType SurfaceType;
+    SurfaceType.mType = 0;
+
+    FrictionPairs = PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(1, 1);
+
+    const PxMaterial* Mats[] = { DefaultMat };
+    PxVehicleDrivableSurfaceType SurfaceTypes[] = { SurfaceType };
+    
+    FrictionPairs->setup(1, 1, Mats, SurfaceTypes);
+    
+    FrictionPairs->setTypePairFriction(0, 0, 1.0f);
+}
+
+void UVehicleMovementComponent::ReleaseFrictionPairs()
+{
+    if (FrictionPairs)
+    {
+        FrictionPairs->release();
+        FrictionPairs = nullptr;
+    }    
+}
+
+PxRigidDynamic* UVehicleMovementComponent::GetValidDynamicActor() const
+{
+    UPrimitiveComponent* MeshComp = Cast<UPrimitiveComponent>(UpdatedComponent);
+    if (!MeshComp || !MeshComp->GetBodyInstance())
+    {
+        return nullptr;
+    }
+
+    FBodyInstance* BodyInst = MeshComp->GetBodyInstance();
+    if (!BodyInst->RigidActor)
+    {
+        return nullptr;
+    }
+
+    return BodyInst->RigidActor->is<PxRigidDynamic>();
+}
+
+void UVehicleMovementComponent::TickComponent(float DeltaSeconds)
+{
+    Super::TickComponent(DeltaSeconds);
+
+    if (!PVehicleDrive || !UpdatedComponent) { return; }
+
+    UPrimitiveComponent* MeshComp = Cast<UPrimitiveComponent>(UpdatedComponent);
+    if (!MeshComp || !MeshComp->GetBodyInstance()) { return; }
+
+    UpdateVehicleSimulation(DeltaSeconds);
+    
+    ProcessVehicleInput(DeltaSeconds);
+
+    // @note 디버그용 (불필요할 시 주석처리 혹은 삭제할 것)
+    if (PVehicleDrive)
+    {
+        // 엔진 회전수 (Rad/s -> RPM)
+        float RPM = PVehicleDrive->mDriveDynData.getEngineRotationSpeed() * 9.55f;
+        // 현재 기어
+        int32 Gear = PVehicleDrive->mDriveDynData.getCurrentGear();
+        // 실제 바퀴 회전 속도 (첫번째 바퀴)
+        float WheelSpeed = PVehicleDrive->mWheelsDynData.getWheelRotationSpeed(0);
+    
+        UE_LOG("RPM: %.1f | Gear: %d | WheelSpeed: %.1f", RPM, Gear, WheelSpeed);
+    }
+}
+
 
 void UVehicleMovementComponent::PerformSuspensionRaycasts(float DeltaTime)
 {
-    // PhysX Scene Query를 사용하여 바퀴 아래를 검사
+    if (!SuspensionBatchQuery)
+    {
+        SetupBatchQuery();
+        if (!SuspensionBatchQuery)
+        {
+            return;
+        }
+    }
+    
     PxVehicleWheels* Vehicles[1] = { PVehicleDrive };
     
-    // 레이캐스트 결과를 담을 버퍼
-    PxRaycastQueryResult RaycastResults[4];
-    PxVehicleSuspensionRaycasts(
-        nullptr, // BatchQuery (널이면 내부적으로 즉시 쿼리 수행 - 성능상 BatchQuery 권장)
-        1, 
-        Vehicles, 
-        4, // 쿼리 개수 (바퀴 수)
-        RaycastResults
+    PxVehicleSuspensionRaycasts(SuspensionBatchQuery, 1, Vehicles, MAX_WHEELS, BatchQueryResults);
+
+    SuspensionBatchQuery->execute();
+}
+
+bool UVehicleMovementComponent::IsVehicleInAir() const
+{
+    if (!BatchQueryResults) return true; 
+
+    for (int i = 0; i < MAX_WHEELS; i++)
+    {
+        if (BatchQueryResults[i].block.actor != nullptr)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void UVehicleMovementComponent::ProcessVehicleInput(float DeltaTime)
+{
+    if (!PInputData || !PVehicleDrive)
+    {
+        return;
+    }
+
+    bool bIsInAir = IsVehicleInAir();
+
+    PxVehicleDrive4WSmoothAnalogRawInputsAndSetAnalogInputs(
+        gPadSmoothingData,
+        gSteerVsForwardSpeedTable,
+        *PInputData,
+        DeltaTime,
+        bIsInAir,
+        *PVehicleDrive
     );
 }
+
+void UVehicleMovementComponent::UpdateVehicleSimulation(float DeltaTime)
+{
+    PerformSuspensionRaycasts(DeltaTime);
+
+    PxScene* Scene = PVehicleDrive->getRigidDynamicActor()->getScene();
+    PxVec3 Gravity = Scene ? Scene->getGravity() : PxVec3(0, 0, -9.81f);
+
+    if (!FrictionPairs)
+    {
+        SetupFrictionPairs();
+        if (!FrictionPairs)
+        {
+            return;
+        }
+    }
+
+    PxVehicleWheels* Vehicles[] = { PVehicleDrive };
+    PxVehicleUpdates(DeltaTime, Gravity, *FrictionPairs, 1, Vehicles, nullptr);
+
+    PxRigidDynamic* Actor = PVehicleDrive->getRigidDynamicActor();
+    if (Actor && Actor->isSleeping())
+    {
+        Actor->wakeUp();
+    }
+}
+
+// ====================================================================
+// 입력 인터페이스 (PlayerController에서 호출)
+// ====================================================================
 
 void UVehicleMovementComponent::SetThrottleInput(float Throttle)
 {
@@ -218,46 +566,62 @@ void UVehicleMovementComponent::SetHandbrakeInput(bool bNewHandbrake)
     if (PInputData) PInputData->setAnalogHandbrake(bNewHandbrake ? 1.0f : 0.0f);
 }
 
+float UVehicleMovementComponent::GetForwardSpeed() const
+{
+    if (PVehicleDrive)
+    {
+        return PVehicleDrive->computeForwardSpeed();
+    }
+    return 0.0f;
+}
+
+void UVehicleMovementComponent::SetGearToDrive()
+{
+    if (PVehicleDrive)
+    {
+        if (PVehicleDrive->mDriveDynData.getCurrentGear() < physx::PxVehicleGearsData::eFIRST)
+        {
+            PVehicleDrive->mDriveDynData.forceGearChange(physx::PxVehicleGearsData::eFIRST);
+            PVehicleDrive->mDriveDynData.setUseAutoGears(true); 
+        }
+    }
+}
+
+void UVehicleMovementComponent::SetGearToReverse()
+{
+    if (PVehicleDrive)
+    {
+        if (PVehicleDrive->mDriveDynData.getCurrentGear() != physx::PxVehicleGearsData::eREVERSE)
+        {
+            PVehicleDrive->mDriveDynData.setUseAutoGears(false);
+            PVehicleDrive->mDriveDynData.forceGearChange(physx::PxVehicleGearsData::eREVERSE);
+        }
+    }
+}
+
 FTransform UVehicleMovementComponent::GetWheelTransform(int32 WheelIndex) const
 {
-    // 1. 기본 유효성 검사
-    if (!PVehicleDrive || WheelIndex >= 4)
+    if (!PVehicleDrive || WheelIndex < 0 || WheelIndex >= static_cast<int32>(PVehicleDrive->mWheelsSimData.getNbWheels()))
     {
         return FTransform();
     }
 
-    // 2. [핵심 수정] 현재 컴포넌트의 실제 BodyInstance와 Actor 확인
-    UPrimitiveComponent* MeshComp = Cast<UPrimitiveComponent>(UpdatedComponent);
-    if (!MeshComp || !MeshComp->GetBodyInstance()) 
+    physx::PxRigidDynamic* Actor = PVehicleDrive->getRigidDynamicActor();
+    if (!Actor)
     {
         return FTransform();
     }
 
-    FBodyInstance* BodyInst = MeshComp->GetBodyInstance();
-    
-    // 3. [방어 코드] PhysX Vehicle이 알고 있는 Actor가 현재 진짜 Actor와 같은지 비교
-    //    다르다면(이미 파괴된 Actor라면) 접근하지 말고 리턴해야 함.
-    PxRigidDynamic* CurrentRealActor = BodyInst->RigidActor ? BodyInst->RigidActor->is<PxRigidDynamic>() : nullptr;
-    PxRigidDynamic* CachedVehicleActor = PVehicleDrive->getRigidDynamicActor();
-
-    if (!CurrentRealActor || !CachedVehicleActor || CurrentRealActor != CachedVehicleActor)
-    {
-        // 배우(Actor)가 교체되었거나 유효하지 않음 -> 시뮬레이션 데이터 접근 불가
-        return FTransform();
-    }
-
-    // 4. Shape 매핑 인덱스 확인
-    PxI32 ShapeIndex = PVehicleDrive->mWheelsSimData.getWheelShapeMapping(WheelIndex);
+    const int32 ShapeIndex = PVehicleDrive->mWheelsSimData.getWheelShapeMapping(WheelIndex);
     if (ShapeIndex < 0)
     {
         return FTransform();
     }
 
-    // 5. Shape 가져오기 (이제 Actor가 유효함이 보장됨)
-    PxShape* WheelShape = nullptr;
-    
-    // getShapes의 리턴값(가져온 개수) 확인
-    if (CachedVehicleActor->getShapes(&WheelShape, 1, ShapeIndex) == 1 && WheelShape)
+    physx::PxShape* WheelShape = nullptr;
+    const PxU32 NumShapesRetrieved = Actor->getShapes(&WheelShape, 1, ShapeIndex);
+
+    if (NumShapesRetrieved > 0 && WheelShape)
     {
         return P2UTransform(WheelShape->getLocalPose());
     }

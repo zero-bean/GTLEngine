@@ -62,7 +62,7 @@ bool InitGamePhys()
 
     PxVehicleSetBasisVectors(PxVec3(0, 0, 1), PxVec3(1, 0, 0));
 
-    PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
+    PxVehicleSetUpdateMode(PxVehicleUpdateMode::eACCELERATION);
 
     if (!PxInitExtensions(*GPhysXSDK, GPhysXVisualDebugger))
     {

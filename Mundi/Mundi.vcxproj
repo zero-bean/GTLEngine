@@ -468,7 +468,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysXSimEventCallback.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysXSupport.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\ShapeElem.cpp" />
-    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\Vehicle\VehicleEngineData.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\Vehicle\VehicleDefinitions.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\Vehicle\VehicleWheel.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Scripting\GameObject.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Scripting\LuaArrayProxy.cpp" />
@@ -771,7 +771,6 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Generated\UVehicleMovementComponent.generated.cpp" />
     <ClCompile Include="Generated\AVehicle.generated.cpp" />
     <ClCompile Include="Generated\UVehicleWheel.generated.cpp" />
-    <ClCompile Include="Generated\FVehicleEngineData.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
@@ -1043,7 +1042,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\ShapeElem.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\SphereElem.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\SphylElem.h" />
-    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\Vehicle\VehicleEngineData.h" />
+    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\Vehicle\VehicleDefinitions.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\Vehicle\VehicleWheel.h" />
     <ClInclude Include="Source\Runtime\Engine\Scripting\GameObject.h" />
     <ClInclude Include="Source\Runtime\Engine\Scripting\LuaArrayProxy.h" />
@@ -1372,7 +1371,6 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClInclude Include="Generated\UVehicleMovementComponent.generated.h" />
     <ClInclude Include="Generated\AVehicle.generated.h" />
     <ClInclude Include="Generated\UVehicleWheel.generated.h" />
-    <ClInclude Include="Generated\FVehicleEngineData.generated.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTools\CodeGenerator\generate.py" />

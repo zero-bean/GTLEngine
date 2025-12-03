@@ -22,7 +22,6 @@ public:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
 
-    // 입력 바인딩 설정
     virtual void SetupPlayerInputComponent(UInputComponent* InInputComponent) override;
 
     // ====================================================================
@@ -66,4 +65,7 @@ protected:
     // ====================================================================
     /** 매 프레임 PhysX 시뮬레이션 결과에 맞춰 바퀴 메쉬를 회전/이동시킴 */
     void SyncWheelVisuals();
+
+    float CurrentForwardInput;
+    float CurrentSteeringInput;
 };

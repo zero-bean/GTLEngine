@@ -95,8 +95,6 @@ void FPhysScene::DeferAddActor(PxActor* InActor)
 {
     if (!InActor) { return; }
 
-    InActor->userData = nullptr;
-
     std::lock_guard<std::mutex> Lock(DeferredReleaseMutex);
     DeferredAddQueue.Add(InActor);
 }

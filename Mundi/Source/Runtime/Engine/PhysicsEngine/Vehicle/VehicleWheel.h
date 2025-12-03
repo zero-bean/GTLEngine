@@ -48,7 +48,7 @@ public:
 
     /** 서스펜션 스프링 강도 (값이 클수록 딱딱함) */
     UPROPERTY(EditAnywhere, Category = "Suspension")
-    float SprungMass = 0.0f; // 0이면 자동 계산 권장
+    float SprungMass = 0.0f; 
 
     /** 서스펜션 댐퍼 강도 (값이 클수록 출렁거림이 적음) */
     UPROPERTY(EditAnywhere, Category = "Suspension")
@@ -73,24 +73,25 @@ public:
     /** PhysX WheelData 구조체로 변환하여 반환 */
     PxVehicleWheelData GetPxWheelData() const
     {
-        PxVehicleWheelData data;
-        data.mRadius             = WheelRadius;
-        data.mWidth              = WheelWidth;
-        data.mMass               = Mass;
-        data.mMOI                = 0.5f * Mass * data.mRadius * data.mRadius; // 관성 모멘트(I = 0.5 * m * r^2)
-        data.mMaxHandBrakeTorque = bAffectedByHandbrake ? 3000.0f : 0.0f;
-        data.mMaxSteer           = DegreesToRadians(SteerAngle);
-        return data;
+        PxVehicleWheelData Data;
+        Data.mRadius             = WheelRadius;
+        Data.mWidth              = WheelWidth;
+        Data.mMass               = Mass;
+        Data.mMOI                = 0.5f * Mass * Data.mRadius * Data.mRadius; // 관성 모멘트(I = 0.5 * m * r^2)
+        Data.mMaxHandBrakeTorque = bAffectedByHandbrake ? 3000.0f : 0.0f;
+        Data.mMaxSteer           = DegreesToRadians(SteerAngle);
+        return Data;
     }
 
     /** PhysX SuspensionData 구조체로 변환하여 반환 */
     PxVehicleSuspensionData GetPxSuspensionData() const
     {
-        PxVehicleSuspensionData data;
-        data.mMaxCompression   = MaxSuspensionCompression;
-        data.mMaxDroop         = MaxSuspensionDroop;
-        data.mSpringStrength   = SuspensionStiffness;
-        data.mSpringDamperRate = SuspensionDamping;
-        return data;
+        PxVehicleSuspensionData Data;
+        Data.mMaxCompression   = MaxSuspensionCompression;
+        Data.mMaxDroop         = MaxSuspensionDroop;
+        Data.mSpringStrength   = SuspensionStiffness;
+        Data.mSpringDamperRate = SuspensionDamping;
+        Data.mSprungMass       = (SprungMass > 0.0f) ? SprungMass : 1500.0f / 4.0f;
+        return Data;
     }
 };
