@@ -36,7 +36,7 @@ UCharacterMovementComponent::UCharacterMovementComponent()
 	, bCanJump(true)
 	// 바닥 감지 설정
 	, WalkableFloorAngle(44.0f)
-	, FloorSnapDistance(0.08f)
+	, FloorSnapDistance(0.02f)
 	, MaxStepHeight(45.0f)
 	// 경사면 미끄러짐 설정
 	, bEnableSlopeSliding(true)
@@ -633,7 +633,7 @@ bool UCharacterMovementComponent::ResolvePenetration()
 	                                          MTD, PenetrationDepth, CharacterOwner))
 	{
 		// 침투가 감지됨 - MTD 방향으로 밀어냄
-		const float PushOutDistance = PenetrationDepth + 0.0125f;
+		const float PushOutDistance = PenetrationDepth + 0.00125f;
 		FVector Adjustment = MTD * PushOutDistance;
 
 		// 걸을 수 없는 표면 (벽, 가파른 경사, 천장/둔각 등)
