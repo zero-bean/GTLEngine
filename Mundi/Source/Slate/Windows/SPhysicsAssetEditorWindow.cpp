@@ -190,6 +190,12 @@ void SPhysicsAssetEditorWindow::OnUpdate(float DeltaSeconds)
 		}
 	}
 
+	// Constraint 라인 재생성
+	if (State->bShowConstraints && State->bConstraintLinesDirty)
+	{
+		RebuildConstraintLines();
+	}
+
 	// 시뮬레이션 업데이트
 	if (State->bIsSimulating)
 	{
@@ -1723,7 +1729,170 @@ void SPhysicsAssetEditorWindow::RebuildSelectedBodyLines()
 
 void SPhysicsAssetEditorWindow::RebuildConstraintLines()
 {
-	// TODO: Phase 9에서 구현
+	PhysicsAssetEditorState* State = GetActivePhysicsState();
+	if (!State || !State->ConstraintPDI) return;
+
+	// Constraint 라인 클리어
+	State->ConstraintPDI->Clear();
+
+	UPhysicsAsset* PhysAsset = State->EditingPhysicsAsset;
+	if (!PhysAsset) return;
+
+	// 스켈레탈 메시 정보
+	USkeletalMeshComponent* MeshComp = nullptr;
+	USkeletalMesh* Mesh = nullptr;
+	if (State->PreviewActor)
+	{
+		MeshComp = State->PreviewActor->GetSkeletalMeshComponent();
+		if (MeshComp)
+		{
+			Mesh = MeshComp->GetSkeletalMesh();
+		}
+	}
+	const FSkeleton* Skeleton = Mesh ? Mesh->GetSkeleton() : nullptr;
+	if (!Skeleton || !MeshComp) return;
+
+	const FLinearColor SwingColor(1.0f, 0.0f, 0.0f, 1.0f);   // 빨간색 (Swing)
+	const FLinearColor TwistColor(0.0f, 0.0f, 1.0f, 1.0f);   // 초록색 (Twist)
+	const float ConeLength = 0.1f;							 // 콘 길이 (미터)
+	const int32 Segments = 32;								 // 콘 세그먼트 수
+
+	// 모든 Constraint 순회
+	int32 ConstraintCount = PhysAsset->GetConstraintCount();
+	for (int32 ConstraintIdx = 0; ConstraintIdx < ConstraintCount; ++ConstraintIdx)
+	{
+		UPhysicsConstraintTemplate* Constraint = PhysAsset->ConstraintSetup[ConstraintIdx];
+		if (!Constraint) continue;
+
+		const FConstraintInstance& Instance = Constraint->DefaultInstance;
+
+		// 자식 본 (Bone2) 위치에서 Constraint 시각화
+		FName ChildBoneName = Instance.ConstraintBone2;
+		auto it = Skeleton->BoneNameToIndex.find(ChildBoneName.ToString());
+		if (it == Skeleton->BoneNameToIndex.end()) continue;
+
+		int32 ChildBoneIndex = it->second;
+		FTransform ChildBoneTM = MeshComp->GetBoneWorldTransform(ChildBoneIndex);
+		ChildBoneTM.Rotation.Normalize();
+
+		FVector Origin = ChildBoneTM.Translation;
+
+		// 부모 본 방향 계산 (Twist 축)
+		FVector TwistAxis = FVector(1, 0, 0);  // 기본 X축
+		FName ParentBoneName = Instance.ConstraintBone1;
+		auto parentIt = Skeleton->BoneNameToIndex.find(ParentBoneName.ToString());
+		if (parentIt != Skeleton->BoneNameToIndex.end())
+		{
+			int32 ParentBoneIndex = parentIt->second;
+			FTransform ParentBoneTM = MeshComp->GetBoneWorldTransform(ParentBoneIndex);
+			FVector ToChild = Origin - ParentBoneTM.Translation;
+			if (ToChild.Size() > 0.001f)
+			{
+				TwistAxis = ToChild.GetNormalized();
+			}
+		}
+
+		// 로컬 축 계산 (Swing1 = Y축 기반, Swing2 = Z축 기반)
+		FVector Swing1Axis, Swing2Axis;
+		if (FMath::Abs(TwistAxis.Z) < 0.999f)
+		{
+			Swing1Axis = FVector::Cross(FVector(0, 0, 1), TwistAxis).GetNormalized();
+		}
+		else
+		{
+			Swing1Axis = FVector::Cross(FVector(1, 0, 0), TwistAxis).GetNormalized();
+		}
+		Swing2Axis = FVector::Cross(TwistAxis, Swing1Axis).GetNormalized();
+
+		// === Swing 콘 그리기 (빨간색) ===
+		float Swing1Rad = DegreesToRadians(Instance.Swing1LimitAngle);
+		float Swing2Rad = DegreesToRadians(Instance.Swing2LimitAngle);
+
+		if (Instance.AngularSwing1Motion != EAngularConstraintMotion::Locked ||
+			Instance.AngularSwing2Motion != EAngularConstraintMotion::Locked)
+		{
+			// 콘 윤곽선 (타원형)
+			TArray<FVector> ConePoints;
+			for (int32 i = 0; i <= Segments; ++i)
+			{
+				float Angle = 2.0f * PI * i / (float)Segments;
+				float SwingAngle1 = Swing1Rad * cosf(Angle);
+				float SwingAngle2 = Swing2Rad * sinf(Angle);
+				float TotalSwing = FMath::Sqrt(SwingAngle1 * SwingAngle1 + SwingAngle2 * SwingAngle2);
+
+				// 콘 표면 점 계산
+				float CosTotalSwing = cosf(TotalSwing);
+				float SinTotalSwing = sinf(TotalSwing);
+				float CosAngle = cosf(Angle);
+				float SinAngle = sinf(Angle);
+
+				FVector SwingDir = Swing1Axis * CosAngle + Swing2Axis * SinAngle;
+				FVector Dir = TwistAxis * CosTotalSwing + SwingDir * SinTotalSwing;
+				Dir.Normalize();
+
+				FVector Point = Origin + Dir * ConeLength;
+				ConePoints.Add(Point);
+			}
+
+			// 콘 테두리 라인
+			for (int32 i = 0; i < ConePoints.Num() - 1; ++i)
+			{
+				State->ConstraintPDI->DrawLine(ConePoints[i], ConePoints[i + 1], SwingColor);
+			}
+
+			// 원점에서 콘 테두리로 연결선
+			for (int32 i = 0; i < 8; ++i)
+			{
+				int32 Idx = i * Segments / 8;
+				if (Idx < ConePoints.Num())
+				{
+					State->ConstraintPDI->DrawLine(Origin, ConePoints[Idx], SwingColor);
+				}
+			}
+		}
+
+		// === Twist 아크 그리기 (초록색) ===
+		if (Instance.AngularTwistMotion != EAngularConstraintMotion::Locked)
+		{
+			float TwistRad = DegreesToRadians(Instance.TwistLimitAngle);
+			float ArcRadius = ConeLength * 0.8f;  // 아크 반지름
+
+			// Twist 아크 (콘 끝 부분에 표시)
+			FVector ArcCenter = Origin + TwistAxis * (ConeLength * 0.01f);
+			int32 ArcSegments = 24;
+
+			TArray<FVector> ArcPoints;
+			for (int32 i = 0; i <= ArcSegments; ++i)
+			{
+				float t = (float)i / (float)ArcSegments;
+				float Angle = -TwistRad + 2.0f * TwistRad * t;
+
+				float CosAngle = cosf(Angle);
+				float SinAngle = sinf(Angle);
+				FVector ArcDir = Swing1Axis * CosAngle + Swing2Axis * SinAngle;
+				FVector Point = ArcCenter + ArcDir * ArcRadius;
+				ArcPoints.Add(Point);
+			}
+
+			// 아크 라인
+			for (int32 i = 0; i < ArcPoints.Num() - 1; ++i)
+			{
+				State->ConstraintPDI->DrawLine(ArcPoints[i], ArcPoints[i + 1], TwistColor);
+			}
+
+			// 아크 중심에서 연결선 (4개)
+			if (ArcPoints.Num() > 0)
+			{
+				int32 NumPoints = ArcPoints.Num();
+				State->ConstraintPDI->DrawLine(ArcCenter, ArcPoints[0], TwistColor);
+				State->ConstraintPDI->DrawLine(ArcCenter, ArcPoints[NumPoints / 3], TwistColor);
+				State->ConstraintPDI->DrawLine(ArcCenter, ArcPoints[NumPoints * 2 / 3], TwistColor);
+				State->ConstraintPDI->DrawLine(ArcCenter, ArcPoints[NumPoints - 1], TwistColor);
+			}
+		}
+	}
+
+	State->bConstraintLinesDirty = false;
 }
 
 void SPhysicsAssetEditorWindow::SavePhysicsAsset()
