@@ -96,6 +96,16 @@ void UConstraintPropertiesWidget::RenderWidget()
 					EditorState->bIsDirty = true;
 					EditorState->RequestLinesRebuild();
 					bWasModified = true;
+
+					// Euler 변경 시 축 벡터 동기화
+					if (strcmp(Prop->Name, "ParentRotation") == 0)
+					{
+						Constraint.UpdateParentAxesFromEuler();
+					}
+					else if (strcmp(Prop->Name, "ChildRotation") == 0)
+					{
+						Constraint.UpdateChildAxesFromEuler();
+					}
 				}
 
 				ImGui::PopID();

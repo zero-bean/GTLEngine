@@ -84,7 +84,19 @@ public:
 
 private:
     /**
-     * Position + Rotation(Euler) → PxTransform 변환
+     * Position + 축 벡터 → PxTransform 변환 (Euler 손실 없음)
+     * @param Position   위치
+     * @param PriAxis    Primary axis (X/Twist)
+     * @param SecAxis    Secondary axis (Y)
+     */
+    static PxTransform ConvertAxesToPxTransform(
+        const FVector& Position,
+        const FVector& PriAxis,
+        const FVector& SecAxis
+    );
+
+    /**
+     * Position + Rotation(Euler) → PxTransform 변환 (deprecated, 축 벡터 방식 권장)
      * @param Position          위치
      * @param RotationDegrees   회전 (Roll, Pitch, Yaw in degrees)
      */

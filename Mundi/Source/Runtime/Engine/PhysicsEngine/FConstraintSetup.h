@@ -88,6 +88,13 @@ public:
 	UPROPERTY(EditAnywhere, Category="Frame", Tooltip="자식 프레임 회전 (Roll, Pitch, Yaw degrees)")
 	FVector ChildRotation = FVector::Zero();
 
+	// 축 벡터 (저장용 - UI 노출 안됨, Euler 변환 손실 방지)
+	UPROPERTY()
+	FVector ChildPriAxis = FVector(1, 0, 0);  // X축 (Twist)
+
+	UPROPERTY()
+	FVector ChildSecAxis = FVector(0, 1, 0);  // Y축
+
 	// ────────────────────────────────────────────────
 	// Constraint Frame - Parent (Body2)
 	// ────────────────────────────────────────────────
@@ -96,6 +103,13 @@ public:
 
 	UPROPERTY(EditAnywhere, Category="Frame", Tooltip="부모 프레임 회전 (Roll, Pitch, Yaw degrees)")
 	FVector ParentRotation = FVector::Zero();
+
+	// 축 벡터 (저장용 - UI 노출 안됨, Euler 변환 손실 방지)
+	UPROPERTY()
+	FVector ParentPriAxis = FVector(1, 0, 0);  // X축 (Twist)
+
+	UPROPERTY()
+	FVector ParentSecAxis = FVector(0, 1, 0);  // Y축
 
 	// ────────────────────────────────────────────────
 	// Angular Rotation Offset (비대칭 Limit용)
@@ -137,5 +151,57 @@ public:
 		return Swing1Motion == EAngularConstraintMotion::Limited ||
 		       Swing2Motion == EAngularConstraintMotion::Limited ||
 		       TwistMotion == EAngularConstraintMotion::Limited;
+	}
+
+	// ────────────────────────────────────────────────
+	// 축 벡터 ↔ Euler 변환 헬퍼
+	// ────────────────────────────────────────────────
+
+	// Euler(degrees) → 축 벡터 변환 (UI에서 Euler 변경 시 호출)
+	void UpdateParentAxesFromEuler()
+	{
+		FQuat Quat = FQuat::MakeFromEulerZYX(ParentRotation);
+		ParentPriAxis = Quat.RotateVector(FVector(1, 0, 0));
+		ParentSecAxis = Quat.RotateVector(FVector(0, 1, 0));
+	}
+
+	void UpdateChildAxesFromEuler()
+	{
+		FQuat Quat = FQuat::MakeFromEulerZYX(ChildRotation);
+		ChildPriAxis = Quat.RotateVector(FVector(1, 0, 0));
+		ChildSecAxis = Quat.RotateVector(FVector(0, 1, 0));
+	}
+
+	// 축 벡터 → Euler(degrees) 변환 (축 벡터 설정 후 UI 업데이트용)
+	void UpdateParentEulerFromAxes()
+	{
+		FQuat Quat = GetQuatFromAxes(ParentPriAxis, ParentSecAxis);
+		ParentRotation = Quat.ToEulerZYXDeg();
+	}
+
+	void UpdateChildEulerFromAxes()
+	{
+		FQuat Quat = GetQuatFromAxes(ChildPriAxis, ChildSecAxis);
+		ChildRotation = Quat.ToEulerZYXDeg();
+	}
+
+	// 축 벡터에서 Quaternion 구성
+	static FQuat GetQuatFromAxes(const FVector& PriAxis, const FVector& SecAxis)
+	{
+		// X = PriAxis, Y = SecAxis, Z = X × Y
+		FVector X = PriAxis.GetNormalized();
+		FVector Y = SecAxis.GetNormalized();
+		FVector Z = FVector::Cross(X, Y).GetNormalized();
+		// Y를 다시 직교화
+		Y = FVector::Cross(Z, X).GetNormalized();
+
+		// 회전 행렬에서 Quaternion 추출
+		FMatrix RotMatrix;
+		RotMatrix.M[0][0] = X.X; RotMatrix.M[0][1] = X.Y; RotMatrix.M[0][2] = X.Z; RotMatrix.M[0][3] = 0;
+		RotMatrix.M[1][0] = Y.X; RotMatrix.M[1][1] = Y.Y; RotMatrix.M[1][2] = Y.Z; RotMatrix.M[1][3] = 0;
+		RotMatrix.M[2][0] = Z.X; RotMatrix.M[2][1] = Z.Y; RotMatrix.M[2][2] = Z.Z; RotMatrix.M[2][3] = 0;
+		RotMatrix.M[3][0] = 0;   RotMatrix.M[3][1] = 0;   RotMatrix.M[3][2] = 0;   RotMatrix.M[3][3] = 1;
+
+		return FQuat(RotMatrix);
 	}
 };

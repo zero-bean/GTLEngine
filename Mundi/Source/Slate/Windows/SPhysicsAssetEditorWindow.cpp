@@ -72,7 +72,9 @@ static void CalculateConstraintFramesFromBones(
     // Child Frame: 원점, Identity 회전 (자식 바디 로컬 기준)
     // ─────────────────────────────────────────────────────────────
     OutSetup.ChildPosition = FVector::Zero();
-    OutSetup.ChildRotation = FVector::Zero();
+    OutSetup.ChildPriAxis = FVector(1, 0, 0);  // Identity X축
+    OutSetup.ChildSecAxis = FVector(0, 1, 0);  // Identity Y축
+    OutSetup.ChildRotation = FVector::Zero();  // UI용 Euler
 
     // ─────────────────────────────────────────────────────────────
     // Parent Frame: 조인트 위치를 부모 로컬로 변환
@@ -88,9 +90,14 @@ static void CalculateConstraintFramesFromBones(
     FQuat RelativeRot = ParentRotInv * ChildRot;
     RelativeRot.Normalize();
 
-    // Quaternion -> Euler 변환
-    FVector EulerAngles = RelativeRot.ToEulerZYXDeg();  // Roll, Pitch, Yaw in degrees
-    OutSetup.ParentRotation = EulerAngles;
+    // ─────────────────────────────────────────────────────────────
+    // 축 벡터 계산 (Quaternion에서 직접 추출 - 손실 없음)
+    // ─────────────────────────────────────────────────────────────
+    OutSetup.ParentPriAxis = RelativeRot.RotateVector(FVector(1, 0, 0));
+    OutSetup.ParentSecAxis = RelativeRot.RotateVector(FVector(0, 1, 0));
+
+    // UI용 Euler는 축 벡터에서 역산 (표시용)
+    OutSetup.UpdateParentEulerFromAxes();
 
     // AngularRotationOffset 초기값은 Zero
     OutSetup.AngularRotationOffset = FVector::Zero();
@@ -2025,7 +2032,19 @@ void SPhysicsAssetEditorWindow::AutoGenerateBodies(EAggCollisionShape PrimitiveT
 		{
 			char JointName[128];
 			sprintf_s(JointName, "Joint_%s", Skeleton->Bones[i].Name.c_str());
-			Asset->AddConstraint(FName(JointName), ParentBodyIdx, ChildBodyIdx);
+			int32 ConstraintIndex = Asset->AddConstraint(FName(JointName), ParentBodyIdx, ChildBodyIdx);
+
+			// Constraint Frame 자동 계산
+			if (ConstraintIndex >= 0)
+			{
+				FTransform ParentBoneTransform = MeshComp->GetBoneWorldTransform(ParentBoneIdx);
+				FTransform ChildBoneTransform = MeshComp->GetBoneWorldTransform(i);
+				CalculateConstraintFramesFromBones(
+					Asset->ConstraintSetups[ConstraintIndex],
+					ParentBoneTransform,
+					ChildBoneTransform
+				);
+			}
 		}
 	}
 
@@ -3031,6 +3050,7 @@ void SPhysicsAssetEditorWindow::UpdateConstraintFrameFromGizmo()
 					FQuat NewParentRot = ParentBoneRotInv * NewJointWorldRot;
 					NewParentRot.Normalize();
 					Constraint.ParentRotation = NewParentRot.ToEulerZYXDeg();
+					Constraint.UpdateParentAxesFromEuler();  // 축 벡터 동기화
 
 					// Child도 같은 월드 델타만큼 회전
 					FQuat OldChildLocalRot = FQuat::MakeFromEulerZYX(Constraint.ChildRotation);
@@ -3042,6 +3062,7 @@ void SPhysicsAssetEditorWindow::UpdateConstraintFrameFromGizmo()
 					FQuat NewChildRot = ChildBoneRotInv * NewChildWorldRot;
 					NewChildRot.Normalize();
 					Constraint.ChildRotation = NewChildRot.ToEulerZYXDeg();
+					Constraint.UpdateChildAxesFromEuler();  // 축 벡터 동기화
 
 					bChanged = true;
 				}
@@ -3057,6 +3078,7 @@ void SPhysicsAssetEditorWindow::UpdateConstraintFrameFromGizmo()
 				if ((NewChildEuler - Constraint.ChildRotation).SizeSquared() > 0.01f)
 				{
 					Constraint.ChildRotation = NewChildEuler;
+					Constraint.UpdateChildAxesFromEuler();  // 축 벡터 동기화
 					bChanged = true;
 				}
 			}
@@ -3071,6 +3093,7 @@ void SPhysicsAssetEditorWindow::UpdateConstraintFrameFromGizmo()
 				if ((NewParentEuler - Constraint.ParentRotation).SizeSquared() > 0.01f)
 				{
 					Constraint.ParentRotation = NewParentEuler;
+					Constraint.UpdateParentAxesFromEuler();  // 축 벡터 동기화
 					bChanged = true;
 				}
 			}

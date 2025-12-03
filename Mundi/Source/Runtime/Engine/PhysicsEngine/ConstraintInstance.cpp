@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ConstraintInstance.h"
 #include "BodyInstance.h"
 #include "PhysScene.h"
@@ -55,9 +55,79 @@ void FConstraintInstance::InitConstraint(
         return;
     }
 
-    // 저장된 Frame 데이터를 사용하여 로컬 프레임 생성
-    PxTransform ChildLocalFrame = ConvertToPxTransform(Setup.ChildPosition, Setup.ChildRotation);
-    PxTransform ParentLocalFrame = ConvertToPxTransform(Setup.ParentPosition, Setup.ParentRotation);
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 하이브리드 방식:
+    // - 위치: 현재 바디 포즈에서 계산 (본 트랜스폼 vs RigidActor 위치 차이 보정)
+    // - 회전: 저장된 축 벡터 사용 (에디터에서 설정한 축 방향 유지)
+    //
+    // 참고: 언리얼은 저장된 Position을 직접 사용하지만, 이를 위해서는
+    // AutoGenerateBodies와 시뮬레이션 시작 시 동일한 포즈(RefPose)가 필요함.
+    // 현재는 포즈 일관성이 보장되지 않아 런타임에 Position을 계산함.
+    // ─────────────────────────────────────────────────────────────────────────────
+    PxTransform ParentLocalFrame = PxTransform(PxIdentity);
+    PxTransform ChildLocalFrame = PxTransform(PxIdentity);
+
+    if (ParentActor && ChildActor)
+    {
+        // ─────────────────────────────────────────────────────────────────────────
+        // 위치: 저장된 ParentPosition/ChildPosition 직접 사용
+        // - 에디터와 시뮬레이션 모두 RefPose 기준이므로 그대로 사용 가능
+        // - ChildPosition: Child 본 로컬에서 조인트 앵커 위치
+        // - ParentPosition: Parent 본 로컬에서 조인트 앵커 위치
+        // - 단위 변환: 엔진(cm) → PhysX(m) - 0.01 스케일 적용
+        // ─────────────────────────────────────────────────────────────────────────
+        constexpr float CmToM = 0.01f;  // cm → m 변환
+        PxVec3 ParentPos = U2PVector(Setup.ParentPosition) * CmToM;
+        PxVec3 ChildPos = U2PVector(Setup.ChildPosition) * CmToM;
+
+        // ─────────────────────────────────────────────────────────────────────────
+        // 회전: 저장된 축 벡터 사용 (기본값이면 현재 포즈에서 계산)
+        // ─────────────────────────────────────────────────────────────────────────
+        PxTransform ParentWorldPose = ParentActor->getGlobalPose();
+        PxTransform ChildWorldPose = ChildActor->getGlobalPose();
+
+        bool bUseStoredRotation = !(Setup.ParentPriAxis == FVector(1, 0, 0) &&
+                                    Setup.ParentSecAxis == FVector(0, 1, 0));
+
+        PxQuat ParentRot;
+        if (bUseStoredRotation)
+        {
+            // 저장된 축 벡터에서 회전 추출
+            PxTransform StoredFrame = ConvertAxesToPxTransform(FVector::Zero(), Setup.ParentPriAxis, Setup.ParentSecAxis);
+            ParentRot = StoredFrame.q;
+        }
+        else
+        {
+            // 기본값이면 현재 포즈에서 계산
+            ParentRot = ParentWorldPose.q.getConjugate() * ChildWorldPose.q;
+        }
+
+        ParentLocalFrame = PxTransform(ParentPos, ParentRot);
+        ChildLocalFrame = PxTransform(ChildPos, PxQuat(PxIdentity));
+
+        // 디버그: 변환된 저장값 vs 런타임 계산값 비교
+        PxVec3 RuntimeParentPos = ParentWorldPose.getInverse().transform(ChildWorldPose.p);
+        float Diff = (RuntimeParentPos - ParentPos).magnitude();
+        UE_LOG("[Constraint] %s: Converted=(%.4f,%.4f,%.4f) Runtime=(%.4f,%.4f,%.4f) Diff=%.6f",
+            Setup.JointName.ToString().c_str(),
+            ParentPos.x, ParentPos.y, ParentPos.z,
+            RuntimeParentPos.x, RuntimeParentPos.y, RuntimeParentPos.z, Diff);
+    }
+    else if (ParentActor || ChildActor)
+    {
+        // 한쪽만 있는 경우 (월드에 고정)
+        // 저장된 Frame 데이터 사용
+        ParentLocalFrame = ConvertAxesToPxTransform(
+            Setup.ParentPosition,
+            Setup.ParentPriAxis,
+            Setup.ParentSecAxis
+        );
+        ChildLocalFrame = ConvertAxesToPxTransform(
+            Setup.ChildPosition,
+            Setup.ChildPriAxis,
+            Setup.ChildSecAxis
+        );
+    }
 
     // AngularRotationOffset 적용 (Parent Frame에만)
     if (!Setup.AngularRotationOffset.IsZero())
@@ -273,6 +343,64 @@ void FConstraintInstance::LogCurrentAngles(const FName& JointName) const
 // Static Helper Functions
 // ─────────────────────────────────────────────────────────────────────────────
 
+PxTransform FConstraintInstance::ConvertAxesToPxTransform(
+    const FVector& Position,
+    const FVector& PriAxis,
+    const FVector& SecAxis)
+{
+    // Position 변환
+    PxVec3 PxPos(Position.X, Position.Y, Position.Z);
+
+    // 축 벡터에서 회전 행렬 구성
+    // X = PriAxis, Y = SecAxis, Z = X × Y
+    FVector X = PriAxis.GetNormalized();
+    FVector Y = SecAxis.GetNormalized();
+    FVector Z = FVector::Cross(X, Y).GetNormalized();
+    // Y를 다시 직교화 (입력이 완전히 직교하지 않을 수 있음)
+    Y = FVector::Cross(Z, X).GetNormalized();
+
+    // 3x3 회전 행렬에서 Quaternion 추출
+    // 참고: https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+    float trace = X.X + Y.Y + Z.Z;
+    PxQuat PxRot;
+
+    if (trace > 0)
+    {
+        float s = 0.5f / sqrtf(trace + 1.0f);
+        PxRot.w = 0.25f / s;
+        PxRot.x = (Y.Z - Z.Y) * s;
+        PxRot.y = (Z.X - X.Z) * s;
+        PxRot.z = (X.Y - Y.X) * s;
+    }
+    else if (X.X > Y.Y && X.X > Z.Z)
+    {
+        float s = 2.0f * sqrtf(1.0f + X.X - Y.Y - Z.Z);
+        PxRot.w = (Y.Z - Z.Y) / s;
+        PxRot.x = 0.25f * s;
+        PxRot.y = (Y.X + X.Y) / s;
+        PxRot.z = (Z.X + X.Z) / s;
+    }
+    else if (Y.Y > Z.Z)
+    {
+        float s = 2.0f * sqrtf(1.0f + Y.Y - X.X - Z.Z);
+        PxRot.w = (Z.X - X.Z) / s;
+        PxRot.x = (Y.X + X.Y) / s;
+        PxRot.y = 0.25f * s;
+        PxRot.z = (Z.Y + Y.Z) / s;
+    }
+    else
+    {
+        float s = 2.0f * sqrtf(1.0f + Z.Z - X.X - Y.Y);
+        PxRot.w = (X.Y - Y.X) / s;
+        PxRot.x = (Z.X + X.Z) / s;
+        PxRot.y = (Z.Y + Y.Z) / s;
+        PxRot.z = 0.25f * s;
+    }
+
+    PxRot.normalize();
+    return PxTransform(PxPos, PxRot);
+}
+
 PxTransform FConstraintInstance::ConvertToPxTransform(
     const FVector& Position,
     const FVector& RotationDegrees)
@@ -348,7 +476,9 @@ void FConstraintInstance::CalculateFramesFromBones(
     // Child Frame: 원점, Identity 회전 (자식 바디 로컬 기준)
     // ─────────────────────────────────────────────────────────────
     OutSetup.ChildPosition = FVector::Zero();
-    OutSetup.ChildRotation = FVector::Zero();
+    OutSetup.ChildPriAxis = FVector(1, 0, 0);  // Identity X축
+    OutSetup.ChildSecAxis = FVector(0, 1, 0);  // Identity Y축
+    OutSetup.ChildRotation = FVector::Zero();  // UI용 Euler
 
     // ─────────────────────────────────────────────────────────────
     // Parent Frame: 조인트 위치를 부모 로컬로 변환
@@ -362,44 +492,23 @@ void FConstraintInstance::CalculateFramesFromBones(
     PxQuat RelativeRot = ParentWorldPose.q.getConjugate() * ChildWorldPose.q;
     RelativeRot.normalize();
 
-    // Quaternion -> Euler 변환
-    // PhysX PxQuat에서 Euler 각도 추출
-    float Roll, Pitch, Yaw;
+    // ─────────────────────────────────────────────────────────────
+    // 축 벡터 계산 (Quaternion에서 직접 추출 - 손실 없음)
+    // ─────────────────────────────────────────────────────────────
+    // RelativeRot으로 회전된 X, Y 축 계산
+    PxVec3 PxPriAxis = RelativeRot.rotate(PxVec3(1, 0, 0));
+    PxVec3 PxSecAxis = RelativeRot.rotate(PxVec3(0, 1, 0));
 
-    // toRadiansAndUnitAxis 대신 직접 Euler 변환
-    // 참고: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-    float qw = RelativeRot.w;
-    float qx = RelativeRot.x;
-    float qy = RelativeRot.y;
-    float qz = RelativeRot.z;
+    OutSetup.ParentPriAxis = FVector(PxPriAxis.x, PxPriAxis.y, PxPriAxis.z);
+    OutSetup.ParentSecAxis = FVector(PxSecAxis.x, PxSecAxis.y, PxSecAxis.z);
 
-    // Roll (X축)
-    float sinr_cosp = 2.0f * (qw * qx + qy * qz);
-    float cosr_cosp = 1.0f - 2.0f * (qx * qx + qy * qy);
-    Roll = atan2f(sinr_cosp, cosr_cosp);
-
-    // Pitch (Y축)
-    float sinp = 2.0f * (qw * qy - qz * qx);
-    if (fabsf(sinp) >= 1.0f)
-        Pitch = copysignf(PxPi / 2.0f, sinp);  // Gimbal lock
-    else
-        Pitch = asinf(sinp);
-
-    // Yaw (Z축)
-    float siny_cosp = 2.0f * (qw * qz + qx * qy);
-    float cosy_cosp = 1.0f - 2.0f * (qy * qy + qz * qz);
-    Yaw = atan2f(siny_cosp, cosy_cosp);
-
-    OutSetup.ParentRotation = FVector(
-        RadiansToDegrees(Roll),
-        RadiansToDegrees(Pitch),
-        RadiansToDegrees(Yaw)
-    );
+    // UI용 Euler는 축 벡터에서 역산 (표시용)
+    OutSetup.UpdateParentEulerFromAxes();
 
     // AngularRotationOffset 초기값은 Zero
     OutSetup.AngularRotationOffset = FVector::Zero();
 
-    UE_LOG("[Constraint] CalculateFramesFromBones: ParentPos=(%.2f, %.2f, %.2f) ParentRot=(%.1f, %.1f, %.1f)",
+    UE_LOG("[Constraint] CalculateFramesFromBones: ParentPos=(%.2f, %.2f, %.2f) PriAxis=(%.2f, %.2f, %.2f)",
         OutSetup.ParentPosition.X, OutSetup.ParentPosition.Y, OutSetup.ParentPosition.Z,
-        OutSetup.ParentRotation.X, OutSetup.ParentRotation.Y, OutSetup.ParentRotation.Z);
+        OutSetup.ParentPriAxis.X, OutSetup.ParentPriAxis.Y, OutSetup.ParentPriAxis.Z);
 }
