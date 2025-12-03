@@ -2170,6 +2170,64 @@ void SPhysicsAssetEditorWindow::RenderConstraintDetails(UPhysicsConstraintTempla
 
 	ImGui::Spacing();
 
+	// ▼ Joint Frame 설정
+	if (ImGui::CollapsingHeader("조인트 프레임", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		ImGui::Indent(10.0f);
+
+		// Frame1 (Parent Body)
+		ImGui::Text("프레임 1 (부모 본)");
+		ImGui::Separator();
+
+		ImGui::Text("위치 (Location):");
+		ImGui::SameLine(120.0f);
+		ImGui::SetNextItemWidth(-1);
+		if (ImGui::DragFloat3("##Frame1Loc", &CI.Frame1Loc.X, 0.01f, -1000.0f, 1000.0f, "%.3f"))
+		{
+			bChanged = true;
+		}
+
+		ImGui::Text("회전 (Euler ZYX):");
+		ImGui::SameLine(120.0f);
+		ImGui::SetNextItemWidth(-1);
+		if (ImGui::DragFloat3("##Frame1Rot", &CI.Frame1Rot.X, 0.5f, -180.0f, 180.0f, "%.1f"))
+		{
+			bChanged = true;
+		}
+
+		ImGui::Spacing();
+		ImGui::Spacing();
+
+		// Frame2 (Child Body)
+		ImGui::Text("프레임 2 (자식 본)");
+		ImGui::Separator();
+
+		ImGui::Text("위치 (Location):");
+		ImGui::SameLine(120.0f);
+		ImGui::SetNextItemWidth(-1);
+		if (ImGui::DragFloat3("##Frame2Loc", &CI.Frame2Loc.X, 0.01f, -1000.0f, 1000.0f, "%.3f"))
+		{
+			bChanged = true;
+		}
+
+		ImGui::Text("회전 (Euler ZYX):");
+		ImGui::SameLine(120.0f);
+		ImGui::SetNextItemWidth(-1);
+		if (ImGui::DragFloat3("##Frame2Rot", &CI.Frame2Rot.X, 0.5f, -180.0f, 180.0f, "%.1f"))
+		{
+			bChanged = true;
+		}
+
+		ImGui::Spacing();
+
+		// 도움말
+		ImGui::TextDisabled("팁: 값은 각 본의 로컬 좌표계에서 정의됩니다.");
+
+		ImGui::Unindent(10.0f);
+	}
+
+	ImGui::Spacing();
+
 	// ▼ Angular Limits
 	if (ImGui::CollapsingHeader("각도 제한", ImGuiTreeNodeFlags_DefaultOpen))
 	{
@@ -3061,7 +3119,7 @@ void SPhysicsAssetEditorWindow::StartSimulation()
 
 		// Joint 생성
 		FConstraintInstance* RuntimeConstraint = new FConstraintInstance(Instance);
-		RuntimeConstraint->InitConstraint(Body1, Body2, nullptr);
+		RuntimeConstraint->InitConstraintWithFrames(Body1, Body2, nullptr);
 
 		if (RuntimeConstraint->PxJoint)
 		{
@@ -3335,8 +3393,47 @@ void SPhysicsAssetEditorWindow::CreateAllBodies(int32 ShapeType)
 	int32 ConstraintCount = 0;
 	if (Options.bCreateConstraints)
 	{
+		// 1. 컨스트레인트 데이터 구조 생성 (빈 껍데기)
 		ConstraintCount = FPhysicsAssetUtils::CreateConstraintsForBodies(PhysAsset, Mesh, Options);
+    
+		// 2. === Frame 값 계산 ===
+		// PhysX 시스템이나 씬이 필요 없음. 그냥 수학 함수임.
+    
+		for (int32 i = 0; i < PhysAsset->GetConstraintCount(); ++i)
+		{
+			UPhysicsConstraintTemplate* Constraint = PhysAsset->ConstraintSetup[i];
+			if (!Constraint) continue;
+
+			FConstraintInstance& Instance = Constraint->DefaultInstance;
+
+			// Bone 이름으로 인덱스 찾기
+			int32 BodyIndex1 = PhysAsset->FindBodySetupIndex(Instance.ConstraintBone1);
+			int32 BodyIndex2 = PhysAsset->FindBodySetupIndex(Instance.ConstraintBone2);
+
+			USkeletalBodySetup* Setup1 = PhysAsset->GetBodySetup(BodyIndex1);
+			USkeletalBodySetup* Setup2 = PhysAsset->GetBodySetup(BodyIndex2);
+
+			if (Setup1 && Setup2)
+			{
+				int32 BoneIndex1 = Mesh->GetSkeleton()->BoneNameToIndex.FindRef(Setup1->BoneName.ToString());
+				int32 BoneIndex2 = Mesh->GetSkeleton()->BoneNameToIndex.FindRef(Setup2->BoneName.ToString());
+
+				if (BoneIndex1 != INDEX_NONE && BoneIndex2 != INDEX_NONE)
+				{
+					FTransform Bone1TM = MeshComp->GetBoneWorldTransform(BoneIndex1);
+					FTransform Bone2TM = MeshComp->GetBoneWorldTransform(BoneIndex2);
+
+					// FTransform -> PxTransform 변환 (단위 변환 포함 0.01f 등은 Convert 함수 내부에서 처리 권장)
+					PxTransform PxParentTM = PhysXConvert::ToPx(Bone1TM);
+					PxTransform PxChildTM = PhysXConvert::ToPx(Bone2TM);
+
+					// 계산 함수 호출 (이제 Actor가 아니라 Transform만 넘김)
+					FPhysicsAssetUtils::CalculateConstraintFramesFromPhysX(Instance, PxParentTM, PxChildTM);
+				}
+			}
+		}
 	}
+
 
 	// 상태 업데이트
 	State->GraphRootBodyIndex = -1;
@@ -3350,7 +3447,7 @@ void SPhysicsAssetEditorWindow::CreateAllBodies(int32 ShapeType)
 	State->bAllConstraintLinesDirty = true;
 	State->bSelectedConstraintLineDirty = true;
 
-	UE_LOG("[PhysicsAssetEditor] 모든 바디 생성 완료: %d개 바디, %d개 컨스트레인트",
+	UE_LOG("[PhysicsAssetEditor] 모든 바디 생성 완료: %d개 바디, %d개 컨스트레인트 (Frame 값 자동 계산됨)",
 		BodyCount, ConstraintCount);
 }
 
@@ -3715,7 +3812,6 @@ static void DrawConstraintVisualization(
 		}
 	}
 }
-
 void SPhysicsAssetEditorWindow::RebuildUnselectedConstraintLines()
 {
 	PhysicsAssetEditorState* State = GetActivePhysicsState();

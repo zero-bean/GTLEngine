@@ -693,7 +693,7 @@ void USkeletalMeshComponent::CreatePhysicsConstraints()
 
         // Joint 초기화 (동적 Frame 계산 사용)
         // Twist 축(X축)이 부모→자식 뼈 방향으로 자동 정렬됨
-        Constraint->InitConstraint(Body1, Body2, this);
+        Constraint->InitConstraintWithFrames(Body1, Body2, this);
         Constraints.Add(Constraint);
     }
 
