@@ -54,6 +54,7 @@ void UClothComponent::TickComponent(float DeltaSeconds)
 
 	nv::cloth::Range<nv::cloth::PhaseConfig> range(phaseConfigs.data(), phaseConfigs.data() + numPhases);
 	ClothInstance->Cloth->setPhaseConfig(range);
+
 }
 void UClothComponent::EndPlay()
 {
@@ -96,6 +97,11 @@ void UClothComponent::CollectMeshBatches(TArray<FMeshBatchElement>& OutMeshBatch
 	BatchElement.WorldMatrix = GetWorldMatrix();
 	BatchElement.ObjectID = InternalIndex;
 	BatchElement.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	if (Texture) 
+	{
+		BatchElement.InstanceShaderResourceView = Texture->GetShaderResourceView();
+	}
+
 	OutMeshBatchElements.Add(BatchElement);
 }
 FVector UClothComponent::GetWorldVector(const FVector& Vector)

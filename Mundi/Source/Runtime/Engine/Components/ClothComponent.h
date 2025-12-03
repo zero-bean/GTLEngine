@@ -2,6 +2,7 @@
 #include "MeshComponent.h"
 #include "UClothComponent.generated.h"
 
+class UTexture;
 class UClothMeshInstance;
 
 UCLASS(DisplayName = "Cloth", Description = "Cloth")
@@ -39,6 +40,8 @@ public:
 	UPROPERTY(EditAnywhere, DisplayName = "Cloth", Range = "0.0, 1.0")
 	float Stiffness = 1.0f;
 
+	UPROPERTY(EditAnywhere, DisplayName = "Cloth", Range = "0.0, 1.0")
+	UTexture* Texture = nullptr;
 private:
 	float ElapsedTime = 0.0f;
 };
