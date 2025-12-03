@@ -220,108 +220,172 @@ void SPhysicsAssetEditorWindow::OnMouseDown(FVector2D MousePos, uint32 Button)
 					ViewportMousePos, ViewportSize
 				);
 
-				// 바디/Shape 피킹 (Physics Asset이 있을 때)
+				// 컨스트레인트/바디/Shape 피킹 (Physics Asset이 있을 때)
+				bool bPickedConstraint = false;
 				bool bPickedShape = false;
-				if (State->EditingPhysicsAsset && State->bShowBodies)
+
+				UPhysicsAsset* PhysAsset = State->EditingPhysicsAsset;
+				USkeletalMeshComponent* MeshComp = State->PreviewActor->GetSkeletalMeshComponent();
+				USkeletalMesh* Mesh = MeshComp ? MeshComp->GetSkeletalMesh() : nullptr;
+				const FSkeleton* Skeleton = Mesh ? Mesh->GetSkeleton() : nullptr;
+
+				// === 1. 컨스트레인트 피킹 (바디보다 우선) ===
+				if (PhysAsset && State->bShowConstraints && Skeleton)
 				{
-					UPhysicsAsset* PhysAsset = State->EditingPhysicsAsset;
-					USkeletalMeshComponent* MeshComp = State->PreviewActor->GetSkeletalMeshComponent();
-					USkeletalMesh* Mesh = MeshComp ? MeshComp->GetSkeletalMesh() : nullptr;
-					const FSkeleton* Skeleton = Mesh ? Mesh->GetSkeleton() : nullptr;
+					const float ConstraintPickRadius = 0.05f;  // 피킹 반경 (미터)
+					float BestConstraintDist = FLT_MAX;
+					int32 BestConstraintIndex = -1;
 
-					if (Skeleton)
+					int32 ConstraintCount = PhysAsset->GetConstraintCount();
+					for (int32 ConstraintIdx = 0; ConstraintIdx < ConstraintCount; ++ConstraintIdx)
 					{
-						float BestDistance = FLT_MAX;
-						int32 BestBodyIndex = -1;
-						int32 BestShapeIndex = -1;
-						int32 BestShapeType = -1;
+						UPhysicsConstraintTemplate* Constraint = PhysAsset->ConstraintSetup[ConstraintIdx];
+						if (!Constraint) continue;
 
-						const float CmToM = 0.01f;
-						const float Default = 1.0f;
+						// 컨스트레인트 원점 (Bone2 위치)
+						FName ChildBoneName = Constraint->GetBone2Name();
+						auto it = Skeleton->BoneNameToIndex.find(ChildBoneName.ToString());
+						if (it == Skeleton->BoneNameToIndex.end()) continue;
 
-						int32 BodyCount = PhysAsset->GetBodySetupCount();
-						for (int32 BodyIdx = 0; BodyIdx < BodyCount; ++BodyIdx)
+						int32 ChildBoneIndex = it->second;
+						FTransform ChildBoneTM = MeshComp->GetBoneWorldTransform(ChildBoneIndex);
+						FVector ConstraintOrigin = ChildBoneTM.Translation;
+
+						// Ray-Sphere 교차 테스트 (컨스트레인트 원점에 가상 구)
+						FVector OriginToCenter = ConstraintOrigin - Ray.Origin;
+						float Tca = FVector::Dot(OriginToCenter, Ray.Direction);
+						float D2 = FVector::Dot(OriginToCenter, OriginToCenter) - Tca * Tca;
+						float Radius2 = ConstraintPickRadius * ConstraintPickRadius;
+
+						if (D2 <= Radius2)
 						{
-							USkeletalBodySetup* Body = PhysAsset->GetBodySetup(BodyIdx);
-							if (!Body) continue;
-
-							// 본 트랜스폼 가져오기
-							FTransform BoneTM;
-							if (FTransform* CachedTM = State->CachedBoneTM.Find(BodyIdx))
+							float Thc = FMath::Sqrt(Radius2 - D2);
+							float T0 = Tca - Thc;
+							float T1 = Tca + Thc;
+							if (T0 < 0.0f) T0 = T1;
+							if (T0 >= 0.0f && T0 < BestConstraintDist)
 							{
-								BoneTM = *CachedTM;
+								BestConstraintDist = T0;
+								BestConstraintIndex = ConstraintIdx;
 							}
-							else
-							{
-								auto it = Skeleton->BoneNameToIndex.find(Body->BoneName.ToString());
-								if (it != Skeleton->BoneNameToIndex.end())
-								{
-									int32 BoneIndex = it->second;
-									BoneTM = MeshComp->GetBoneWorldTransform(BoneIndex);
-								}
-							}
+						}
+					}
 
-							// Sphere 피킹
-							for (int32 i = 0; i < (int32)Body->AggGeom.SphereElems.size(); ++i)
-							{
-								float Dist;
-								if (Body->AggGeom.SphereElems[i].RayIntersect(Ray, BoneTM, CmToM, Dist))
-								{
-									if (Dist < BestDistance)
-									{
-										BestDistance = Dist;
-										BestBodyIndex = BodyIdx;
-										BestShapeIndex = i;
-										BestShapeType = 0;
-									}
-								}
-							}
+					if (BestConstraintIndex >= 0)
+					{
+						bPickedConstraint = true;
+						State->SelectedConstraintIndex = BestConstraintIndex;
+						State->SelectedBodyIndex = -1;
+						State->SelectedShapeIndex = -1;
+						State->SelectedShapeType = -1;
+						State->SelectedBoneIndex = -1;
 
-							// Box 피킹
-							for (int32 i = 0; i < (int32)Body->AggGeom.BoxElems.size(); ++i)
-							{
-								float Dist;
-								if (Body->AggGeom.BoxElems[i].RayIntersect(Ray, BoneTM, Default, Dist))
-								{
-									if (Dist < BestDistance)
-									{
-										BestDistance = Dist;
-										BestBodyIndex = BodyIdx;
-										BestShapeIndex = i;
-										BestShapeType = 1;
-									}
-								}
-							}
+						// 기즈모 숨기기 (컨스트레인트는 기즈모로 편집 안함)
+						if (UBoneAnchorComponent* Anchor = State->PreviewActor->GetBoneGizmoAnchor())
+						{
+							Anchor->SetVisibility(false);
+						}
 
-							// Capsule 피킹
-							for (int32 i = 0; i < (int32)Body->AggGeom.SphylElems.size(); ++i)
+						// 라인 재생성
+						State->bAllConstraintLinesDirty = true;
+						State->bAllBodyLinesDirty = true;
+					}
+				}
+
+				// === 2. 바디/Shape 피킹 (컨스트레인트가 피킹되지 않은 경우만) ===
+				if (!bPickedConstraint && PhysAsset && State->bShowBodies && Skeleton)
+				{
+					float BestDistance = FLT_MAX;
+					int32 BestBodyIndex = -1;
+					int32 BestShapeIndex = -1;
+					int32 BestShapeType = -1;
+
+					const float CmToM = 0.01f;
+					const float Default = 1.0f;
+
+					int32 BodyCount = PhysAsset->GetBodySetupCount();
+					for (int32 BodyIdx = 0; BodyIdx < BodyCount; ++BodyIdx)
+					{
+						USkeletalBodySetup* Body = PhysAsset->GetBodySetup(BodyIdx);
+						if (!Body) continue;
+
+						// 본 트랜스폼 가져오기
+						FTransform BoneTM;
+						if (FTransform* CachedTM = State->CachedBoneTM.Find(BodyIdx))
+						{
+							BoneTM = *CachedTM;
+						}
+						else
+						{
+							auto it = Skeleton->BoneNameToIndex.find(Body->BoneName.ToString());
+							if (it != Skeleton->BoneNameToIndex.end())
 							{
-								float Dist;
-								if (Body->AggGeom.SphylElems[i].RayIntersect(Ray, BoneTM, CmToM, Dist))
+								int32 BoneIndex = it->second;
+								BoneTM = MeshComp->GetBoneWorldTransform(BoneIndex);
+							}
+						}
+
+						// Sphere 피킹
+						for (int32 i = 0; i < (int32)Body->AggGeom.SphereElems.size(); ++i)
+						{
+							float Dist;
+							if (Body->AggGeom.SphereElems[i].RayIntersect(Ray, BoneTM, CmToM, Dist))
+							{
+								if (Dist < BestDistance)
 								{
-									if (Dist < BestDistance)
-									{
-										BestDistance = Dist;
-										BestBodyIndex = BodyIdx;
-										BestShapeIndex = i;
-										BestShapeType = 2;
-									}
+									BestDistance = Dist;
+									BestBodyIndex = BodyIdx;
+									BestShapeIndex = i;
+									BestShapeType = 0;
 								}
 							}
 						}
 
-						if (BestBodyIndex >= 0)
+						// Box 피킹
+						for (int32 i = 0; i < (int32)Body->AggGeom.BoxElems.size(); ++i)
 						{
-							bPickedShape = true;
-							State->GraphRootBodyIndex = BestBodyIndex;  // 그래프 중심으로 설정
-							State->SelectedBodyIndex = BestBodyIndex;
-							State->SelectedShapeIndex = BestShapeIndex;
-							State->SelectedShapeType = BestShapeType;
-							State->SelectedConstraintIndex = -1;
-							State->SelectedBoneIndex = -1;
+							float Dist;
+							if (Body->AggGeom.BoxElems[i].RayIntersect(Ray, BoneTM, Default, Dist))
+							{
+								if (Dist < BestDistance)
+								{
+									BestDistance = Dist;
+									BestBodyIndex = BodyIdx;
+									BestShapeIndex = i;
+									BestShapeType = 1;
+								}
+							}
+						}
 
-							// 증분 업데이트로 라인 갱신
-							UpdateBodyLinesIncremental();
+						// Capsule 피킹
+						for (int32 i = 0; i < (int32)Body->AggGeom.SphylElems.size(); ++i)
+						{
+							float Dist;
+							if (Body->AggGeom.SphylElems[i].RayIntersect(Ray, BoneTM, CmToM, Dist))
+							{
+								if (Dist < BestDistance)
+								{
+									BestDistance = Dist;
+									BestBodyIndex = BodyIdx;
+									BestShapeIndex = i;
+									BestShapeType = 2;
+								}
+							}
+						}
+					}
+
+					if (BestBodyIndex >= 0)
+					{
+						bPickedShape = true;
+						State->GraphRootBodyIndex = BestBodyIndex;  // 그래프 중심으로 설정
+						State->SelectedBodyIndex = BestBodyIndex;
+						State->SelectedShapeIndex = BestShapeIndex;
+						State->SelectedShapeType = BestShapeType;
+						State->SelectedConstraintIndex = -1;
+						State->SelectedBoneIndex = -1;
+
+						// 증분 업데이트로 라인 갱신
+						UpdateBodyLinesIncremental();
 
 							// 선택된 Shape의 월드 위치에 기즈모 배치
 							USkeletalBodySetup* SelectedBody = PhysAsset->GetBodySetup(BestBodyIndex);
@@ -364,12 +428,11 @@ void SPhysicsAssetEditorWindow::OnMouseDown(FVector2D MousePos, uint32 Button)
 									State->World->GetSelectionManager()->SelectComponent(Anchor);
 								}
 							}
-						}
 					}
 				}
 
-				// 바디가 피킹되지 않았으면 본 피킹 시도
-				if (!bPickedShape)
+				// 컨스트레인트/바디가 피킹되지 않았으면 본 피킹 시도
+				if (!bPickedConstraint && !bPickedShape)
 				{
 					float HitDistance;
 					int32 PickedBoneIndex = State->PreviewActor->PickBone(Ray, HitDistance);
@@ -567,10 +630,10 @@ void SPhysicsAssetEditorWindow::OnUpdate(float DeltaSeconds)
 		State->LastSelectedBodyIndex = State->SelectedBodyIndex;
 	}
 
-	// 선택 컨스트레인트 변경 감지 (증분 업데이트)
+	// 선택 컨스트레인트 변경 감지 (전체 재생성 - 색상 변경 필요)
 	if (State->SelectedConstraintIndex != State->LastSelectedConstraintIndex)
 	{
-		UpdateConstraintLinesIncremental();
+		State->bAllConstraintLinesDirty = true;  // 전체 재생성으로 색상 갱신
 		State->LastSelectedConstraintIndex = State->SelectedConstraintIndex;
 	}
 
@@ -3658,7 +3721,7 @@ void SPhysicsAssetEditorWindow::RebuildUnselectedConstraintLines()
 	PhysicsAssetEditorState* State = GetActivePhysicsState();
 	if (!State || !State->ConstraintPDI) return;
 
-	// 비선택 Constraint 라인 클리어
+	// Constraint 라인 클리어
 	State->ConstraintPDI->Clear();
 
 	UPhysicsAsset* PhysAsset = State->EditingPhysicsAsset;
@@ -3678,15 +3741,23 @@ void SPhysicsAssetEditorWindow::RebuildUnselectedConstraintLines()
 	const FSkeleton* Skeleton = Mesh ? Mesh->GetSkeleton() : nullptr;
 	if (!Skeleton || !MeshComp) return;
 
-	const FLinearColor SwingColor(1.0f, 0.0f, 0.0f, 1.0f);   // 빨간색 (Swing)
-	const FLinearColor TwistColor(0.0f, 0.0f, 1.0f, 1.0f);   // 파란색 (Twist)
+	// 색상 정의
+	const FLinearColor UnselectedSwingColor(1.0f, 0.0f, 0.0f, 1.0f);   // 빨간색 (비선택 Swing)
+	const FLinearColor UnselectedTwistColor(0.0f, 0.0f, 1.0f, 1.0f);   // 파란색 (비선택 Twist)
+	const FLinearColor SelectedSwingColor(1.0f, 0.5f, 0.0f, 1.0f);     // 주황색 (선택 Swing)
+	const FLinearColor SelectedTwistColor(0.0f, 1.0f, 1.0f, 1.0f);     // 청록색 (선택 Twist)
 
-	// 모든 Constraint 렌더링 (선택된 Constraint도 포함 - 선택 라인이 위에 덧그려짐)
+	// 모든 Constraint 렌더링 (선택된 Constraint는 다른 색상)
 	int32 ConstraintCount = PhysAsset->GetConstraintCount();
 	for (int32 ConstraintIdx = 0; ConstraintIdx < ConstraintCount; ++ConstraintIdx)
 	{
 		UPhysicsConstraintTemplate* Constraint = PhysAsset->ConstraintSetup[ConstraintIdx];
 		if (!Constraint) continue;
+
+		// 선택 여부에 따라 색상 선택
+		bool bSelected = (ConstraintIdx == State->SelectedConstraintIndex);
+		const FLinearColor& SwingColor = bSelected ? SelectedSwingColor : UnselectedSwingColor;
+		const FLinearColor& TwistColor = bSelected ? SelectedTwistColor : UnselectedTwistColor;
 
 		DrawConstraintVisualization(
 			State->ConstraintPDI,
@@ -3706,50 +3777,9 @@ void SPhysicsAssetEditorWindow::RebuildSelectedConstraintLines()
 	PhysicsAssetEditorState* State = GetActivePhysicsState();
 	if (!State || !State->SelectedConstraintPDI) return;
 
-	// 선택 Constraint 라인 클리어
+	// 선택 Constraint 라인 클리어만 수행 (더 이상 오버레이 렌더링하지 않음)
+	// 선택된 Constraint는 RebuildUnselectedConstraintLines()에서 다른 색상으로 렌더링됨
 	State->SelectedConstraintPDI->Clear();
-
-	UPhysicsAsset* PhysAsset = State->EditingPhysicsAsset;
-	if (!PhysAsset) return;
-
-	// 선택된 컨스트레인트가 없으면 리턴
-	if (State->SelectedConstraintIndex < 0 ||
-		State->SelectedConstraintIndex >= PhysAsset->GetConstraintCount())
-	{
-		State->bSelectedConstraintLineDirty = false;
-		return;
-	}
-
-	// 스켈레탈 메시 정보
-	USkeletalMeshComponent* MeshComp = nullptr;
-	USkeletalMesh* Mesh = nullptr;
-	if (State->PreviewActor)
-	{
-		MeshComp = State->PreviewActor->GetSkeletalMeshComponent();
-		if (MeshComp)
-		{
-			Mesh = MeshComp->GetSkeletalMesh();
-		}
-	}
-	const FSkeleton* Skeleton = Mesh ? Mesh->GetSkeleton() : nullptr;
-	if (!Skeleton || !MeshComp) return;
-
-	// 선택된 컨스트레인트용 밝은 색상
-	const FLinearColor SwingColor(1.0f, 0.5f, 0.0f, 1.0f);   // 주황색 (Swing)
-	const FLinearColor TwistColor(0.0f, 1.0f, 1.0f, 1.0f);   // 시안색 (Twist)
-
-	UPhysicsConstraintTemplate* Constraint = PhysAsset->ConstraintSetup[State->SelectedConstraintIndex];
-	if (Constraint)
-	{
-		DrawConstraintVisualization(
-			State->SelectedConstraintPDI,
-			Constraint->DefaultInstance,
-			MeshComp,
-			Skeleton,
-			SwingColor,
-			TwistColor
-		);
-	}
 
 	State->bSelectedConstraintLineDirty = false;
 }
