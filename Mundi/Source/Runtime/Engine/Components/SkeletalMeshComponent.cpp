@@ -31,6 +31,10 @@ USkeletalMeshComponent::USkeletalMeshComponent()
     PlayAnimation(AnimationAsset, true, 1.f);
 }
 
+USkeletalMeshComponent::~USkeletalMeshComponent()
+{
+    TermPhysics();
+}
 
 void USkeletalMeshComponent::BeginPlay()
 {
@@ -45,11 +49,10 @@ void USkeletalMeshComponent::BeginPlay()
         AnimInstance->EvaluateAnimation(OutputPose);
         
         CurrentLocalSpacePose = OutputPose.LocalSpacePose;
-        ForceRecomputePose();
     }
-    
     // 이제 정확한 포즈 상태에서 물리 초기화
     InitPhysics();
+    ResetToRefPose();
 }
 
 void USkeletalMeshComponent::EndPlay()
