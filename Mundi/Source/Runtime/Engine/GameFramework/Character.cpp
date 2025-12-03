@@ -39,7 +39,7 @@ ACharacter::ACharacter()
 	if (MeshComponent && CapsuleComponent)
 	{
 		MeshComponent->SetupAttachment(CapsuleComponent);
-		MeshComponent->SetRelativeLocation(FVector(0.0f, 0.0f, -1.0f));
+		MeshComponent->SetRelativeLocation(FVector(0.0f, 0.0f, -1.25f));
 	}
 
 	// CharacterMovementComponent 생성
