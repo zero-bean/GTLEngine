@@ -212,4 +212,17 @@ struct PhysicsAssetEditorState : public ViewerState
 
     // 경고/에러 팝업용
     FString PendingWarningMessage;
+
+    // === Tool 패널 파라미터 ===
+    // 바디 생성 옵션
+    int32 ToolGeomType = 2;                 // 0: Sphere, 1: Box, 2: Capsule (기본값)
+    float ToolBodySizeScale = 1.0f;         // 바디 크기 비율 (0.5~1.0)
+    bool bToolBodyForAll = false;           // 모든 본에 바디 생성
+    float ToolMinBoneSize = 0.25f;          // 이 크기 미만 본은 무시 (미터)
+
+    // 컨스트레인트 생성 옵션
+    bool bToolCreateConstraints = true;     // 컨스트레인트 자동 생성
+    int32 ToolAngularMode = 1;              // 0: Free, 1: Limited (기본값), 2: Locked
+    float ToolSwingLimit = 45.0f;           // Swing 제한 각도 (도)
+    float ToolTwistLimit = 45.0f;           // Twist 제한 각도 (도)
 };
