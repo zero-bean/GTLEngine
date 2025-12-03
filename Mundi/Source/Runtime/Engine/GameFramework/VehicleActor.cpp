@@ -163,7 +163,7 @@ void AVehicleActor::UpdateWheelsTransform(int32 WheelIndex, FVector Translation,
 
 void AVehicleActor::UpdateDriftSmoke(float Value)
 {
-	if (SmokeParticleComponent)
+	if (SmokeParticleComponent && SmokeParticleComponent->Template && SmokeParticleComponent->Template->GetEmitter(0) && SmokeParticleComponent->Template->GetEmitter(0)->GetLODLevel(0))
 	{
 		// NOTE: 시간 없어서 일단 하드코딩으로 파티클 양 조절
 		SmokeParticleComponent->Template->GetEmitter(0)->GetLODLevel(0)->SpawnModule->SpawnRate = FDistributionFloat(1000.0f * Value);
