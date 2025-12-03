@@ -17,8 +17,8 @@
 
 AHudExampleGameMode::AHudExampleGameMode()
 {
-	DefaultPawnClass = ADancingCharacter::StaticClass();
-	// DefaultPawnClass = AVehicle::StaticClass();
+	// DefaultPawnClass = ADancingCharacter::StaticClass();
+	DefaultPawnClass = AVehicle::StaticClass();
 }
 
 // ────────────────────────────────────────────────────────────────────────────

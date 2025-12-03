@@ -113,6 +113,7 @@ void TermGamePhys()
     if (GPhysXSDK)            { PxCloseExtensions(); }
     if (GPhysXSDK)            { GPhysXSDK->release(); GPhysXSDK = nullptr; }
     if (GPhysicalMaterial)    { DeleteObject(GPhysicalMaterial); GPhysicalMaterial = nullptr; }
+    if (GPhysXSDK)            { PxCloseVehicleSDK(); }
 
     // PVD 연결 해제 후 transport 해제 (순서 중요)
     if (GPhysXVisualDebugger)
