@@ -23,6 +23,26 @@ void FPrimitiveDrawInterface::Clear()
     {
         LineComp->ClearLines();
     }
+    bIncrementalMode = false;
+}
+
+void FPrimitiveDrawInterface::BeginIncrementalUpdate()
+{
+    bIncrementalMode = true;
+    if (LineComp)
+    {
+        LineComp->BeginUpdate();
+    }
+}
+
+void FPrimitiveDrawInterface::EndIncrementalUpdate()
+{
+    bIncrementalMode = false;
+}
+
+int32 FPrimitiveDrawInterface::GetUpdateCursor() const
+{
+    return LineComp ? LineComp->GetUpdateCursor() : 0;
 }
 
 // =====================================================
@@ -35,7 +55,25 @@ void FPrimitiveDrawInterface::DrawLine(const FVector& Start, const FVector& End,
     {
         return;
     }
-    LineComp->AddLine(Start, End, FVector4(Color.R, Color.G, Color.B, Color.A));
+
+    if (bIncrementalMode)
+    {
+        // 증분 모드: 기존 라인이 있으면 업데이트, 없으면 새로 추가
+        int32 Cursor = LineComp->GetUpdateCursor();
+        if (Cursor < LineComp->GetLineCount())
+        {
+            LineComp->UpdateLine(Cursor, Start, End);
+        }
+        else
+        {
+            LineComp->AddLine(Start, End, FVector4(Color.R, Color.G, Color.B, Color.A));
+        }
+        LineComp->SetUpdateCursor(Cursor + 1);
+    }
+    else
+    {
+        LineComp->AddLine(Start, End, FVector4(Color.R, Color.G, Color.B, Color.A));
+    }
 }
 
 void FPrimitiveDrawInterface::DrawCircle(const FVector& Center, const FVector& XAxis, const FVector& YAxis,

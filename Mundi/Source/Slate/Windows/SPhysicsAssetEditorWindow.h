@@ -78,6 +78,10 @@ private:
 	void RebuildUnselectedConstraintLines();// 비선택 컨스트레인트 라인
 	void RebuildSelectedConstraintLines();  // 선택 컨스트레인트 라인
 
+	// 증분 업데이트 (시뮬레이션 성능 최적화)
+	void UpdateBodyLinesIncremental();      // 바디 라인 위치만 업데이트
+	void UpdateConstraintLinesIncremental();// 컨스트레인트 라인 위치만 업데이트
+
 	// 파일 작업
 	void SavePhysicsAsset();
 	void SavePhysicsAssetAs();

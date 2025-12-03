@@ -25,6 +25,22 @@ public:
     void Clear();
 
     // =====================================================
+    // Incremental Update Mode (시뮬레이션 성능 최적화)
+    // =====================================================
+
+    /** 증분 업데이트 모드 시작 - 기존 라인 재사용 */
+    void BeginIncrementalUpdate();
+
+    /** 증분 업데이트 모드 종료 */
+    void EndIncrementalUpdate();
+
+    /** 증분 업데이트 모드 여부 */
+    bool IsIncrementalMode() const { return bIncrementalMode; }
+
+    /** 현재 업데이트 커서 위치 */
+    int32 GetUpdateCursor() const;
+
+    // =====================================================
     // Wire 프리미티브 (라인 기반)
     // =====================================================
 
@@ -92,6 +108,7 @@ public:
 
 private:
     ULineComponent* LineComp = nullptr;
+    bool bIncrementalMode = false;
 
     // Solid 렌더링용 (추후 구현)
     // UDynamicMesh* SolidMesh = nullptr;

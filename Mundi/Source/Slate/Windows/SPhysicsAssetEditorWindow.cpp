@@ -2302,27 +2302,10 @@ void SPhysicsAssetEditorWindow::StartSimulation()
 	State->SimulationLeftoverTime = 0.0f;
 
 	// === 6. 디버그 라인 비활성화 (시뮬레이션 중에는 표시 안 함) ===
-	State->bShowBodies = false;
-	State->bShowConstraints = false;
+	//State->bShowBodies = false;
+	//State->bShowConstraints = false;
 	State->bShowBones = false;
 
-	// LineComponent 가시성 끄기
-	if (State->BodyShapeLineComponent)
-	{
-		State->BodyShapeLineComponent->SetLineVisible(false);
-	}
-	if (State->SelectedBodyLineComponent)
-	{
-		State->SelectedBodyLineComponent->SetLineVisible(false);
-	}
-	if (State->ConstraintLineComponent)
-	{
-		State->ConstraintLineComponent->SetLineVisible(false);
-	}
-	if (State->SelectedConstraintLineComponent)
-	{
-		State->SelectedConstraintLineComponent->SetLineVisible(false);
-	}
 	if (State->PreviewActor)
 	{
 		if (ULineComponent* BoneLineComp = State->PreviewActor->GetBoneLineComponent())
@@ -2380,29 +2363,6 @@ void SPhysicsAssetEditorWindow::StopSimulation()
 	}
 
 	State->bIsSimulating = false;
-
-	// 디버그 라인 재활성화 (바디, 컨스트레인트만 - 본은 제외)
-	State->bShowBodies = true;
-	State->bShowConstraints = true;
-	// State->bShowBones는 false 유지
-
-	// LineComponent 가시성 켜기 (바디, 컨스트레인트만)
-	if (State->BodyShapeLineComponent)
-	{
-		State->BodyShapeLineComponent->SetLineVisible(true);
-	}
-	if (State->SelectedBodyLineComponent)
-	{
-		State->SelectedBodyLineComponent->SetLineVisible(true);
-	}
-	if (State->ConstraintLineComponent)
-	{
-		State->ConstraintLineComponent->SetLineVisible(true);
-	}
-	if (State->SelectedConstraintLineComponent)
-	{
-		State->SelectedConstraintLineComponent->SetLineVisible(true);
-	}
 
 	// 즉시 라인 재구성 (다음 프레임 지연 방지)
 	RebuildBoneTMCache();
@@ -2544,12 +2504,17 @@ void SPhysicsAssetEditorWindow::TickSimulation(float DeltaTime)
 		}
 	}
 
-	// === 5. 시각화 업데이트 플래그 설정 ===
-	State->bBoneTMCacheDirty = true;
-	State->bAllBodyLinesDirty = true;
-	State->bSelectedBodyLineDirty = true;
-	State->bAllConstraintLinesDirty = true;
-	State->bSelectedConstraintLineDirty = true;
+	// === 5. 시각화 증분 업데이트 (객체 재생성 없이 위치만 업데이트) ===
+	if (State->bShowBodies)
+	{
+		UpdateBodyLinesIncremental();
+	}
+	if (State->bShowConstraints)
+	{
+		UpdateConstraintLinesIncremental();
+	}
+
+	// 본 라인은 dirty 플래그로 처리
 	State->bBoneLinesDirty = true;
 }
 
@@ -3110,6 +3075,196 @@ void SPhysicsAssetEditorWindow::RebuildSelectedConstraintLines()
 	}
 
 	State->bSelectedConstraintLineDirty = false;
+}
+
+void SPhysicsAssetEditorWindow::UpdateBodyLinesIncremental()
+{
+	PhysicsAssetEditorState* State = GetActivePhysicsState();
+	if (!State) return;
+
+	UPhysicsAsset* PhysAsset = State->EditingPhysicsAsset;
+	if (!PhysAsset) return;
+
+	// 스켈레탈 메시 컴포넌트에서 본 Transform 가져오기
+	USkeletalMeshComponent* MeshComp = nullptr;
+	USkeletalMesh* Mesh = nullptr;
+	if (State->PreviewActor)
+	{
+		MeshComp = State->PreviewActor->GetSkeletalMeshComponent();
+		if (MeshComp)
+		{
+			Mesh = MeshComp->GetSkeletalMesh();
+		}
+	}
+
+	const FSkeleton* Skeleton = Mesh ? Mesh->GetSkeleton() : nullptr;
+	if (!Skeleton || !MeshComp) return;
+
+	const FLinearColor UnselectedColor(0.0f, 1.0f, 0.0f, 1.0f);
+	const FLinearColor SelectedColor(1.0f, 0.8f, 0.0f, 1.0f);
+	const float CmToM = 0.01f;
+	const float Default = 1.0f;
+
+	// BoneTM 캐시 업데이트
+	State->CachedBoneTM.Empty();
+	int32 BodyCount = PhysAsset->GetBodySetupCount();
+	for (int32 BodyIdx = 0; BodyIdx < BodyCount; ++BodyIdx)
+	{
+		USkeletalBodySetup* Body = PhysAsset->GetBodySetup(BodyIdx);
+		if (!Body) continue;
+
+		auto it = Skeleton->BoneNameToIndex.find(Body->BoneName.ToString());
+		if (it != Skeleton->BoneNameToIndex.end())
+		{
+			int32 BoneIndex = it->second;
+			if (BoneIndex >= 0 && BoneIndex < (int32)Skeleton->Bones.Num())
+			{
+				FTransform BoneTM = MeshComp->GetBoneWorldTransform(BoneIndex);
+				BoneTM.Rotation.Normalize();
+				State->CachedBoneTM.Add(BodyIdx, BoneTM);
+			}
+		}
+	}
+
+	// 비선택 바디 라인 증분 업데이트
+	if (State->PDI)
+	{
+		State->PDI->BeginIncrementalUpdate();
+
+		for (int32 BodyIdx = 0; BodyIdx < BodyCount; ++BodyIdx)
+		{
+			USkeletalBodySetup* Body = PhysAsset->GetBodySetup(BodyIdx);
+			if (!Body) continue;
+
+			FTransform BoneTM;
+			if (FTransform* CachedTM = State->CachedBoneTM.Find(BodyIdx))
+			{
+				BoneTM = *CachedTM;
+			}
+
+			for (const FKSphereElem& Elem : Body->AggGeom.SphereElems)
+			{
+				Elem.DrawElemWire(State->PDI, BoneTM, CmToM, UnselectedColor);
+			}
+			for (const FKBoxElem& Elem : Body->AggGeom.BoxElems)
+			{
+				Elem.DrawElemWire(State->PDI, BoneTM, Default, UnselectedColor);
+			}
+			for (const FKSphylElem& Elem : Body->AggGeom.SphylElems)
+			{
+				Elem.DrawElemWire(State->PDI, BoneTM, CmToM, UnselectedColor);
+			}
+		}
+
+		State->PDI->EndIncrementalUpdate();
+	}
+
+	// 선택 바디 라인 증분 업데이트
+	if (State->SelectedPDI && State->SelectedBodyIndex >= 0)
+	{
+		State->SelectedPDI->BeginIncrementalUpdate();
+
+		USkeletalBodySetup* Body = PhysAsset->GetBodySetup(State->SelectedBodyIndex);
+		if (Body)
+		{
+			FTransform BoneTM;
+			if (FTransform* CachedTM = State->CachedBoneTM.Find(State->SelectedBodyIndex))
+			{
+				BoneTM = *CachedTM;
+			}
+
+			for (const FKSphereElem& Elem : Body->AggGeom.SphereElems)
+			{
+				Elem.DrawElemWire(State->SelectedPDI, BoneTM, CmToM, SelectedColor);
+			}
+			for (const FKBoxElem& Elem : Body->AggGeom.BoxElems)
+			{
+				Elem.DrawElemWire(State->SelectedPDI, BoneTM, Default, SelectedColor);
+			}
+			for (const FKSphylElem& Elem : Body->AggGeom.SphylElems)
+			{
+				Elem.DrawElemWire(State->SelectedPDI, BoneTM, CmToM, SelectedColor);
+			}
+		}
+
+		State->SelectedPDI->EndIncrementalUpdate();
+	}
+}
+
+void SPhysicsAssetEditorWindow::UpdateConstraintLinesIncremental()
+{
+	PhysicsAssetEditorState* State = GetActivePhysicsState();
+	if (!State) return;
+
+	UPhysicsAsset* PhysAsset = State->EditingPhysicsAsset;
+	if (!PhysAsset) return;
+
+	// 스켈레탈 메시 정보
+	USkeletalMeshComponent* MeshComp = nullptr;
+	USkeletalMesh* Mesh = nullptr;
+	if (State->PreviewActor)
+	{
+		MeshComp = State->PreviewActor->GetSkeletalMeshComponent();
+		if (MeshComp)
+		{
+			Mesh = MeshComp->GetSkeletalMesh();
+		}
+	}
+	const FSkeleton* Skeleton = Mesh ? Mesh->GetSkeleton() : nullptr;
+	if (!Skeleton || !MeshComp) return;
+
+	const FLinearColor SwingColor(1.0f, 0.0f, 0.0f, 1.0f);
+	const FLinearColor TwistColor(0.0f, 0.0f, 1.0f, 1.0f);
+
+	// 비선택 컨스트레인트 라인 증분 업데이트
+	if (State->ConstraintPDI)
+	{
+		State->ConstraintPDI->BeginIncrementalUpdate();
+
+		int32 ConstraintCount = PhysAsset->GetConstraintCount();
+		for (int32 ConstraintIdx = 0; ConstraintIdx < ConstraintCount; ++ConstraintIdx)
+		{
+			UPhysicsConstraintTemplate* Constraint = PhysAsset->ConstraintSetup[ConstraintIdx];
+			if (!Constraint) continue;
+
+			DrawConstraintVisualization(
+				State->ConstraintPDI,
+				Constraint->DefaultInstance,
+				MeshComp,
+				Skeleton,
+				SwingColor,
+				TwistColor
+			);
+		}
+
+		State->ConstraintPDI->EndIncrementalUpdate();
+	}
+
+	// 선택 컨스트레인트 라인 증분 업데이트
+	if (State->SelectedConstraintPDI &&
+		State->SelectedConstraintIndex >= 0 &&
+		State->SelectedConstraintIndex < PhysAsset->GetConstraintCount())
+	{
+		const FLinearColor SelSwingColor(1.0f, 0.5f, 0.0f, 1.0f);
+		const FLinearColor SelTwistColor(0.0f, 1.0f, 1.0f, 1.0f);
+
+		State->SelectedConstraintPDI->BeginIncrementalUpdate();
+
+		UPhysicsConstraintTemplate* Constraint = PhysAsset->ConstraintSetup[State->SelectedConstraintIndex];
+		if (Constraint)
+		{
+			DrawConstraintVisualization(
+				State->SelectedConstraintPDI,
+				Constraint->DefaultInstance,
+				MeshComp,
+				Skeleton,
+				SelSwingColor,
+				SelTwistColor
+			);
+		}
+
+		State->SelectedConstraintPDI->EndIncrementalUpdate();
+	}
 }
 
 void SPhysicsAssetEditorWindow::SavePhysicsAsset()

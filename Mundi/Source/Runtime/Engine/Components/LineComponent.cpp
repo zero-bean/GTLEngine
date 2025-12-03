@@ -95,6 +95,18 @@ void ULineComponent::ClearLines()
         }
     }
     Lines.Empty();
+    UpdateCursor = 0;
+}
+
+void ULineComponent::UpdateLine(int32 Index, const FVector& StartPoint, const FVector& EndPoint)
+{
+    if (Index >= 0 && Index < static_cast<int32>(Lines.size()))
+    {
+        if (Lines[Index])
+        {
+            Lines[Index]->SetLine(StartPoint, EndPoint);
+        }
+    }
 }
 
 void ULineComponent::CollectLineBatches(URenderer* Renderer)

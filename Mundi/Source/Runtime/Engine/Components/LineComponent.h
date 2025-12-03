@@ -21,6 +21,12 @@ public:
     void RemoveLine(ULine* Line);
     void ClearLines();
 
+    // Incremental update support (for simulation performance)
+    void UpdateLine(int32 Index, const FVector& StartPoint, const FVector& EndPoint);
+    void BeginUpdate() { UpdateCursor = 0; }
+    int32 GetUpdateCursor() const { return UpdateCursor; }
+    void SetUpdateCursor(int32 Cursor) { UpdateCursor = Cursor; }
+
     void CollectLineBatches(URenderer* Renderer);
 
     // Properties
@@ -48,4 +54,5 @@ private:
     TArray<ULine*> Lines;
     bool bLinesVisible = true;
     bool bAlwaysOnTop = false;
+    int32 UpdateCursor = 0;  // For incremental update tracking
  };
