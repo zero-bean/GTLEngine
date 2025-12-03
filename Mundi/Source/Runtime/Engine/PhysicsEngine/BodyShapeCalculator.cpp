@@ -107,17 +107,21 @@ FBodyShapeCalculationResult FBodyShapeCalculator::CalculateFromVertices(
 	Result.DebugBoneDirection = WorldBoneDir;
 
 	// ────────────────────────────────────────────────
-	// 5단계: 정점 분포 분석
+	// 5단계: 정점 분포 분석 (3축 중 가장 긴 방향 선택)
 	// ────────────────────────────────────────────────
 	FVector VertexWorldCenter;
+	FVector BestWorldAxis;
 	AnalyzeVertexDistribution(
 		WorldVertices,
 		BoneWorldPos,
 		WorldBoneDir,
 		Result.Radius,
 		Result.Length,
-		VertexWorldCenter
+		VertexWorldCenter,
+		BestWorldAxis
 	);
+
+	Result.DebugBoneDirection = BestWorldAxis;  // 실제 사용된 축으로 업데이트
 
 	// ────────────────────────────────────────────────
 	// 6단계: 본 로컬 좌표로 변환
@@ -125,8 +129,8 @@ FBodyShapeCalculationResult FBodyShapeCalculator::CalculateFromVertices(
 	// Shape.Center: 정점 중심을 본 로컬 좌표로 변환
 	Result.LocalCenter = BoneInvRot.RotateVector(VertexWorldCenter - BoneWorldPos);
 
-	// Shape.Rotation: 본 방향을 본 로컬로 변환하여 회전 계산
-	FVector LocalBoneDir = BoneInvRot.RotateVector(WorldBoneDir);
+	// Shape.Rotation: 선택된 최적 축을 본 로컬로 변환하여 회전 계산
+	FVector LocalBoneDir = BoneInvRot.RotateVector(BestWorldAxis);
 
 	// 캡슐/박스는 기본 Z축 방향 -> LocalBoneDir 방향으로 회전 필요
 	FVector DefaultAxis(0, 0, 1);
@@ -283,37 +287,92 @@ void FBodyShapeCalculator::AnalyzeVertexDistribution(
 	const FVector& WorldBoneDir,
 	float& OutRadius,
 	float& OutLength,
-	FVector& OutVertexWorldCenter
+	FVector& OutVertexWorldCenter,
+	FVector& OutBestAxis
 )
 {
-	float MinProj = FLT_MAX, MaxProj = -FLT_MAX;
-	TArray<float> RadialDistances;
-	RadialDistances.Reserve(WorldVertices.Num());
+	// ────────────────────────────────────────────────
+	// 1단계: 정점 중심 계산
+	// ────────────────────────────────────────────────
 	FVector VertexCenterSum = FVector::Zero();
-
 	for (const FVector& WorldV : WorldVertices)
 	{
 		VertexCenterSum += WorldV;
+	}
+	OutVertexWorldCenter = VertexCenterSum / static_cast<float>(WorldVertices.Num());
 
-		// 본 위치 기준 상대 위치
+	// ────────────────────────────────────────────────
+	// 2단계: 본 방향에 직교하는 2축 계산
+	// ────────────────────────────────────────────────
+	FVector Axis1 = WorldBoneDir;  // 본 방향
+	FVector Axis2, Axis3;
+
+	// Axis1에 직교하는 벡터 찾기
+	FVector ArbitraryVec = (FMath::Abs(Axis1.X) < 0.9f) ? FVector(1, 0, 0) : FVector(0, 1, 0);
+	Axis2 = FVector::Cross(Axis1, ArbitraryVec).GetNormalized();
+	Axis3 = FVector::Cross(Axis1, Axis2).GetNormalized();
+
+	// ────────────────────────────────────────────────
+	// 3단계: 각 축에 대해 정점 분포 분석 (extent 계산)
+	// ────────────────────────────────────────────────
+	struct FAxisExtent
+	{
+		FVector Axis;
+		float MinProj = FLT_MAX;
+		float MaxProj = -FLT_MAX;
+		float Extent() const { return MaxProj - MinProj; }
+	};
+
+	FAxisExtent Axes[3] = { {Axis1}, {Axis2}, {Axis3} };
+
+	for (const FVector& WorldV : WorldVertices)
+	{
 		FVector RelativePos = WorldV - BoneWorldPos;
 
-		// 본 방향으로 투영 (길이)
-		float Proj = FVector::Dot(RelativePos, WorldBoneDir);
-		MinProj = std::min(MinProj, Proj);
-		MaxProj = std::max(MaxProj, Proj);
+		for (int32 i = 0; i < 3; ++i)
+		{
+			float Proj = FVector::Dot(RelativePos, Axes[i].Axis);
+			Axes[i].MinProj = std::min(Axes[i].MinProj, Proj);
+			Axes[i].MaxProj = std::max(Axes[i].MaxProj, Proj);
+		}
+	}
 
-		// 본 방향 수직 거리 (반경) - 이상치 제거를 위해 배열에 수집
-		FVector Radial = RelativePos - WorldBoneDir * Proj;
+	// ────────────────────────────────────────────────
+	// 4단계: 가장 긴 축 선택
+	// ────────────────────────────────────────────────
+	int32 BestAxisIndex = 0;
+	float BestExtent = Axes[0].Extent();
+
+	for (int32 i = 1; i < 3; ++i)
+	{
+		if (Axes[i].Extent() > BestExtent)
+		{
+			BestExtent = Axes[i].Extent();
+			BestAxisIndex = i;
+		}
+	}
+
+	OutBestAxis = Axes[BestAxisIndex].Axis;
+	OutLength = BestExtent;
+
+	// ────────────────────────────────────────────────
+	// 5단계: 선택된 축 기준으로 반경 계산
+	// ────────────────────────────────────────────────
+	TArray<float> RadialDistances;
+	RadialDistances.Reserve(WorldVertices.Num());
+
+	for (const FVector& WorldV : WorldVertices)
+	{
+		FVector RelativePos = WorldV - BoneWorldPos;
+		float Proj = FVector::Dot(RelativePos, OutBestAxis);
+		FVector Radial = RelativePos - OutBestAxis * Proj;
 		RadialDistances.Add(Radial.Size());
 	}
 
-	// 90th percentile로 Radius 계산 (이상치 제거)
+	// 66th percentile로 Radius 계산 (이상치 제거)
 	std::sort(RadialDistances.GetData(), RadialDistances.GetData() + RadialDistances.Num());
 	int32 PercentileIndex = static_cast<int32>(RadialDistances.Num() * 0.66f);
 	PercentileIndex = std::min(PercentileIndex, RadialDistances.Num() - 1);
 
 	OutRadius = RadialDistances[PercentileIndex];
-	OutLength = MaxProj - MinProj;
-	OutVertexWorldCenter = VertexCenterSum / static_cast<float>(WorldVertices.Num());
 }

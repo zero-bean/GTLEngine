@@ -98,13 +98,14 @@ private:
 		const TArray<TArray<int32>>& ChildrenMap
 	);
 
-	// 정점 분포를 분석하여 반지름과 길이 계산
+	// 정점 분포를 분석하여 반지름과 길이 계산 (3축 중 가장 긴 방향 선택)
 	static void AnalyzeVertexDistribution(
 		const TArray<FVector>& WorldVertices,
 		const FVector& BoneWorldPos,
 		const FVector& WorldBoneDir,
 		float& OutRadius,
 		float& OutLength,
-		FVector& OutVertexWorldCenter
+		FVector& OutVertexWorldCenter,
+		FVector& OutBestAxis
 	);
 };
