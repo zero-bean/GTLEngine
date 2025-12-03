@@ -29,11 +29,12 @@ class UClothMeshInstance : public UObject //ResourceBase가 되어야함 일단 
 public:
     UClothMeshInstance() = default;
     ~UClothMeshInstance() override;
+    UClothMeshInstance* GetDuplicated();
     void Init(FClothMesh* InClothMesh);
-
+    void Sync();
     FClothMesh* GetOriginCloth() { return ClothMesh; }
 public:
-    Cloth* Cloth;
+    Cloth* Cloth = nullptr;
     TArray<physx::PxVec4> Particles;
     TArray<uint32_t> Indices;
     TArray<FVertexDynamic> Vertices;

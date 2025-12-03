@@ -12,13 +12,14 @@ public:
 	UClothComponent();
 	~UClothComponent();
 
-	void TickComponent(float DeltaTime) override;       // 매 프레임
+	void BeginPlay() override;
+	void TickComponent(float DeltaSeconds) override;
+	void EndPlay() override;
 	void CollectMeshBatches(TArray<FMeshBatchElement>& OutMeshBatchElements, const FSceneView* View) override;
 
 	void DuplicateSubObjects() override;
 
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
-	
 	UClothMeshInstance* ClothInstance = nullptr;
 };

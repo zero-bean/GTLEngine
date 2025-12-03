@@ -26,6 +26,9 @@ public:
 
     FClothMesh* GetTestCloth() { return TestCloth; }
 
+    void RegisterCloth(Cloth* InCloth) { Solver->addCloth(InCloth); }
+    void UnRegisterCloth(Cloth* InCloth) { Solver->removeCloth(InCloth); }
+
 private:
     void CopySettings(Cloth* Source, Cloth* Target);
 

@@ -9,33 +9,32 @@
 UClothComponent::UClothComponent()
 {
 	bCanEverTick = true;
-
 	ClothInstance = NewObject<UClothMeshInstance>();
 	ClothInstance->Init(UClothManager::Instance->GetTestCloth());
 }
-void UClothComponent::TickComponent(float DeltaTime)
+UClothComponent::~UClothComponent()
 {
-	Super::TickComponent(DeltaTime);
-
-	MappedRange<physx::PxVec4> Particles = ClothInstance->Cloth->getCurrentParticles();
-	for (int i = 0; i < Particles.size(); i++)
-	{
-		PxVec3 PxPos = Particles[i].getXYZ();
-		FVector Pos = FVector(PxPos.x, PxPos.y, PxPos.z);
-		ClothInstance->Vertices[i].Position = Pos;
-		//do something with particles[i]
-		//the xyz components are the current positions
-		//the w component is the invMass.
-	}
-	ID3D11DeviceContext* Context = UClothManager::Instance->GetContext();
-
-	D3D11RHI::VertexBufferUpdate(Context, ClothInstance->VertexBuffer, ClothInstance->Vertices);
-	//destructor of particles should be called before mCloth is destroyed.
+	DeleteObject(ClothInstance);
+	ClothInstance = nullptr;
 }
 
+void UClothComponent::BeginPlay()
+{
+	UClothManager::Instance->RegisterCloth(ClothInstance->Cloth);
+}
+void UClothComponent::TickComponent(float DeltaSeconds)
+{
+	Super::TickComponent(DeltaSeconds);
+	ClothInstance->Sync();
+}
+void UClothComponent::EndPlay()
+{
+	UClothManager::Instance->UnRegisterCloth(ClothInstance->Cloth);
+}
 void UClothComponent::DuplicateSubObjects()
 {
 	Super::DuplicateSubObjects();
+	ClothInstance = ClothInstance->GetDuplicated();
 }
 
 void UClothComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
@@ -70,9 +69,4 @@ void UClothComponent::CollectMeshBatches(TArray<FMeshBatchElement>& OutMeshBatch
 	BatchElement.ObjectID = InternalIndex;
 	BatchElement.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	OutMeshBatchElements.Add(BatchElement);
-}
-UClothComponent::~UClothComponent()
-{
-	DeleteObject(ClothInstance);
-	ClothInstance = nullptr;
 }
