@@ -150,19 +150,17 @@ void SPhysicsAssetEditorWindow::OnUpdate(float DeltaSeconds)
 	PhysicsAssetEditorState* State = GetActivePhysicsState();
 	if (!State) return;
 
-	// 선택 바디 변경 감지
+	// 선택 바디 변경 감지 (선택 라인만 업데이트, 비선택 라인은 모든 항목 포함하므로 재생성 불필요)
 	if (State->SelectedBodyIndex != State->LastSelectedBodyIndex)
 	{
-		State->bAllBodyLinesDirty = true;      // 이전 선택 바디 색상 복원 위해 전체 갱신
-		State->bSelectedBodyLineDirty = true;  // 새 선택 바디 하이라이트
+		State->bSelectedBodyLineDirty = true;  // 선택 바디 하이라이트만 업데이트
 		State->LastSelectedBodyIndex = State->SelectedBodyIndex;
 	}
 
-	// 선택 컨스트레인트 변경 감지
+	// 선택 컨스트레인트 변경 감지 (선택 라인만 업데이트)
 	if (State->SelectedConstraintIndex != State->LastSelectedConstraintIndex)
 	{
-		State->bAllConstraintLinesDirty = true;      // 이전 선택 컨스트레인트 색상 복원
-		State->bSelectedConstraintLineDirty = true;  // 새 선택 컨스트레인트 하이라이트
+		State->bSelectedConstraintLineDirty = true;  // 선택 컨스트레인트 하이라이트만 업데이트
 		State->LastSelectedConstraintIndex = State->SelectedConstraintIndex;
 	}
 
@@ -2779,13 +2777,10 @@ void SPhysicsAssetEditorWindow::RebuildUnselectedBodyLines()
 		}
 	}
 
-	// 선택된 바디를 제외한 모든 바디 렌더링
+	// 모든 바디 렌더링 (선택된 바디도 포함 - 선택 라인이 위에 덧그려짐)
 	int32 BodyCount = PhysAsset->GetBodySetupCount();
 	for (int32 BodyIdx = 0; BodyIdx < BodyCount; ++BodyIdx)
 	{
-		// 선택된 바디는 건너뜀 (SelectedPDI에서 렌더링)
-		if (BodyIdx == State->SelectedBodyIndex) continue;
-
 		USkeletalBodySetup* Body = PhysAsset->GetBodySetup(BodyIdx);
 		if (!Body) continue;
 
@@ -3044,13 +3039,10 @@ void SPhysicsAssetEditorWindow::RebuildUnselectedConstraintLines()
 	const FLinearColor SwingColor(1.0f, 0.0f, 0.0f, 1.0f);   // 빨간색 (Swing)
 	const FLinearColor TwistColor(0.0f, 0.0f, 1.0f, 1.0f);   // 파란색 (Twist)
 
-	// 선택되지 않은 Constraint만 순회
+	// 모든 Constraint 렌더링 (선택된 Constraint도 포함 - 선택 라인이 위에 덧그려짐)
 	int32 ConstraintCount = PhysAsset->GetConstraintCount();
 	for (int32 ConstraintIdx = 0; ConstraintIdx < ConstraintCount; ++ConstraintIdx)
 	{
-		// 선택된 컨스트레인트는 스킵
-		if (ConstraintIdx == State->SelectedConstraintIndex) continue;
-
 		UPhysicsConstraintTemplate* Constraint = PhysAsset->ConstraintSetup[ConstraintIdx];
 		if (!Constraint) continue;
 
