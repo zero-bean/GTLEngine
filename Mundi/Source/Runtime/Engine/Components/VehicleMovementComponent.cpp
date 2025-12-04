@@ -106,8 +106,9 @@ void UVehicleMovementComponent::InitializeComponent()
 void UVehicleMovementComponent::BeginPlay()
 {
     Super::BeginPlay();
-    
-    SetupVehicle();
+
+    // SetupVehicle은 TickComponent에서 Scene이 준비된 후 호출
+    // Standalone 환경에서는 BeginPlay 시점에 Scene이 아직 null일 수 있음
 }
 
 void UVehicleMovementComponent::OnRegister(UWorld* InWorld)
@@ -448,13 +449,30 @@ void UVehicleMovementComponent::TickComponent(float DeltaSeconds)
 {
     Super::TickComponent(DeltaSeconds);
 
-    if (!PVehicleDrive || !UpdatedComponent) { return; }
+    if (!UpdatedComponent) { return; }
 
     UPrimitiveComponent* MeshComp = Cast<UPrimitiveComponent>(UpdatedComponent);
     if (!MeshComp || !MeshComp->GetBodyInstance()) { return; }
 
+    // 지연 초기화: PVehicleDrive가 없으면 Scene이 준비되었는지 확인 후 SetupVehicle 호출
+    if (!PVehicleDrive)
+    {
+        PxRigidDynamic* RigidActor = GetValidDynamicActor();
+        if (RigidActor && RigidActor->getScene())
+        {
+            SetupVehicle();
+        }
+        return;
+    }
+
+    // DeltaTime이 0이면 PxVehicleUpdates에서 NaN 발생 가능 (0으로 나누기)
+    if (DeltaSeconds < 0.0001f)
+    {
+        return;
+    }
+
     UpdateVehicleSimulation(DeltaSeconds);
-    
+
     ProcessVehicleInput(DeltaSeconds);
 
     // @note 디버그용 (불필요할 시 주석처리 혹은 삭제할 것)

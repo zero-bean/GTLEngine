@@ -35,29 +35,28 @@ UConsoleWidget* UGlobalConsole::GetConsoleWidget()
 
 void UGlobalConsole::Log(const char* fmt, ...)
 {
-#ifdef _EDITOR
     va_list args;
     va_start(args, fmt);
     LogV(fmt, args);
     va_end(args);
-#endif
 }
 
 void UGlobalConsole::LogV(const char* fmt, va_list args)
 {
+    // 항상 OutputDebugString 출력 (Visual Studio Output 창에서 확인 가능)
+    char tmp[1024];
+    vsnprintf_s(tmp, _countof(tmp), fmt, args);
+    OutputDebugStringA(tmp);
+    OutputDebugStringA("\n");
+
 #ifdef _EDITOR
+    // 에디터에서는 ConsoleWidget에도 출력
     if (ConsoleWidget)
     {
-        ConsoleWidget->VAddLog(fmt, args);
-    }
-    else
-    {
-        // Fallback to OutputDebugString if console widget not available
-        char tmp[1024];
-        vsnprintf_s(tmp, _countof(tmp), fmt, args);
-        OutputDebugStringA("[No Console] ");
-        OutputDebugStringA(tmp);
-        OutputDebugStringA("\n");
+        va_list args_copy;
+        va_copy(args_copy, args);
+        ConsoleWidget->VAddLog(fmt, args_copy);
+        va_end(args_copy);
     }
 #endif
 }
