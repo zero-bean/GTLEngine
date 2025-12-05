@@ -47,7 +47,29 @@ void FCCTSettings::SetFromComponents(UCapsuleComponent* Capsule, UCharacterMovem
 
     if (Movement)
     {
-        StepOffset = Movement->MaxStepHeight;  // cm 그대로
+        // StepOffset 설정
+        // 1. PhysX CCT 요구사항: stepOffset <= height + 2*radius
+        // 2. 현실적인 계단 높이: 캡슐 전체 높이(Height + 2*Radius)의 약 25%
+        float TotalCapsuleHeight = Height + 2.0f * Radius;
+        float PhysXMaxStep = TotalCapsuleHeight;  // PhysX 제한
+        float ReasonableMaxStep = TotalCapsuleHeight * 0.25f;  // 현실적인 계단 높이
+
+        StepOffset = Movement->MaxStepHeight;
+
+        // 현실적인 최대값으로 먼저 제한
+        if (StepOffset > ReasonableMaxStep)
+        {
+            UE_LOG("[PhysX CCT] StepOffset(%.2f)이 권장값(%.2f, 캡슐높이의 25%%)을 초과하여 클램프됨",
+                   StepOffset, ReasonableMaxStep);
+            StepOffset = ReasonableMaxStep;
+        }
+
+        // PhysX 제한도 확인
+        if (StepOffset > PhysXMaxStep * 0.9f)
+        {
+            StepOffset = PhysXMaxStep * 0.9f;
+        }
+
         // 각도를 라디안으로 변환 후 cos 계산
         float AngleRadians = Movement->WalkableFloorAngle * static_cast<float>(M_PI) / 180.0f;
         SlopeLimit = std::cos(AngleRadians);
@@ -140,12 +162,16 @@ void FControllerInstance::InitController(UCapsuleComponent* InCapsule, UCharacte
     QueryFilter->MyChannel = CollisionChannel;
     QueryFilter->MyCollisionMask = CollisionMask;
 
-    // FilterData 캐시
-    CachedFilterData.word0 = static_cast<PxU32>(CollisionChannel);
+    // FilterData 캐시 (채널을 비트로 변환)
+    CachedFilterData.word0 = ChannelToBit(CollisionChannel);
     CachedFilterData.word1 = CollisionMask;
 
-    UE_LOG("[PhysX CCT] Controller 초기화 완료 (Radius: %.2f, Height: %.2f, StepOffset: %.2f)",
-           Settings.Radius, Settings.Height, Settings.StepOffset);
+    // 초기 바닥 상태 확인을 위해 아래 방향으로 작은 이동 수행
+    // 이렇게 해야 첫 프레임 점프 입력 시 bLastGrounded가 올바른 값을 가짐
+    Move(FVector(0.0f, 0.0f, -0.01f), 0.0f);
+
+    UE_LOG("[PhysX CCT] Controller 초기화 완료 (Radius: %.2f, Height: %.2f, StepOffset: %.2f, Grounded: %s)",
+           Settings.Radius, Settings.Height, Settings.StepOffset, bLastGrounded ? "true" : "false");
 }
 
 void FControllerInstance::TermController()
@@ -255,7 +281,7 @@ void FControllerInstance::SetCollisionChannel(ECollisionChannel Channel, uint32 
     CollisionChannel = Channel;
     CollisionMask = Mask;
 
-    CachedFilterData.word0 = static_cast<PxU32>(Channel);
+    CachedFilterData.word0 = ChannelToBit(Channel);
     CachedFilterData.word1 = Mask;
 
     if (QueryFilter)

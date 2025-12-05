@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "CCTQueryFilterCallback.h"
 
 #include "BodyInstance.h"
@@ -44,8 +44,8 @@ PxQueryHitType::Enum FCCTQueryFilterCallback::preFilter(
     PxU32 OtherChannel = ShapeFilter.word0;
     PxU32 OtherMask = ShapeFilter.word1;
 
-    // CCT의 채널 비트
-    PxU32 MyChannelBit = static_cast<PxU32>(MyChannel);
+    // CCT의 채널 비트 (인덱스가 아닌 비트로 변환)
+    PxU32 MyChannelBit = ChannelToBit(MyChannel);
 
     // 양방향 체크:
     // 1. 내 마스크가 상대 채널을 포함하는가?

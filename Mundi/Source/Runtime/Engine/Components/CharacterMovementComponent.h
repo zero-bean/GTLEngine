@@ -233,8 +233,9 @@ public:
 
 	/**
 	 * 지면에 있는지 확인합니다.
+	 * CCT 모드에서는 실시간 충돌 상태를, 그 외에는 MovementMode 기반으로 확인합니다.
 	 */
-	bool IsGrounded() const { return MovementMode == EMovementMode::Walking; }
+	bool IsGrounded() const;
 
 	/**
 	 * 낙하 중인지 확인합니다.

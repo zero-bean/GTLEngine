@@ -1,4 +1,4 @@
-// ────────────────────────────────────────────────────────────────────────────
+﻿// ────────────────────────────────────────────────────────────────────────────
 // CapsuleComponent.cpp
 // Capsule 형태의 충돌 컴포넌트 구현 (Week09 기반, Week12 적응)
 // ────────────────────────────────────────────────────────────────────────────
@@ -122,6 +122,18 @@ void UCapsuleComponent::OnRegister(UWorld* InWorld)
 {
 	Super::OnRegister(InWorld);
 	UpdateBounds();
+
+	// CCT 모드인데 RigidBody가 생성됐으면 CCT로 전환
+	if (bUseCCT && ControllerInstance == nullptr)
+	{
+		// Super::OnRegister에서 RigidBody가 생성됐으면 제거
+		if (BodyInstance.IsValidBodyInstance())
+		{
+			BodyInstance.TermBody();
+			UE_LOG("[PhysX CCT] RigidBody 제거 후 CCT로 전환");
+		}
+		OnCreatePhysicsState();
+	}
 }
 
 void UCapsuleComponent::GetShape(FShape& Out) const
@@ -377,16 +389,18 @@ void UCapsuleComponent::SetUseCCT(bool bInUseCCT)
 		return;
 	}
 
-	// 현재 물리 상태가 있으면 해제 후 재생성
-	bool bHadPhysicsState = BodyInstance.IsValidBodyInstance() || (ControllerInstance != nullptr);
-	if (bHadPhysicsState)
+	// 현재 물리 상태가 있으면 해제
+	if (BodyInstance.IsValidBodyInstance() || ControllerInstance != nullptr)
 	{
 		OnDestroyPhysicsState();
 	}
 
 	bUseCCT = bInUseCCT;
 
-	if (bHadPhysicsState)
+	// 이미 World에 등록되어 있으면 새 물리 상태 생성
+	// (생성자에서 호출된 경우는 OnRegister에서 처리됨)
+	UWorld* World = GetWorld();
+	if (World && World->GetPhysicsScene())
 	{
 		OnCreatePhysicsState();
 	}

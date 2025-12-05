@@ -157,7 +157,7 @@ bool UCharacterMovementComponent::Jump()
 {
 	if (!bCanJump || !IsGrounded())
 	{
-		return false;
+ 		return false;
 	}
 
 	FVector JumpVelocity = GravityDirection * -1.0f * JumpZVelocity;
@@ -187,6 +187,33 @@ void UCharacterMovementComponent::SetMovementMode(EMovementMode NewMode)
 		return;
 	}
 	MovementMode = NewMode;
+}
+
+bool UCharacterMovementComponent::IsGrounded() const
+{
+	// MovementMode가 Walking이면 grounded로 간주
+	// (이전 프레임에서 바닥에 있었으면 점프 허용)
+	// 입력 처리가 TickComponent보다 먼저 일어나므로 이 체크가 필요
+	if (MovementMode == EMovementMode::Walking)
+	{
+		return true;
+	}
+
+	// CCT 모드에서 실시간 확인 (낙하 중 착지 감지 등)
+	if (CharacterOwner)
+	{
+		UCapsuleComponent* Capsule = CharacterOwner->GetCapsuleComponent();
+		if (Capsule && Capsule->GetUseCCT())
+		{
+			FControllerInstance* Ctrl = Capsule->GetControllerInstance();
+			if (Ctrl && Ctrl->IsValid())
+			{
+				return Ctrl->IsGrounded();
+			}
+		}
+	}
+
+	return false;
 }
 
 void UCharacterMovementComponent::SetGravityDirection(const FVector& NewDirection)
@@ -818,6 +845,16 @@ void UCharacterMovementComponent::MoveWithCCT(float DeltaTime)
 	// 이동 벡터 계산
 	FVector Displacement = Velocity * DeltaTime;
 
+	// 바닥 충돌 감지를 위해 항상 중력 방향 성분 추가
+	// PhysX CCT는 순수 수평 이동(Z=0) 시 DOWN 충돌을 감지하지 않을 수 있음
+	const float MinDownDisplacement = 0.01f;
+	float VerticalDisp = FVector::Dot(Displacement, GravityDirection);
+	if (VerticalDisp > -MinDownDisplacement)  // 아래로 충분히 안 가고 있으면
+	{
+		// 중력 방향으로 작은 양 추가 (바닥 충돌 감지용)
+		Displacement += GravityDirection * MinDownDisplacement;
+	}
+
 	// CCT::move() 호출 - 자동으로 경사면/계단/장애물 처리
 	PxControllerCollisionFlags Flags = Ctrl->Move(Displacement, DeltaTime);
 
@@ -861,8 +898,10 @@ void UCharacterMovementComponent::MoveWithCCT(float DeltaTime)
 	}
 
 	// CCT 위치를 UpdatedComponent에 동기화
-	FVector NewFootPos = Ctrl->GetFootPosition();
-	UpdatedComponent->SetWorldLocation(NewFootPos);
+	// GetPosition()은 캡슐 중심, GetFootPosition()은 바닥
+	// CapsuleComponent의 WorldLocation은 중심이므로 GetPosition() 사용
+	FVector NewCenterPos = Ctrl->GetPosition();
+	UpdatedComponent->SetWorldLocation(NewCenterPos);
 }
 
 // ────────────────────────────────────────────────────────────────────────────

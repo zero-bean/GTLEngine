@@ -161,6 +161,7 @@ void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPr
         for (PxU32 i = 0; i < NumShapes; ++i)
         {
             Shapes[i]->setSimulationFilterData(FilterData);
+            Shapes[i]->setQueryFilterData(FilterData);  // CCT Scene Query용
         }
     }
 
@@ -396,6 +397,7 @@ void FBodyInstance::UpdateFilterData()
         FilterData.word2 = ExistingData.word2;  // 기존 겹침 무시 마스크 유지
         FilterData.word3 = ExistingData.word3;  // 기존 바디 인덱스 유지
         Shapes[i]->setSimulationFilterData(FilterData);
+        Shapes[i]->setQueryFilterData(FilterData);  // CCT Scene Query용
     }
 
     // 필터 변경 후 Scene에 알림
