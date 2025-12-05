@@ -318,6 +318,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Source\Runtime\Engine\GameFramework\Character.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\Controller.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\DancingCharacter.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\GameInstance.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\GameModeBase.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\GameStateBase.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\HudExampleGameMode.cpp" />
@@ -845,6 +846,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Generated\APlayerGameMode.generated.cpp" />
     <ClCompile Include="Generated\UClothComponent.generated.cpp" />
     <ClCompile Include="Generated\FDecalFadeProperty.generated.cpp" />
+    <ClCompile Include="Generated\UGameInstance.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
@@ -1077,6 +1079,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Source\Runtime\Engine\GameFramework\Camera\CamMod_Fade.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\Camera\CamMod_Shake.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameEngine.h" />
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\GameInstance.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameModeBase.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameStateBase.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\HudExampleGameMode.h" />
@@ -1473,6 +1476,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Generated\APlayerGameMode.generated.h" />
     <ClInclude Include="Generated\UClothComponent.generated.h" />
     <ClInclude Include="Generated\FDecalFadeProperty.generated.h" />
+    <ClInclude Include="Generated\UGameInstance.generated.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTools\CodeGenerator\generate.py" />
