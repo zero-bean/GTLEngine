@@ -90,15 +90,6 @@ void FSceneRenderer::Render()
 {
     if (!IsValid()) return;
 
-	// 스키닝 통계 리셋 및 GPU 시간 조회는 Renderer::BeginFrame()으로 이동됨
-	// 각 뷰어는 통계를 누적만 함
-
-	/*static bool Loaded = false;
-	if (!Loaded)
-	{
-		FSkeletalMeshData Skeletal = UFbxLoader::GetInstance().LoadFbxMesh("C:\\Program Files\\Autodesk\\Fbx\\Fbx SDK\\2020.3.7\\build\\vc143_x64_dll\\Debug\\sadface.fbx");
-		Loaded = true;
-	}*/
     // 뷰(View) 준비: 행렬, 절두체 등 프레임에 필요한 기본 데이터 계산
     PrepareView();
     // (Background is cleared per-path when binding service color)
@@ -141,6 +132,7 @@ void FSceneRenderer::Render()
 	{
 		// 디버그 요소는 Post Processing 적용하지 않음
 		// NOTE: RenderDebugPass()는 이미 투명 패스 전에 호출됨 (파티클과의 깊이 관계를 위해)
+		RenderDebugPass();
 		RenderEditorPrimitivesPass();	// 빌보드, 기타 화살표 출력 (상호작용, 피킹 O)
 
 		// 오버레이(Overlay) Primitive 렌더링
@@ -211,13 +203,6 @@ void FSceneRenderer::RenderLitPath()
 	RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual);  // 불투명: 깊이 쓰기 ON
 	RHIDevice->OMSetBlendState(false);  // 불투명: 블렌딩 OFF
 	RenderOpaquePass(View->RenderSettings->GetViewMode());
-
-	// 디버그 요소들(그리드, 선택 박스 등)을 투명 패스 전에 렌더링
-	// 깊이 버퍼에 기록하여 파티클과 올바른 깊이 관계 유지
-	if (!World->bPie)
-	{
-		RenderDebugPass();
-	}
 
 	RenderDecalPass();
 	RenderParticleSystemPass();
@@ -1289,17 +1274,21 @@ void FSceneRenderer::RenderPostProcessingPasses()
 			PostProcessModifiers.Add(FogPostProc);
 		}
 	}
-	if (0 < SceneGlobals.DOFs.Num())
+	for (UDOFComponent* DofComponent : SceneGlobals.DOFs)
 	{
-		UDOFComponent* DOFComp = SceneGlobals.DOFs[0];
-		if (DOFComp)
+		if (DofComponent && DofComponent->IsDepthOfFieldEnabled())
 		{
-			FPostProcessModifier DOFPostProc;
-			DOFPostProc.Type = EPostProcessEffectType::DOF;
-			DOFPostProc.bEnabled = DOFComp->IsActive() && DOFComp->IsVisible();
-			DOFPostProc.SourceObject = DOFComp;
-			DOFPostProc.Priority = -1;
-			PostProcessModifiers.Add(DOFPostProc);
+			// 카메라가 볼륨 안에 있는지 체크
+			if (DofComponent->IsInsideVolume(View->ViewLocation))
+			{
+				FPostProcessModifier DofPostProc;
+				DofPostProc.Type = EPostProcessEffectType::DOF;
+				DofPostProc.bEnabled = true;
+				DofPostProc.SourceObject = DofComponent;
+				DofPostProc.Priority = DofComponent->GetDofPriority();
+				DofPostProc.Weight = DofComponent->GetBlendWeight();
+				PostProcessModifiers.Add(DofPostProc);
+			}
 		}
 	}
 	
