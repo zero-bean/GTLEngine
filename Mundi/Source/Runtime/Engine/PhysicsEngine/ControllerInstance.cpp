@@ -36,18 +36,18 @@ void FCCTSettings::SetFromComponents(UCapsuleComponent* Capsule, UCharacterMovem
 
     if (Capsule)
     {
-        // cm -> m 변환
+        // 프로젝트가 cm 단위를 직접 사용 (변환 없음)
         float RadiusCm = Capsule->GetCapsuleRadius();
         float HalfHeightCm = Capsule->GetCapsuleHalfHeight();
 
-        Radius = RadiusCm * 0.01f;
-        Height = (HalfHeightCm * 2.0f - RadiusCm * 2.0f) * 0.01f;  // 원통 부분만
+        Radius = RadiusCm;
+        Height = (HalfHeightCm * 2.0f - RadiusCm * 2.0f);  // 원통 부분만
         if (Height < 0.0f) Height = 0.01f;  // 최소값 보장
     }
 
     if (Movement)
     {
-        StepOffset = Movement->MaxStepHeight * 0.01f;  // cm -> m
+        StepOffset = Movement->MaxStepHeight;  // cm 그대로
         // 각도를 라디안으로 변환 후 cos 계산
         float AngleRadians = Movement->WalkableFloorAngle * static_cast<float>(M_PI) / 180.0f;
         SlopeLimit = std::cos(AngleRadians);
@@ -104,9 +104,9 @@ void FControllerInstance::InitController(UCapsuleComponent* InCapsule, UCharacte
     Desc.upDirection = Settings.UpDirection;
     Desc.nonWalkableMode = Settings.NonWalkableMode;
 
-    // 초기 위치 (cm -> m 변환)
+    // 초기 위치 (프로젝트가 cm 단위 직접 사용)
     FVector WorldPos = InCapsule->GetWorldLocation();
-    Desc.position = PxExtendedVec3(WorldPos.X * 0.01, WorldPos.Y * 0.01, WorldPos.Z * 0.01);
+    Desc.position = PxExtendedVec3(WorldPos.X, WorldPos.Y, WorldPos.Z);
 
     // Material (기본 마찰/반발 계수로 생성)
     PxMaterial* DefaultMaterial = GPhysXSDK->createMaterial(0.5f, 0.5f, 0.1f);
@@ -174,8 +174,8 @@ PxControllerCollisionFlags FControllerInstance::Move(const FVector& Displacement
         return PxControllerCollisionFlags(0);
     }
 
-    // cm -> m 변환
-    PxVec3 PxDisp = U2PVector(Displacement * 0.01f);
+    // 프로젝트가 cm 단위 직접 사용 (변환 없음)
+    PxVec3 PxDisp = U2PVector(Displacement);
 
     // 필터 구성
     PxControllerFilters Filters = GetFilters();
@@ -198,8 +198,8 @@ void FControllerInstance::SetPosition(const FVector& NewPosition)
         return;
     }
 
-    // cm -> m 변환
-    PxExtendedVec3 PxPos(NewPosition.X * 0.01, NewPosition.Y * 0.01, NewPosition.Z * 0.01);
+    // 프로젝트가 cm 단위 직접 사용 (변환 없음)
+    PxExtendedVec3 PxPos(NewPosition.X, NewPosition.Y, NewPosition.Z);
     Controller->setPosition(PxPos);
 }
 
@@ -211,11 +211,11 @@ FVector FControllerInstance::GetPosition() const
     }
 
     PxExtendedVec3 PxPos = Controller->getPosition();
-    // m -> cm 변환
+    // 프로젝트가 cm 단위 직접 사용 (변환 없음)
     return FVector(
-        static_cast<float>(PxPos.x) * 100.0f,
-        static_cast<float>(PxPos.y) * 100.0f,
-        static_cast<float>(PxPos.z) * 100.0f
+        static_cast<float>(PxPos.x),
+        static_cast<float>(PxPos.y),
+        static_cast<float>(PxPos.z)
     );
 }
 
@@ -227,11 +227,11 @@ FVector FControllerInstance::GetFootPosition() const
     }
 
     PxExtendedVec3 PxPos = Controller->getFootPosition();
-    // m -> cm 변환
+    // 프로젝트가 cm 단위 직접 사용 (변환 없음)
     return FVector(
-        static_cast<float>(PxPos.x) * 100.0f,
-        static_cast<float>(PxPos.y) * 100.0f,
-        static_cast<float>(PxPos.z) * 100.0f
+        static_cast<float>(PxPos.x),
+        static_cast<float>(PxPos.y),
+        static_cast<float>(PxPos.z)
     );
 }
 

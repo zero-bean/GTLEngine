@@ -66,10 +66,14 @@ void FCCTHitReport::onShapeHit(const PxControllerShapeHit& hit)
     NotifyInfo.Info1.Component = OtherBody->OwnerComponent;
     NotifyInfo.Info1.BodyIndex = 0;
 
-    // 충돌 위치/노멀 (m -> cm 변환)
-    NotifyInfo.ImpactPoint = FVector(hit.worldPos.x, hit.worldPos.y, hit.worldPos.z) * 100.0f;
+    // 충돌 위치/노멀 (프로젝트가 cm 단위 직접 사용)
+    NotifyInfo.ImpactPoint = FVector(
+        static_cast<float>(hit.worldPos.x),
+        static_cast<float>(hit.worldPos.y),
+        static_cast<float>(hit.worldPos.z)
+    );
     NotifyInfo.ImpactNormal = FVector(hit.worldNormal.x, hit.worldNormal.y, hit.worldNormal.z);
-    NotifyInfo.TotalImpulse = hit.length * 100.0f;  // 근사치
+    NotifyInfo.TotalImpulse = hit.length;  // 근사치
 
     NotifyInfo.bCallEvent0 = true;
     NotifyInfo.bCallEvent1 = true;
@@ -107,13 +111,13 @@ void FCCTHitReport::onControllerHit(const PxControllersHit& hit)
     NotifyInfo.Info1.Component = Ctrl1->OwnerComponent;
     NotifyInfo.Info1.BodyIndex = 0;
 
-    // 충돌 위치 (두 CCT 중간점)
+    // 충돌 위치 (두 CCT 중간점, 프로젝트가 cm 단위 직접 사용)
     PxExtendedVec3 Pos0 = hit.controller->getPosition();
     PxExtendedVec3 Pos1 = hit.other->getPosition();
     FVector MidPoint = FVector(
-        static_cast<float>((Pos0.x + Pos1.x) * 0.5) * 100.0f,
-        static_cast<float>((Pos0.y + Pos1.y) * 0.5) * 100.0f,
-        static_cast<float>((Pos0.z + Pos1.z) * 0.5) * 100.0f
+        static_cast<float>((Pos0.x + Pos1.x) * 0.5),
+        static_cast<float>((Pos0.y + Pos1.y) * 0.5),
+        static_cast<float>((Pos0.z + Pos1.z) * 0.5)
     );
     NotifyInfo.ImpactPoint = MidPoint;
 
