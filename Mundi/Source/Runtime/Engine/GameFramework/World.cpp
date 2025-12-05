@@ -28,6 +28,7 @@
 #include "Level.h"
 #include "LightManager.h"
 #include "LuaManager.h"
+#include "InputManager.h"
 #include "LevelTransitionManager.h"
 #include "GameEngine.h"
 #include "CollisionManager.h"
@@ -224,7 +225,6 @@ bool UWorld::LoadLevelFromFile(const FWideString& Path)
 
 	SetLevel(std::move(NewLevel));
 
-	UE_LOG("UWorld: Scene loaded successfully: %s", WideToUTF8(Path).c_str());
 	return true;
 }
 
@@ -310,7 +310,8 @@ void UWorld::Tick(float DeltaSeconds)
 
 		for (AActor* Actor : LevelActors)
 		{
-			if (Actor && Actor->IsActorActive())
+			// CRITICAL: PendingDestroy 체크 추가 (레벨 전환 중 삭제된 액터 방지)
+			if (Actor && Actor->IsActorActive() && !Actor->IsPendingDestroy())
 			{
 				if (Actor->CanEverTick())
 				{
@@ -574,20 +575,18 @@ void UWorld::SpawnDefaultActors()
 
 ALevelTransitionManager* UWorld::GetLevelTransitionManager()
 {
-    // PIE 모드에서만 생성
-    if (!LevelTransitionManager && bPie)
-    {
-        LevelTransitionManager = SpawnActor<ALevelTransitionManager>();
-        UE_LOG("[info] World: LevelTransitionManager created");
-    }
+    if (!bPie) { return nullptr; }
 
-    return LevelTransitionManager;
+    return FindActor<ALevelTransitionManager>();
 }
 
 void UWorld::TransitionToLevel(const FWideString& LevelPath)
 {
+    UE_LOG("[info] World::TransitionToLevel: Called with path: %s", WideToUTF8(LevelPath).c_str());
+
     if (ALevelTransitionManager* Manager = GetLevelTransitionManager())
     {
+        UE_LOG("[info] World::TransitionToLevel: Manager found, calling TransitionToLevel");
         Manager->TransitionToLevel(LevelPath);
     }
     else
@@ -614,31 +613,35 @@ void UWorld::SetLevel(std::unique_ptr<ULevel> InLevel)
 	// ParticleEventManager는 Level의 액터로 등록되어 있으므로 아래 for문에서 삭제됨
 	ParticleEventManager = nullptr;
 
-    // Cleanup current
+    // Cleanup current level
     if (Level)
     {
-        // Persistent Actor 추출 (레벨 전환 시에도 유지)
-        TArray<AActor*> PersistentActors;
-        for (AActor* Actor : Level->GetActors())
+        UE_LOG("[info] World::SetLevel: Cleaning up old level (bPie=%d)", bPie);
+        UE_LOG("[info] World::SetLevel: Old level actor count: %d", Level->GetActors().size());
+
+        // 모든 액터 삭제 (Persistent Actor 개념 제거)
+        TArray<AActor*> ActorsToDelete = Level->GetActors();
+
+        // Clear the level's actor list first
+        Level->Clear();
+
+        // Delete all actors
+        for (AActor* Actor : ActorsToDelete)
         {
-            if (Actor && Actor->IsPersistentActor())
-            {
-                PersistentActors.Add(Actor);
-                UE_LOG("[info] World::SetLevel: Preserving persistent actor: %s", Actor->ObjectName);
-            }
-            else
+            if (Actor)
             {
                 ObjectFactory::DeleteObject(Actor);
             }
         }
 
-        Level->Clear();
-
-        // Persistent Actor를 새 레벨에 다시 추가
-        for (AActor* Actor : PersistentActors)
-        {
-            InLevel->AddActor(Actor);
-        }
+		// PIE 런타임에서 레벨이 전환될 때, 싱글턴 매니저 중 UObject인 것들은
+		// 월드와 함께 소멸될 수 있다. 하지만 static 포인터는 그대로 남아있어
+		// Dangling Pointer 문제가 발생한다.
+		// 따라서 월드 정리 후 명시적으로 싱글턴 인스턴스 포인터를 리셋해줘야 한다.
+		if (bPie)
+		{
+			UInputManager::Shutdown();
+		}
     }
     // Clear spatial indices (skip if partition is null for preview worlds)
     if (Partition)
@@ -657,26 +660,24 @@ void UWorld::SetLevel(std::unique_ptr<ULevel> InLevel)
 			Partition->BulkRegister(Level->GetActors());
 		}
 
-		// 먼저 World 설정만 수행
-        for (AActor* Actor : Level->GetActors())
-        {
-			if (Actor)
-			{
-				Actor->SetWorld(this);
-			}
-        }
-
-		// PCM을 먼저 찾아서 설정 (RegisterAllComponents에서 CameraComponent가 RegisterView 호출 시 필요)
+		// Find the PlayerCameraManager that may have been loaded with the level.
+		// This needs to be set before RegisterAllComponents is called.
 		this->PlayerCameraManager = FindActor<APlayerCameraManager>();
 
-		// 그 후 RegisterAllComponents 호출
-        for (AActor* Actor : Level->GetActors())
-        {
+		// Use a single, index-based loop for adoption. This is safer against
+		// the actor list being modified during iteration (e.g., by a component's
+		// OnRegister method spawning a new actor).
+		for (size_t i = 0; i < Level->GetActors().size(); ++i)
+		{
+			AActor* Actor = Level->GetActors()[i];
 			if (Actor)
 			{
+				// Ensure the World pointer is set.
+				Actor->SetWorld(this);
+				// Register all of the actor's components.
 				Actor->RegisterAllComponents(this);
 			}
-        }
+		}
     }
 
 	// 파티클 이벤트 매니저 생성 (Preview World 제외)

@@ -419,6 +419,8 @@ FLuaManager::FLuaManager()
     SharedLib.set_function("TransitionToLevel",
         [](const FString& LevelPathUTF8)
         {
+            UE_LOG("[Lua] TransitionToLevel called from Lua with path: %s", LevelPathUTF8.c_str());
+
             if (!GWorld)
             {
                 UE_LOG("[Lua][error] TransitionToLevel: GWorld is null");
@@ -426,6 +428,7 @@ FLuaManager::FLuaManager()
             }
 
             FWideString LevelPathWide = UTF8ToWide(LevelPathUTF8);
+            UE_LOG("[Lua] Calling GWorld->TransitionToLevel");
             GWorld->TransitionToLevel(LevelPathWide);
         }
     );

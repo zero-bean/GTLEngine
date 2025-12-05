@@ -185,9 +185,6 @@ private:
     /** === GameMode 인스턴스 === */
     AGameModeBase* GameModeInstance = nullptr;
 
-    /** === 레벨전환 (PIE Only) === */
-    ALevelTransitionManager* LevelTransitionManager = nullptr;
-
     /** === 레벨 컨테이너 === */
     std::unique_ptr<ULevel> Level;
     TArray<AActor*> PendingKillActors;  // 지연 삭제 예정 액터 목록

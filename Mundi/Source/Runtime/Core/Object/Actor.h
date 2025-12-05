@@ -165,8 +165,7 @@ public:
 	bool CanTickInEditor() const { return bTickInEditor; }
 
     // ───── 레벨 전환 관련 ─────────────────────────
-    void SetPersistAcrossLevelTransition(bool bPersist) { bPersistAcrossLevelTransition = bPersist; }
-    bool IsPersistentActor() const { return bPersistAcrossLevelTransition; }
+    // Persistent Actor 개념 제거됨 - 모든 액터는 씬 전환 시 삭제됨
 
     // ───── 충돌 관련 ─────────────────────────  
     void OnBeginOverlap(UPrimitiveComponent* MyComp, UPrimitiveComponent* OtherComp);
@@ -218,7 +217,6 @@ protected:
     bool bIsPicked = false;
     bool bCanEverTick = true;   // Tick을 허용하는 Actor 라는 뜻 (생성자 시점에만 변경해야 됨)
     bool bIsCulled = false;
-    bool bPersistAcrossLevelTransition = false;  // 레벨 전환 시에도 유지되는 액터
 
     float CustomTimeDillation;
 

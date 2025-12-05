@@ -8,11 +8,7 @@ IMPLEMENT_CLASS(ALevelTransitionManager)
 ALevelTransitionManager::ALevelTransitionManager()
 {
     ObjectName = "LevelTransitionManager";
-    bCanEverTick = false;
-
-    SetPersistAcrossLevelTransition(true);
-
-    UE_LOG("[info] LevelTransitionManager: Created (Persistent Actor)");
+    bCanEverTick = true;  // Tick 활성화 (Lua 스크립트 Update 호출을 위해)
 }
 
 ALevelTransitionManager::~ALevelTransitionManager()
@@ -23,7 +19,18 @@ ALevelTransitionManager::~ALevelTransitionManager()
 void ALevelTransitionManager::BeginPlay()
 {
     Super::BeginPlay();
-    UE_LOG("[info] LevelTransitionManager: BeginPlay (Ready for level transitions)");
+
+    // PIE 세션 시작 시 모든 상태 초기화
+    UE_LOG("[info] LevelTransitionManager: BeginPlay - Resetting transition state for new PIE session.");
+    TransitionState = ELevelTransitionState::Idle;
+    bPendingTransition = false;
+    PendingLevelPath.clear();
+    NextScenePath.clear();
+}
+
+void ALevelTransitionManager::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -31,58 +38,73 @@ void ALevelTransitionManager::BeginPlay()
 
 void ALevelTransitionManager::TransitionToLevel(const FWideString& LevelPath)
 {
-    // 1. 에러 체크
-
     // 이미 전환 중이면 무시
-    if (IsTransitioning())
-    {
-        UE_LOG("[warning] LevelTransitionManager: Already transitioning to another level");
-        return;
-    }
+    if (IsTransitioning() || bPendingTransition) { return; }
 
     // 경로가 비어있으면 에러
-    if (LevelPath.empty())
-    {
-        UE_LOG("[error] LevelTransitionManager: Empty level path");
-        return;
-    }
+    if (LevelPath.empty()) { return; }
 
     // 파일이 존재하지 않으면 에러
-    if (!DoesLevelFileExist(LevelPath))
-    {
-        UE_LOG("[error] LevelTransitionManager: Level file does not exist: %s",
-               WideToUTF8(LevelPath).c_str());
-        return;
-    }
+    if (!DoesLevelFileExist(LevelPath)) { return; }
 
-    // 2. 전환 실행
-
-    UWorld* World = GetWorld();
-    if (!World)
-    {
-        UE_LOG("[error] LevelTransitionManager: World is null");
-        return;
-    }
-
-    UE_LOG("[info] LevelTransitionManager: Transitioning to level: %s",
-           WideToUTF8(LevelPath).c_str());
-
+    // 2. 지연 전환 예약 (다음 프레임 초에 실행 - 현재 Tick 완료 보장)
+    bPendingTransition = true;
+    PendingLevelPath = LevelPath;
     TransitionState = ELevelTransitionState::Transitioning;
+}
 
-    // World의 LoadLevelFromFile 호출
-    // ※ 내부에서 SetLevel()이 호출되며, Persistent Actor는 자동으로 보존됨
-    bool bSuccess = World->LoadLevelFromFile(LevelPath);
+void ALevelTransitionManager::TransitionToNextLevel()
+{
+    if (NextScenePath.empty()) { return; }
 
-    if (bSuccess)
+    TransitionToLevel(NextScenePath);
+}
+
+void ALevelTransitionManager::ProcessPendingTransition()
+{
+    // bPendingTransition 플래그가 세워져 있으면 전환 실행
+    if (!bPendingTransition) { return; }
+
+    // LoadLevelFromFile() 호출 시 this가 파괴되므로, 경로를 로컬 변수에 복사
+    FWideString LevelToLoad = PendingLevelPath;
+
+    // 1. PIE 모드 확인
+    if (!GEngine.IsPIEActive())
     {
-        UE_LOG("[info] LevelTransitionManager: Level transition successful");
-    }
-    else
-    {
-        UE_LOG("[error] LevelTransitionManager: Level transition failed");
+        TransitionState = ELevelTransitionState::Idle;
+        bPendingTransition = false;
+        return;
     }
 
-    TransitionState = ELevelTransitionState::Idle;
+    // 2. PIE World 찾기
+    UWorld* PIEWorld = nullptr;
+    for (const auto& Context : GEngine.GetWorldContexts())
+    {
+        if (Context.WorldType == EWorldType::Game)
+        {
+            PIEWorld = Context.World;
+            break;
+        }
+    }
+
+    if (!PIEWorld)
+    {
+        UE_LOG("[error] LevelTransitionManager: Could not find PIE world context.");
+        TransitionState = ELevelTransitionState::Idle;
+        bPendingTransition = false;
+        return;
+    }
+
+    // 3. 런타임 씬 전환 (PIE 종료 없이 직접 교체)
+    if (PIEWorld->LoadLevelFromFile(LevelToLoad) == false)
+    {
+        TransitionState = ELevelTransitionState::Idle;
+        bPendingTransition = false;
+        return;
+    }
+
+    // 4. 새 씬의 게임플레이 시작
+    PIEWorld->BeginPlay();
 }
 
 // ════════════════════════════════════════════════════════════════════════

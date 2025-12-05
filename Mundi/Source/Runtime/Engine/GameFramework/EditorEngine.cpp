@@ -12,6 +12,7 @@
 #include "Source/Runtime/Engine/PhysicsEngine/PhysXSupport.h"
 #include "Source/Runtime/Engine/Cloth/ClothManager.h"
 #include "GameInstance.h"
+#include "LevelTransitionManager.h"
 
 float UEditorEngine::ClientWidth = 1024.0f;
 float UEditorEngine::ClientHeight = 1024.0f;
@@ -238,15 +239,6 @@ void UEditorEngine::Tick(float DeltaSeconds)
     for (auto& WorldContext : WorldContexts)
     {
         WorldContext.World->Tick(DeltaSeconds);
-        //// 테스트용으로 분기해놨음
-        //if (WorldContext.World && bPIEActive && WorldContext.WorldType == EWorldType::Game)
-        //{
-        //    WorldContext.World->Tick(DeltaSeconds, WorldContext.WorldType);
-        //}
-        //else if (WorldContext.World && !bPIEActive && WorldContext.WorldType == EWorldType::Editor)
-        //{
-        //    WorldContext.World->Tick(DeltaSeconds, WorldContext.WorldType);
-        //}
     }
     
     SLATE.Update(DeltaSeconds);
@@ -324,7 +316,7 @@ void UEditorEngine::MainLoop()
                 ObjectFactory::DeleteObject(GWorld);
             }
 
-            // GameInstance 소멸 (PIE 종료)
+            // GameInstance 소멸 (PIE 종료 시)
             if (GameInstance)
             {
                 ObjectFactory::DeleteObject(GameInstance);
@@ -352,8 +344,27 @@ void UEditorEngine::MainLoop()
         FPlatformCrashHandler::TickCrashMode();
         ClothManager->Tick(DeltaSeconds);
         Tick(DeltaSeconds);
+
+        // 레벨 전환 처리 (Tick 완료 후, Render 전)
+        if (bPIEActive)
+        {
+            for (auto& WorldContext : WorldContexts)
+            {
+                if (WorldContext.WorldType == EWorldType::Game && WorldContext.World)
+                {
+                    if (ALevelTransitionManager* Manager = WorldContext.World->GetLevelTransitionManager())
+                    {
+                        if (Manager->IsTransitioning())
+                        {
+                            Manager->ProcessPendingTransition();
+                        }
+                    }
+                }
+            }
+        }
+
         Render();
-        
+
         // Shader Hot Reloading - Call AFTER render to avoid mid-frame resource conflicts
         // This ensures all GPU commands are submitted before we check for shader updates
         UResourceManager::GetInstance().CheckAndReloadShaders(DeltaSeconds);
@@ -362,7 +373,6 @@ void UEditorEngine::MainLoop()
 
 void UEditorEngine::Shutdown()
 {
-
     // 월드부터 삭제해야 DeleteAll 때 문제가 없음
     for (FWorldContext WorldContext : WorldContexts)
     {
@@ -415,8 +425,16 @@ void UEditorEngine::StartPIE()
     bPIEActive = true;
 
     // GameInstance 생성 (PIE 세션 동안 유지)
-    GameInstance = NewObject<UGameInstance>();
-    UE_LOG("[info] EditorEngine: GameInstance created");
+    // 레벨 전환 중이면 기존 GameInstance 재사용
+    if (!GameInstance)
+    {
+        GameInstance = NewObject<UGameInstance>();
+        UE_LOG("[info] EditorEngine: GameInstance created");
+    }
+    else
+    {
+        UE_LOG("[info] EditorEngine: Reusing existing GameInstance");
+    }
 
     // World Settings 기반 GameMode 생성 및 모든 액터 BeginPlay 호출
     GWorld->BeginPlay();
