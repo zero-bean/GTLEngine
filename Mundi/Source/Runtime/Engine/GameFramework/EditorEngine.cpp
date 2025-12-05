@@ -11,6 +11,7 @@
 #include "PhysicalMaterialLoader.h"
 #include "Source/Runtime/Engine/PhysicsEngine/PhysXSupport.h"
 #include "Source/Runtime/Engine/Cloth/ClothManager.h"
+#include "GameInstance.h"
 
 float UEditorEngine::ClientWidth = 1024.0f;
 float UEditorEngine::ClientHeight = 1024.0f;
@@ -323,6 +324,14 @@ void UEditorEngine::MainLoop()
                 ObjectFactory::DeleteObject(GWorld);
             }
 
+            // GameInstance 소멸 (PIE 종료)
+            if (GameInstance)
+            {
+                ObjectFactory::DeleteObject(GameInstance);
+                GameInstance = nullptr;
+                UE_LOG("[info] EditorEngine: GameInstance destroyed");
+            }
+
             // PIE 종료 시 Game HUD 위젯 정리
             if (SGameHUD::Get().IsInitialized())
             {
@@ -404,6 +413,10 @@ void UEditorEngine::StartPIE()
     SLATE.SetPIEWorld(GWorld);  // SLATE의 카메라를 가져와서 설정, TODO: 추후 월드의 카메라 컴포넌트를 가져와서 설정하도록 변경 필요
 
     bPIEActive = true;
+
+    // GameInstance 생성 (PIE 세션 동안 유지)
+    GameInstance = NewObject<UGameInstance>();
+    UE_LOG("[info] EditorEngine: GameInstance created");
 
     // World Settings 기반 GameMode 생성 및 모든 액터 BeginPlay 호출
     GWorld->BeginPlay();

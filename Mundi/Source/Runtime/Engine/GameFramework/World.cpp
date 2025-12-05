@@ -29,6 +29,7 @@
 #include "LightManager.h"
 #include "LuaManager.h"
 #include "LevelTransitionManager.h"
+#include "GameEngine.h"
 #include "CollisionManager.h"
 #include "ShapeComponent.h"
 #include "PlayerCameraManager.h"
@@ -593,6 +594,13 @@ void UWorld::TransitionToLevel(const FWideString& LevelPath)
     {
         UE_LOG("[error] World::TransitionToLevel: LevelTransitionManager is null (PIE mode only)");
     }
+}
+
+UGameInstance* UWorld::GetGameInstance() const
+{
+    // GEngine은 pch.h에서 전역으로 선언됨
+    // _EDITOR 모드에서는 UEditorEngine, _GAME 모드에서는 UGameEngine
+    return GEngine.GetGameInstance();
 }
 
 // ════════════════════════════════════════════════════════════════════════

@@ -33,6 +33,7 @@ class AParticleEventManager;
 class UCollisionManager;
 class AGameModeBase;
 class ALevelTransitionManager;
+class UGameInstance;
 
 struct FTransform;
 struct FSceneCompData;
@@ -77,6 +78,9 @@ public:
 
     /** 편의 메서드: 레벨 전환 */
     void TransitionToLevel(const FWideString& LevelPath);
+
+    /** GameInstance 접근자 (PIE Only) */
+    UGameInstance* GetGameInstance() const;
 
 public:
     /** 초기화 */

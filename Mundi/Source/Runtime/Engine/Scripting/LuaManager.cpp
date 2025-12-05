@@ -9,6 +9,8 @@
 #include "CameraActor.h"
 #include "CameraComponent.h"
 #include "PlayerCameraManager.h"
+#include "GameInstance.h"
+#include "GameEngine.h"
 #include <tuple>
 
 sol::object MakeCompProxy(sol::state_view SolState, UObject* Instance, UClass* Class) {
@@ -357,6 +359,76 @@ FLuaManager::FLuaManager()
     RegisterComponentProxy(*Lua);
     ExposeGlobalFunctions();
     ExposeAllComponentsToLua();
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 레벨 전환 시스템 바인딩
+    // ════════════════════════════════════════════════════════════════════════
+
+    // GameInstance 바인딩
+    Lua->new_usertype<UGameInstance>("GameInstance",
+        sol::no_constructor,
+
+        // 아이템 관리
+        "AddItem", &UGameInstance::AddItem,
+        "GetItemCount", &UGameInstance::GetItemCount,
+        "RemoveItem", &UGameInstance::RemoveItem,
+        "HasItem", &UGameInstance::HasItem,
+        "ClearItems", &UGameInstance::ClearItems,
+
+        // 플레이어 상태
+        "SetPlayerHealth", &UGameInstance::SetPlayerHealth,
+        "GetPlayerHealth", &UGameInstance::GetPlayerHealth,
+        "SetPlayerScore", &UGameInstance::SetPlayerScore,
+        "GetPlayerScore", &UGameInstance::GetPlayerScore,
+        "SetPlayerName", &UGameInstance::SetPlayerName,
+        "GetPlayerName", &UGameInstance::GetPlayerName,
+        "SetRescuedCount", &UGameInstance::SetRescuedCount,
+        "GetRescuedCount", &UGameInstance::GetRescuedCount,
+        "ResetPlayerData", &UGameInstance::ResetPlayerData,
+
+        // 범용 키-값 저장소
+        "SetInt", &UGameInstance::SetInt,
+        "GetInt", &UGameInstance::GetInt,
+        "SetFloat", &UGameInstance::SetFloat,
+        "GetFloat", &UGameInstance::GetFloat,
+        "SetString", &UGameInstance::SetString,
+        "GetString", &UGameInstance::GetString,
+        "SetBool", &UGameInstance::SetBool,
+        "GetBool", &UGameInstance::GetBool,
+        "HasKey", &UGameInstance::HasKey,
+        "ClearAll", &UGameInstance::ClearAll,
+
+        // 디버그
+        "PrintDebugInfo", &UGameInstance::PrintDebugInfo
+    );
+
+    // 전역 함수: GetGameInstance()
+    SharedLib.set_function("GetGameInstance",
+        []() -> UGameInstance*
+        {
+            if (!GWorld)
+            {
+                UE_LOG("[Lua][error] GetGameInstance: GWorld is null");
+                return nullptr;
+            }
+            return GWorld->GetGameInstance();
+        }
+    );
+
+    // 전역 함수: TransitionToLevel()
+    SharedLib.set_function("TransitionToLevel",
+        [](const FString& LevelPathUTF8)
+        {
+            if (!GWorld)
+            {
+                UE_LOG("[Lua][error] TransitionToLevel: GWorld is null");
+                return;
+            }
+
+            FWideString LevelPathWide = UTF8ToWide(LevelPathUTF8);
+            GWorld->TransitionToLevel(LevelPathWide);
+        }
+    );
 
     // 위 등록 마친 뒤 fall back 설정 : Shared lib의 fall back은 G
     sol::table MetaTableShared = Lua->create_table();
