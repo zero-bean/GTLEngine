@@ -2648,6 +2648,24 @@ bool UPropertyRenderer::RenderSingleMaterialSlot(const char* Label, UMaterialInt
 			bElementChanged = true;
 		}
 
+		// TileU (UV Tiling X)
+		TempFloat = Info.TileU;
+		FString TileULabel = "Tile U##" + FString(Label);
+		if (ImGui::DragFloat(TileULabel.c_str(), &TempFloat, 0.1f, 0.01f, 100.0f))
+		{
+			MeshComponent->SetMaterialScalarByUser(MaterialIndex, "TileU", TempFloat);
+			bElementChanged = true;
+		}
+
+		// TileV (UV Tiling Y)
+		TempFloat = Info.TileV;
+		FString TileVLabel = "Tile V##" + FString(Label);
+		if (ImGui::DragFloat(TileVLabel.c_str(), &TempFloat, 0.1f, 0.01f, 100.0f))
+		{
+			MeshComponent->SetMaterialScalarByUser(MaterialIndex, "TileV", TempFloat);
+			bElementChanged = true;
+		}
+
 		// --- Ints (IlluminationModel) ---
 		int TempInt = Info.IlluminationModel;
 		FString IllumModelLabel = "Illum Model##" + FString(Label);
