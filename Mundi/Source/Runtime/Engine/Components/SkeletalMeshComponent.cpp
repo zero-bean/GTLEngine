@@ -34,7 +34,7 @@ USkeletalMeshComponent::USkeletalMeshComponent()
     SetSkeletalMesh(GDataDir + "/DancingRacer.fbx");
 
     // 기본 PhysicsAsset 설정
-    PhysicsAsset = UResourceManager::GetInstance().Load<UPhysicsAsset>("Data/Physics/Dancing.physicsasset");
+    PhysicsAsset = UResourceManager::GetInstance().Load<UPhysicsAsset>("Data/Physics/xBot.physicsasset");
 }
 
 
