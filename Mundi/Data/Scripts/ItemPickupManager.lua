@@ -55,8 +55,8 @@ end
 -- 하이라이트 관리
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- 하이라이트 색상 (노란색/황금색)
-local HighlightColor = { R = 1.0, G = 0.8, B = 0.2, A = 1.0 }
+-- 하이라이트 색상 (흰색)
+local HighlightColor = { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
 
 local function SetHighlight(gameObject, bHighlight)
     if not gameObject then return end

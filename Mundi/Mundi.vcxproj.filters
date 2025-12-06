@@ -1682,6 +1682,9 @@
     <ClCompile Include="Generated\UItemComponent.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Generated\AItemTestGameMode.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Runtime\AssetManagement\LinesBatch.h" />
@@ -3633,6 +3636,9 @@
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Generated\UItemComponent.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\AItemTestGameMode.generated.h">
       <Filter>Generated</Filter>
     </ClInclude>
   </ItemGroup>

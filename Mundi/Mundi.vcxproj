@@ -325,6 +325,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Source\Runtime\Engine\GameFramework\GameModeBase.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\GameStateBase.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\HudExampleGameMode.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\ItemTestGameMode.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\LevelTransitionManager.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\Pawn.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\PlayerController.cpp" />
@@ -860,6 +861,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Generated\AFirefighterCharacter.generated.cpp" />
     <ClCompile Include="Generated\USkyboxComponent.generated.cpp" />
     <ClCompile Include="Generated\UItemComponent.generated.cpp" />
+    <ClCompile Include="Generated\AItemTestGameMode.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
@@ -1098,6 +1100,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameModeBase.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameStateBase.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\HudExampleGameMode.h" />
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\ItemTestGameMode.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\LevelTransitionManager.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\Pawn.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\PlayerCameraManager.h" />
@@ -1502,6 +1505,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Generated\AFirefighterCharacter.generated.h" />
     <ClInclude Include="Generated\USkyboxComponent.generated.h" />
     <ClInclude Include="Generated\UItemComponent.generated.h" />
+    <ClInclude Include="Generated\AItemTestGameMode.generated.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTools\CodeGenerator\generate.py" />
