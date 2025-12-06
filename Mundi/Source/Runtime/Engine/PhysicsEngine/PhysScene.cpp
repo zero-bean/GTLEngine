@@ -5,6 +5,14 @@
 #include "PhysXSimEventCallback.h"
 #include "PrimitiveComponent.h"
 
+// CCT (Character Controller) 관련
+#include "ControllerInstance.h"
+#include "CCTHitReport.h"
+#include "CCTQueryFilterCallback.h"
+#include "CCTBehaviorCallback.h"
+#include "CapsuleComponent.h"
+#include "CharacterMovementComponent.h"
+
 // 커스텀 Simulation Filter Shader
 // FilterData 구조:
 // word0: 충돌 채널 비트 (이 바디의 타입)
@@ -247,6 +255,25 @@ void FPhysScene::InitPhysScene()
                                         PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES);
         }
         UE_LOG("[PhysX] PhysX Scene 생성에 성공했습니다.");
+
+        // CCT (Character Controller) 시스템 초기화
+        ControllerManager = PxCreateControllerManager(*PhysXScene);
+        if (ControllerManager)
+        {
+            // 침투 해결 활성화
+            ControllerManager->setOverlapRecoveryModule(true);
+
+            // CCT 콜백 생성
+            CCTHitReport = new FCCTHitReport(this);
+            CCTBehaviorCallback = new FCCTBehaviorCallback();
+            CCTControllerFilter = new FCCTControllerFilterCallback();
+
+            UE_LOG("[PhysX] CCT Controller Manager 생성에 성공했습니다.");
+        }
+        else
+        {
+            UE_LOG("[PhysX Error] CCT Controller Manager 생성에 실패했습니다.");
+        }
     }
     else
     {
@@ -256,6 +283,31 @@ void FPhysScene::InitPhysScene()
 
 void FPhysScene::TermPhysScene()
 {
+    // CCT 시스템 정리 (ControllerManager는 Scene보다 먼저 해제해야 함)
+    if (ControllerManager)
+    {
+        ControllerManager->release();
+        ControllerManager = nullptr;
+    }
+
+    if (CCTHitReport)
+    {
+        delete CCTHitReport;
+        CCTHitReport = nullptr;
+    }
+
+    if (CCTBehaviorCallback)
+    {
+        delete CCTBehaviorCallback;
+        CCTBehaviorCallback = nullptr;
+    }
+
+    if (CCTControllerFilter)
+    {
+        delete CCTControllerFilter;
+        CCTControllerFilter = nullptr;
+    }
+
     if (PhysXScene)
     {
         WaitPhysScene();
@@ -752,4 +804,43 @@ bool FPhysScene::ComputePenetrationCapsule(const FVector& Position,
     }
 
     return MaxPenetration > 0.0f;
+}
+
+// ==================================================================================
+// CCT (Character Controller) Interface Implementation
+// ==================================================================================
+
+FControllerInstance* FPhysScene::CreateController(UCapsuleComponent* InCapsule, UCharacterMovementComponent* InMovement)
+{
+    if (!ControllerManager || !InCapsule)
+    {
+        UE_LOG("[PhysX CCT] CreateController 실패: ControllerManager 또는 CapsuleComponent가 nullptr");
+        return nullptr;
+    }
+
+    FControllerInstance* NewInstance = new FControllerInstance();
+    NewInstance->InitController(InCapsule, InMovement, this);
+
+    if (!NewInstance->IsValid())
+    {
+        UE_LOG("[PhysX CCT] CreateController 실패: Controller 초기화 실패");
+        delete NewInstance;
+        return nullptr;
+    }
+
+    UE_LOG("[PhysX CCT] Controller 생성 성공");
+    return NewInstance;
+}
+
+void FPhysScene::DestroyController(FControllerInstance* InController)
+{
+    if (!InController)
+    {
+        return;
+    }
+
+    InController->TermController();
+    delete InController;
+
+    UE_LOG("[PhysX CCT] Controller 해제 완료");
 }

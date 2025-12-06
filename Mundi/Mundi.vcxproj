@@ -529,7 +529,11 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\BodySetup.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\BodyShapeCalculator.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\BoxElem.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\CCTBehaviorCallback.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\CCTHitReport.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\CCTQueryFilterCallback.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\ConstraintInstance.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\ControllerInstance.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\ConvexElem.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysicalMaterial.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysicsAsset.cpp" />
@@ -1115,7 +1119,11 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\BodySetup.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\BodyShapeCalculator.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\BoxElem.h" />
+    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\CCTBehaviorCallback.h" />
+    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\CCTHitReport.h" />
+    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\CCTQueryFilterCallback.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\ConstraintInstance.h" />
+    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\ControllerInstance.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\ConvexElem.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\ConvexSource.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\EAggCollisionShape.h" />
