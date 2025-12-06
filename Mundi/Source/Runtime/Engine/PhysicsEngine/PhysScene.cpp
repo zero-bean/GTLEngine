@@ -391,6 +391,13 @@ void FPhysScene::SyncComponentsToBodies()
             continue;
         }
 
+        // Kinematic 바디(bSimulatePhysics=false)는 사용자가 직접 제어하므로
+        // 물리 시뮬레이션 결과로 덮어쓰지 않음
+        if (!BodyInstance->bSimulatePhysics)
+        {
+            continue;
+        }
+
         // OwnerComponent가 유효한지 확인
         UPrimitiveComponent* OwnerComp = BodyInstance->OwnerComponent;
         if (!OwnerComp)

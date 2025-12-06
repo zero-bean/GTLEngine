@@ -18,7 +18,6 @@ FBodyInstance::FBodyInstance()
     , PhysicalMaterialOverride(nullptr)
     , Scale3D(FVector(1.f, 1.f, 1.f))
     , bSimulatePhysics(false)
-    , bKinematic(false)
     , LinearDamping(0.01f)
     , AngularDamping(0.f)
     , MassInKgOverride(100.0f)
@@ -35,7 +34,6 @@ FBodyInstance::FBodyInstance(const FBodyInstance& Other)
     , PhysicalMaterialOverride(Other.PhysicalMaterialOverride)
     , Scale3D(Other.Scale3D)
     , bSimulatePhysics(Other.bSimulatePhysics)
-    , bKinematic(Other.bKinematic)
     , LinearDamping(Other.LinearDamping)
     , AngularDamping(Other.AngularDamping)
     , MassInKgOverride(Other.MassInKgOverride)
@@ -55,7 +53,6 @@ FBodyInstance& FBodyInstance::operator=(const FBodyInstance& Other)
         PhysicalMaterialOverride = Other.PhysicalMaterialOverride;
         Scale3D = Other.Scale3D;
         bSimulatePhysics = Other.bSimulatePhysics;
-        bKinematic = Other.bKinematic;
         LinearDamping = Other.LinearDamping;
         AngularDamping = Other.AngularDamping;
         MassInKgOverride = Other.MassInKgOverride;
@@ -101,7 +98,7 @@ void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPr
 
     // 컴포넌트의 Mobility에 따라 Actor 타입 결정
     // Static: PxRigidStatic (움직이지 않음, TriangleMesh 허용)
-    // Movable: PxRigidDynamic (bSimulatePhysics/bKinematic에 따라 동작)
+    // Movable: PxRigidDynamic (bSimulatePhysics에 따라 Dynamic/Kinematic 동작)
     EComponentMobility ComponentMobility = Component ? Component->Mobility : EComponentMobility::Movable;
     switch (ComponentMobility)
     {
@@ -132,8 +129,8 @@ void FBodyInstance::InitBody(UBodySetup* Setup, const FTransform& Transform, UPr
     {
         PxRigidDynamic* DynamicActor = RigidActor->is<PxRigidDynamic>();
 
-        // Kinematic 모드 설정
-        bool bShouldBeKinematic = bKinematic;
+        // Kinematic 모드 설정 (bSimulatePhysics=false이면 Kinematic)
+        bool bShouldBeKinematic = !bSimulatePhysics;
 
         // 에디터 모드에서는 bTickInEditor가 true가 아니면 시뮬레이션 비활성화 (Kinematic으로 설정)
         // PIE 모드이거나 bTickInEditor가 true인 경우에만 실제 시뮬레이션 수행
@@ -286,18 +283,13 @@ void FBodyInstance::SetBodyTransform(const FTransform& NewTransform, bool bTelep
 {
     if (!IsValidBodyInstance() || !PhysScene) { return; }
 
-    std::weak_ptr<bool> WeakHandle = LifeHandle;
+    PxScene* PScene = PhysScene->GetPxScene();
+    if (!PScene) { return; }
 
-    PhysScene->EnqueueCommand([this, NewTransform, bTeleport, WeakHandle]()
+    // Actor가 이미 Scene에 있으면 즉시 실행, 없으면 Enqueue
+    if (RigidActor->getScene())
     {
-        if (WeakHandle.expired())
-        {
-            return;
-        }
-
-        if (!IsValidBodyInstance() || !PhysScene) return;
-        PxScene* PScene = PhysScene->GetPxScene();
-        if (!PScene) return;
+        SCOPED_SCENE_WRITE_LOCK(PScene);
 
         PxTransform PNewTransform = U2PTransform(NewTransform);
         RigidActor->setGlobalPose(PNewTransform);
@@ -312,22 +304,39 @@ void FBodyInstance::SetBodyTransform(const FTransform& NewTransform, bool bTelep
                 DynamicActor->wakeUp();
             }
         }
-    });
+    }
+    else
+    {
+        std::weak_ptr<bool> WeakHandle = LifeHandle;
+
+        PhysScene->EnqueueCommand([this, NewTransform, bTeleport, WeakHandle]()
+        {
+            if (WeakHandle.expired()) return;
+            if (!IsValidBodyInstance() || !PhysScene) return;
+
+            PxTransform PNewTransform = U2PTransform(NewTransform);
+            RigidActor->setGlobalPose(PNewTransform);
+
+            if (bTeleport && IsDynamic())
+            {
+                PxRigidDynamic* DynamicActor = RigidActor->is<PxRigidDynamic>();
+                if (DynamicActor)
+                {
+                    DynamicActor->setLinearVelocity(PxVec3(0.0f));
+                    DynamicActor->setAngularVelocity(PxVec3(0.0f));
+                    DynamicActor->wakeUp();
+                }
+            }
+        });
+    }
 }
 
 void FBodyInstance::SetLinearVelocity(const FVector& NewVel, bool bAddToCurrent)
 {
     if (!IsValidBodyInstance() || !PhysScene) return;
 
-    std::weak_ptr<bool> WeakHandle = LifeHandle;
-
-    PhysScene->EnqueueCommand([this, NewVel, bAddToCurrent, WeakHandle]()
+    auto SetVelocityImpl = [this, NewVel, bAddToCurrent]()
     {
-        if (WeakHandle.expired())
-        {
-            return;
-        }
-
         if (!IsValidBodyInstance()) return;
 
         if (IsDynamic())
@@ -351,7 +360,23 @@ void FBodyInstance::SetLinearVelocity(const FVector& NewVel, bool bAddToCurrent)
             }
             DynamicActor->wakeUp();
         }
-    });
+    };
+
+    // Actor가 이미 Scene에 있으면 즉시 실행, 없으면 Enqueue
+    if (RigidActor->getScene())
+    {
+        SCOPED_SCENE_WRITE_LOCK(PhysScene->GetPxScene());
+        SetVelocityImpl();
+    }
+    else
+    {
+        std::weak_ptr<bool> WeakHandle = LifeHandle;
+        PhysScene->EnqueueCommand([this, SetVelocityImpl, WeakHandle]()
+        {
+            if (WeakHandle.expired()) return;
+            SetVelocityImpl();
+        });
+    }
 }
 
 void FBodyInstance::AddForce(const FVector& Force, bool bAccelChange)
@@ -468,9 +493,9 @@ void FBodyInstance::AddAngularImpulse(const FVector& Impulse, bool bVelChange)
 
 bool FBodyInstance::IsDynamic() const
 {
-    // Movable이고 물리 시뮬레이션이 활성화되어 있고 Kinematic이 아닌 경우
+    // Movable이고 물리 시뮬레이션이 활성화되어 있는 경우
     if (!OwnerComponent) return false;
-    return OwnerComponent->Mobility == EComponentMobility::Movable && bSimulatePhysics && !bKinematic;
+    return OwnerComponent->Mobility == EComponentMobility::Movable && bSimulatePhysics;
 }
 
 bool FBodyInstance::IsStatic() const
@@ -481,9 +506,9 @@ bool FBodyInstance::IsStatic() const
 
 bool FBodyInstance::IsKinematic() const
 {
-    // Movable이고 (물리 시뮬레이션이 비활성화되어 있거나 Kinematic인 경우)
+    // Movable이고 물리 시뮬레이션이 비활성화되어 있는 경우
     if (!OwnerComponent) return false;
-    return OwnerComponent->Mobility == EComponentMobility::Movable && (!bSimulatePhysics || bKinematic);
+    return OwnerComponent->Mobility == EComponentMobility::Movable && !bSimulatePhysics;
 }
 
 void FBodyInstance::SetCollisionChannel(ECollisionChannel InChannel, uint32 InMask)
@@ -548,16 +573,9 @@ void FBodyInstance::SetKinematicTarget(const FTransform& NewTransform)
 {
     if (!IsValidBodyInstance() || !IsKinematic() || !PhysScene) return;
 
-    std::weak_ptr<bool> WeakHandle = LifeHandle;
-
-    PhysScene->EnqueueCommand([this, NewTransform, WeakHandle]()
+    auto SetTargetImpl = [this, NewTransform]()
     {
-        if (WeakHandle.expired())
-        {
-            return;
-        }
-
-        if (!IsValidBodyInstance() || !PhysScene) return;
+        if (!IsValidBodyInstance()) return;
 
         PxRigidDynamic* DynamicActor = RigidActor->is<PxRigidDynamic>();
         if (DynamicActor)
@@ -565,7 +583,23 @@ void FBodyInstance::SetKinematicTarget(const FTransform& NewTransform)
             PxTransform PxTarget = U2PTransform(NewTransform);
             DynamicActor->setKinematicTarget(PxTarget);
         }
-    });
+    };
+
+    // Actor가 이미 Scene에 있으면 즉시 실행, 없으면 Enqueue
+    if (RigidActor->getScene())
+    {
+        SCOPED_SCENE_WRITE_LOCK(PhysScene->GetPxScene());
+        SetTargetImpl();
+    }
+    else
+    {
+        std::weak_ptr<bool> WeakHandle = LifeHandle;
+        PhysScene->EnqueueCommand([this, SetTargetImpl, WeakHandle]()
+        {
+            if (WeakHandle.expired()) return;
+            SetTargetImpl();
+        });
+    }
 }
 
 void FBodyInstance::SetKinematic(bool bEnable)
@@ -577,28 +611,26 @@ void FBodyInstance::SetKinematic(bool bEnable)
         return;
     }
 
+    // bSimulatePhysics와 bEnable은 반대 관계
+    // SetKinematic(true) → bSimulatePhysics = false
+    // SetKinematic(false) → bSimulatePhysics = true
+    bool bNewSimulatePhysics = !bEnable;
+
     // 이미 같은 상태면 무시
-    if (bKinematic == bEnable)
+    if (bSimulatePhysics == bNewSimulatePhysics)
     {
         return;
     }
 
-    bKinematic = bEnable;
+    bSimulatePhysics = bNewSimulatePhysics;
 
     if (!IsValidBodyInstance() || !PhysScene)
     {
         return;
     }
 
-    std::weak_ptr<bool> WeakHandle = LifeHandle;
-
-    PhysScene->EnqueueCommand([this, bEnable, WeakHandle]()
+    auto SetKinematicImpl = [this, bEnable]()
     {
-        if (WeakHandle.expired())
-        {
-            return;
-        }
-
         if (!IsValidBodyInstance()) return;
 
         PxRigidDynamic* DynamicActor = RigidActor->is<PxRigidDynamic>();
@@ -614,5 +646,21 @@ void FBodyInstance::SetKinematic(bool bEnable)
                 DynamicActor->wakeUp();
             }
         }
-    });
+    };
+
+    // Actor가 이미 Scene에 있으면 즉시 실행, 없으면 Enqueue
+    if (RigidActor->getScene())
+    {
+        SCOPED_SCENE_WRITE_LOCK(PhysScene->GetPxScene());
+        SetKinematicImpl();
+    }
+    else
+    {
+        std::weak_ptr<bool> WeakHandle = LifeHandle;
+        PhysScene->EnqueueCommand([this, SetKinematicImpl, WeakHandle]()
+        {
+            if (WeakHandle.expired()) return;
+            SetKinematicImpl();
+        });
+    }
 }

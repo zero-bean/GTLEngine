@@ -102,11 +102,11 @@ public:
     /** 바디를 생성하기 위한 3D 스케일 */
     FVector Scale3D;
 
-    /** True일 경우, 물리 시뮬레이션을 수행한다 (Movable일 때만 유효) */
+    /** True일 경우, 물리 시뮬레이션을 수행한다 (Movable일 때만 유효)
+     *  - true: Dynamic 바디 (물리 시뮬레이션)
+     *  - false: Kinematic 바디 (사용자 직접 제어)
+     */
     bool bSimulatePhysics = false;
-
-    /** True일 경우, Kinematic 바디 (Movable + bSimulatePhysics일 때만 유효) */
-    bool bKinematic = false;
 
     /** 선형 댐핑 (이동에 대한 저항력) */
     float LinearDamping;
