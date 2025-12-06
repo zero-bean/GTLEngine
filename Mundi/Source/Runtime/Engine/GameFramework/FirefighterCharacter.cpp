@@ -102,9 +102,7 @@ void AFirefighterCharacter::HandleAnimNotify(const FAnimNotifyEvent& NotifyEvent
 
 void AFirefighterCharacter::Tick(float DeltaSeconds)
 {
-	Super::Tick(DeltaSeconds);
-
-	// 이동 방향으로 캐릭터 회전
+	// 이동 방향으로 캐릭터 회전 (Super::Tick 전에 처리해야 SpringArm이 올바른 회전을 사용)
 	if (bOrientRotationToMovement && CurrentMovementDirection.SizeSquared() > 0.01f)
 	{
 		// 이동 방향에서 목표 회전 계산 (Yaw만 사용)
@@ -136,6 +134,9 @@ void AFirefighterCharacter::Tick(float DeltaSeconds)
 
 	// 이동 방향 초기화 (다음 프레임을 위해)
 	CurrentMovementDirection = FVector::Zero();
+
+	// Super::Tick에서 Component들의 Tick이 호출됨 (SpringArm 포함)
+	Super::Tick(DeltaSeconds);
 }
 
 void AFirefighterCharacter::SetupPlayerInputComponent(UInputComponent* InInputComponent)
