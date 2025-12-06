@@ -321,10 +321,10 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Source\Runtime\Engine\GameFramework\Controller.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\FirefighterCharacter.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\GameInstance.cpp" />
-    <ClCompile Include="Source\Runtime\Engine\GameFramework\GameJamGameMode.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\GameModeBase.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\GameStateBase.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\HudExampleGameMode.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\IntroGameMode.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\LevelTransitionManager.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\Pawn.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\PlayerController.cpp" />
@@ -857,8 +857,8 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Generated\ALevelTransitionManager.generated.cpp" />
     <ClCompile Include="Generated\FKTriangleMeshElem.generated.cpp" />
     <ClCompile Include="Generated\AFirefighterCharacter.generated.cpp" />
-    <ClCompile Include="Generated\AGameJamGameMode.generated.cpp" />
     <ClCompile Include="Generated\ATimerTrigger.generated.cpp" />
+    <ClCompile Include="Generated\AIntroGameMode.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
@@ -1092,10 +1092,10 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Source\Runtime\Engine\GameFramework\Camera\CamMod_Shake.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameEngine.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameInstance.h" />
-    <ClInclude Include="Source\Runtime\Engine\GameFramework\GameJamGameMode.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameModeBase.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameStateBase.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\HudExampleGameMode.h" />
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\IntroGameMode.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\LevelTransitionManager.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\Pawn.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\PlayerCameraManager.h" />
@@ -1498,8 +1498,8 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Generated\ALevelTransitionManager.generated.h" />
     <ClInclude Include="Generated\FKTriangleMeshElem.generated.h" />
     <ClInclude Include="Generated\AFirefighterCharacter.generated.h" />
-    <ClInclude Include="Generated\AGameJamGameMode.generated.h" />
     <ClInclude Include="Generated\ATimerTrigger.generated.h" />
+    <ClInclude Include="Generated\AIntroGameMode.generated.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTools\CodeGenerator\generate.py" />

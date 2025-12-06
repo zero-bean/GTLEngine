@@ -12,9 +12,14 @@
 // 헬퍼 함수
 // =====================================================
 
-static void SafeRelease(IUnknown* p)
+template<typename T>
+static void SafeRelease(T*& p)
 {
-    if (p) p->Release();
+    if (p)
+    {
+        p->Release();
+        p = nullptr;
+    }
 }
 
 static D2D1_COLOR_F ToD2DColor(const FSlateColor& Color)
@@ -112,30 +117,56 @@ void FD2DRenderer::Shutdown()
     if (!bInitialized)
         return;
 
-    // TextFormat 캐시 해제
-    for (auto& Pair : TextFormatCache)
+    // 재진입 방지 - Shutdown이 두 번 호출되는 것을 막음
+    bInitialized = false;
+
+    // If we are in the middle of a frame, end the draw call.
+    // D2DERR_WRONG_STATE will be returned if EndDraw is called without a matching BeginDraw,
+    // but that's fine to ignore here.
+    if (bInFrame)
     {
-        SafeRelease(Pair.second);
+        D2DContext->EndDraw();
+        bInFrame = false; // Prevent re-entry if something weird happens
+    }
+
+    // Always unbind the render target before releasing resources.
+    if (D2DContext)
+    {
+        D2DContext->SetTarget(nullptr);
+    }
+
+    // TextFormat 캐시 해제
+    for (auto It = TextFormatCache.begin(); It != TextFormatCache.end(); ++It)
+    {
+        if (It->second)
+        {
+            It->second->Release();
+            It->second = nullptr;
+        }
     }
     TextFormatCache.Empty();
 
     // Bitmap 캐시 해제
-    for (auto& Pair : BitmapCache)
+    for (auto It = BitmapCache.begin(); It != BitmapCache.end(); ++It)
     {
-        SafeRelease(Pair.second);
+        if (It->second)
+        {
+            It->second->Release();
+            It->second = nullptr;
+        }
     }
     BitmapCache.clear();
 
-    SafeRelease(RenderTarget);
+    // D2D 리소스 해제 (역순으로 해제)
     SafeRelease(SolidBrush);
-    SafeRelease(DWriteFactory);
+    SafeRelease(RenderTarget);
     SafeRelease(D2DContext);
     SafeRelease(D2DDevice);
+    SafeRelease(DWriteFactory);
     SafeRelease(D2DFactory);
 
     D3DDevice = nullptr;
     SwapChain = nullptr;
-    bInitialized = false;
 }
 
 // =====================================================
