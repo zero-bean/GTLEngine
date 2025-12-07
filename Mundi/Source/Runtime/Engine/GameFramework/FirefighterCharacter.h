@@ -88,6 +88,14 @@ public:
     UPROPERTY(LuaBind, DisplayName="bIsDead")
     bool bIsDead = false;
 
+    /** 물 마법 사용 중 설정 (Lua에서 호출) */
+    UFUNCTION(LuaBind, DisplayName="SetUsingWaterMagic")
+    void SetUsingWaterMagic(bool bUsing) { bIsUsingWaterMagic = bUsing; }
+
+    /** 물 마법 사용 중 여부 반환 (Lua에서 호출) */
+    UFUNCTION(LuaBind, DisplayName="IsUsingWaterMagic")
+    bool IsUsingWaterMagic() const { return bIsUsingWaterMagic; }
+
     /** 데미지 쿨타임 (초) */
     UPROPERTY(LuaBind, DisplayName="DamageCooldown")
     float DamageCooldown = 0.5f;
@@ -158,6 +166,9 @@ private:
 
     /** 데미지 쿨타임 타이머 */
     float DamageCooldownTimer = 0.0f;
+
+    /** 물 마법 사용 중 여부 */
+    bool bIsUsingWaterMagic = false;
 
     /** 사망 처리 */
     void Die();

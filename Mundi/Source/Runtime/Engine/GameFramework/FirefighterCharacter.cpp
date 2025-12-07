@@ -173,8 +173,8 @@ void AFirefighterCharacter::HandleAnimNotify(const FAnimNotifyEvent& NotifyEvent
 void AFirefighterCharacter::Tick(float DeltaSeconds)
 {
 	// 이동 방향으로 캐릭터 회전 (Super::Tick 전에 처리해야 SpringArm이 올바른 회전을 사용)
-	// MaxWalkSpeed가 0이면 (PickUp 등) 회전도 비활성화
-	const bool bCanRotate = CharacterMovement && CharacterMovement->MaxWalkSpeed > 0.01f;
+	// MaxWalkSpeed가 0이면 (PickUp 등) 회전도 비활성화, 단 물 마법 사용 중에는 회전 허용
+	const bool bCanRotate = CharacterMovement && (CharacterMovement->MaxWalkSpeed > 0.01f || bIsUsingWaterMagic);
 	if (bOrientRotationToMovement && bCanRotate && CurrentMovementDirection.SizeSquared() > 0.01f)
 	{
 		// 이동 방향에서 목표 회전 계산 (Yaw만 사용)
