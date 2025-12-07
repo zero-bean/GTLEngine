@@ -18,11 +18,28 @@ local STATE_WALKING = "Walking"
 local STATE_RUNNING = "Running"
 local STATE_PICKUP = "PickUp"
 
--- 애니메이션 에셋 경로 (FBX파일명_AnimStack이름 형식)
-local ANIM_IDLE = "Data/firefighter/Firefighter_Without_Cloth_Idle_mixamo.com"
-local ANIM_WALKING = "Data/firefighter/Firefighter_Without_Cloth_Walking_mixamo.com"
-local ANIM_RUNNING = "Data/firefighter/Firefighter_Without_Cloth_Running_mixamo.com"
-local ANIM_PICKUP = "Data/firefighter/Firefighter_Without_Cloth_Picking_Up_Object_mixamo.com"
+-- 애니메이션 에셋 경로 (Without_Cloth 버전)
+local ANIM_WITHOUT_CLOTH = {
+    IDLE = "Data/firefighter/Firefighter_Without_Cloth_Idle_mixamo.com",
+    WALKING = "Data/firefighter/Firefighter_Without_Cloth_Walking_mixamo.com",
+    RUNNING = "Data/firefighter/Firefighter_Without_Cloth_Running_mixamo.com",
+    PICKUP = "Data/firefighter/Firefighter_Without_Cloth_Picking_Up_Object_mixamo.com"
+}
+
+-- 애니메이션 에셋 경로 (With_Cloth 버전 - 소방복 장착 시)
+local ANIM_WITH_CLOTH = {
+    IDLE = "Data/firefighter/Firefighter_With_Cloth_Idle_mixamo.com",
+    WALKING = "Data/firefighter/Firefighter_With_Cloth_Walking_mixamo.com",
+    RUNNING = "Data/firefighter/Firefighter_With_Cloth_Running_mixamo.com",
+    PICKUP = "Data/firefighter/Firefighter_With_Cloth_Picking_Up_Object_mixamo.com"
+}
+
+-- 메시 경로
+local MESH_WITHOUT_CLOTH = "Data/firefighter/Firefighter_Without_Cloth.fbx"
+local MESH_WITH_CLOTH = "Data/firefighter/Firefighter_With_Cloth.fbx"
+
+-- 현재 애니메이션 세트 (기본: Without_Cloth)
+local CurrentAnims = ANIM_WITHOUT_CLOTH
 
 -- ============================================================================
 -- 참조 초기화 함수 (BeginPlay와 HotReload에서 공통 사용)
@@ -63,6 +80,7 @@ function OnBeginPlay()
     State.bIsMoving = false
     State.bIsRunning = false
     State.bIsPerformingAction = false
+    State.bHasFireSuit = false  -- 소방복 장착 상태
 
     -- 애니메이션 상태 머신 설정
     SetupAnimationStateMachine()
@@ -90,11 +108,14 @@ function SetupAnimationStateMachine()
         return
     end
 
+    -- 기존 상태들 클리어 (메시 변경 후 재설정 시 필요)
+    State.StateMachine:Clear()
+
     -- 상태 추가 (이름, 에셋 경로, 재생 속도, 루핑 여부)
-    local idleIdx = State.StateMachine:AddState(STATE_IDLE, ANIM_IDLE, 1.0, true)
-    local walkIdx = State.StateMachine:AddState(STATE_WALKING, ANIM_WALKING, 1.0, true)
-    local runIdx = State.StateMachine:AddState(STATE_RUNNING, ANIM_RUNNING, 1.5, true)  -- 달리기 속도 1.5배
-    local pickupIdx = State.StateMachine:AddState(STATE_PICKUP, ANIM_PICKUP, 1.0, false)  -- 루핑 안함
+    local idleIdx = State.StateMachine:AddState(STATE_IDLE, CurrentAnims.IDLE, 1.0, true)
+    local walkIdx = State.StateMachine:AddState(STATE_WALKING, CurrentAnims.WALKING, 1.0, true)
+    local runIdx = State.StateMachine:AddState(STATE_RUNNING, CurrentAnims.RUNNING, 1.5, true)  -- 달리기 속도 1.5배
+    local pickupIdx = State.StateMachine:AddState(STATE_PICKUP, CurrentAnims.PICKUP, 1.0, false)  -- 루핑 안함
 
     print("[FirefighterController] States added: Idle=" .. tostring(idleIdx) .. ", Walking=" .. tostring(walkIdx) .. ", Running=" .. tostring(runIdx) .. ", PickUp=" .. tostring(pickupIdx))
 
@@ -123,9 +144,71 @@ function SetupAnimationStateMachine()
     print("[FirefighterController] Animation State Machine setup complete!")
 end
 
+-- ============================================================================
+-- 소방복 장착 함수 (외부에서 호출 가능)
+-- ============================================================================
+function EquipFireSuit()
+    if State.bHasFireSuit then
+        print("[FirefighterController] Already wearing fire suit!")
+        return
+    end
+
+    print("[FirefighterController] Equipping Fire Suit...")
+
+    -- 현재 상태와 시간 저장 (애니메이션 이어서 재생용)
+    local prevStateName = nil
+    local prevStateTime = 0
+    if State.StateMachine then
+        prevStateName = State.StateMachine:GetCurrentStateName()
+        if prevStateName and prevStateName ~= "" then
+            prevStateTime = State.StateMachine:GetStateTime(prevStateName)
+            print("[FirefighterController] Saving state: " .. prevStateName .. " at time " .. prevStateTime)
+        end
+    end
+
+    State.bHasFireSuit = true
+    -- bIsPerformingAction은 유지 (픽업 중이면 계속 픽업 상태)
+    CurrentAnims = ANIM_WITH_CLOTH
+
+    -- 메시 변경
+    if State.SkeletalMeshComp then
+        State.SkeletalMeshComp:SetSkeletalMesh(MESH_WITH_CLOTH)
+        print("[FirefighterController] Mesh changed to With_Cloth")
+    end
+
+    -- 참조 재초기화 (메시 변경 후 필요할 수 있음)
+    InitReferences()
+
+    -- 상태 머신 재설정 (새 애니메이션 경로로)
+    SetupAnimationStateMachine()
+
+    -- 이전 상태와 시간 복원 (애니메이션 이어서 재생)
+    if prevStateName and prevStateName ~= "" and State.StateMachine then
+        State.StateMachine:SetState(prevStateName, 0)  -- 즉시 전환 (블렌드 없음)
+        State.StateMachine:SetStateTime(prevStateName, prevStateTime)
+        print("[FirefighterController] Restored state: " .. prevStateName .. " at time " .. prevStateTime)
+    end
+
+    print("[FirefighterController] Fire Suit equipped!")
+end
+
+-- 소방복 장착 여부 확인 함수
+function HasFireSuit()
+    return State.bHasFireSuit or false
+end
+
 function Update(DeltaTime)
     if not State.Character or not State.StateMachine then
         return
+    end
+
+    -- 소방복 장착 플래그 체크 (GameInstance에서)
+    if not State.bHasFireSuit then
+        local gi = GetGameInstance()
+        if gi and gi:GetBool("bEquipFireSuit", false) then
+            EquipFireSuit()
+            gi:SetBool("bEquipFireSuit", false)  -- 플래그 리셋
+        end
     end
 
     -- 현재 프레임 이동 상태 초기화

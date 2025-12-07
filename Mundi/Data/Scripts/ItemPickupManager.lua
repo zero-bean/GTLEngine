@@ -135,6 +135,13 @@ local function TryPickup()
         gameInstance:AddItem(itemInfo.Name, itemInfo.Quantity)
         gameInstance:SetString("ItemType_" .. itemInfo.Name, tostring(itemInfo.Type))
         print("[ItemPickup] Picked up: " .. itemInfo.Name .. " x" .. itemInfo.Quantity)
+
+        -- 소방복 아이템인 경우 GameInstance에 플래그 설정
+        -- (FirefighterController에서 매 프레임 체크하여 장착 처리)
+        if itemInfo.Name == "FireSuit" then
+            print("[ItemPickup] FireSuit detected! Setting equip flag...")
+            gameInstance:SetBool("bEquipFireSuit", true)
+        end
     end
 
     -- 픽업할 아이템 참조 저장

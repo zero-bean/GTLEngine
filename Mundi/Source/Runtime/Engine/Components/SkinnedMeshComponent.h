@@ -36,6 +36,7 @@ public:
      * @brief 렌더링할 스켈레탈 메시 에셋 설정 (UStaticMeshComponent::SetStaticMesh와 동일한 역할)
      * @param PathFileName 새 스켈레탈 메시 에셋 경로
      */
+    UFUNCTION(LuaBind, DisplayName="SetSkeletalMesh")
     virtual void SetSkeletalMesh(const FString& PathFileName);
     /**
      * @brief 이 컴포넌트의 USkeletalMesh 에셋을 반환
