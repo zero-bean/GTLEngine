@@ -55,6 +55,8 @@ function OnBeginPlay()
     MovementComp = GetComponent(Obj, "UCharacterMovementComponent")
     if MovementComp then
         print("[FirefighterController] MovementComponent found!")
+        -- 점프력 설정
+        MovementComp.JumpZVelocity = 5.0
     end
 
     -- 애니메이션 상태 머신 설정
