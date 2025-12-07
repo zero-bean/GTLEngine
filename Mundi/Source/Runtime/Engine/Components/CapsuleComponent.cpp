@@ -64,8 +64,9 @@ void UCapsuleComponent::SetCapsuleSize(float InRadius, float InHalfHeight, bool 
 		CapsuleHalfHeight = InHalfHeight;
 
 		UpdateBodySetup();
-	
-		if (BodyInstance.IsValidBodyInstance())
+
+		// CCT 모드이거나 RigidBody가 있으면 물리 상태 재생성
+		if (BodyInstance.IsValidBodyInstance() || ControllerInstance != nullptr)
 		{
 			OnDestroyPhysicsState();
 			OnCreatePhysicsState();
