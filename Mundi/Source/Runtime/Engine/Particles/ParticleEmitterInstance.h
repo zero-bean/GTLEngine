@@ -99,6 +99,9 @@ struct FParticleEmitterInstance
 	// 모든 파티클 제거
 	void KillAllParticles();
 
+	// 이미터 완전 리셋 (파티클 + 이미터 상태)
+	void ResetEmitter();
+
 	// 파티클 데이터 크기 조정
 	void Resize(int32 NewMaxActiveParticles);
 

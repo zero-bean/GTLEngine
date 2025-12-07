@@ -835,7 +835,7 @@ void UParticleSystemComponent::ResetParticles()
 	{
 		if (Instance)
 		{
-			Instance->KillAllParticles();
+			Instance->ResetEmitter();  // 파티클 + 이미터 상태 완전 리셋
 		}
 	}
 }

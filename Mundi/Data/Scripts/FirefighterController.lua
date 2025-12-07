@@ -45,7 +45,7 @@ local CurrentAnims = ANIM_WITHOUT_CLOTH
 -- 참조 초기화 함수 (BeginPlay와 HotReload에서 공통 사용)
 -- ============================================================================
 local function InitReferences()
-    State.Character = GetOwnerAs(Obj, "ACharacter")
+    State.Character = GetOwnerAs(Obj, "AFirefighterCharacter")
     State.SkeletalMeshComp = GetComponent(Obj, "USkeletalMeshComponent")
     State.MovementComp = GetComponent(Obj, "UCharacterMovementComponent")
 
@@ -187,6 +187,12 @@ function EquipFireSuit()
         State.StateMachine:SetState(prevStateName, 0)  -- 즉시 전환 (블렌드 없음)
         State.StateMachine:SetStateTime(prevStateName, prevStateTime)
         print("[FirefighterController] Restored state: " .. prevStateName .. " at time " .. prevStateTime)
+    end
+
+    -- 파티클 이펙트 재생
+    if State.Character and State.Character.PlayFireSuitEquipEffect then
+        State.Character:PlayFireSuitEquipEffect()
+        print("[FirefighterController] Playing equip particle effect!")
     end
 
     print("[FirefighterController] Fire Suit equipped!")

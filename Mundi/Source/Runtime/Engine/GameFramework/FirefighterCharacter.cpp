@@ -12,6 +12,9 @@
 #include "InputComponent.h"
 #include "LuaScriptComponent.h"
 #include "CharacterMovementComponent.h"
+#include "ParticleSystemComponent.h"
+#include "ParticleSystem.h"
+#include "ResourceManager.h"
 
 AFirefighterCharacter::AFirefighterCharacter()
 	: bOrientRotationToMovement(true)
@@ -79,6 +82,22 @@ AFirefighterCharacter::AFirefighterCharacter()
 	if (ItemPickupScript)
 	{
 		ItemPickupScript->ScriptFilePath = "Data/Scripts/ItemPickupManager.lua";
+	}
+
+	// 소방복 장착 파티클 컴포넌트 생성
+	FireSuitEquipParticle = CreateDefaultSubobject<UParticleSystemComponent>("FireSuitEquipParticle");
+	if (FireSuitEquipParticle && CapsuleComponent)
+	{
+		FireSuitEquipParticle->SetupAttachment(CapsuleComponent);
+		FireSuitEquipParticle->SetRelativeLocation(FVector(0.0f, 0.0f, -1.0f));  // 발밑
+		FireSuitEquipParticle->bAutoActivate = false;  // 수동으로 활성화
+
+		// 파티클 시스템 로드
+		UParticleSystem* EquipEffect = UResourceManager::GetInstance().Load<UParticleSystem>("Data/Particles/FireSuitEquip.particle");
+		if (EquipEffect)
+		{
+			FireSuitEquipParticle->SetTemplate(EquipEffect);
+		}
 	}
 }
 
@@ -234,4 +253,13 @@ void AFirefighterCharacter::MoveRightCamera(float Value)
 
 	// 이동 입력 추가
 	AddMovementInput(Right, Value);
+}
+
+void AFirefighterCharacter::PlayFireSuitEquipEffect()
+{
+	if (FireSuitEquipParticle)
+	{
+		FireSuitEquipParticle->ResetParticles();
+		FireSuitEquipParticle->ActivateSystem();
+	}
 }
