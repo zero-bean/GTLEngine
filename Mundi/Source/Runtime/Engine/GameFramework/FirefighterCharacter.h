@@ -16,12 +16,44 @@ public:
     AFirefighterCharacter();
 
     // ────────────────────────────────────────────────
+    // 체력 및 소화 게이지
+    // ────────────────────────────────────────────────
+
+    /** 현재 체력 */
+    UPROPERTY(LuaBind, DisplayName="Health")
+    float Health = 100.0f;
+
+    /** 최대 체력 */
+    UPROPERTY(LuaBind, DisplayName="MaxHealth")
+    float MaxHealth = 100.0f;
+
+    /** 현재 소화 게이지 */
+    UPROPERTY(LuaBind, DisplayName="ExtinguishGauge")
+    float ExtinguishGauge = 100.0f;
+
+    /** 최대 소화 게이지 */
+    UPROPERTY(LuaBind, DisplayName="MaxExtinguishGauge")
+    float MaxExtinguishGauge = 100.0f;
+
+    // ────────────────────────────────────────────────
     // 파티클 이펙트
     // ────────────────────────────────────────────────
 
     /** 소방복 장착 파티클 재생 (Lua에서 호출) */
     UFUNCTION(LuaBind, DisplayName="PlayFireSuitEquipEffect")
     void PlayFireSuitEquipEffect();
+
+    /** 물 마법 파티클 재생 시작 (Lua에서 호출) */
+    UFUNCTION(LuaBind, DisplayName="PlayWaterMagicEffect")
+    void PlayWaterMagicEffect();
+
+    /** 물 마법 파티클 재생 중지 (Lua에서 호출) */
+    UFUNCTION(LuaBind, DisplayName="StopWaterMagicEffect")
+    void StopWaterMagicEffect();
+
+    /** 소화 게이지 감소 (Lua에서 호출) */
+    UFUNCTION(LuaBind, DisplayName="DrainExtinguishGauge")
+    void DrainExtinguishGauge(float Amount);
 
 protected:
     ~AFirefighterCharacter() override;
@@ -76,6 +108,9 @@ private:
 
     /** 소방복 장착 파티클 컴포넌트 */
     UParticleSystemComponent* FireSuitEquipParticle;
+
+    /** 물 마법 파티클 컴포넌트 */
+    UParticleSystemComponent* WaterMagicParticle;
 
     //USound* SorrySound;
     //USound* HitSound;

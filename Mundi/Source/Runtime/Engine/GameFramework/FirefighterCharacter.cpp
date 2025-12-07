@@ -22,6 +22,7 @@ AFirefighterCharacter::AFirefighterCharacter()
 	, CurrentMovementDirection(FVector::Zero())
 	, ItemDetectionSphere(nullptr)
 	, ItemPickupScript(nullptr)
+	, WaterMagicParticle(nullptr)
 {
 	// 캡슐 크기 설정
 	if (CapsuleComponent)
@@ -97,6 +98,22 @@ AFirefighterCharacter::AFirefighterCharacter()
 		if (EquipEffect)
 		{
 			FireSuitEquipParticle->SetTemplate(EquipEffect);
+		}
+	}
+
+	// 물 마법 파티클 컴포넌트 생성
+	WaterMagicParticle = CreateDefaultSubobject<UParticleSystemComponent>("WaterMagicParticle");
+	if (WaterMagicParticle && MeshComponent)
+	{
+		WaterMagicParticle->SetupAttachment(MeshComponent);
+		WaterMagicParticle->SetRelativeLocation(FVector(0.9f, 0.0f, 1.2f));  // 캐릭터 앞쪽 손 위치 근처
+		WaterMagicParticle->bAutoActivate = false;  // 수동으로 활성화
+
+		// 파티클 시스템 로드
+		UParticleSystem* WaterEffect = UResourceManager::GetInstance().Load<UParticleSystem>("Data/Particles/WaterMagic.particle");
+		if (WaterEffect)
+		{
+			WaterMagicParticle->SetTemplate(WaterEffect);
 		}
 	}
 }
@@ -262,4 +279,26 @@ void AFirefighterCharacter::PlayFireSuitEquipEffect()
 		FireSuitEquipParticle->ResetParticles();
 		FireSuitEquipParticle->ActivateSystem();
 	}
+}
+
+void AFirefighterCharacter::PlayWaterMagicEffect()
+{
+	if (WaterMagicParticle)
+	{
+		WaterMagicParticle->ResetParticles();
+		WaterMagicParticle->ActivateSystem();
+	}
+}
+
+void AFirefighterCharacter::StopWaterMagicEffect()
+{
+	if (WaterMagicParticle)
+	{
+		WaterMagicParticle->DeactivateSystem();
+	}
+}
+
+void AFirefighterCharacter::DrainExtinguishGauge(float Amount)
+{
+	ExtinguishGauge = FMath::Max(0.0f, ExtinguishGauge - Amount);
 }

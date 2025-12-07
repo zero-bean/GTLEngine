@@ -12,18 +12,27 @@ State = State or {}
 local WALK_SPEED = 6.0    -- 기본 걷기 속도
 local RUN_SPEED = 8.0     -- 달리기 속도
 
+-- 소화 게이지 설정
+local EXTINGUISH_DRAIN_RATE = 10.0  -- 초당 소화 게이지 소모량
+
 -- 애니메이션 상태 이름
 local STATE_IDLE = "Idle"
 local STATE_WALKING = "Walking"
 local STATE_RUNNING = "Running"
 local STATE_PICKUP = "PickUp"
+local STATE_WATERMAGIC_START = "WaterMagic_Start"
+local STATE_WATERMAGIC_PROGRESS = "WaterMagic_Progress"
+local STATE_WATERMAGIC_END = "WaterMagic_End"
 
 -- 애니메이션 에셋 경로 (Without_Cloth 버전)
 local ANIM_WITHOUT_CLOTH = {
     IDLE = "Data/firefighter/Firefighter_Without_Cloth_Idle_mixamo.com",
     WALKING = "Data/firefighter/Firefighter_Without_Cloth_Walking_mixamo.com",
     RUNNING = "Data/firefighter/Firefighter_Without_Cloth_Running_mixamo.com",
-    PICKUP = "Data/firefighter/Firefighter_Without_Cloth_Picking_Up_Object_mixamo.com"
+    PICKUP = "Data/firefighter/Firefighter_Without_Cloth_Picking_Up_Object_mixamo.com",
+    WATERMAGIC_START = "Data/firefighter/Firefighter_Without_Cloth_WaterMagic_Start_mixamo.com",
+    WATERMAGIC_PROGRESS = "Data/firefighter/Firefighter_Without_Cloth_WaterMagic_Progress_mixamo.com",
+    WATERMAGIC_END = "Data/firefighter/Firefighter_Without_Cloth_WaterMagic_End_mixamo.com"
 }
 
 -- 애니메이션 에셋 경로 (With_Cloth 버전 - 소방복 장착 시)
@@ -31,7 +40,10 @@ local ANIM_WITH_CLOTH = {
     IDLE = "Data/firefighter/Firefighter_With_Cloth_Idle_mixamo.com",
     WALKING = "Data/firefighter/Firefighter_With_Cloth_Walking_mixamo.com",
     RUNNING = "Data/firefighter/Firefighter_With_Cloth_Running_mixamo.com",
-    PICKUP = "Data/firefighter/Firefighter_With_Cloth_Picking_Up_Object_mixamo.com"
+    PICKUP = "Data/firefighter/Firefighter_With_Cloth_Picking_Up_Object_mixamo.com",
+    WATERMAGIC_START = "Data/firefighter/Firefighter_With_Cloth_WaterMagic_Start_mixamo.com",
+    WATERMAGIC_PROGRESS = "Data/firefighter/Firefighter_With_Cloth_WaterMagic_Progress_mixamo.com",
+    WATERMAGIC_END = "Data/firefighter/Firefighter_With_Cloth_WaterMagic_End_mixamo.com"
 }
 
 -- 메시 경로
@@ -82,6 +94,11 @@ function OnBeginPlay()
     State.bIsPerformingAction = false
     State.bHasFireSuit = false  -- 소방복 장착 상태
 
+    -- 물 마법 상태 초기화
+    State.bIsUsingWaterMagic = false      -- 물 마법 사용 중 여부
+    State.bWaterMagicStarted = false      -- WaterMagic_Start 애니메이션 완료 여부
+    State.bWaterMagicEnding = false       -- WaterMagic_End 애니메이션 재생 중 여부
+
     -- 애니메이션 상태 머신 설정
     SetupAnimationStateMachine()
 end
@@ -116,8 +133,12 @@ function SetupAnimationStateMachine()
     local walkIdx = State.StateMachine:AddState(STATE_WALKING, CurrentAnims.WALKING, 1.0, true)
     local runIdx = State.StateMachine:AddState(STATE_RUNNING, CurrentAnims.RUNNING, 1.5, true)  -- 달리기 속도 1.5배
     local pickupIdx = State.StateMachine:AddState(STATE_PICKUP, CurrentAnims.PICKUP, 1.0, false)  -- 루핑 안함
+    local waterStartIdx = State.StateMachine:AddState(STATE_WATERMAGIC_START, CurrentAnims.WATERMAGIC_START, 1.0, false)  -- 루핑 안함
+    local waterProgressIdx = State.StateMachine:AddState(STATE_WATERMAGIC_PROGRESS, CurrentAnims.WATERMAGIC_PROGRESS, 1.0, true)  -- 루핑
+    local waterEndIdx = State.StateMachine:AddState(STATE_WATERMAGIC_END, CurrentAnims.WATERMAGIC_END, 1.0, false)  -- 루핑 안함
 
     print("[FirefighterController] States added: Idle=" .. tostring(idleIdx) .. ", Walking=" .. tostring(walkIdx) .. ", Running=" .. tostring(runIdx) .. ", PickUp=" .. tostring(pickupIdx))
+    print("[FirefighterController] WaterMagic states: Start=" .. tostring(waterStartIdx) .. ", Progress=" .. tostring(waterProgressIdx) .. ", End=" .. tostring(waterEndIdx))
 
     -- 전이(Transition) 추가 (BlendTime 0.2초)
     -- Idle <-> Walking
@@ -137,6 +158,18 @@ function SetupAnimationStateMachine()
     State.StateMachine:AddTransitionByName(STATE_WALKING, STATE_PICKUP, 0.1)
     State.StateMachine:AddTransitionByName(STATE_RUNNING, STATE_PICKUP, 0.1)
     State.StateMachine:AddTransitionByName(STATE_PICKUP, STATE_IDLE, 0.2)
+
+    -- WaterMagic 전이
+    -- 모든 기본 상태에서 WaterMagic_Start로
+    State.StateMachine:AddTransitionByName(STATE_IDLE, STATE_WATERMAGIC_START, 0.1)
+    State.StateMachine:AddTransitionByName(STATE_WALKING, STATE_WATERMAGIC_START, 0.1)
+    State.StateMachine:AddTransitionByName(STATE_RUNNING, STATE_WATERMAGIC_START, 0.1)
+    -- WaterMagic_Start -> WaterMagic_Progress
+    State.StateMachine:AddTransitionByName(STATE_WATERMAGIC_START, STATE_WATERMAGIC_PROGRESS, 0.1)
+    -- WaterMagic_Progress -> WaterMagic_End
+    State.StateMachine:AddTransitionByName(STATE_WATERMAGIC_PROGRESS, STATE_WATERMAGIC_END, 0.15)
+    -- WaterMagic_End -> Idle
+    State.StateMachine:AddTransitionByName(STATE_WATERMAGIC_END, STATE_IDLE, 0.2)
 
     -- 초기 상태: Idle
     State.StateMachine:SetState(STATE_IDLE, 0.0)
@@ -221,7 +254,50 @@ function Update(DeltaTime)
     State.bIsMoving = false
     State.bIsRunning = false
 
-    -- 액션 수행 중이면 이동 불가 및 다른 입력 무시
+    -- 물 마법 종료 중이면 대기 (WaterMagic_End 애니메이션 완료 대기)
+    if State.bWaterMagicEnding then
+        if State.MovementComp then
+            State.MovementComp.MaxWalkSpeed = 0
+        end
+        return
+    end
+
+    -- 물 마법 사용 중 (WaterMagic_Progress 재생 중)
+    if State.bIsUsingWaterMagic then
+        if State.MovementComp then
+            State.MovementComp.MaxWalkSpeed = 0
+        end
+
+        -- 오른쪽 마우스 누르고 있고 소화 게이지가 남아있으면 계속 사용
+        local bRightMouseDown = Input:IsMouseButtonDown(1)  -- RButton = 1
+        local extinguishGauge = State.Character.ExtinguishGauge or 0
+
+        -- 디버그: 매 프레임 게이지 출력 (1초마다)
+        State.DebugTimer = (State.DebugTimer or 0) + DeltaTime
+        if State.DebugTimer > 1.0 then
+            print("[FirefighterController] WaterMagic Progress - Gauge: " .. tostring(extinguishGauge) .. ", MouseDown: " .. tostring(bRightMouseDown))
+            State.DebugTimer = 0
+        end
+
+        if bRightMouseDown and extinguishGauge > 0 then
+            -- 소화 게이지 감소 (C++ 함수 호출)
+            local drainAmount = EXTINGUISH_DRAIN_RATE * DeltaTime
+            State.Character:DrainExtinguishGauge(drainAmount)
+        else
+            -- 물 마법 종료 조건: 마우스 놓음 또는 소화 게이지 0
+            print("[FirefighterController] WaterMagic ending (gauge=" .. tostring(extinguishGauge) .. ", mouseDown=" .. tostring(bRightMouseDown) .. ")")
+            State.bIsUsingWaterMagic = false
+            State.bWaterMagicEnding = true
+            State.StateMachine:SetState(STATE_WATERMAGIC_END, 0.15)
+            -- 파티클 중지
+            if State.Character.StopWaterMagicEffect then
+                State.Character:StopWaterMagicEffect()
+            end
+        end
+        return
+    end
+
+    -- 액션 수행 중이면 이동 불가 및 다른 입력 무시 (PickUp 또는 WaterMagic_Start)
     if State.bIsPerformingAction then
         if State.MovementComp then
             State.MovementComp.MaxWalkSpeed = 0
@@ -234,6 +310,16 @@ function Update(DeltaTime)
         print("[FirefighterController] PickUp triggered!")
         State.bIsPerformingAction = true
         State.StateMachine:SetState(STATE_PICKUP, 0.1)
+        return
+    end
+
+    -- 오른쪽 마우스 클릭으로 물 마법 시작 (RButton = 1)
+    local extinguishGauge = State.Character.ExtinguishGauge or 0
+    if Input:IsMouseButtonPressed(1) and extinguishGauge > 0 then
+        print("[FirefighterController] WaterMagic Start triggered! (gauge=" .. tostring(extinguishGauge) .. ")")
+        State.bIsPerformingAction = true
+        State.bWaterMagicStarted = false
+        State.StateMachine:SetState(STATE_WATERMAGIC_START, 0.1)
         return
     end
 
@@ -291,6 +377,32 @@ function OnAnimNotify(NotifyName)
     if NotifyName == "EndPickUp" then
         print("[FirefighterController] EndPickUp notify triggered! Returning to Idle.")
         State.bIsPerformingAction = false
+        if State.StateMachine then
+            State.StateMachine:SetState(STATE_IDLE, 0.2)
+        end
+    end
+
+    -- WaterMagic_Start 완료 노티파이: Progress로 전환, 파티클 시작
+    if NotifyName == "EndWaterMagicStart" then
+        print("[FirefighterController] WaterMagic_Start complete! Transitioning to Progress.")
+        State.bIsPerformingAction = false
+        State.bWaterMagicStarted = true
+        State.bIsUsingWaterMagic = true
+        if State.StateMachine then
+            State.StateMachine:SetState(STATE_WATERMAGIC_PROGRESS, 0.1)
+        end
+        -- 파티클 시작
+        if State.Character and State.Character.PlayWaterMagicEffect then
+            State.Character:PlayWaterMagicEffect()
+        end
+    end
+
+    -- WaterMagic_End 완료 노티파이: Idle로 전환
+    if NotifyName == "EndWaterMagicEnd" then
+        print("[FirefighterController] WaterMagic_End complete! Returning to Idle.")
+        State.bWaterMagicEnding = false
+        State.bIsUsingWaterMagic = false
+        State.bWaterMagicStarted = false
         if State.StateMachine then
             State.StateMachine:SetState(STATE_IDLE, 0.2)
         end
