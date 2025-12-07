@@ -5,6 +5,7 @@
 class UAudioComponent;
 class USphereComponent;
 class ULuaScriptComponent;
+class UParticleSystemComponent;
 
 UCLASS(DisplayName = "파이어 파이터 캐릭터", Description = "렛츠고 파이어 파이터")
 class AFirefighterCharacter : public ACharacter
@@ -13,6 +14,14 @@ class AFirefighterCharacter : public ACharacter
 
 public:
     AFirefighterCharacter();
+
+    // ────────────────────────────────────────────────
+    // 파티클 이펙트
+    // ────────────────────────────────────────────────
+
+    /** 소방복 장착 파티클 재생 (Lua에서 호출) */
+    UFUNCTION(LuaBind, DisplayName="PlayFireSuitEquipEffect")
+    void PlayFireSuitEquipEffect();
 
 protected:
     ~AFirefighterCharacter() override;
@@ -64,6 +73,9 @@ private:
 
     /** Lua 스크립트 컴포넌트 (애니메이션 제어용) */
     ULuaScriptComponent* LuaScript;
+
+    /** 소방복 장착 파티클 컴포넌트 */
+    UParticleSystemComponent* FireSuitEquipParticle;
 
     //USound* SorrySound;
     //USound* HitSound;

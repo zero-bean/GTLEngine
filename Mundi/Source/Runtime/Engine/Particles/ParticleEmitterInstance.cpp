@@ -381,8 +381,18 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 	FrameSpawnedCount = 0;
 	FrameKilledCount = 0;
 
-	if (!CurrentLODLevel || !bEmitterEnabled || !CurrentLODLevel->bEnabled)
+	if (!CurrentLODLevel || !CurrentLODLevel->bEnabled)
 	{
+		return;
+	}
+
+	// 이미터가 비활성화되어도 기존 파티클은 수명이 다할 때까지 업데이트해야 함
+	if (!bEmitterEnabled)
+	{
+		if (ActiveParticles > 0)
+		{
+			UpdateParticles(DeltaTime);
+		}
 		return;
 	}
 
@@ -712,6 +722,25 @@ void FParticleEmitterInstance::KillParticle(int32 Index)
 void FParticleEmitterInstance::KillAllParticles()
 {
 	ActiveParticles = 0;
+}
+
+void FParticleEmitterInstance::ResetEmitter()
+{
+	// 모든 파티클 제거
+	ActiveParticles = 0;
+
+	// 이미터 상태 리셋
+	EmitterTime = 0.0f;
+	CurrentLoopCount = 0;
+	bEmitterEnabled = true;
+	bDelayComplete = false;
+	SpawnFraction = 0.0f;
+
+	// Burst 상태 리셋
+	for (int32 i = 0; i < BurstFired.Num(); ++i)
+	{
+		BurstFired[i] = false;
+	}
 }
 
 FBaseParticle* FParticleEmitterInstance::GetParticleAtIndex(int32 Index)
