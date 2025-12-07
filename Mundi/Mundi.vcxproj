@@ -519,6 +519,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Source\Runtime\Engine\GameFramework\GameEngine.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\DirectionalLightActor.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\EmptyActor.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\FireActor.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\HeightFogActor.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\Info.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\PointLightActor.cpp" />
@@ -870,6 +871,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Generated\UBoneSocketComponent.generated.cpp" />
     <ClCompile Include="Generated\AEndGameMode.generated.cpp" />
     <ClCompile Include="Generated\AItemTestGameMode.generated.cpp" />
+    <ClCompile Include="Generated\AFireActor.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
@@ -1117,6 +1119,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Source\Runtime\Engine\GameFramework\PlayerCameraManager.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\DirectionalLightActor.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\EmptyActor.h" />
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\FireActor.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\HeightFogActor.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\Info.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\PlayerController.h" />
@@ -1522,6 +1525,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Generated\UBoneSocketComponent.generated.h" />
     <ClInclude Include="Generated\AEndGameMode.generated.h" />
     <ClInclude Include="Generated\AItemTestGameMode.generated.h" />
+    <ClInclude Include="Generated\AFireActor.generated.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTools\CodeGenerator\generate.py" />

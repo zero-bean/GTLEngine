@@ -14,6 +14,7 @@ local RUN_SPEED = 8.0     -- 달리기 속도
 
 -- 소화 게이지 설정
 local EXTINGUISH_DRAIN_RATE = 10.0  -- 초당 소화 게이지 소모량
+local WATER_MAGIC_DAMAGE_RATE = 0.5  -- 초당 불에 가하는 데미지 (0.5 = 2초에 불 50% 약화)
 
 -- 애니메이션 상태 이름
 local STATE_IDLE = "Idle"
@@ -282,7 +283,11 @@ function Update(DeltaTime)
         if bRightMouseDown and extinguishGauge > 0 then
             -- 소화 게이지 감소 (C++ 함수 호출)
             local drainAmount = EXTINGUISH_DRAIN_RATE * DeltaTime
-            State.Character:DrainExtinguishGauge(drainAmount)
+            --State.Character:DrainExtinguishGauge(drainAmount)
+
+            -- 물 마법 발사 (전방의 불에 데미지)
+            local waterDamage = WATER_MAGIC_DAMAGE_RATE * DeltaTime
+            State.Character:FireWaterMagic(waterDamage)
         else
             -- 물 마법 종료 조건: 마우스 놓음 또는 소화 게이지 0
             print("[FirefighterController] WaterMagic ending (gauge=" .. tostring(extinguishGauge) .. ", mouseDown=" .. tostring(bRightMouseDown) .. ")")

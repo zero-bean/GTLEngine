@@ -15,6 +15,9 @@
 #include "ParticleSystemComponent.h"
 #include "ParticleSystem.h"
 #include "ResourceManager.h"
+#include "World.h"
+#include "PhysScene.h"
+#include "FireActor.h"
 
 AFirefighterCharacter::AFirefighterCharacter()
 	: bOrientRotationToMovement(true)
@@ -106,7 +109,7 @@ AFirefighterCharacter::AFirefighterCharacter()
 	if (WaterMagicParticle && MeshComponent)
 	{
 		WaterMagicParticle->SetupAttachment(MeshComponent);
-		WaterMagicParticle->SetRelativeLocation(FVector(0.9f, 0.0f, 1.2f));  // 캐릭터 앞쪽 손 위치 근처
+		WaterMagicParticle->SetRelativeLocation(FVector(0.9f, 0.2f, 1.2f));  // 캐릭터 앞쪽 손 위치 근처
 		WaterMagicParticle->bAutoActivate = false;  // 수동으로 활성화
 
 		// 파티클 시스템 로드
@@ -301,4 +304,42 @@ void AFirefighterCharacter::StopWaterMagicEffect()
 void AFirefighterCharacter::DrainExtinguishGauge(float Amount)
 {
 	ExtinguishGauge = FMath::Max(0.0f, ExtinguishGauge - Amount);
+}
+
+void AFirefighterCharacter::FireWaterMagic(float DamageAmount)
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	FPhysScene* PhysScene = World->GetPhysicsScene();
+	if (!PhysScene)
+	{
+		return;
+	}
+
+	// 캐릭터 전방 방향으로 Sphere Sweep (물줄기 굵기 표현)
+	FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, 1.0f);  // 약간 위에서 발사
+	FVector Direction = GetActorForward();
+	FVector End = Start + Direction * WaterMagicRange;
+
+	FHitResult HitResult;
+	float SweepRadius = 0.5f;  // 물줄기 반경
+
+	// Sphere Sweep 수행
+	bool bHit = PhysScene->SweepSingleSphere(Start, End, SweepRadius, HitResult, this);
+
+	if (bHit && HitResult.Actor.IsValid())
+	{
+		// 불 액터에 맞았는지 확인
+		AFireActor* FireActor = Cast<AFireActor>(HitResult.Actor.Get());
+		if (FireActor && FireActor->IsFireActive())
+		{
+			// 물 데미지 적용
+			FireActor->ApplyWaterDamage(DamageAmount);
+			UE_LOG("FireActor->ApplyWaterDamage");
+		}
+	}
 }

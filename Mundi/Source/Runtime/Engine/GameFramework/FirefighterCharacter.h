@@ -55,6 +55,14 @@ public:
     UFUNCTION(LuaBind, DisplayName="DrainExtinguishGauge")
     void DrainExtinguishGauge(float Amount);
 
+    /** 물 마법 발사 - 전방 Raycast로 불 액터에 데미지 (Lua에서 호출) */
+    UFUNCTION(LuaBind, DisplayName="FireWaterMagic")
+    void FireWaterMagic(float DamageAmount);
+
+    /** 물 마법 사거리 */
+    UPROPERTY(LuaBind, DisplayName="WaterMagicRange")
+    float WaterMagicRange = 10.0f;
+
 protected:
     ~AFirefighterCharacter() override;
 
