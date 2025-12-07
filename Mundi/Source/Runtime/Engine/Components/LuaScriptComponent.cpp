@@ -76,6 +76,14 @@ void ULuaScriptComponent::BeginPlay()
 		return;
 	}
 
+#ifdef _EDITOR
+	// 핫 리로드용 초기 파일 수정 시간 기록
+	if (std::filesystem::exists(ScriptFilePath))
+	{
+		LastModifiedTime = std::filesystem::last_write_time(ScriptFilePath);
+	}
+#endif
+
 	if (!LuaVM->LoadScriptInto(Env, ScriptFilePath)) {
 		UE_LOG("[Lua][error] failed to run: %s\n", ScriptFilePath.c_str());
 #ifdef _EDITOR
@@ -248,6 +256,25 @@ void ULuaScriptComponent::TickComponent(float DeltaTime)
 		return;
 	}
 
+#ifdef _EDITOR
+	// 핫 리로드: 파일 변경 감지 (throttled)
+	HotReloadCheckTimer += DeltaTime;
+	if (HotReloadCheckTimer >= HotReloadCheckInterval)
+	{
+		HotReloadCheckTimer = 0.0f;
+
+		if (!ScriptFilePath.empty() && std::filesystem::exists(ScriptFilePath))
+		{
+			auto CurrentModTime = std::filesystem::last_write_time(ScriptFilePath);
+			if (CurrentModTime > LastModifiedTime)
+			{
+				LastModifiedTime = CurrentModTime;
+				ReloadScript();
+			}
+		}
+	}
+#endif
+
 	if (FuncTick.valid()) {
 		auto Result = FuncTick(DeltaTime);
 		if (!Result.valid()) { sol::error Err = Result; UE_LOG("[Lua][error] %s\n", Err.what()); }
@@ -284,6 +311,83 @@ void ULuaScriptComponent::EndPlay()
 	// 모든 Lua 관련 리소스 정리
 	CleanupLuaResources();
 }
+
+#ifdef _EDITOR
+void ULuaScriptComponent::ReloadScript()
+{
+	auto LuaVM = GetWorld()->GetLuaManager();
+	if (!LuaVM) return;
+
+	// 기존 코루틴 정리
+	LuaVM->GetScheduler().CancelByOwner(this);
+
+	// ═══════════════════════════════════════════════════════════════════════════
+	// 핫 리로드: 기존 변수들(함수 제외)을 백업하고 스크립트 재로드 후 복원
+	// ═══════════════════════════════════════════════════════════════════════════
+
+	// 1. 기존 Env에서 함수가 아닌 값들을 백업
+	sol::state& L = LuaVM->GetState();
+	sol::table Backup = L.create_table();
+
+	for (auto& Pair : Env)
+	{
+		sol::object Key = Pair.first;
+		sol::object Value = Pair.second;
+
+		// 함수가 아닌 값만 백업 (함수는 새 스크립트에서 갱신됨)
+		if (Value.get_type() != sol::type::function)
+		{
+			Backup[Key] = Value;
+		}
+	}
+
+	// 2. 스크립트 재로드
+	if (!LuaVM->LoadScriptInto(Env, ScriptFilePath))
+	{
+		UE_LOG("[Lua][HotReload][error] Failed to reload: %s", ScriptFilePath.c_str());
+		return;
+	}
+
+	// 3. 백업한 변수들 복원 (새 스크립트에서 정의한 함수는 유지)
+	for (auto& Pair : Backup)
+	{
+		sol::object Key = Pair.first;
+		sol::object BackupValue = Pair.second;
+
+		// Env에서 현재 값 확인
+		sol::object CurrentValue = Env[Key];
+
+		// 현재 값이 함수가 아니면 백업값으로 복원
+		// (새 스크립트에서 함수로 재정의한 경우는 유지)
+		if (CurrentValue.get_type() != sol::type::function)
+		{
+			Env[Key] = BackupValue;
+		}
+	}
+
+	// 함수 캐시 갱신
+	FuncBeginPlay      = FLuaManager::GetFunc(Env, "OnBeginPlay");
+	FuncTick           = FLuaManager::GetFunc(Env, "Update");
+	FuncOnBeginOverlap = FLuaManager::GetFunc(Env, "OnBeginOverlap");
+	FuncOnEndOverlap   = FLuaManager::GetFunc(Env, "OnEndOverlap");
+	FuncEndPlay        = FLuaManager::GetFunc(Env, "OnEndPlay");
+	FuncOnAnimNotify   = FLuaManager::GetFunc(Env, "OnAnimNotify");
+
+	// OnHotReload 콜백 호출 (있으면)
+	sol::protected_function FuncOnHotReload = FLuaManager::GetFunc(Env, "OnHotReload");
+	if (FuncOnHotReload.valid())
+	{
+		auto Result = FuncOnHotReload();
+		if (!Result.valid())
+		{
+			sol::error Err = Result;
+			UE_LOG("[Lua][HotReload][error] OnHotReload failed: %s", Err.what());
+		}
+	}
+
+	UE_LOG("[Lua][HotReload] Reloaded: %s", ScriptFilePath.c_str());
+}
+#endif
 
 void ULuaScriptComponent::CleanupLuaResources()
 {

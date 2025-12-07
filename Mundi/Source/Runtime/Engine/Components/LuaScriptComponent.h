@@ -4,6 +4,7 @@
 #include "Vector.h"
 #include "LuaCoroutineScheduler.h"
 #include "ULuaScriptComponent.generated.h"
+#include <filesystem>
 
 namespace sol { class state; }
 using state = sol::state;
@@ -55,6 +56,17 @@ protected:
 
 	FDelegateHandle BeginHandleLua{};
 	FDelegateHandle EndHandleLua{};
-	
+
 	bool bIsLuaCleanedUp = false;
+
+	// ═══════════════════════════════════════════════════════════════════════════
+	// Hot Reload (에디터 전용)
+	// ═══════════════════════════════════════════════════════════════════════════
+#ifdef _EDITOR
+	std::filesystem::file_time_type LastModifiedTime{};
+	float HotReloadCheckTimer = 0.0f;
+	static constexpr float HotReloadCheckInterval = 0.5f; // 0.5초마다 체크
+
+	void ReloadScript();
+#endif
 };
