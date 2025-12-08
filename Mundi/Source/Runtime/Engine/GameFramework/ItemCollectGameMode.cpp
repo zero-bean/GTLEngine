@@ -460,8 +460,11 @@ void AItemCollectGameMode::InitializeItemUI()
 			600.f                // Bottom
 		);
 
+		// 소방복(인덱스 0)은 처음에 흑백 이미지(itemsNone.png)로 시작
+		FString ImagePath = (i == 0) ? "Data/Textures/Collect/itemsNone.png" : "Data/Textures/Collect/items.png";
+
 		ItemImageWidgets[i]->SetBackgroundImageAtlas(
-			"Data/Textures/Collect/items.png",
+			ImagePath,
 			AtlasRect,  // Normal
 			AtlasRect,  // Hovered
 			AtlasRect   // Pressed
@@ -476,25 +479,29 @@ void AItemCollectGameMode::InitializeItemUI()
 			.SetZOrder(10);
 
 		// 아이템 카운트 텍스트 위젯 (이미지 오른쪽 옆)
-		ItemCountWidgets[i] = MakeShared<STextBlock>();
+		// 소방복(인덱스 0)은 개수를 표시하지 않음
+		if (i != 0)
+		{
+			ItemCountWidgets[i] = MakeShared<STextBlock>();
 
-		wchar_t CountText[32];
-		swprintf_s(CountText, L"%d", ItemCounts[i]);
+			wchar_t CountText[32];
+			swprintf_s(CountText, L"%d", ItemCounts[i]);
 
-		ItemCountWidgets[i]->SetText(CountText)
-			.SetFontSize(48.f)
-			.SetFontPath("Data/UI/fonts/ChosunKm.TTF")
-			.SetColor(FSlateColor(1.0f, 1.0f, 1.0f, 1.0f))  // 흰색
-			.SetHAlign(ETextHAlign::Left)
-			.SetVAlign(ETextVAlign::Center)
-			.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor(0.0f, 0.0f, 0.0f, 0.8f));  // 검은색 그림자
+			ItemCountWidgets[i]->SetText(CountText)
+				.SetFontSize(48.f)
+				.SetFontPath("Data/UI/fonts/ChosunKm.TTF")
+				.SetColor(FSlateColor(1.0f, 1.0f, 1.0f, 1.0f))  // 흰색
+				.SetHAlign(ETextHAlign::Left)
+				.SetVAlign(ETextVAlign::Center)
+				.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor(0.0f, 0.0f, 0.0f, 0.8f));  // 검은색 그림자
 
-		SGameHUD::Get().AddWidget(ItemCountWidgets[i])
-			.SetAnchor(StartX, StartY)
-			.SetPivot(0.0f, 0.5f)  // 왼쪽 중앙 기준
-			.SetOffset(StartOffsetX + i * ItemSpacing + ItemImageSize * 0.6f, 0.f)  // 이미지 오른쪽
-			.SetSize(100.f, 60.f)
-			.SetZOrder(11);
+			SGameHUD::Get().AddWidget(ItemCountWidgets[i])
+				.SetAnchor(StartX, StartY)
+				.SetPivot(0.0f, 0.5f)  // 왼쪽 중앙 기준
+				.SetOffset(StartOffsetX + i * ItemSpacing + ItemImageSize * 0.6f, 0.f)  // 이미지 오른쪽
+				.SetSize(100.f, 60.f)
+				.SetZOrder(11);
+		}
 	}
 }
 
@@ -549,12 +556,29 @@ void AItemCollectGameMode::UpdateItemCount(const FString& ItemTag)
 	{
 		ItemCounts[ItemIndex]++;
 
-		// UI 업데이트
-		if (ItemCountWidgets[ItemIndex] && SGameHUD::Get().IsInitialized())
+		// 소방복(인덱스 0)은 이미지만 컬러로 변경 (개수 표시 안 함)
+		if (ItemIndex == 0)
 		{
-			wchar_t CountText[32];
-			swprintf_s(CountText, L"%d", ItemCounts[ItemIndex]);
-			ItemCountWidgets[ItemIndex]->SetText(CountText);
+			if (ItemImageWidgets[0] && SGameHUD::Get().IsInitialized())
+			{
+				FSlateRect AtlasRect(0.f, 0.f, 600.f, 600.f);
+				ItemImageWidgets[0]->SetBackgroundImageAtlas(
+					"Data/Textures/Collect/items.png",
+					AtlasRect,
+					AtlasRect,
+					AtlasRect
+				);
+			}
+		}
+		else
+		{
+			// 소화기, 산소통은 개수 텍스트 업데이트
+			if (ItemCountWidgets[ItemIndex] && SGameHUD::Get().IsInitialized())
+			{
+				wchar_t CountText[32];
+				swprintf_s(CountText, L"%d", ItemCounts[ItemIndex]);
+				ItemCountWidgets[ItemIndex]->SetText(CountText);
+			}
 		}
 	}
 }
@@ -588,12 +612,29 @@ void AItemCollectGameMode::UpdateItemCountUI()
 		{
 			ItemCounts[i] = ItemCount;
 
-			// UI 업데이트
-			if (ItemCountWidgets[i])
+			// 소방복(인덱스 0)은 이미지만 컬러로 변경
+			if (i == 0)
 			{
-				wchar_t CountText[32];
-				swprintf_s(CountText, L"%d", ItemCounts[i]);
-				ItemCountWidgets[i]->SetText(CountText);
+				if (ItemImageWidgets[0] && ItemCounts[0] > 0)
+				{
+					FSlateRect AtlasRect(0.f, 0.f, 600.f, 600.f);
+					ItemImageWidgets[0]->SetBackgroundImageAtlas(
+						"Data/Textures/Collect/items.png",
+						AtlasRect,
+						AtlasRect,
+						AtlasRect
+					);
+				}
+			}
+			else
+			{
+				// 소화기, 산소통은 개수 텍스트 업데이트
+				if (ItemCountWidgets[i])
+				{
+					wchar_t CountText[32];
+					swprintf_s(CountText, L"%d", ItemCounts[i]);
+					ItemCountWidgets[i]->SetText(CountText);
+				}
 			}
 		}
 	}
