@@ -20,6 +20,9 @@
 #include "FireActor.h"
 #include "EPhysicsMode.h"
 #include "PhysicsAsset.h"
+#include "BoneSocketComponent.h"
+#include "SkeletalMesh.h"
+#include "GameObject.h"
 
 AFirefighterCharacter::AFirefighterCharacter()
 	: bOrientRotationToMovement(true)
@@ -128,6 +131,28 @@ AFirefighterCharacter::AFirefighterCharacter()
 			WaterMagicParticle->SetTemplate(WaterEffect);
 		}
 	}
+
+	// 왼손 본 소켓 컴포넌트 생성 (사람 들기용 - Neck 부착)
+	LeftHandSocket = CreateDefaultSubobject<UBoneSocketComponent>("LeftHandSocket");
+	if (LeftHandSocket && MeshComponent)
+	{
+		LeftHandSocket->SetupAttachment(MeshComponent);
+		LeftHandSocket->BoneName = "mixamorig:LeftHand";
+		// 손에서 앞쪽(X)으로 오프셋, Person이 눕혀지도록 회전 (Pitch -90도)
+		LeftHandSocket->SocketOffsetLocation = FVector(0.3f, 0.0f, 0.0f);
+		//LeftHandSocket->SocketOffsetRotationEuler = FVector(0.0f, -90.0f, 0.0f);  // (Roll, Pitch, Yaw)
+	}
+
+	// 오른손 본 소켓 컴포넌트 생성 (사람 들기용 - Hips 부착)
+	RightHandSocket = CreateDefaultSubobject<UBoneSocketComponent>("RightHandSocket");
+	if (RightHandSocket && MeshComponent)
+	{
+		RightHandSocket->SetupAttachment(MeshComponent);
+		RightHandSocket->BoneName = "mixamorig:RightHand";
+		// 손에서 앞쪽(X)으로 오프셋, Person이 눕혀지도록 회전 (Pitch -90도)
+		RightHandSocket->SocketOffsetLocation = FVector(0.3f, 0.0f, 0.0f);
+		//RightHandSocket->SocketOffsetRotationEuler = FVector(0.0f, -90.0f, 0.0f);  // (Roll, Pitch, Yaw)
+	}
 }
 
 AFirefighterCharacter::~AFirefighterCharacter()
@@ -138,6 +163,18 @@ void AFirefighterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	// 애니메이션은 LuaScriptComponent(FirefighterController.lua)에서 처리
+
+	// BoneSocketComponent에 명시적으로 TargetMesh 설정 (BeginPlay 후 본 검색)
+	if (LeftHandSocket && MeshComponent)
+	{
+		LeftHandSocket->SetTargetByName(MeshComponent, "mixamorig:LeftHand");
+		UE_LOG("[FirefighterCharacter] LeftHandSocket TargetMesh set, BoneIndex=%d", LeftHandSocket->BoneIndex);
+	}
+	if (RightHandSocket && MeshComponent)
+	{
+		RightHandSocket->SetTargetByName(MeshComponent, "mixamorig:RightHand");
+		UE_LOG("[FirefighterCharacter] RightHandSocket TargetMesh set, BoneIndex=%d", RightHandSocket->BoneIndex);
+	}
 }
 
 void AFirefighterCharacter::PossessedBy(AController* NewController)
@@ -455,4 +492,136 @@ void AFirefighterCharacter::Die()
 		// 랙돌 모드로 전환 (물리가 본을 제어)
 		MeshComponent->SetPhysicsMode(EPhysicsMode::Ragdoll);
 	}
+}
+
+void AFirefighterCharacter::StartCarryingPerson(FGameObject* PersonGameObject)
+{
+	if (!PersonGameObject)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: PersonGameObject is null");
+		return;
+	}
+
+	// FGameObject에서 Actor 가져오기
+	AActor* PersonActor = PersonGameObject->GetOwner();
+	if (!PersonActor)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: PersonActor is null");
+		return;
+	}
+
+	// 이미 들고 있으면 무시
+	if (bIsCarryingPerson && CarriedPerson)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: Already carrying someone");
+		return;
+	}
+
+	// Person의 SkeletalMeshComponent 가져오기
+	USkeletalMeshComponent* PersonMesh = Cast<USkeletalMeshComponent>(
+		PersonActor->GetComponent(USkeletalMeshComponent::StaticClass()));
+	if (!PersonMesh)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: Person has no SkeletalMeshComponent");
+		return;
+	}
+
+	// Person 스켈레탈 메시를 래그돌 모드로 전환
+	PersonMesh->SetPhysicsMode(EPhysicsMode::Ragdoll);
+
+	// 본 인덱스 찾기 (Neck, Hips)
+	USkeletalMesh* SkelMesh = PersonMesh->GetSkeletalMesh();
+	if (!SkelMesh)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: Person has no SkeletalMesh");
+		return;
+	}
+
+	const FSkeleton* Skeleton = SkelMesh->GetSkeleton();
+	if (!Skeleton)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: Person has no Skeleton");
+		return;
+	}
+
+	// 디버그: 모든 본 이름 출력
+	UE_LOG("[FirefighterCharacter] Person bone names:");
+	for (const auto& Pair : Skeleton->BoneNameToIndex)
+	{
+		UE_LOG("  - %s (index: %d)", Pair.first.c_str(), Pair.second);
+	}
+
+	// Neck 본 인덱스 찾기 (여러 이름 시도)
+	int32 NeckBoneIndex = -1;
+	const char* NeckNames[] = { "mixamorig4:Neck", "mixamorig:Neck", "Neck", "neck", "Bip01_Neck", "Bip001_Neck" };
+	for (const char* Name : NeckNames)
+	{
+		auto It = Skeleton->BoneNameToIndex.find(Name);
+		if (It != Skeleton->BoneNameToIndex.end())
+		{
+			NeckBoneIndex = It->second;
+			UE_LOG("[FirefighterCharacter] Found Neck bone: %s (index: %d)", Name, NeckBoneIndex);
+			break;
+		}
+	}
+
+	// Hips 본 인덱스 찾기 (여러 이름 시도)
+	int32 HipsBoneIndex = -1;
+	const char* HipsNames[] = { "mixamorig4:Hips", "mixamorig:Hips", "Hips", "hips", "Bip01_Pelvis", "Bip001_Pelvis", "pelvis", "Pelvis" };
+	for (const char* Name : HipsNames)
+	{
+		auto It = Skeleton->BoneNameToIndex.find(Name);
+		if (It != Skeleton->BoneNameToIndex.end())
+		{
+			HipsBoneIndex = It->second;
+			UE_LOG("[FirefighterCharacter] Found Hips bone: %s (index: %d)", Name, HipsBoneIndex);
+			break;
+		}
+	}
+
+	UE_LOG("[FirefighterCharacter] StartCarryingPerson: Neck=%d, Hips=%d", NeckBoneIndex, HipsBoneIndex);
+
+	// 왼손 소켓에 Neck 부착
+	if (LeftHandSocket && NeckBoneIndex >= 0)
+	{
+		LeftHandSocket->AttachRagdoll(PersonMesh, NeckBoneIndex);
+		UE_LOG("[FirefighterCharacter] Attached Neck to LeftHand");
+	}
+
+	// 오른손 소켓에 Hips 부착
+	if (RightHandSocket && HipsBoneIndex >= 0)
+	{
+		RightHandSocket->AttachRagdoll(PersonMesh, HipsBoneIndex);
+		UE_LOG("[FirefighterCharacter] Attached Hips to RightHand");
+	}
+
+	// 상태 업데이트
+	CarriedPerson = PersonActor;
+	bIsCarryingPerson = true;
+
+	UE_LOG("[FirefighterCharacter] StartCarryingPerson: Success!");
+}
+
+void AFirefighterCharacter::StopCarryingPerson()
+{
+	if (!bIsCarryingPerson || !CarriedPerson)
+	{
+		return;
+	}
+
+	// 소켓에서 래그돌 분리
+	if (LeftHandSocket)
+	{
+		LeftHandSocket->DetachRagdoll();
+	}
+	if (RightHandSocket)
+	{
+		RightHandSocket->DetachRagdoll();
+	}
+
+	// 상태 업데이트
+	CarriedPerson = nullptr;
+	bIsCarryingPerson = false;
+
+	UE_LOG("[FirefighterCharacter] StopCarryingPerson: Released person");
 }

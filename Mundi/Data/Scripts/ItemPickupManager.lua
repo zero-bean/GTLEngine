@@ -27,6 +27,10 @@ local function DistanceSquared(loc1, loc2)
     return dx*dx + dy*dy + dz*dz
 end
 
+-- ItemType 상수 (C++ EItemType과 일치)
+local ITEM_TYPE_ITEM = 0
+local ITEM_TYPE_PERSON = 1
+
 -- 아이템의 ItemComponent 가져오기
 local function GetItemInfo(gameObject)
     if not gameObject then return nil end
@@ -129,7 +133,38 @@ local function TryPickup()
         return
     end
 
-    -- 인벤토리에 추가
+    -- Person 타입인 경우 특수 처리 (들기)
+    if itemInfo.Type == ITEM_TYPE_PERSON then
+        print("[ItemPickup] Person detected! Starting carry...")
+
+        -- Firefighter Character 가져오기 (이 스크립트는 Firefighter에 부착됨)
+        local firefighter = GetOwnerAs(Obj, "AFirefighterCharacter")
+        if firefighter then
+            -- StartCarryingPerson 호출 (FGameObject 직접 전달)
+            firefighter:StartCarryingPerson(PendingPickupItem)
+            print("[ItemPickup] StartCarryingPerson called!")
+
+            -- 목록에서 제거 (파괴는 하지 않음)
+            RemoveFromList(PendingPickupItem)
+            if ClosestItem == PendingPickupItem then
+                ClosestItem = nil
+            end
+
+            -- 더 이상 픽업 불가능하게 설정
+            local itemComp = GetItemComponent(PendingPickupItem)
+            if itemComp then
+                itemComp.bCanPickUp = false
+            end
+        else
+            print("[ItemPickup] ERROR: Could not get Firefighter character")
+        end
+
+        PendingPickupItem = nil
+        UpdateClosestItem()
+        return
+    end
+
+    -- 일반 아이템: 인벤토리에 추가
     local gameInstance = GetGameInstance()
     if gameInstance then
         gameInstance:AddItem(itemInfo.Name, itemInfo.Quantity)

@@ -20,6 +20,9 @@ local WATER_MAGIC_DAMAGE_RATE = 0.5  -- 초당 불에 가하는 데미지 (0.5 =
 local STATE_IDLE = "Idle"
 local STATE_WALKING = "Walking"
 local STATE_RUNNING = "Running"
+local STATE_IDLE_WITH_OBJECT = "IdleWithObject"
+local STATE_WALKING_WITH_OBJECT = "WalkingWithObject"
+local STATE_RUNNING_WITH_OBJECT = "RunningWithObject"
 local STATE_PICKUP = "PickUp"
 local STATE_WATERMAGIC_START = "WaterMagic_Start"
 local STATE_WATERMAGIC_PROGRESS = "WaterMagic_Progress"
@@ -143,12 +146,19 @@ function SetupAnimationStateMachine()
     local idleIdx = State.StateMachine:AddState(STATE_IDLE, CurrentAnims.IDLE, 1.0, true)
     local walkIdx = State.StateMachine:AddState(STATE_WALKING, CurrentAnims.WALKING, 1.0, true)
     local runIdx = State.StateMachine:AddState(STATE_RUNNING, CurrentAnims.RUNNING, 1.5, true)  -- 달리기 속도 1.5배
+
+    -- WITH_OBJECT 상태 추가 (사람 들고 있을 때)
+    local idleObjIdx = State.StateMachine:AddState(STATE_IDLE_WITH_OBJECT, CurrentAnims.IDLE_WITH_OBJECT, 1.0, true)
+    local walkObjIdx = State.StateMachine:AddState(STATE_WALKING_WITH_OBJECT, CurrentAnims.WALKING_WITH_OBJECT, 1.0, true)
+    local runObjIdx = State.StateMachine:AddState(STATE_RUNNING_WITH_OBJECT, CurrentAnims.RUNNING_WITH_OBJECT, 1.5, true)
+
     local pickupIdx = State.StateMachine:AddState(STATE_PICKUP, CurrentAnims.PICKUP, 1.0, false)  -- 루핑 안함
     local waterStartIdx = State.StateMachine:AddState(STATE_WATERMAGIC_START, CurrentAnims.WATERMAGIC_START, 1.0, false)  -- 루핑 안함
     local waterProgressIdx = State.StateMachine:AddState(STATE_WATERMAGIC_PROGRESS, CurrentAnims.WATERMAGIC_PROGRESS, 1.0, true)  -- 루핑
     local waterEndIdx = State.StateMachine:AddState(STATE_WATERMAGIC_END, CurrentAnims.WATERMAGIC_END, 1.0, false)  -- 루핑 안함
 
     print("[FirefighterController] States added: Idle=" .. tostring(idleIdx) .. ", Walking=" .. tostring(walkIdx) .. ", Running=" .. tostring(runIdx) .. ", PickUp=" .. tostring(pickupIdx))
+    print("[FirefighterController] WITH_OBJECT states: IdleObj=" .. tostring(idleObjIdx) .. ", WalkObj=" .. tostring(walkObjIdx) .. ", RunObj=" .. tostring(runObjIdx))
     print("[FirefighterController] WaterMagic states: Start=" .. tostring(waterStartIdx) .. ", Progress=" .. tostring(waterProgressIdx) .. ", End=" .. tostring(waterEndIdx))
 
     -- 전이(Transition) 추가 (BlendTime 0.2초)
@@ -164,11 +174,28 @@ function SetupAnimationStateMachine()
     State.StateMachine:AddTransitionByName(STATE_WALKING, STATE_RUNNING, 0.15)
     State.StateMachine:AddTransitionByName(STATE_RUNNING, STATE_WALKING, 0.15)
 
-    -- PickUp 전이 (모든 상태에서 PickUp으로, PickUp에서 Idle로)
+    -- WITH_OBJECT 상태 간 전이
+    State.StateMachine:AddTransitionByName(STATE_IDLE_WITH_OBJECT, STATE_WALKING_WITH_OBJECT, 0.2)
+    State.StateMachine:AddTransitionByName(STATE_WALKING_WITH_OBJECT, STATE_IDLE_WITH_OBJECT, 0.2)
+    State.StateMachine:AddTransitionByName(STATE_IDLE_WITH_OBJECT, STATE_RUNNING_WITH_OBJECT, 0.2)
+    State.StateMachine:AddTransitionByName(STATE_RUNNING_WITH_OBJECT, STATE_IDLE_WITH_OBJECT, 0.2)
+    State.StateMachine:AddTransitionByName(STATE_WALKING_WITH_OBJECT, STATE_RUNNING_WITH_OBJECT, 0.15)
+    State.StateMachine:AddTransitionByName(STATE_RUNNING_WITH_OBJECT, STATE_WALKING_WITH_OBJECT, 0.15)
+
+    -- 일반 <-> WITH_OBJECT 전이 (사람 들기/내려놓기)
+    State.StateMachine:AddTransitionByName(STATE_IDLE, STATE_IDLE_WITH_OBJECT, 0.2)
+    State.StateMachine:AddTransitionByName(STATE_IDLE_WITH_OBJECT, STATE_IDLE, 0.2)
+    State.StateMachine:AddTransitionByName(STATE_WALKING, STATE_WALKING_WITH_OBJECT, 0.2)
+    State.StateMachine:AddTransitionByName(STATE_WALKING_WITH_OBJECT, STATE_WALKING, 0.2)
+    State.StateMachine:AddTransitionByName(STATE_RUNNING, STATE_RUNNING_WITH_OBJECT, 0.2)
+    State.StateMachine:AddTransitionByName(STATE_RUNNING_WITH_OBJECT, STATE_RUNNING, 0.2)
+
+    -- PickUp 전이 (모든 상태에서 PickUp으로, PickUp에서 Idle 또는 IdleWithObject로)
     State.StateMachine:AddTransitionByName(STATE_IDLE, STATE_PICKUP, 0.1)
     State.StateMachine:AddTransitionByName(STATE_WALKING, STATE_PICKUP, 0.1)
     State.StateMachine:AddTransitionByName(STATE_RUNNING, STATE_PICKUP, 0.1)
     State.StateMachine:AddTransitionByName(STATE_PICKUP, STATE_IDLE, 0.2)
+    State.StateMachine:AddTransitionByName(STATE_PICKUP, STATE_IDLE_WITH_OBJECT, 0.2)
 
     -- WaterMagic 전이
     -- 모든 기본 상태에서 WaterMagic_Start로
@@ -377,12 +404,17 @@ function UpdateAnimationState()
     local currentState = State.StateMachine:GetCurrentStateName()
     local desiredState = STATE_IDLE
 
+    -- 사람을 들고 있는지 체크 (C++ bIsCarryingPerson 변수)
+    local bCarryingPerson = State.Character and State.Character.bIsCarryingPerson or false
+
     if State.bIsMoving then
         if State.bIsRunning then
-            desiredState = STATE_RUNNING
+            desiredState = bCarryingPerson and STATE_RUNNING_WITH_OBJECT or STATE_RUNNING
         else
-            desiredState = STATE_WALKING
+            desiredState = bCarryingPerson and STATE_WALKING_WITH_OBJECT or STATE_WALKING
         end
+    else
+        desiredState = bCarryingPerson and STATE_IDLE_WITH_OBJECT or STATE_IDLE
     end
 
     -- 상태가 다르면 전환
@@ -395,12 +427,14 @@ end
 function OnAnimNotify(NotifyName)
     print("[FirefighterController] AnimNotify received: " .. tostring(NotifyName))
 
-    -- EndPickUp 노티파이 처리: 액션 종료, Idle로 전환
+    -- EndPickUp 노티파이 처리: 액션 종료, Idle로 전환 (사람 들고 있으면 IdleWithObject)
     if NotifyName == "EndPickUp" then
-        print("[FirefighterController] EndPickUp notify triggered! Returning to Idle.")
+        local bCarryingPerson = State.Character and State.Character.bIsCarryingPerson or false
+        local targetState = bCarryingPerson and STATE_IDLE_WITH_OBJECT or STATE_IDLE
+        print("[FirefighterController] EndPickUp notify triggered! Returning to " .. targetState)
         State.bIsPerformingAction = false
         if State.StateMachine then
-            State.StateMachine:SetState(STATE_IDLE, 0.2)
+            State.StateMachine:SetState(targetState, 0.2)
         end
     end
 
