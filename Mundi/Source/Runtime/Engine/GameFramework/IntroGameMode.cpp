@@ -60,29 +60,21 @@ void AIntroGameMode::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    // 와이프 전환 타이머 처리
+    // 와이프 전환 타이머 처리 (게임 시작 버튼만 해당)
     if (bIsTransitioning)
     {
         TransitionTimer += DeltaTime;
 
         if (TransitionTimer >= WipeDuration)
         {
-            if (bIsQuitting)
+            // 다음 씬으로 전환
+            if (GetWorld())
             {
-                // 게임 종료
-                PostQuitMessage(0);
-            }
-            else
-            {
-                // 다음 씬으로 전환
-                if (GetWorld())
+                if (ALevelTransitionManager* Manager = GetWorld()->FindActor<ALevelTransitionManager>())
                 {
-                    if (ALevelTransitionManager* Manager = GetWorld()->FindActor<ALevelTransitionManager>())
+                    if (!Manager->IsTransitioning())
                     {
-                        if (!Manager->IsTransitioning())
-                        {
-                            Manager->TransitionToNextLevel();
-                        }
+                        Manager->TransitionToNextLevel();
                     }
                 }
             }
@@ -235,31 +227,8 @@ void AIntroGameMode::OnQuitButtonClicked()
 {
     if (bIsTransitioning) { return; }
 
-    // 버튼 사운드 재생
-    if (ButtonSound)
-    {
-        FAudioDevice::PlaySound3D(ButtonSound, FVector::Zero(), 1.0f, false);
-    }
-
-    // 모든 UI 즉시 숨김
-    if (TitleWidget) TitleWidget->SetVisibility(ESlateVisibility::Hidden);
-    if (StartButton) StartButton->SetVisibility(ESlateVisibility::Hidden);
-    if (QuitButton) QuitButton->SetVisibility(ESlateVisibility::Hidden);
-    if (HelpButton) HelpButton->SetVisibility(ESlateVisibility::Hidden);
-    if (GuideWidget) GuideWidget->SetVisibility(ESlateVisibility::Hidden);
-
-    // 수직 줄무늬 와이프 시작
-    if (GetWorld())
-    {
-        if (APlayerCameraManager* CameraManager = GetWorld()->FindActor<APlayerCameraManager>())
-        {
-            CameraManager->StartStripedWipe(WipeDuration, 8.f, FLinearColor(0,0,0,1), 100);
-        }
-    }
-
-    bIsTransitioning = true;
-    bIsQuitting = true;
-    TransitionTimer = 0.0f;
+    // 즉시 게임 종료 (UI 정리는 자동으로 수행됨)
+    PostQuitMessage(0);
 }
 
 void AIntroGameMode::OnHelpButtonHovered()

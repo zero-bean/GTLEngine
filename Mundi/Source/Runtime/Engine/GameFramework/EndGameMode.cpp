@@ -12,6 +12,7 @@
 #include "FAudioDevice.h"
 #include "Sound.h"
 #include "ResourceManager.h"
+#include "PlayerController.h"
 
 IMPLEMENT_CLASS(AEndGameMode)
 
@@ -38,8 +39,15 @@ void AEndGameMode::BeginPlay()
         }
     }
 
-    // 입력 모드를 UIOnly로 설정
-    UInputManager::GetInstance().SetInputMode(EInputMode::UIOnly);
+    // 입력 모드를 UIOnly로 설정 (PlayerController를 통해 설정)
+    if (PlayerController)
+    {
+        PlayerController->SetInputMode(EInputMode::UIOnly);
+    }
+    else
+    {
+        UInputManager::GetInstance().SetInputMode(EInputMode::UIOnly);
+    }
 
     // 데이터 초기화
     InitializeData();
@@ -55,8 +63,15 @@ void AEndGameMode::EndPlay()
 {
     Super::EndPlay();
 
-    // 입력 모드 복원
-    UInputManager::GetInstance().SetInputMode(EInputMode::GameAndUI);
+    // 입력 모드 복원 (PlayerController를 통해 설정)
+    if (PlayerController)
+    {
+        PlayerController->SetInputMode(EInputMode::GameAndUI);
+    }
+    else
+    {
+        UInputManager::GetInstance().SetInputMode(EInputMode::GameAndUI);
+    }
 
     ClearUI();
 }
@@ -550,7 +565,7 @@ FWideString AEndGameMode::GetEndingText() const
     // 엔딩 타입별 멘트 (각 2종류씩)
     static const FWideString MartyrdomTexts[2] = {
         L"당신의 희생은\n결코 잊혀지지 않을 것입니다.",
-        L"영웅은 떠났지만\n그 용기는 영원히 기억됩니다."
+        L"영웅은 떠났지만,\n영원히 기억될 것입니다."
     };
 
     static const FWideString FailureTexts[2] = {
