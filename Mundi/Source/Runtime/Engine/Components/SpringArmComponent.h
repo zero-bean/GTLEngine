@@ -118,6 +118,22 @@ public:
 	void SetDrawDebugCollision(bool bEnable) { bDrawDebugCollision = bEnable; }
 
 	// ────────────────────────────────────────────────
+	// 충돌 무시 액터
+	// ────────────────────────────────────────────────
+
+	/** 충돌 테스트에서 무시할 액터 추가 */
+	void AddIgnoredActor(AActor* Actor);
+
+	/** 충돌 테스트에서 무시할 액터 제거 */
+	void RemoveIgnoredActor(AActor* Actor);
+
+	/** 모든 무시 액터 제거 */
+	void ClearIgnoredActors();
+
+	/** 액터가 무시 목록에 있는지 확인 */
+	bool IsActorIgnored(AActor* Actor) const;
+
+	// ────────────────────────────────────────────────
 	// Controller Rotation 연동
 	// ────────────────────────────────────────────────
 
@@ -158,6 +174,9 @@ protected:
 	// Socket Transform (자식 컴포넌트가 배치될 위치)
 	FVector SocketLocation;
 	FQuat SocketRotation;
+
+	// 충돌 테스트에서 무시할 액터 목록
+	TArray<AActor*> IgnoredActors;
 
 	// ────────────────────────────────────────────────
 	// 내부 함수

@@ -140,8 +140,7 @@ AFirefighterCharacter::AFirefighterCharacter()
 		LeftHandSocket->SetupAttachment(MeshComponent);
 		LeftHandSocket->BoneName = "mixamorig:LeftHand";
 		// 손에서 앞쪽(X)으로 오프셋, Person이 눕혀지도록 회전 (Pitch -90도)
-		LeftHandSocket->SocketOffsetLocation = FVector(0.3f, 0.0f, 0.0f);
-		//LeftHandSocket->SocketOffsetRotationEuler = FVector(0.0f, -90.0f, 0.0f);  // (Roll, Pitch, Yaw)
+		LeftHandSocket->SocketOffsetLocation = FVector(0.0f, 0.0f, -0.2f);
 	}
 
 	// 오른손 본 소켓 컴포넌트 생성 (사람 들기용 - Hips 부착)
@@ -151,8 +150,7 @@ AFirefighterCharacter::AFirefighterCharacter()
 		RightHandSocket->SetupAttachment(MeshComponent);
 		RightHandSocket->BoneName = "mixamorig:RightHand";
 		// 손에서 앞쪽(X)으로 오프셋, Person이 눕혀지도록 회전 (Pitch -90도)
-		RightHandSocket->SocketOffsetLocation = FVector(0.3f, 0.0f, 0.0f);
-		//RightHandSocket->SocketOffsetRotationEuler = FVector(0.0f, -90.0f, 0.0f);  // (Roll, Pitch, Yaw)
+		RightHandSocket->SocketOffsetLocation = FVector(0.5f, 0.0f, 0.0f);
 	}
 }
 
@@ -591,6 +589,13 @@ void AFirefighterCharacter::StartCarryingPerson(FGameObject* PersonGameObject)
 	CarriedPerson = PersonActor;
 	bIsCarryingPerson = true;
 
+	// SpringArm 충돌에서 무시하도록 설정 (카메라가 래그돌에 붙지 않도록)
+	if (SpringArmComponent)
+	{
+		SpringArmComponent->AddIgnoredActor(PersonActor);
+		UE_LOG("[FirefighterCharacter] Added CarriedPerson to SpringArm ignored actors");
+	}
+
 	UE_LOG("[FirefighterCharacter] StartCarryingPerson: Success!");
 }
 
@@ -601,6 +606,28 @@ void AFirefighterCharacter::StopCarryingPerson()
 		return;
 	}
 
+	UE_LOG("[FirefighterCharacter] StopCarryingPerson");
+
+	// SpringArm 무시 목록에서 제거
+	if (SpringArmComponent)
+	{
+		SpringArmComponent->RemoveIgnoredActor(CarriedPerson);
+		UE_LOG("[FirefighterCharacter] Removed CarriedPerson from SpringArm ignored actors");
+	}
+
+	// 래그돌 분리
+	if (LeftHandSocket)
+	{
+		LeftHandSocket->DetachRagdoll();
+	}
+	if (RightHandSocket)
+	{
+		RightHandSocket->DetachRagdoll();
+	}
+
+	// 상태 초기화
+	CarriedPerson = nullptr;
+	bIsCarryingPerson = false;
 }
 
 void AFirefighterCharacter::RebindBoneSockets()
