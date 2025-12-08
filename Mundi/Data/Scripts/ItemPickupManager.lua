@@ -27,6 +27,10 @@ local function DistanceSquared(loc1, loc2)
     return dx*dx + dy*dy + dz*dz
 end
 
+-- ItemType 상수 (C++ EItemType과 일치)
+local ITEM_TYPE_ITEM = 0
+local ITEM_TYPE_PERSON = 1
+
 -- 아이템의 ItemComponent 가져오기
 local function GetItemInfo(gameObject)
     if not gameObject then return nil end
@@ -129,7 +133,38 @@ local function TryPickup()
         return
     end
 
-    -- 인벤토리에 추가
+    -- Person 타입인 경우 특수 처리 (들기)
+    if itemInfo.Type == ITEM_TYPE_PERSON then
+        print("[ItemPickup] Person detected! Starting carry...")
+
+        -- Firefighter Character 가져오기 (이 스크립트는 Firefighter에 부착됨)
+        local firefighter = GetOwnerAs(Obj, "AFirefighterCharacter")
+        if firefighter then
+            -- StartCarryingPerson 호출 (FGameObject 직접 전달)
+            firefighter:StartCarryingPerson(PendingPickupItem)
+            print("[ItemPickup] StartCarryingPerson called!")
+
+            -- 목록에서 제거 (파괴는 하지 않음)
+            RemoveFromList(PendingPickupItem)
+            if ClosestItem == PendingPickupItem then
+                ClosestItem = nil
+            end
+
+            -- 더 이상 픽업 불가능하게 설정
+            local itemComp = GetItemComponent(PendingPickupItem)
+            if itemComp then
+                itemComp.bCanPickUp = false
+            end
+        else
+            print("[ItemPickup] ERROR: Could not get Firefighter character")
+        end
+
+        PendingPickupItem = nil
+        UpdateClosestItem()
+        return
+    end
+
+    -- 일반 아이템: 인벤토리에 추가
     local gameInstance = GetGameInstance()
     if gameInstance then
         gameInstance:AddItem(itemInfo.Name, itemInfo.Quantity)
@@ -161,13 +196,9 @@ local function TryPickup()
     UpdateClosestItem()
 end
 
--- 클릭 시 호출 - 대상 아이템 저장 (이미 대기 중이면 무시)
+-- 클릭 시 호출 - 대상 아이템 저장 (항상 최신 아이템으로 갱신)
 local function OnPickupStarted()
-    -- 이미 픽업 대기 중이면 덮어쓰지 않음
-    if PendingPickupItem then
-        return
-    end
-
+    -- 항상 현재 가장 가까운 아이템으로 갱신 (거부된 클릭의 구형 값 방지)
     if ClosestItem then
         PendingPickupItem = ClosestItem
         print("[ItemPickup] Pickup target: " .. (GetItemInfo(ClosestItem).Name or "Unknown"))
@@ -215,8 +246,9 @@ function OnEndOverlap(OtherObj)
 end
 
 function Update(dt)
-    -- 마우스 클릭 시 픽업 대상 저장 (실제 줍기는 PickUp 노티파이에서)
-    if Input:IsMouseButtonPressed(MouseButton.Left) then
+    -- 마우스 클릭 또는 게임패드 B 버튼으로 픽업 대상 저장 (실제 줍기는 PickUp 노티파이에서)
+    local bPickupInput = Input:IsMouseButtonPressed(MouseButton.Left) or Input:IsGamepadButtonPressed(GamepadButton.B)
+    if bPickupInput then
         OnPickupStarted()
     end
 

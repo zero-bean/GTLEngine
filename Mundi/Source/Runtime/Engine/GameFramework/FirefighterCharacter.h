@@ -6,6 +6,7 @@ class UAudioComponent;
 class USphereComponent;
 class ULuaScriptComponent;
 class UParticleSystemComponent;
+class UBoneSocketComponent;
 
 UCLASS(DisplayName = "파이어 파이터 캐릭터", Description = "렛츠고 파이어 파이터")
 class AFirefighterCharacter : public ACharacter
@@ -173,6 +174,46 @@ private:
     /** 사망 처리 */
     void Die();
 
+    /** 게임패드 입력 처리 (좌 스틱 이동, A 버튼 점프) */
+    void ProcessGamepadInput();
+
     //USound* SorrySound;
     //USound* HitSound;
+
+    // ────────────────────────────────────────────────
+    // 손 본 소켓 (사람 들기용)
+    // ────────────────────────────────────────────────
+public:
+    /** 왼손 본 소켓 컴포넌트 */
+    UBoneSocketComponent* LeftHandSocket;
+
+    /** 오른손 본 소켓 컴포넌트 */
+    UBoneSocketComponent* RightHandSocket;
+
+    /** 현재 들고 있는 사람 (스켈레탈 메시 컴포넌트의 오너 액터) */
+    AActor* CarriedPerson = nullptr;
+
+    /** 사람을 들고 있는지 여부 */
+    UPROPERTY(LuaBind, DisplayName="bIsCarryingPerson")
+    bool bIsCarryingPerson = false;
+
+    /** 왼손 소켓 getter (Lua용) */
+    UFUNCTION(LuaBind, DisplayName="GetLeftHandSocket")
+    UBoneSocketComponent* GetLeftHandSocket() const { return LeftHandSocket; }
+
+    /** 오른손 소켓 getter (Lua용) */
+    UFUNCTION(LuaBind, DisplayName="GetRightHandSocket")
+    UBoneSocketComponent* GetRightHandSocket() const { return RightHandSocket; }
+
+    /** 사람 들기 시작 (Lua에서 호출) */
+    UFUNCTION(LuaBind, DisplayName="StartCarryingPerson")
+    void StartCarryingPerson(FGameObject* PersonGameObject);
+
+    /** 사람 내려놓기 (Lua에서 호출) */
+    UFUNCTION(LuaBind, DisplayName="StopCarryingPerson")
+    void StopCarryingPerson();
+
+    /** 본 소켓 재바인딩 (메시 변경 후 호출, Lua에서 호출) */
+    UFUNCTION(LuaBind, DisplayName="RebindBoneSockets")
+    void RebindBoneSockets();
 };

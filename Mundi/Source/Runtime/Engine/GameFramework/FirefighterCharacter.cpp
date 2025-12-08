@@ -10,6 +10,7 @@
 #include "PlayerController.h"
 #include "Controller.h"
 #include "InputComponent.h"
+#include "InputManager.h"
 #include "LuaScriptComponent.h"
 #include "CharacterMovementComponent.h"
 #include "ParticleSystemComponent.h"
@@ -20,6 +21,9 @@
 #include "FireActor.h"
 #include "EPhysicsMode.h"
 #include "PhysicsAsset.h"
+#include "BoneSocketComponent.h"
+#include "SkeletalMesh.h"
+#include "GameObject.h"
 
 AFirefighterCharacter::AFirefighterCharacter()
 	: bOrientRotationToMovement(true)
@@ -44,7 +48,7 @@ AFirefighterCharacter::AFirefighterCharacter()
 		MeshComponent->SetSkeletalMesh(GDataDir + "/firefighter/Firefighter_Without_Cloth.fbx");
 
 		// PhysicsAsset 설정 (랙돌용)
-		UPhysicsAsset* PhysAsset = UResourceManager::GetInstance().Load<UPhysicsAsset>("Data/Physics/Firefighter.physicsasset");
+		UPhysicsAsset* PhysAsset = UResourceManager::GetInstance().Load<UPhysicsAsset>("Data/Physics/firefighter_nocloth.physicsasset");
 		if (PhysAsset)
 		{
 			MeshComponent->SetPhysicsAsset(PhysAsset);
@@ -128,6 +132,26 @@ AFirefighterCharacter::AFirefighterCharacter()
 			WaterMagicParticle->SetTemplate(WaterEffect);
 		}
 	}
+
+	// 왼손 본 소켓 컴포넌트 생성 (사람 들기용 - Neck 부착)
+	LeftHandSocket = CreateDefaultSubobject<UBoneSocketComponent>("LeftHandSocket");
+	if (LeftHandSocket && MeshComponent)
+	{
+		LeftHandSocket->SetupAttachment(MeshComponent);
+		LeftHandSocket->BoneName = "mixamorig:LeftHand";
+		// 손에서 앞쪽(X)으로 오프셋, Person이 눕혀지도록 회전 (Pitch -90도)
+		LeftHandSocket->SocketOffsetLocation = FVector(0.0f, 0.0f, -0.2f);
+	}
+
+	// 오른손 본 소켓 컴포넌트 생성 (사람 들기용 - Hips 부착)
+	RightHandSocket = CreateDefaultSubobject<UBoneSocketComponent>("RightHandSocket");
+	if (RightHandSocket && MeshComponent)
+	{
+		RightHandSocket->SetupAttachment(MeshComponent);
+		RightHandSocket->BoneName = "mixamorig:RightHand";
+		// 손에서 앞쪽(X)으로 오프셋, Person이 눕혀지도록 회전 (Pitch -90도)
+		RightHandSocket->SocketOffsetLocation = FVector(0.5f, 0.0f, 0.0f);
+	}
 }
 
 AFirefighterCharacter::~AFirefighterCharacter()
@@ -138,6 +162,18 @@ void AFirefighterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	// 애니메이션은 LuaScriptComponent(FirefighterController.lua)에서 처리
+
+	// BoneSocketComponent에 명시적으로 TargetMesh 설정 (BeginPlay 후 본 검색)
+	if (LeftHandSocket && MeshComponent)
+	{
+		LeftHandSocket->SetTargetByName(MeshComponent, "mixamorig:LeftHand");
+		UE_LOG("[FirefighterCharacter] LeftHandSocket TargetMesh set, BoneIndex=%d", LeftHandSocket->BoneIndex);
+	}
+	if (RightHandSocket && MeshComponent)
+	{
+		RightHandSocket->SetTargetByName(MeshComponent, "mixamorig:RightHand");
+		UE_LOG("[FirefighterCharacter] RightHandSocket TargetMesh set, BoneIndex=%d", RightHandSocket->BoneIndex);
+	}
 }
 
 void AFirefighterCharacter::PossessedBy(AController* NewController)
@@ -172,6 +208,9 @@ void AFirefighterCharacter::HandleAnimNotify(const FAnimNotifyEvent& NotifyEvent
 
 void AFirefighterCharacter::Tick(float DeltaSeconds)
 {
+	// 게임패드 입력 처리 (좌 스틱 이동, A 버튼 점프)
+	ProcessGamepadInput();
+
 	// 이동 방향으로 캐릭터 회전 (Super::Tick 전에 처리해야 SpringArm이 올바른 회전을 사용)
 	// MaxWalkSpeed가 0이면 (PickUp 등) 회전도 비활성화, 단 물 마법 사용 중에는 회전 허용
 	const bool bCanRotate = CharacterMovement && (CharacterMovement->MaxWalkSpeed > 0.01f || bIsUsingWaterMagic);
@@ -454,5 +493,192 @@ void AFirefighterCharacter::Die()
 	{
 		// 랙돌 모드로 전환 (물리가 본을 제어)
 		MeshComponent->SetPhysicsMode(EPhysicsMode::Ragdoll);
+	}
+}
+
+void AFirefighterCharacter::StartCarryingPerson(FGameObject* PersonGameObject)
+{
+	if (!PersonGameObject)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: PersonGameObject is null");
+		return;
+	}
+
+	// FGameObject에서 Actor 가져오기
+	AActor* PersonActor = PersonGameObject->GetOwner();
+	if (!PersonActor)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: PersonActor is null");
+		return;
+	}
+
+	// 이미 들고 있으면 무시
+	if (bIsCarryingPerson && CarriedPerson)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: Already carrying someone");
+		return;
+	}
+
+	// Person의 SkeletalMeshComponent 가져오기
+	USkeletalMeshComponent* PersonMesh = Cast<USkeletalMeshComponent>(
+		PersonActor->GetComponent(USkeletalMeshComponent::StaticClass()));
+	if (!PersonMesh)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: Person has no SkeletalMeshComponent");
+		return;
+	}
+
+	// Person 스켈레탈 메시를 래그돌 모드로 전환
+	PersonMesh->SetPhysicsMode(EPhysicsMode::Ragdoll);
+
+	// 본 인덱스 찾기 (Neck, Hips)
+	USkeletalMesh* SkelMesh = PersonMesh->GetSkeletalMesh();
+	if (!SkelMesh)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: Person has no SkeletalMesh");
+		return;
+	}
+
+	const FSkeleton* Skeleton = SkelMesh->GetSkeleton();
+	if (!Skeleton)
+	{
+		UE_LOG("[FirefighterCharacter] StartCarryingPerson: Person has no Skeleton");
+		return;
+	}
+
+	// 디버그: 모든 본 이름 출력
+	UE_LOG("[FirefighterCharacter] Person bone names:");
+	for (const auto& Pair : Skeleton->BoneNameToIndex)
+	{
+		UE_LOG("  - %s (index: %d)", Pair.first.c_str(), Pair.second);
+	}
+
+	// Neck 본 인덱스 찾기 (suffix 검색 사용)
+	int32 NeckBoneIndex = -1;
+	FString NeckBoneName;
+	if (UBoneSocketComponent::FindBoneBySuffix(Skeleton, "Neck", NeckBoneIndex, NeckBoneName))
+	{
+		UE_LOG("[FirefighterCharacter] Found Neck bone: %s (index: %d)", NeckBoneName.c_str(), NeckBoneIndex);
+	}
+
+	// Hips 본 인덱스 찾기 (suffix 검색 사용)
+	int32 HipsBoneIndex = -1;
+	FString HipsBoneName;
+	if (UBoneSocketComponent::FindBoneBySuffix(Skeleton, "Hips", HipsBoneIndex, HipsBoneName))
+	{
+		UE_LOG("[FirefighterCharacter] Found Hips bone: %s (index: %d)", HipsBoneName.c_str(), HipsBoneIndex);
+	}
+
+	UE_LOG("[FirefighterCharacter] StartCarryingPerson: Neck=%d, Hips=%d", NeckBoneIndex, HipsBoneIndex);
+
+	// 왼손 소켓에 Neck 부착
+	if (LeftHandSocket && NeckBoneIndex >= 0)
+	{
+		LeftHandSocket->AttachRagdoll(PersonMesh, NeckBoneIndex);
+		UE_LOG("[FirefighterCharacter] Attached Neck to LeftHand");
+	}
+
+	// 오른손 소켓에 Hips 부착
+	if (RightHandSocket && HipsBoneIndex >= 0)
+	{
+		RightHandSocket->AttachRagdoll(PersonMesh, HipsBoneIndex);
+		UE_LOG("[FirefighterCharacter] Attached Hips to RightHand");
+	}
+
+	// 상태 업데이트
+	CarriedPerson = PersonActor;
+	bIsCarryingPerson = true;
+
+	// SpringArm 충돌에서 무시하도록 설정 (카메라가 래그돌에 붙지 않도록)
+	if (SpringArmComponent)
+	{
+		SpringArmComponent->AddIgnoredActor(PersonActor);
+		UE_LOG("[FirefighterCharacter] Added CarriedPerson to SpringArm ignored actors");
+	}
+
+	UE_LOG("[FirefighterCharacter] StartCarryingPerson: Success!");
+}
+
+void AFirefighterCharacter::StopCarryingPerson()
+{
+	if (!bIsCarryingPerson || !CarriedPerson)
+	{
+		return;
+	}
+
+	UE_LOG("[FirefighterCharacter] StopCarryingPerson");
+
+	// SpringArm 무시 목록에서 제거
+	if (SpringArmComponent)
+	{
+		SpringArmComponent->RemoveIgnoredActor(CarriedPerson);
+		UE_LOG("[FirefighterCharacter] Removed CarriedPerson from SpringArm ignored actors");
+	}
+
+	// 래그돌 분리
+	if (LeftHandSocket)
+	{
+		LeftHandSocket->DetachRagdoll();
+	}
+	if (RightHandSocket)
+	{
+		RightHandSocket->DetachRagdoll();
+	}
+
+	// 상태 초기화
+	CarriedPerson = nullptr;
+	bIsCarryingPerson = false;
+}
+
+void AFirefighterCharacter::RebindBoneSockets()
+{
+	UE_LOG("[FirefighterCharacter] RebindBoneSockets called");
+
+	// 메시 변경 후 BoneSocketComponent에 새 스켈레톤의 본을 다시 바인딩
+	if (LeftHandSocket && MeshComponent)
+	{
+		bool bFound = LeftHandSocket->SetTargetByName(MeshComponent, "mixamorig:LeftHand");
+		UE_LOG("[FirefighterCharacter] RebindBoneSockets: LeftHandSocket BoneIndex=%d, found=%d",
+			LeftHandSocket->BoneIndex, bFound ? 1 : 0);
+	}
+	if (RightHandSocket && MeshComponent)
+	{
+		bool bFound = RightHandSocket->SetTargetByName(MeshComponent, "mixamorig:RightHand");
+		UE_LOG("[FirefighterCharacter] RebindBoneSockets: RightHandSocket BoneIndex=%d, found=%d",
+			RightHandSocket->BoneIndex, bFound ? 1 : 0);
+	}
+}
+
+void AFirefighterCharacter::ProcessGamepadInput()
+{
+	UInputManager& InputManager = UInputManager::GetInstance();
+
+	// 게임패드가 연결되어 있지 않으면 리턴
+	if (!InputManager.IsGamepadConnected())
+	{
+		return;
+	}
+
+	// 좌 스틱 이동 입력
+	FVector2D LeftStick = InputManager.GetGamepadLeftStick();
+
+	if (LeftStick.Y != 0.0f)
+	{
+		MoveForwardCamera(LeftStick.Y);
+	}
+
+	if (LeftStick.X != 0.0f)
+	{
+		MoveRightCamera(LeftStick.X);
+	}
+
+	// A 버튼 점프
+	if (InputManager.IsGamepadButtonPressed(GamepadA))
+	{
+		Jump();
+	}
+	else if (InputManager.IsGamepadButtonReleased(GamepadA))
+	{
+		StopJumping();
 	}
 }

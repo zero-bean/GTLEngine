@@ -14,6 +14,45 @@ UBoneSocketComponent::UBoneSocketComponent()
     SocketOffset = FTransform();
 }
 
+bool UBoneSocketComponent::FindBoneBySuffix(const FSkeleton* Skeleton, const FString& BaseName, int32& OutBoneIndex, FString& OutFullName)
+{
+    OutBoneIndex = -1;
+    OutFullName.clear();
+
+    if (!Skeleton || BaseName.empty())
+    {
+        return false;
+    }
+
+    // 먼저 정확히 일치하는 이름 검색
+    auto ExactIt = Skeleton->BoneNameToIndex.find(BaseName);
+    if (ExactIt != Skeleton->BoneNameToIndex.end())
+    {
+        OutBoneIndex = ExactIt->second;
+        OutFullName = BaseName;
+        return true;
+    }
+
+    // suffix로 끝나는 본 검색 (예: "mixamorig10:LeftHand" -> "LeftHand"로 끝남)
+    FString Suffix = ":" + BaseName;
+    for (const auto& Pair : Skeleton->BoneNameToIndex)
+    {
+        // 본 이름이 ":BaseName"으로 끝나는지 확인
+        if (Pair.first.length() > Suffix.length())
+        {
+            size_t SuffixStart = Pair.first.length() - Suffix.length();
+            if (Pair.first.substr(SuffixStart) == Suffix)
+            {
+                OutBoneIndex = Pair.second;
+                OutFullName = Pair.first;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 void UBoneSocketComponent::BeginPlay()
 {
     Super::BeginPlay();
@@ -27,14 +66,30 @@ void UBoneSocketComponent::BeginPlay()
     // BoneName이 설정되어 있고 BoneIndex가 -1이면 이름으로 인덱스 찾기
     if (TargetMesh && BoneIndex == -1 && !BoneName.empty())
     {
-        if (USkeletalMesh* SkelMesh = TargetMesh->GetSkeletalMesh())
+        USkeletalMesh* SkelMesh = TargetMesh->GetSkeletalMesh();
+        if (SkelMesh)
         {
-            if (const FSkeleton* Skeleton = SkelMesh->GetSkeleton())
+            const FSkeleton* Skeleton = SkelMesh->GetSkeleton();
+            if (Skeleton)
             {
-                auto It = Skeleton->BoneNameToIndex.find(BoneName);
-                if (It != Skeleton->BoneNameToIndex.end())
+                // 접두사 제거하여 기본 이름 추출
+                FString BaseName = BoneName;
+                size_t ColonPos = BaseName.find(':');
+                if (ColonPos != FString::npos)
                 {
-                    BoneIndex = It->second;
+                    BaseName = BaseName.substr(ColonPos + 1);
+                }
+
+                // suffix 검색 사용
+                FString FoundName;
+                if (FindBoneBySuffix(Skeleton, BaseName, BoneIndex, FoundName))
+                {
+                    BoneName = FoundName;
+                    UE_LOG("[BoneSocketComponent] BeginPlay: Found bone '%s' at index %d", BoneName.c_str(), BoneIndex);
+                }
+                else
+                {
+                    UE_LOG("[BoneSocketComponent] BeginPlay: Bone '%s' not found!", BaseName.c_str());
                 }
             }
         }
@@ -81,29 +136,41 @@ bool UBoneSocketComponent::SetTargetByName(USkeletalMeshComponent* InTargetMesh,
     USkeletalMesh* SkelMesh = InTargetMesh->GetSkeletalMesh();
     if (!SkelMesh)
     {
+        UE_LOG("[BoneSocketComponent] SetTargetByName: No SkeletalMesh");
         return false;
     }
 
     const FSkeleton* Skeleton = SkelMesh->GetSkeleton();
     if (!Skeleton)
     {
+        UE_LOG("[BoneSocketComponent] SetTargetByName: No Skeleton");
         return false;
     }
 
-    // 본 이름으로 인덱스 찾기
-    auto It = Skeleton->BoneNameToIndex.find(InBoneName);
-    if (It == Skeleton->BoneNameToIndex.end())
+    // 접두사 제거하여 기본 이름 추출
+    FString BaseName = InBoneName;
+    size_t ColonPos = BaseName.find(':');
+    if (ColonPos != FString::npos)
     {
-        return false;
+        BaseName = BaseName.substr(ColonPos + 1);
     }
 
-    TargetMesh = InTargetMesh;
-    BoneIndex = It->second;
-    BoneName = InBoneName;
+    // suffix 검색 사용
+    int32 FoundIndex;
+    FString FoundName;
+    if (FindBoneBySuffix(Skeleton, BaseName, FoundIndex, FoundName))
+    {
+        TargetMesh = InTargetMesh;
+        BoneIndex = FoundIndex;
+        BoneName = FoundName;
+        UE_LOG("[BoneSocketComponent] SetTargetByName: Found '%s' at index %d", BoneName.c_str(), BoneIndex);
+        SyncWithBone();
+        return true;
+    }
 
-    // 즉시 동기화
-    SyncWithBone();
-    return true;
+    // 못 찾았으면 로그 출력
+    UE_LOG("[BoneSocketComponent] SetTargetByName: Bone '%s' (base: '%s') not found!", InBoneName.c_str(), BaseName.c_str());
+    return false;
 }
 
 USkeletalMeshComponent* UBoneSocketComponent::FindAndSetTargetFromParent()
@@ -205,12 +272,21 @@ void UBoneSocketComponent::OnUpdateTransform(EUpdateTransformFlags UpdateTransfo
 
 void UBoneSocketComponent::SyncWithBone()
 {
-    if (!TargetMesh || BoneIndex < 0 || bSyncing)
+    if (bSyncing)
     {
         return;
     }
 
     bSyncing = true;
+
+    // BoneIndex가 유효하지 않아도 AttachedRagdoll이 있으면 동기화 수행
+    if (!TargetMesh || BoneIndex < 0)
+    {
+        // AttachedRagdoll만 동기화
+        SyncAttachedRagdoll();
+        bSyncing = false;
+        return;
+    }
 
     FTransform BoneWorldTransform;
 
@@ -287,6 +363,7 @@ void UBoneSocketComponent::AttachRagdoll(USkeletalMeshComponent* RagdollMesh, in
 {
     if (!RagdollMesh)
     {
+        UE_LOG("[BoneSocketComponent] AttachRagdoll: RagdollMesh is null");
         return;
     }
 
@@ -299,17 +376,38 @@ void UBoneSocketComponent::AttachRagdoll(USkeletalMeshComponent* RagdollMesh, in
     AttachedRagdoll = RagdollMesh;
     AttachedRagdollBoneIndex = AttachBoneIndex;
 
+    // PhysicsAsset 확인
+    UPhysicsAsset* PhysAsset = RagdollMesh->GetPhysicsAsset();
+    if (!PhysAsset)
+    {
+        UE_LOG("[BoneSocketComponent] AttachRagdoll: WARNING - No PhysicsAsset! Ragdoll won't work properly.");
+    }
+    else
+    {
+        UE_LOG("[BoneSocketComponent] AttachRagdoll: PhysicsAsset found");
+    }
+
     // 래그돌 모드가 아니면 래그돌 모드로 전환
     if (RagdollMesh->GetPhysicsMode() != EPhysicsMode::Ragdoll)
     {
+        UE_LOG("[BoneSocketComponent] AttachRagdoll: Setting Ragdoll mode");
         RagdollMesh->SetPhysicsMode(EPhysicsMode::Ragdoll);
     }
+
+    // Bodies 확인
+    const TArray<FBodyInstance*>& Bodies = RagdollMesh->GetBodies();
+    UE_LOG("[BoneSocketComponent] AttachRagdoll: Bodies count = %d", Bodies.Num());
 
     // 고정할 본의 바디를 키네마틱으로 설정
     FBodyInstance* AttachBody = RagdollMesh->GetBodyInstance(AttachBoneIndex);
     if (AttachBody && AttachBody->IsValidBodyInstance())
     {
+        UE_LOG("[BoneSocketComponent] AttachRagdoll: Setting bone %d to kinematic", AttachBoneIndex);
         AttachBody->SetKinematic(true); // 키네마틱으로 전환
+    }
+    else
+    {
+        UE_LOG("[BoneSocketComponent] AttachRagdoll: WARNING - No body for bone index %d", AttachBoneIndex);
     }
 
     // 즉시 동기화
@@ -336,7 +434,39 @@ void UBoneSocketComponent::DetachRagdoll()
 
 void UBoneSocketComponent::SyncAttachedRagdoll()
 {
-    FTransform SocketWorld = GetWorldTransform();
+    // 오프셋 프로퍼티 업데이트
+    UpdateSocketOffsetFromProperties();
+
+    // 소켓의 월드 위치 계산
+    // TargetMesh와 BoneIndex가 유효하면 본 트랜스폼 사용, 아니면 부모 트랜스폼 사용
+    FTransform BaseWorld;
+    if (TargetMesh && BoneIndex >= 0)
+    {
+        // 래그돌 모드일 때는 물리 바디에서 트랜스폼 가져옴
+        if (TargetMesh->GetPhysicsMode() == EPhysicsMode::Ragdoll)
+        {
+            FBodyInstance* Body = TargetMesh->GetBodyInstance(BoneIndex);
+            if (Body && Body->IsValidBodyInstance())
+            {
+                BaseWorld = Body->GetUnrealWorldTransform();
+                BaseWorld.Scale3D = TargetMesh->GetWorldScale();
+            }
+            else
+            {
+                BaseWorld = TargetMesh->GetBoneWorldTransform(BoneIndex);
+            }
+        }
+        else
+        {
+            BaseWorld = TargetMesh->GetBoneWorldTransform(BoneIndex);
+        }
+    }
+    else
+    {
+        // 본 추적이 안되면 부모 트랜스폼 사용
+        BaseWorld = GetAttachParent() ? GetAttachParent()->GetWorldTransform() : FTransform();
+    }
+    FTransform SocketWorld = BaseWorld.GetWorldTransform(SocketOffset);
 
     // 명시적으로 AttachRagdoll로 부착된 경우
     if (AttachedRagdoll && AttachedRagdollBoneIndex >= 0)

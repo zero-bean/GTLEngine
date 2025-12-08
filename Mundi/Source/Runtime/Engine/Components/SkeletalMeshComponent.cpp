@@ -505,6 +505,26 @@ void USkeletalMeshComponent::SetPhysicsAsset(UPhysicsAsset* InPhysicsAsset)
     }
 }
 
+void USkeletalMeshComponent::SetPhysicsAssetByPath(const FString& Path)
+{
+    if (Path.empty())
+    {
+        UE_LOG("[SkeletalMeshComponent] SetPhysicsAssetByPath: 경로가 비어있습니다");
+        return;
+    }
+
+    UPhysicsAsset* NewPhysicsAsset = UResourceManager::GetInstance().Load<UPhysicsAsset>(Path);
+    if (NewPhysicsAsset)
+    {
+        SetPhysicsAsset(NewPhysicsAsset);
+        UE_LOG("[SkeletalMeshComponent] SetPhysicsAssetByPath: %s 로드 성공", Path.c_str());
+    }
+    else
+    {
+        UE_LOG("[SkeletalMeshComponent] SetPhysicsAssetByPath: %s 로드 실패", Path.c_str());
+    }
+}
+
 void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 {
     // SetPhysicsMode로 위임

@@ -174,6 +174,20 @@ public:
                            AActor* IgnoreActor = nullptr) const;
 
     /**
+     * @brief 스피어 형태로 스윕하여 첫 번째 히트를 반환 (여러 액터 무시)
+     * @param Start 시작 위치
+     * @param End 끝 위치
+     * @param Radius 스피어 반경
+     * @param OutHit 히트 결과 (출력)
+     * @param IgnoreActors 무시할 액터 목록
+     * @return 히트 여부
+     */
+    bool SweepSingleSphere(const FVector& Start, const FVector& End,
+                           float Radius,
+                           FHitResult& OutHit,
+                           const TArray<AActor*>& IgnoreActors) const;
+
+    /**
      * @brief 박스 형태로 스윕하여 첫 번째 히트를 반환
      * @param Start 시작 위치
      * @param End 끝 위치

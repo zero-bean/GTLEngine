@@ -243,9 +243,20 @@ bool USpringArmComponent::DoCollisionTest(const FVector& DesiredLocation, FVecto
 			SweepDist);
 	}
 
-	// Sphere 스윕으로 충돌 검사
+	// 무시할 액터 목록 구성 (Owner + 추가 무시 액터)
+	TArray<AActor*> AllIgnoredActors;
+	AllIgnoredActors.push_back(OwnerActor);
+	for (AActor* Actor : IgnoredActors)
+	{
+		if (Actor)
+		{
+			AllIgnoredActors.push_back(Actor);
+		}
+	}
+
+	// Sphere 스윕으로 충돌 검사 (PhysX에서 무시 액터 필터링)
 	FHitResult HitResult;
-	bool bHit = PhysScene->SweepSingleSphere(SweepStart, SweepEnd, ProbeSize, HitResult, OwnerActor);
+	bool bHit = PhysScene->SweepSingleSphere(SweepStart, SweepEnd, ProbeSize, HitResult, AllIgnoredActors);
 
 	if (bHit && HitResult.bBlockingHit)
 	{
@@ -264,6 +275,8 @@ bool USpringArmComponent::DoCollisionTest(const FVector& DesiredLocation, FVecto
 			return false;
 		}
 
+		AActor* HitActor = HitResult.Actor.Get();
+
 		// PhysX에서 반환된 충돌 위치를 직접 사용 (P2UVector 좌표 변환이 적용됨)
 		FVector HitLocation = HitResult.ImpactPoint;
 
@@ -276,7 +289,6 @@ bool USpringArmComponent::DoCollisionTest(const FVector& DesiredLocation, FVecto
 		// 디버그 로그
 		if (bDrawDebugCollision)
 		{
-			AActor* HitActor = HitResult.Actor.Get();
 			UE_LOG("[SpringArm] HIT! Dist:%.2f ArmLen:%.2f HitActor:%s",
 				HitResult.Distance,
 				CurrentArmLength,
@@ -297,6 +309,40 @@ bool USpringArmComponent::DoCollisionTest(const FVector& DesiredLocation, FVecto
 			OutLocation.X, OutLocation.Y, OutLocation.Z);
 	}
 	return false;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 충돌 무시 액터 관리
+// ────────────────────────────────────────────────────────────────────────────
+
+void USpringArmComponent::AddIgnoredActor(AActor* Actor)
+{
+	if (Actor && !IsActorIgnored(Actor))
+	{
+		IgnoredActors.push_back(Actor);
+	}
+}
+
+void USpringArmComponent::RemoveIgnoredActor(AActor* Actor)
+{
+	if (Actor)
+	{
+		auto It = std::find(IgnoredActors.begin(), IgnoredActors.end(), Actor);
+		if (It != IgnoredActors.end())
+		{
+			IgnoredActors.erase(It);
+		}
+	}
+}
+
+void USpringArmComponent::ClearIgnoredActors()
+{
+	IgnoredActors.clear();
+}
+
+bool USpringArmComponent::IsActorIgnored(AActor* Actor) const
+{
+	return std::find(IgnoredActors.begin(), IgnoredActors.end(), Actor) != IgnoredActors.end();
 }
 
 // ────────────────────────────────────────────────────────────────────────────

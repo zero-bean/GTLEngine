@@ -592,6 +592,66 @@ public:
     }
 };
 
+// 레이캐스트 필터 콜백: 여러 액터 무시
+class FIgnoreActorsFilterCallback : public PxQueryFilterCallback
+{
+public:
+    const TArray<AActor*>& IgnoreActors;
+
+    FIgnoreActorsFilterCallback(const TArray<AActor*>& InIgnoreActors) : IgnoreActors(InIgnoreActors) {}
+
+    virtual PxQueryHitType::Enum preFilter(
+        const PxFilterData& filterData, const PxShape* shape, const PxRigidActor* actor, PxHitFlags& queryFlags) override
+    {
+        if (!actor || IgnoreActors.empty())
+        {
+            return PxQueryHitType::eBLOCK;
+        }
+
+        void* UserData = actor->userData;
+        if (UserData)
+        {
+            AActor* HitActor = nullptr;
+
+            // FBodyInstance인지 확인 (일반 물리 바디)
+            if (FBodyInstance* BodyInstance = PhysicsUserDataCast<FBodyInstance>(UserData))
+            {
+                if (BodyInstance->OwnerComponent)
+                {
+                    HitActor = BodyInstance->OwnerComponent->GetOwner();
+                }
+            }
+            // FControllerInstance인지 확인 (CCT - Character Controller)
+            else if (FControllerInstance* ControllerInst = PhysicsUserDataCast<FControllerInstance>(UserData))
+            {
+                if (ControllerInst->OwnerComponent)
+                {
+                    HitActor = ControllerInst->OwnerComponent->GetOwner();
+                }
+            }
+
+            // 무시 목록에 있는지 확인
+            if (HitActor)
+            {
+                for (AActor* IgnoreActor : IgnoreActors)
+                {
+                    if (HitActor == IgnoreActor)
+                    {
+                        return PxQueryHitType::eNONE;  // 무시
+                    }
+                }
+            }
+        }
+
+        return PxQueryHitType::eBLOCK;
+    }
+
+    virtual PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit) override
+    {
+        return PxQueryHitType::eBLOCK;
+    }
+};
+
 bool FPhysScene::Raycast(const FVector& Origin, const FVector& Direction, float MaxDistance,
                          FVector& OutHitLocation, FVector& OutHitNormal, float& OutHitDistance,
                          AActor* IgnoreActor) const
@@ -782,6 +842,76 @@ bool FPhysScene::SweepSingleSphere(const FVector& Start, const FVector& End,
     PxSphereGeometry SphereGeom(Radius);
 
     return SweepSingleInternal(SphereGeom, Start, End, FQuat::Identity(), OutHit, IgnoreActor);
+}
+
+bool FPhysScene::SweepSingleSphere(const FVector& Start, const FVector& End,
+                                    float Radius,
+                                    FHitResult& OutHit,
+                                    const TArray<AActor*>& IgnoreActors) const
+{
+    if (!PhysXScene)
+    {
+        return false;
+    }
+
+    OutHit.Init();
+
+    FVector Direction = End - Start;
+    float Distance = Direction.Size();
+
+    if (Distance < KINDA_SMALL_NUMBER)
+    {
+        return false;
+    }
+
+    Direction /= Distance;  // Normalize
+
+    PxSphereGeometry SphereGeom(Radius);
+    PxVec3 PxStart = U2PVector(Start);
+    PxVec3 PxDirection = U2PVector(Direction);
+    PxTransform StartPose(PxStart, PxQuat(PxIdentity));
+
+    PxSweepBuffer Hit;
+    bool bHit = false;
+
+    if (!IgnoreActors.empty())
+    {
+        FIgnoreActorsFilterCallback FilterCallback(IgnoreActors);
+        PxQueryFilterData FilterData;
+        FilterData.flags = PxQueryFlag::eDYNAMIC | PxQueryFlag::eSTATIC | PxQueryFlag::ePREFILTER;
+
+        bHit = PhysXScene->sweep(SphereGeom, StartPose, PxDirection, Distance, Hit,
+                                  PxHitFlag::eDEFAULT | PxHitFlag::eNORMAL | PxHitFlag::ePOSITION,
+                                  FilterData, &FilterCallback);
+    }
+    else
+    {
+        bHit = PhysXScene->sweep(SphereGeom, StartPose, PxDirection, Distance, Hit,
+                                  PxHitFlag::eDEFAULT | PxHitFlag::eNORMAL | PxHitFlag::ePOSITION);
+    }
+
+    if (bHit && Hit.hasBlock)
+    {
+        OutHit.bBlockingHit = true;
+        OutHit.Distance = Hit.block.distance;
+        OutHit.ImpactPoint = P2UVector(Hit.block.position);
+        OutHit.ImpactNormal = P2UVector(Hit.block.normal);
+
+        // 히트한 액터/컴포넌트 정보 추출
+        if (Hit.block.actor && Hit.block.actor->userData)
+        {
+            FBodyInstance* BodyInstance = static_cast<FBodyInstance*>(Hit.block.actor->userData);
+            if (BodyInstance && BodyInstance->OwnerComponent)
+            {
+                OutHit.Component = BodyInstance->OwnerComponent;
+                OutHit.Actor = BodyInstance->OwnerComponent->GetOwner();
+            }
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 bool FPhysScene::SweepSingleBox(const FVector& Start, const FVector& End,
