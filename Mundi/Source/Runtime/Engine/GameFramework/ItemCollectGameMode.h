@@ -86,6 +86,10 @@ public:
 	UPROPERTY(EditAnywhere, Category="Sound", Tooltip="사이렌 사운드 경로입니다.")
 	FString SirenSoundPath = "Data/Audio/StartSiren.wav";
 
+	/** 시간 종료 알람 사운드 경로 */
+	UPROPERTY(EditAnywhere, Category="Sound", Tooltip="시간 종료 시 재생되는 알람 사운드 경로입니다.")
+	FString ClockAlarmSoundPath = "Data/Audio/ClockAlram.wav";
+
 	// ────────────────────────────────────────────────
 	// Getter/Setter
 	// ────────────────────────────────────────────────
@@ -131,6 +135,9 @@ protected:
 	/** 공지 애니메이션 업데이트 */
 	void UpdateNoticeAnimation(float DeltaTime);
 
+	/** Limit 화면 애니메이션 업데이트 (떨림 효과) */
+	void UpdateLimitAnimation(float DeltaTime);
+
 public:
 	/** 아이템 수집 카운트 업데이트 (외부에서 호출 가능) */
 	void UpdateItemCount(const FString& ItemTag);
@@ -159,9 +166,16 @@ private:
 	// 아이템 카운트
 	int ItemCounts[3]; // 각 아이템 수집 개수
 
+	// 제한시간 종료 UI
+	TSharedPtr<STextBlock> LimitWidget;  // limit.png 이미지
+	bool bShowingLimitScreen;            // limit 화면 표시 중 여부
+	float LimitScreenTimer;              // limit 화면 표시 타이머
+	static constexpr float LimitScreenDuration = 3.0f;  // limit 화면 표시 시간
+
 	// 사운드 관련
 	class USound* BGMSound = nullptr;
 	class USound* SirenSound = nullptr;
+	class USound* ClockAlarmSound = nullptr;
 	struct IXAudio2SourceVoice* BGMVoice = nullptr;
 
 	/** 사운드 초기화 */
