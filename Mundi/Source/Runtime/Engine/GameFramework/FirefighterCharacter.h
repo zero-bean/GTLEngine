@@ -228,6 +228,10 @@ private:
     USound* ManLetsGoSound = nullptr;
     USound* WomanLetsGoSound = nullptr;
 
+    /** 구출 완료 사운드 (남성/여성) */
+    USound* ManThankYouSound = nullptr;
+    USound* WomanThankYouSound = nullptr;
+
     // ────────────────────────────────────────────────
     // 충돌 이펙트 (움직이는 물체와 충돌 시)
     // ────────────────────────────────────────────────

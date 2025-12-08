@@ -182,6 +182,10 @@ AFirefighterCharacter::AFirefighterCharacter()
 	ManLetsGoSound = UResourceManager::GetInstance().Load<USound>("Data/Audio/ManLetsGo.wav");
 	WomanLetsGoSound = UResourceManager::GetInstance().Load<USound>("Data/Audio/WomanLetsGo.wav");
 
+	// 구출 완료 사운드 로드 (남성/여성)
+	ManThankYouSound = UResourceManager::GetInstance().Load<USound>("Data/Audio/ManThankYou.wav");
+	WomanThankYouSound = UResourceManager::GetInstance().Load<USound>("Data/Audio/WomanThankYou.wav");
+
 	// 아이템 픽업 파티클 컴포넌트 생성
 	ItemPickupParticle = CreateDefaultSubobject<UParticleSystemComponent>("ItemPickupParticle");
 	if (ItemPickupParticle)
@@ -1232,6 +1236,27 @@ void AFirefighterCharacter::StopCarryingPerson()
 			// 구조 성공!
 			UE_LOG("[FirefighterCharacter] StopCarrying: Person rescued in SafeZone!");
 			RescueMode->OnPersonRescued();
+
+			// 구출 완료 사운드 재생 (이름에 따라 남성/여성 구분)
+			FString PersonName = CarriedPerson->GetName();
+			if (PersonName.find("David") != FString::npos || PersonName.find("Lewis") != FString::npos)
+			{
+				if (ManThankYouSound)
+				{
+					FAudioDevice::PlaySound3D(ManThankYouSound, FloorPosition, 1.0f, false);
+					UE_LOG("[FirefighterCharacter] Playing ManThankYou sound");
+				}
+			}
+			else if (PersonName.find("Elizabeth") != FString::npos ||
+			         PersonName.find("Sophie") != FString::npos ||
+			         PersonName.find("Suzie") != FString::npos)
+			{
+				if (WomanThankYouSound)
+				{
+					FAudioDevice::PlaySound3D(WomanThankYouSound, FloorPosition, 1.0f, false);
+					UE_LOG("[FirefighterCharacter] Playing WomanThankYou sound");
+				}
+			}
 
 			// 사람 숨기기 및 조작 불가 처리
 			PersonMesh->SetVisibility(false);
