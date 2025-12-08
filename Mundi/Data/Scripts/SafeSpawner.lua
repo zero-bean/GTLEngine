@@ -10,9 +10,6 @@
 -- 스폰 설정
 -- ============================================================================
 
-local MaxSpawnCount = 30              -- 최대 스폰 개수
-local MaxSpawnAttempts = 300          -- 최대 스폰 시도 횟수
-
 -- 스폰 영역 (이 오브젝트 위치 기준 오프셋)
 local AreaOffsetMin = Vector(-39, -20, -11.5)   -- 영역 최소 오프셋
 local AreaOffsetMax = Vector(39, 20, 11.5)    -- 영역 최대 오프셋
@@ -25,18 +22,28 @@ local ExcludeFloorTag = "Ground"       -- 이 태그의 바닥에는 스폰 안�
 local MaxFloorDistance = 20.0        -- 바닥 탐지 최대 거리
 local MaxCeilingDistance = 20.0      -- 천장 탐지 최대 거리
 local RequireCeiling = true          -- 천장 필수 여부
+local MinSpawnDistance = 5.0         -- 스폰된 오브젝트 간 최소 거리
 
 -- 프리팹 목록과 각각의 설정
 -- path: 프리팹 경로
--- weight: 스폰 가중치 (높을수록 자주 스폰)
+-- maxCount: 이 프리팹의 최대 스폰 개수
+-- maxAttempts: 이 프리팹의 최대 스폰 시도 횟수
 -- floorOffsetRatio: 바닥 오프셋 비율 (0.0=바닥, 1.0=HalfExtent.Z만큼 위) [기본값: 0.0]
 -- rotationOffset: 회전 오프셋 Vector(Pitch, Yaw, Roll) (도 단위) [기본값: Vector(0,0,0)]
 local PrefabList = {
     {
+        path = "Data/Prefabs/Fire.prefab",
+        maxCount = 20,
+        maxAttempts = 400,
+        floorOffsetRatio = 0.2,
+        rotationOffset = Vector(0, 0, 0)
+    },
+    {
         path = "Data/Prefabs/KneePraying1.prefab",
-        weight = 50,
+        maxCount = 20,
+        maxAttempts = 400,
         floorOffsetRatio = 0.0,
-        rotationOffset = Vector(0, 0, 0)  -- (Pitch, Yaw, Roll) 또는 (X, Y, Z)
+        rotationOffset = Vector(0, 0, 0)
     }
 }
 
@@ -45,6 +52,7 @@ local PrefabList = {
 -- ============================================================================
 
 local SpawnedObjects = {}            -- 스폰된 오브젝트들
+local SpawnedPositions = {}          -- 스폰된 위치들 (최소 거리 체크용)
 local bSpawnPending = false          -- 스폰 대기 중 플래그
 local SpawnDelayTimer = 0            -- 스폰 지연 타이머
 
@@ -56,24 +64,28 @@ local function RandomInRange(minVal, maxVal)
     return minVal + (maxVal - minVal) * math.random()
 end
 
-local function SelectWeightedRandom(list)
-    local totalWeight = 0
-    for _, item in ipairs(list) do
-        totalWeight = totalWeight + item.weight
+-- 위치가 기존 스폰된 오브젝트들과 최소 거리를 유지하는지 체크
+local function CheckMinDistance(position)
+    if MinSpawnDistance <= 0 then
+        return true
     end
 
-    local randomValue = math.random() * totalWeight
-    local accumulated = 0
+    local minDistSq = MinSpawnDistance * MinSpawnDistance
 
-    for _, item in ipairs(list) do
-        accumulated = accumulated + item.weight
-        if randomValue <= accumulated then
-            return item  -- 전체 아이템 반환
+    for _, spawnedPos in ipairs(SpawnedPositions) do
+        local dx = position.X - spawnedPos.X
+        local dy = position.Y - spawnedPos.Y
+        local dz = position.Z - spawnedPos.Z
+        local distSq = dx * dx + dy * dy + dz * dz
+
+        if distSq < minDistSq then
+            return false
         end
     end
 
-    return list[1]  -- 전체 아이템 반환
+    return true
 end
+
 
 -- ============================================================================
 -- 물리 조건 체크 함수
@@ -210,8 +222,8 @@ end
 -- 프리팹 스폰 함수
 -- ============================================================================
 
--- 단일 스폰 시도 (위치 찾기 + 스폰)
-local function TrySpawnOnce(areaMin, areaMax, halfExtent)
+-- 단일 스폰 시도 (특정 프리팹을 지정된 위치에 스폰)
+local function TrySpawnOnce(areaMin, areaMax, halfExtent, prefabData)
     -- 랜덤 위치 생성
     local testPos = Vector(
         RandomInRange(areaMin.X, areaMax.X),
@@ -226,12 +238,14 @@ local function TrySpawnOnce(areaMin, areaMax, halfExtent)
         return nil, checkResult
     end
 
-    -- 가중치 기반으로 프리팹 선택
-    local selectedPrefab = SelectWeightedRandom(PrefabList)
+    -- 최소 거리 체크
+    if not CheckMinDistance(testPos) then
+        return nil, { bValid = false, FailReason = "TooCloseToOther" }
+    end
 
     -- 프리팹별 설정 (기본값 적용)
-    local floorOffsetRatio = selectedPrefab.floorOffsetRatio or 0.0
-    local rotationOffset = selectedPrefab.rotationOffset or Vector(0, 0, 0)
+    local floorOffsetRatio = prefabData.floorOffsetRatio or 0.0
+    local rotationOffset = prefabData.rotationOffset or Vector(0, 0, 0)
 
     -- 바닥 위로 위치 조정 (Z축이 Up/Down)
     -- floorOffsetRatio: 0.0 = 피벗이 바닥에 위치, 1.0 = 피벗이 HalfExtent.Z만큼 위
@@ -244,7 +258,7 @@ local function TrySpawnOnce(areaMin, areaMax, halfExtent)
     -- (floorOffsetRatio=0일 때 박스 하단이 바닥 아래로 가서 항상 실패하기 때문)
 
     -- 프리팹 스폰
-    local spawnedObj = SpawnPrefab(selectedPrefab.path)
+    local spawnedObj = SpawnPrefab(prefabData.path)
     if spawnedObj then
         spawnedObj.Location = spawnPos
         -- 랜덤 Z 회전 + rotationOffset 적용
@@ -255,7 +269,8 @@ local function TrySpawnOnce(areaMin, areaMax, halfExtent)
             rotationOffset.Z + randomYaw
         )
         table.insert(SpawnedObjects, spawnedObj)
-        print("[SafeSpawner] Spawned: " .. selectedPrefab.path ..
+        table.insert(SpawnedPositions, spawnPos)  -- 위치 기록
+        print("[SafeSpawner] Spawned: " .. prefabData.path ..
               " at (" .. string.format("%.2f", spawnPos.X) .. ", " ..
               string.format("%.2f", spawnPos.Y) .. ", " ..
               string.format("%.2f", spawnPos.Z) .. ")" ..
@@ -266,7 +281,7 @@ local function TrySpawnOnce(areaMin, areaMax, halfExtent)
     return nil, { bValid = false, FailReason = "SpawnFailed" }
 end
 
--- 영역 내 최대 개수까지 스폰 시도
+-- 영역 내 각 프리팹별로 최대 개수까지 스폰 시도
 local function SpawnMultiple()
     -- 스폰 영역 계산 (현재 위치 기준)
     local basePos = Obj.Location
@@ -281,24 +296,32 @@ local function SpawnMultiple()
         basePos.Z + AreaOffsetMax.Z
     )
 
-    local spawnedCount = 0
+    local totalSpawned = 0
 
-    -- MaxSpawnAttempts 만큼 시도, MaxSpawnCount 개까지 스폰
-    for attempt = 1, MaxSpawnAttempts do
-        if spawnedCount >= MaxSpawnCount then
-            break
+    -- 각 프리팹별로 개별 스폰
+    for _, prefabData in ipairs(PrefabList) do
+        local maxCount = prefabData.maxCount or 10
+        local maxAttempts = prefabData.maxAttempts or 100
+        local spawnedCount = 0
+
+        for attempt = 1, maxAttempts do
+            if spawnedCount >= maxCount then
+                break
+            end
+
+            local obj, result = TrySpawnOnce(areaMin, areaMax, ObjectHalfExtent, prefabData)
+            if obj then
+                spawnedCount = spawnedCount + 1
+                totalSpawned = totalSpawned + 1
+            end
         end
 
-        local obj, result = TrySpawnOnce(areaMin, areaMax, ObjectHalfExtent)
-        if obj then
-            spawnedCount = spawnedCount + 1
-        end
+        print("[SafeSpawner] " .. prefabData.path .. ": " .. spawnedCount .. "/" .. maxCount ..
+              " (attempts: " .. maxAttempts .. ")")
     end
 
-    print("[SafeSpawner] Spawn complete: " .. spawnedCount .. "/" .. MaxSpawnCount ..
-          " (attempts: " .. MaxSpawnAttempts .. ")")
-
-    return spawnedCount
+    print("[SafeSpawner] Total spawned: " .. totalSpawned)
+    return totalSpawned
 end
 
 -- ============================================================================
@@ -328,6 +351,7 @@ end
 
 function OnEndPlay()
     SpawnedObjects = {}
+    SpawnedPositions = {}
 end
 
 function OnBeginOverlap(OtherActor)
