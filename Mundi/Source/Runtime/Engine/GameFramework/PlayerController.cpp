@@ -68,7 +68,7 @@ void APlayerController::Tick(float DeltaSeconds)
 	{
 		ProcessPlayerInput();
 		ProcessMouseInput();
-		ProcessGamepadInput();
+		ProcessGamepadInput(DeltaSeconds);
 	}
 	else
 	{
@@ -188,7 +188,7 @@ void APlayerController::ProcessMouseInput()
 	}
 }
 
-void APlayerController::ProcessGamepadInput()
+void APlayerController::ProcessGamepadInput(float DeltaTime)
 {
 	if (!InputManager)
 	{
@@ -210,16 +210,20 @@ void APlayerController::ProcessGamepadInput()
 	// 우측 스틱으로 카메라 회전
 	FVector2D RightStick = InputManager->GetGamepadRightStick();
 
+	// DeltaTime을 적용하여 프레임레이트 독립적인 회전 속도
+	// GamepadSensitivity는 이제 "초당 회전 속도"를 의미
+	float RotationSpeed = GamepadSensitivity * DeltaTime * 60.0f;  // 60fps 기준으로 정규화
+
 	// Yaw (좌우 회전) - 우측 스틱 X축
 	if (RightStick.X != 0.0f)
 	{
-		AddYawInput(RightStick.X * GamepadSensitivity);
+		AddYawInput(RightStick.X * RotationSpeed);
 	}
 
 	// Pitch (상하 회전) - 우측 스틱 Y축 (반전: 스틱 위로 밀면 카메라 위로)
 	if (RightStick.Y != 0.0f)
 	{
-		AddPitchInput(-RightStick.Y * GamepadSensitivity);
+		AddPitchInput(-RightStick.Y * RotationSpeed);
 	}
 }
 

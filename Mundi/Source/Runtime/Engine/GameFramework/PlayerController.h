@@ -65,8 +65,9 @@ public:
 
 	/**
 	 * 게임패드 입력을 처리하여 Controller 회전에 반영합니다.
+	 * @param DeltaTime - 프레임 델타 타임 (프레임레이트 독립적 회전을 위해)
 	 */
-	void ProcessGamepadInput();
+	void ProcessGamepadInput(float DeltaTime);
 
 	/**
 	 * 입력이 활성화되어 있는지 확인합니다.
@@ -150,7 +151,7 @@ public:
 
 	/** 게임패드 감도 (에디터에서 조절 가능) */
 	UPROPERTY(LuaBind, DisplayName = "GamepadSensitivity", Category = "Input")
-	float GamepadSensitivity = 0.5f;
+	float GamepadSensitivity = 3.0f;
 
 	/**
 	 * 게임패드 감도를 설정합니다.
