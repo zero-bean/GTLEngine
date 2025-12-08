@@ -10,7 +10,9 @@
 #include "Pawn.h"
 #include "GameUI/SGameHUD.h"
 #include "GameUI/STextBlock.h"
+#include "GameUI/SButton.h"
 #include "LevelTransitionManager.h"
+#include "GameInstance.h"
 #include <cmath>
 
 IMPLEMENT_CLASS(AItemCollectGameMode)
@@ -33,6 +35,12 @@ AItemCollectGameMode::AItemCollectGameMode()
 {
 	DefaultPawnClass = AFirefighterCharacter::StaticClass();
 	PlayerSpawnLocation = FVector(0.0f, 0.0f, 1.0f);
+
+	// 아이템 카운트 초기화
+	for (int i = 0; i < 3; ++i)
+	{
+		ItemCounts[i] = 0;
+	}
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -63,6 +71,7 @@ void AItemCollectGameMode::BeginPlay()
 
 	// UI 초기화
 	InitializeUI();
+	InitializeItemUI();
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -173,6 +182,9 @@ void AItemCollectGameMode::Tick(float DeltaTime)
 		// UI 업데이트
 		UpdateTimerUI();
 	}
+
+	// 아이템 카운트 UI 업데이트 (GameInstance에서 읽어오기)
+	UpdateItemCountUI();
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -183,6 +195,7 @@ void AItemCollectGameMode::EndPlay()
 {
 	Super::EndPlay();
 	ClearUI();
+	ClearItemUI();
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -308,6 +321,173 @@ void AItemCollectGameMode::UpdateTimerUI()
 		{
 			Slot.SetOffset(OffsetX, TextOffsetY)  // 텍스트는 비율 기반 오프셋 + 흔들림
 				.SetSize(TimerWidgetSize * Scale, TimerWidgetSize * Scale);
+		}
+	}
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 아이템 UI 초기화
+// ────────────────────────────────────────────────────────────────────────────
+
+void AItemCollectGameMode::InitializeItemUI()
+{
+	if (!SGameHUD::Get().IsInitialized()) { return; }
+
+	// 아이템 아이콘 크기 및 간격 설정
+	const float ItemImageSize = 150.f;   // 아이템 이미지 크기
+	const float ItemSpacing = 220.f;     // 아이템 간 간격
+	const float StartX = 0.5f;           // 화면 중앙 (X Anchor)
+	const float StartY = 0.08f;          // 상단 (Y Anchor)
+	const float StartOffsetX = -ItemSpacing;  // 중앙 기준 왼쪽으로 이동하여 3개 배치
+
+	for (int i = 0; i < 3; ++i)
+	{
+		// 아이템 이미지 위젯 (items.png 아틀라스, 600x600씩 슬라이싱)
+		ItemImageWidgets[i] = MakeShared<SButton>();
+
+		// 아틀라스 영역 설정 (Left, Top, Right, Bottom)
+		FSlateRect AtlasRect(
+			i * 600.f,           // Left
+			0.f,                 // Top
+			(i + 1) * 600.f,     // Right
+			600.f                // Bottom
+		);
+
+		ItemImageWidgets[i]->SetBackgroundImageAtlas(
+			"Data/Textures/Collect/items.png",
+			AtlasRect,  // Normal
+			AtlasRect,  // Hovered
+			AtlasRect   // Pressed
+		);
+
+		// 화면 중앙 상단에 배치 (3개를 일렬로)
+		SGameHUD::Get().AddWidget(ItemImageWidgets[i])
+			.SetAnchor(StartX, StartY)
+			.SetPivot(0.5f, 0.5f)
+			.SetOffset(StartOffsetX + i * ItemSpacing, 0.f)
+			.SetSize(ItemImageSize, ItemImageSize)
+			.SetZOrder(10);
+
+		// 아이템 카운트 텍스트 위젯 (이미지 오른쪽 옆)
+		ItemCountWidgets[i] = MakeShared<STextBlock>();
+
+		wchar_t CountText[32];
+		swprintf_s(CountText, L"%d", ItemCounts[i]);
+
+		ItemCountWidgets[i]->SetText(CountText)
+			.SetFontSize(48.f)
+			.SetFontPath("Data/UI/fonts/ChosunKm.TTF")
+			.SetColor(FSlateColor(1.0f, 1.0f, 1.0f, 1.0f))  // 흰색
+			.SetHAlign(ETextHAlign::Left)
+			.SetVAlign(ETextVAlign::Center)
+			.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor(0.0f, 0.0f, 0.0f, 0.8f));  // 검은색 그림자
+
+		SGameHUD::Get().AddWidget(ItemCountWidgets[i])
+			.SetAnchor(StartX, StartY)
+			.SetPivot(0.0f, 0.5f)  // 왼쪽 중앙 기준
+			.SetOffset(StartOffsetX + i * ItemSpacing + ItemImageSize * 0.6f, 0.f)  // 이미지 오른쪽
+			.SetSize(100.f, 60.f)
+			.SetZOrder(11);
+	}
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 아이템 UI 정리
+// ────────────────────────────────────────────────────────────────────────────
+
+void AItemCollectGameMode::ClearItemUI()
+{
+	if (!SGameHUD::Get().IsInitialized()) { return; }
+
+	for (int i = 0; i < 3; ++i)
+	{
+		if (ItemImageWidgets[i])
+		{
+			SGameHUD::Get().RemoveWidget(ItemImageWidgets[i]);
+			ItemImageWidgets[i].Reset();
+		}
+
+		if (ItemCountWidgets[i])
+		{
+			SGameHUD::Get().RemoveWidget(ItemCountWidgets[i]);
+			ItemCountWidgets[i].Reset();
+		}
+	}
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 아이템 수집 업데이트
+// ────────────────────────────────────────────────────────────────────────────
+
+void AItemCollectGameMode::UpdateItemCount(const FString& ItemTag)
+{
+	// 태그에 따라 인덱스 결정
+	int ItemIndex = -1;
+
+	if (ItemTag.find("firesuit") != FString::npos || ItemTag.find("소방복") != FString::npos)
+	{
+		ItemIndex = 0;
+	}
+	else if (ItemTag.find("extinguisher") != FString::npos || ItemTag.find("소화기") != FString::npos)
+	{
+		ItemIndex = 1;
+	}
+	else if (ItemTag.find("oxygen") != FString::npos || ItemTag.find("산소통") != FString::npos)
+	{
+		ItemIndex = 2;
+	}
+
+	// 유효한 인덱스라면 카운트 증가 및 UI 업데이트
+	if (ItemIndex >= 0 && ItemIndex < 3)
+	{
+		ItemCounts[ItemIndex]++;
+
+		// UI 업데이트
+		if (ItemCountWidgets[ItemIndex] && SGameHUD::Get().IsInitialized())
+		{
+			wchar_t CountText[32];
+			swprintf_s(CountText, L"%d", ItemCounts[ItemIndex]);
+			ItemCountWidgets[ItemIndex]->SetText(CountText);
+		}
+	}
+}
+
+void AItemCollectGameMode::OnItemCollected(const FString& ItemTag)
+{
+	UpdateItemCount(ItemTag);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 아이템 카운트 UI 업데이트 (GameInstance에서 읽어오기)
+// ────────────────────────────────────────────────────────────────────────────
+
+void AItemCollectGameMode::UpdateItemCountUI()
+{
+	if (!SGameHUD::Get().IsInitialized()) { return; }
+
+	// GameInstance 가져오기
+	UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr;
+	if (!GameInstance) { return; }
+
+	// 각 아이템의 개수를 GameInstance에서 조회
+	const FString ItemNames[] = { "FireSuit", "FireEx", "Oxygen" };
+
+	for (int i = 0; i < 3; ++i)
+	{
+		int32 ItemCount = GameInstance->GetItemCount(ItemNames[i]);
+
+		// 카운트가 변경되었을 때만 UI 업데이트
+		if (ItemCounts[i] != ItemCount)
+		{
+			ItemCounts[i] = ItemCount;
+
+			// UI 업데이트
+			if (ItemCountWidgets[i])
+			{
+				wchar_t CountText[32];
+				swprintf_s(CountText, L"%d", ItemCounts[i]);
+				ItemCountWidgets[i]->SetText(CountText);
+			}
 		}
 	}
 }

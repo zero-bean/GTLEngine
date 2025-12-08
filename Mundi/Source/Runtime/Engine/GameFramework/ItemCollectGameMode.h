@@ -9,6 +9,7 @@
 #include "AItemCollectGameMode.generated.h"
 
 class STextBlock;
+class SButton;
 
 /**
  * AItemCollectGameMode
@@ -103,6 +104,22 @@ protected:
 	/** 타이머 UI 업데이트 */
 	void UpdateTimerUI();
 
+	/** 아이템 UI 초기화 */
+	void InitializeItemUI();
+
+	/** 아이템 카운트 UI 업데이트 (GameInstance에서 읽어오기) */
+	void UpdateItemCountUI();
+
+	/** 아이템 UI 정리 */
+	void ClearItemUI();
+
+	/** 아이템 수집 콜백 */
+	void OnItemCollected(const FString& ItemTag);
+
+public:
+	/** 아이템 수집 카운트 업데이트 (외부에서 호출 가능) */
+	void UpdateItemCount(const FString& ItemTag);
+
 private:
 	// 타이머 UI
 	TSharedPtr<STextBlock> TimerBackgroundWidget;  // 배경 이미지
@@ -112,4 +129,11 @@ private:
 	float RemainingTime;
 	float LastSecond;
 	float ShakeAnimationTime;
+
+	// 아이템 UI (3개 아이템: 소방복, 소화기, 산소통)
+	TSharedPtr<SButton> ItemImageWidgets[3];    // 아이템 이미지 (아틀라스)
+	TSharedPtr<STextBlock> ItemCountWidgets[3]; // 아이템 카운트 텍스트
+
+	// 아이템 카운트
+	int ItemCounts[3]; // 각 아이템 수집 개수
 };
