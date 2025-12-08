@@ -1258,15 +1258,15 @@ void AFirefighterCharacter::StopCarryingPerson()
 				}
 			}
 
-			// 사람 숨기기 및 조작 불가 처리
-			PersonMesh->SetVisibility(false);
-			PersonMesh->SetPhysicsMode(EPhysicsMode::Animation);
+			// 사람 배치 및 조작 불가 처리 (사라지지 않고 그대로 유지)
+			// Kinematic 모드 유지 (바닥에 고정)
+			PersonMesh->SetPhysicsMode(EPhysicsMode::Kinematic);
 
 			UItemComponent* ItemComp = Cast<UItemComponent>(
 				CarriedPerson->GetComponent(UItemComponent::StaticClass()));
 			if (ItemComp)
 			{
-				ItemComp->SetCanPickUp(false);
+				ItemComp->SetCanPickUp(false);  // 다시 선택 불가
 			}
 
 			// 상태 초기화
