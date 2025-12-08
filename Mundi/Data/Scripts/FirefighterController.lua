@@ -51,6 +51,10 @@ local ANIM_WITH_CLOTH = {
 local MESH_WITHOUT_CLOTH = "Data/firefighter/Firefighter_Without_Cloth.fbx"
 local MESH_WITH_CLOTH = "Data/firefighter/Firefighter_With_Cloth.fbx"
 
+-- 피직스 에셋 경로
+local PHYSICS_WITHOUT_CLOTH = "Data/Physics/firefighter_nocloth.physicsasset"
+local PHYSICS_WITH_CLOTH = "Data/Physics/firefighter_cloth.physicsasset"
+
 -- 현재 애니메이션 세트 (기본: Without_Cloth)
 local CurrentAnims = ANIM_WITHOUT_CLOTH
 
@@ -208,6 +212,10 @@ function EquipFireSuit()
     if State.SkeletalMeshComp then
         State.SkeletalMeshComp:SetSkeletalMesh(MESH_WITH_CLOTH)
         print("[FirefighterController] Mesh changed to With_Cloth")
+
+        -- 피직스 에셋 변경
+        State.SkeletalMeshComp:SetPhysicsAsset(PHYSICS_WITH_CLOTH)
+        print("[FirefighterController] PhysicsAsset changed to With_Cloth")
     end
 
     -- 참조 재초기화 (메시 변경 후 필요할 수 있음)

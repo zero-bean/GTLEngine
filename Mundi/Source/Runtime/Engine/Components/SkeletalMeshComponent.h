@@ -170,6 +170,13 @@ public:
     void SetPhysicsAsset(UPhysicsAsset* InPhysicsAsset);
 
     /**
+     * @brief 경로로 물리 에셋 설정 (Lua 바인딩용)
+     * @param Path 물리 에셋 파일 경로 (예: "Data/Physics/firefighter_cloth.physicsasset")
+     */
+    UFUNCTION(LuaBind, DisplayName="SetPhysicsAsset")
+    void SetPhysicsAssetByPath(const FString& Path);
+
+    /**
      * @brief 현재 연결된 물리 에셋 반환
      */
     UPhysicsAsset* GetPhysicsAsset() const { return PhysicsAsset; }

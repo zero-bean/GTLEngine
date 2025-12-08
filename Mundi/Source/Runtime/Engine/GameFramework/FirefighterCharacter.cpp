@@ -44,7 +44,7 @@ AFirefighterCharacter::AFirefighterCharacter()
 		MeshComponent->SetSkeletalMesh(GDataDir + "/firefighter/Firefighter_Without_Cloth.fbx");
 
 		// PhysicsAsset 설정 (랙돌용)
-		UPhysicsAsset* PhysAsset = UResourceManager::GetInstance().Load<UPhysicsAsset>("Data/Physics/Firefighter.physicsasset");
+		UPhysicsAsset* PhysAsset = UResourceManager::GetInstance().Load<UPhysicsAsset>("Data/Physics/firefighter_nocloth.physicsasset");
 		if (PhysAsset)
 		{
 			MeshComponent->SetPhysicsAsset(PhysAsset);
