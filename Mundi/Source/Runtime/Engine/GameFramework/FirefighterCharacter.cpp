@@ -24,6 +24,7 @@
 #include "BoneSocketComponent.h"
 #include "SkeletalMesh.h"
 #include "GameObject.h"
+#include "ItemComponent.h"
 
 AFirefighterCharacter::AFirefighterCharacter()
 	: bOrientRotationToMovement(true)
@@ -476,6 +477,9 @@ void AFirefighterCharacter::Die()
 	bIsDead = true;
 	UE_LOG("Firefighter died! Activating ragdoll...");
 
+	// 물 마법 사용 중이면 강제 종료
+	ForceStopWaterMagic();
+
 	// 이동 비활성화
 	if (CharacterMovement)
 	{
@@ -571,14 +575,14 @@ void AFirefighterCharacter::StartCarryingPerson(FGameObject* PersonGameObject)
 
 	UE_LOG("[FirefighterCharacter] StartCarryingPerson: Neck=%d, Hips=%d", NeckBoneIndex, HipsBoneIndex);
 
-	// 왼손 소켓에 Neck 부착
+	// 두 손으로 부착: Neck은 왼손, Hips는 오른손
+	// 240Hz 고정 타임스텝으로 Joint 안정성 확보
 	if (LeftHandSocket && NeckBoneIndex >= 0)
 	{
 		LeftHandSocket->AttachRagdoll(PersonMesh, NeckBoneIndex);
 		UE_LOG("[FirefighterCharacter] Attached Neck to LeftHand");
 	}
 
-	// 오른손 소켓에 Hips 부착
 	if (RightHandSocket && HipsBoneIndex >= 0)
 	{
 		RightHandSocket->AttachRagdoll(PersonMesh, HipsBoneIndex);
@@ -608,14 +612,113 @@ void AFirefighterCharacter::StopCarryingPerson()
 
 	UE_LOG("[FirefighterCharacter] StopCarryingPerson");
 
-	// SpringArm 무시 목록에서 제거
-	if (SpringArmComponent)
+	// Person의 SkeletalMeshComponent 가져오기
+	USkeletalMeshComponent* PersonMesh = Cast<USkeletalMeshComponent>(
+		CarriedPerson->GetComponent(USkeletalMeshComponent::StaticClass()));
+
+	// ★ 1단계: 먼저 충돌 없는 위치 찾기 (실패하면 배치하지 않음)
+	// SafeSpawner.lua 로직 참고: OverlapBox + 8꼭짓점 벽 체크 + 바닥 레이캐스트
+	UWorld* World = GetWorld();
+	FPhysScene* PhysScene = World ? World->GetPhysicsScene() : nullptr;
+
+	// 충돌 검사용 반크기 (사람 크기 대략)
+	const FVector HalfExtent = FVector(0.4f, 0.4f, 0.5f);  // 80cm x 80cm x 100cm 박스
+	const float StartDistance = 2.0f;  // 시작 거리 2m
+	const float MaxDistance = 6.0f;  // 최대 거리 6m
+	const float StepDistance = 0.5f;  // 검사 간격 0.5m
+
+	FVector Forward = GetActorForward();
+	FVector FirefighterPos = GetActorLocation();
+	FVector DropPos;
+	bool bFoundClearSpot = false;
+
+	// 안전한 위치 찾기 (SafeSpawner 방식)
+	if (PhysScene)
 	{
-		SpringArmComponent->RemoveIgnoredActor(CarriedPerson);
-		UE_LOG("[FirefighterCharacter] Removed CarriedPerson from SpringArm ignored actors");
+		for (float Distance = StartDistance; Distance <= MaxDistance; Distance += StepDistance)
+		{
+			FVector TestPos = FirefighterPos + Forward * Distance;
+
+			// 1. 바닥 찾기
+			FVector RayStart = FVector(TestPos.X, TestPos.Y, TestPos.Z + 1.0f);
+			FVector RayDir = FVector(0, 0, -1);
+			FVector FloorHitLocation, FloorHitNormal;
+			float FloorHitDistance;
+
+			if (!PhysScene->Raycast(RayStart, RayDir, 3.0f, FloorHitLocation, FloorHitNormal, FloorHitDistance, CarriedPerson))
+			{
+				// 바닥 없음 - 다음 거리 시도
+				UE_LOG("[FirefighterCharacter] StopCarrying: No floor at %.1fm", Distance);
+				continue;
+			}
+
+			// 검사 위치 = 바닥 위 HalfExtent.Z + 여유
+			FVector CheckPos = FVector(TestPos.X, TestPos.Y, FloorHitLocation.Z + HalfExtent.Z + 0.1f);
+
+			// 2. OverlapBox로 공간 체크 (Convex 충돌체 검사)
+			if (PhysScene->OverlapAnyBox(CheckPos, HalfExtent, FQuat::Identity(), CarriedPerson))
+			{
+				UE_LOG("[FirefighterCharacter] StopCarrying: OverlapBox collision at %.1fm", Distance);
+				continue;
+			}
+
+			// 3. 8개 꼭짓점에서 중심으로 레이캐스트 (Triangle Mesh 벽 체크)
+			// PhysX OverlapBox는 Triangle Mesh를 제대로 감지 못하므로 레이캐스트로 보완
+			bool bWallIntersect = false;
+			FVector Corners[8] = {
+				CheckPos + FVector(-HalfExtent.X, -HalfExtent.Y, -HalfExtent.Z),
+				CheckPos + FVector(-HalfExtent.X, -HalfExtent.Y, +HalfExtent.Z),
+				CheckPos + FVector(-HalfExtent.X, +HalfExtent.Y, -HalfExtent.Z),
+				CheckPos + FVector(-HalfExtent.X, +HalfExtent.Y, +HalfExtent.Z),
+				CheckPos + FVector(+HalfExtent.X, -HalfExtent.Y, -HalfExtent.Z),
+				CheckPos + FVector(+HalfExtent.X, -HalfExtent.Y, +HalfExtent.Z),
+				CheckPos + FVector(+HalfExtent.X, +HalfExtent.Y, -HalfExtent.Z),
+				CheckPos + FVector(+HalfExtent.X, +HalfExtent.Y, +HalfExtent.Z)
+			};
+
+			for (int32 i = 0; i < 8; ++i)
+			{
+				FVector ToCenter = CheckPos - Corners[i];
+				float Dist = ToCenter.Size();
+
+				if (Dist > 0.01f)
+				{
+					FVector Dir = ToCenter / Dist;
+					FVector WallHitLocation, WallHitNormal;
+					float WallHitDistance;
+
+					// 꼭짓점에서 중심 방향으로 레이캐스트 (중심 직전까지)
+					if (PhysScene->Raycast(Corners[i], Dir, Dist - 0.01f, WallHitLocation, WallHitNormal, WallHitDistance, CarriedPerson))
+					{
+						// 벽이 박스를 관통함
+						bWallIntersect = true;
+						break;
+					}
+				}
+			}
+
+			if (bWallIntersect)
+			{
+				UE_LOG("[FirefighterCharacter] StopCarrying: Wall intersect at %.1fm", Distance);
+				continue;
+			}
+
+			// 모든 조건 통과 - 이 위치 사용
+			DropPos = CheckPos;
+			bFoundClearSpot = true;
+			UE_LOG("[FirefighterCharacter] StopCarrying: Found safe spot at distance %.1fm", Distance);
+			break;
+		}
 	}
 
-	// 래그돌 분리
+	// ★ 빈 공간을 찾지 못하면 배치하지 않고 리턴
+	if (!bFoundClearSpot)
+	{
+		UE_LOG("[FirefighterCharacter] StopCarrying: FAILED - No clear spot found within %.1fm, keeping person", MaxDistance);
+		return;
+	}
+
+	// ★ 2단계: 빈 공간을 찾았으므로 소켓 해제
 	if (LeftHandSocket)
 	{
 		LeftHandSocket->DetachRagdoll();
@@ -623,6 +726,65 @@ void AFirefighterCharacter::StopCarryingPerson()
 	if (RightHandSocket)
 	{
 		RightHandSocket->DetachRagdoll();
+	}
+
+	// SpringArm 무시 목록에서 제거
+	if (SpringArmComponent)
+	{
+		SpringArmComponent->RemoveIgnoredActor(CarriedPerson);
+		UE_LOG("[FirefighterCharacter] Removed CarriedPerson from SpringArm ignored actors");
+	}
+
+	// ★ 3단계: 바닥 배치 + Kinematic 모드 전환
+	if (PersonMesh)
+	{
+		UE_LOG("[FirefighterCharacter] StopCarrying: Drop pos = (%.1f, %.1f, %.1f)",
+			DropPos.X, DropPos.Y, DropPos.Z);
+
+		// 최종 바닥 찾기
+		FVector FloorPosition = DropPos;
+		bool bFoundFloor = false;
+
+		if (PhysScene)
+		{
+			FVector RayStart = FVector(DropPos.X, DropPos.Y, DropPos.Z + 0.5f);
+			FVector RayDir = FVector(0, 0, -1);
+			float MaxFloorDistance = 3.0f;
+
+			FVector HitLocation, HitNormal;
+			float HitDistance;
+
+			if (PhysScene->Raycast(RayStart, RayDir, MaxFloorDistance, HitLocation, HitNormal, HitDistance, CarriedPerson))
+			{
+				FloorPosition.Z = HitLocation.Z + 0.05f;  // 바닥에서 5cm 위
+				bFoundFloor = true;
+				UE_LOG("[FirefighterCharacter] StopCarrying: Found floor at Z=%.2f", FloorPosition.Z);
+			}
+		}
+
+		if (!bFoundFloor)
+		{
+			FloorPosition.Z = FirefighterPos.Z;
+			UE_LOG("[FirefighterCharacter] StopCarrying: No floor found, using firefighter Z=%.2f", FloorPosition.Z);
+		}
+
+		// ★ Kinematic 모드로 전환 (바디 유지하여 선택 가능하게)
+		PersonMesh->SetPhysicsMode(EPhysicsMode::Kinematic);
+
+		// ★ 액터 위치를 바닥으로 설정
+		CarriedPerson->SetActorLocation(FloorPosition);
+
+		UE_LOG("[FirefighterCharacter] StopCarrying: Placed at (%.1f, %.1f, %.1f), Kinematic mode",
+			FloorPosition.X, FloorPosition.Y, FloorPosition.Z);
+	}
+
+	// 다시 줍기 가능하도록 ItemComponent의 bCanPickUp 복원
+	UItemComponent* ItemComp = Cast<UItemComponent>(
+		CarriedPerson->GetComponent(UItemComponent::StaticClass()));
+	if (ItemComp)
+	{
+		ItemComp->SetCanPickUp(true);
+		UE_LOG("[FirefighterCharacter] Restored bCanPickUp = true");
 	}
 
 	// 상태 초기화
@@ -680,5 +842,48 @@ void AFirefighterCharacter::ProcessGamepadInput()
 	else if (InputManager.IsGamepadButtonReleased(GamepadA))
 	{
 		StopJumping();
+	}
+}
+
+void AFirefighterCharacter::Kill()
+{
+	// 즉시 사망 처리 (산소 고갈 등 외부에서 호출)
+	Health = 0.0f;
+	Die();
+}
+
+void AFirefighterCharacter::ForceStopWaterMagic()
+{
+	if (!bIsUsingWaterMagic)
+	{
+		return;
+	}
+
+	UE_LOG("ForceStopWaterMagic: Forcefully stopping water magic");
+
+	// 물 마법 상태 리셋
+	bIsUsingWaterMagic = false;
+
+	// 파티클 중지
+	StopWaterMagicEffect();
+
+	// ExtinguishGauge를 0으로 설정 (Lua에서 이를 감지하여 종료 처리)
+	ExtinguishGauge = 0.0f;
+}
+
+void AFirefighterCharacter::SetCanUseWaterMagic(bool bCanUse)
+{
+	bCanUseWaterMagic = bCanUse;
+
+	// 사용 불가능하게 설정되면 ExtinguishGauge도 0으로
+	if (!bCanUse)
+	{
+		ExtinguishGauge = 0.0f;
+
+		// 현재 사용 중이면 강제 종료
+		if (bIsUsingWaterMagic)
+		{
+			ForceStopWaterMagic();
+		}
 	}
 }

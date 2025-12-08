@@ -366,9 +366,17 @@ function Update(DeltaTime)
         return
     end
 
-    -- 왼쪽 마우스 클릭 또는 B 버튼으로 줍기
+    -- 왼쪽 마우스 클릭 또는 B 버튼으로 줍기/내려놓기
     local bPickupInput = Input:IsMouseButtonPressed(0) or Input:IsGamepadButtonPressed(GamepadButton.B)
     if bPickupInput then
+        -- 사람을 들고 있으면 내려놓기
+        local bCarryingPerson = State.Character and State.Character.bIsCarryingPerson or false
+        if bCarryingPerson then
+            print("[FirefighterController] Releasing carried person!")
+            State.Character:StopCarryingPerson()
+            return
+        end
+
         -- 현재 상태가 Idle/Walking/Running일 때만 픽업 허용 (전환 중 광클 방지)
         local currentState = State.StateMachine:GetCurrentStateName()
         if currentState == STATE_IDLE or currentState == STATE_WALKING or currentState == STATE_RUNNING then

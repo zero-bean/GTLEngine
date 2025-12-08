@@ -32,17 +32,45 @@ local MinSpawnDistance = 5.0         -- 스폰된 오브젝트 간 최소 거리
 -- rotationOffset: 회전 오프셋 Vector(Pitch, Yaw, Roll) (도 단위) [기본값: Vector(0,0,0)]
 local PrefabList = {
     {
+        path = "Data/Prefabs/David.prefab",
+        maxCount = 3,
+        maxAttempts = 50,
+        floorOffsetRatio = 0.0,
+        rotationOffset = Vector(0, 0, 0)
+    },
+    {
+        path = "Data/Prefabs/Elizabeth.prefab",
+        maxCount = 3,
+        maxAttempts = 50,
+        floorOffsetRatio = 0.0,
+        rotationOffset = Vector(0, 0, 0)
+    },
+    {
+        path = "Data/Prefabs/Lewis.prefab",
+        maxCount = 3,
+        maxAttempts = 50,
+        floorOffsetRatio = 0.0,
+        rotationOffset = Vector(0, 0, 0)
+    },
+    {
+        path = "Data/Prefabs/Sophie.prefab",
+        maxCount = 3,
+        maxAttempts = 50,
+        floorOffsetRatio = 0.0,
+        rotationOffset = Vector(0, 0, 0)
+    },
+    {
+        path = "Data/Prefabs/Suzie.prefab",
+        maxCount = 3,
+        maxAttempts = 50,
+        floorOffsetRatio = 0.0,
+        rotationOffset = Vector(0, 0, 0)
+    },
+    {
         path = "Data/Prefabs/Fire.prefab",
         maxCount = 50,
         maxAttempts = 1000,
         floorOffsetRatio = 0.2,
-        rotationOffset = Vector(0, 0, 0)
-    },
-    {
-        path = "Data/Prefabs/KneePraying1.prefab",
-        maxCount = 20,
-        maxAttempts = 400,
-        floorOffsetRatio = 0.0,
         rotationOffset = Vector(0, 0, 0)
     }
 }

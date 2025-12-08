@@ -86,6 +86,9 @@ void FPhysScene::StartFrame()
 {
     if (OwningWorld)
     {
+        // 이전 프레임의 씬 수정 플래그 리셋
+        bSceneModifiedDuringFrame = false;
+
         FlushDeferredAdds();
         FlushCommands();
         float DeltaTime = OwningWorld->GetDeltaTime(EDeltaTime::Game);
@@ -97,6 +100,10 @@ void FPhysScene::EndFrame(ULineComponent* InLineComponent)
 {
     WaitPhysScene();
     ProcessPhysScene();
+
+    // 시뮬레이션 완료 후 대기 중인 물리 명령 즉시 실행
+    // (Tick 중에 EnqueueCommand로 등록된 명령들)
+    FlushCommands();
 
     if (InLineComponent)
     {
@@ -170,16 +177,51 @@ void FPhysScene::FlushDeferredReleases()
 {
     if (!PhysXScene) { return; }
 
-    std::lock_guard<std::mutex> Lock(DeferredReleaseMutex);
-
-    for (PxActor* Actor : DeferredReleaseQueue)
+    // 일반 액터 해제
     {
-        if (Actor)
+        std::lock_guard<std::mutex> Lock(DeferredReleaseMutex);
+
+        for (PxActor* Actor : DeferredReleaseQueue)
         {
-            Actor->release();
+            if (Actor)
+            {
+                Actor->release();
+            }
         }
+        DeferredReleaseQueue.Empty();
     }
-    DeferredReleaseQueue.Empty();
+
+    // CCT Controller 해제
+    {
+        std::lock_guard<std::mutex> Lock(DeferredControllerReleaseMutex);
+
+        for (PxController* Controller : DeferredControllerReleaseQueue)
+        {
+            if (Controller)
+            {
+                Controller->release();
+            }
+        }
+        DeferredControllerReleaseQueue.Empty();
+    }
+}
+
+void FPhysScene::DeferReleaseController(PxController* InController)
+{
+    if (!InController) { return; }
+
+    // CCT 내부 Actor의 userData를 즉시 클리어
+    // SyncComponentsToBodies에서 이 액터를 건너뛰도록 함
+    PxRigidDynamic* CCTActor = InController->getActor();
+    if (CCTActor)
+    {
+        CCTActor->userData = nullptr;
+        UE_LOG("[PhysX] DeferReleaseController: Cleared userData, added to deferred queue");
+    }
+
+    // 해제 큐에 추가 (실제 해제는 FlushDeferredReleases에서)
+    std::lock_guard<std::mutex> Lock(DeferredControllerReleaseMutex);
+    DeferredControllerReleaseQueue.Add(InController);
 }
 
 void FPhysScene::EnqueueCommand(std::function<void()> InCommand)
@@ -339,19 +381,36 @@ void FPhysScene::TickPhysScene(float DeltaTime)
 
     if (DeltaTime <= 0.0f)    { return; }
 
-    PhysXScene->simulate(DeltaTime);
-    bPhysXSceneExecuting = true;
+    // 누적 시간에 델타 추가
+    PhysicsAccumulator += DeltaTime;
+
+    // 고정 시간 스텝으로 서브스테핑
+    // CCT와 동일한 240Hz로 물리 시뮬레이션 수행
+    int32 SubStepCount = 0;
+
+    while (PhysicsAccumulator >= FixedPhysicsStep && SubStepCount < MaxSubSteps)
+    {
+        PhysXScene->simulate(FixedPhysicsStep);
+        PhysXScene->fetchResults(true);
+
+        PhysicsAccumulator -= FixedPhysicsStep;
+        SubStepCount++;
+    }
+
+    // 너무 많이 밀렸으면 누적 시간 리셋 (슬로우모션 방지)
+    if (PhysicsAccumulator > FixedPhysicsStep * MaxSubSteps)
+    {
+        PhysicsAccumulator = 0.0f;
+    }
+
+    // 서브스테핑 완료 후 bPhysXSceneExecuting은 false 유지
+    // (fetchResults가 이미 호출됨)
 }
 
 void FPhysScene::WaitPhysScene()
 {
-    if (!PhysXScene) { return; }
-
-    if (bPhysXSceneExecuting)
-    {
-        PhysXScene->fetchResults(true);
-        bPhysXSceneExecuting = false;
-    }
+    // 서브스테핑 방식에서는 TickPhysScene 내에서 fetchResults가 이미 호출됨
+    // 이 함수는 호환성을 위해 유지하지만 아무것도 하지 않음
 }
 
 void FPhysScene::ProcessPhysScene()
@@ -369,6 +428,14 @@ void FPhysScene::SyncComponentsToBodies()
 {
     if (!PhysXScene) { return; }
 
+    // 프레임 중 씬이 수정되었으면 getActiveActors() 버퍼가 무효화됨
+    // 이 경우 동기화를 건너뛰고 다음 프레임에서 처리
+    if (bSceneModifiedDuringFrame)
+    {
+        UE_LOG("[PhysScene] SyncComponentsToBodies skipped: scene was modified during frame");
+        return;
+    }
+
     PxU32 NbActiveActors = 0;
     PxActor** ActiveActors = PhysXScene->getActiveActors(NbActiveActors);
 
@@ -376,15 +443,20 @@ void FPhysScene::SyncComponentsToBodies()
     {
         if (!ActiveActors[i]) { continue; }
 
+        // ★ 액터가 아직 씬에 있는지 확인 (TermBody에서 removeActor 후 getActiveActors가 여전히 반환할 수 있음)
+        if (!ActiveActors[i]->getScene()) { continue; }
+
         PxRigidActor* RigidActor = ActiveActors[i]->is<PxRigidActor>();
 
         if (!RigidActor) { continue; }
 
-        // userData가 nullptr이면 이미 정리된 바디 (TermBody에서 클리어됨)
+        // userData가 nullptr이면 이미 정리된 바디/CCT (TermBody/DeferReleaseController에서 클리어됨)
         void* UserData = RigidActor->userData;
         if (!UserData) { continue; }
 
-        FBodyInstance* BodyInstance = static_cast<FBodyInstance*>(UserData);
+        // 타입 안전한 캐스팅 사용 (CCT Actor인 경우 nullptr 반환)
+        FBodyInstance* BodyInstance = PhysicsUserDataCast<FBodyInstance>(UserData);
+        if (!BodyInstance) { continue; }
 
         // BodyInstance 유효성 검사: RigidActor가 일치하는지 확인
         // (정리 중인 바디이거나 잘못된 포인터인 경우 방지)
