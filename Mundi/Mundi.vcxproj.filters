@@ -112,6 +112,9 @@
     <FxCompile Include="Shaders\UI\TextBillboard.hlsl">
       <Filter>Shaders\UI</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\StripedWipe_PS.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Generated\AActor.generated.cpp">
@@ -1457,6 +1460,9 @@
     <ClCompile Include="Source\Runtime\Engine\GameFramework\RescueGameMode.cpp" />
     <ClCompile Include="Generated\ARescueGameMode.generated.cpp">
       <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\Camera\CamMod_StripedWipe.cpp">
+      <Filter>Source\Runtime\Engine\GameFramework\Camera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -3084,6 +3090,9 @@
     <ClInclude Include="Source\Runtime\Engine\GameFramework\RescueGameMode.h" />
     <ClInclude Include="Generated\ARescueGameMode.generated.h">
       <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\Camera\CamMod_StripedWipe.h">
+      <Filter>Source\Runtime\Engine\GameFramework\Camera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
