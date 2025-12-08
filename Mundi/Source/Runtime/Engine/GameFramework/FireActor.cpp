@@ -160,7 +160,7 @@ void AFireActor::Tick(float DeltaSeconds)
 		ARescueGameMode* RescueMode = Cast<ARescueGameMode>(World->GetGameMode());
 		if (RescueMode)
 		{
-			RescueMode->DrainOxygen(DamagePerSecond * DeltaSeconds);
+			RescueMode->DrainOxygen(DamagePerSecond * FireIntensity * DeltaSeconds);
 		}
 	}
 
