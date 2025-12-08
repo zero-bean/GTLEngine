@@ -10,6 +10,7 @@
 #include "PlayerController.h"
 #include "Controller.h"
 #include "InputComponent.h"
+#include "InputManager.h"
 #include "LuaScriptComponent.h"
 #include "CharacterMovementComponent.h"
 #include "ParticleSystemComponent.h"
@@ -172,6 +173,9 @@ void AFirefighterCharacter::HandleAnimNotify(const FAnimNotifyEvent& NotifyEvent
 
 void AFirefighterCharacter::Tick(float DeltaSeconds)
 {
+	// 게임패드 입력 처리 (좌 스틱 이동, A 버튼 점프)
+	ProcessGamepadInput();
+
 	// 이동 방향으로 캐릭터 회전 (Super::Tick 전에 처리해야 SpringArm이 올바른 회전을 사용)
 	// MaxWalkSpeed가 0이면 (PickUp 등) 회전도 비활성화, 단 물 마법 사용 중에는 회전 허용
 	const bool bCanRotate = CharacterMovement && (CharacterMovement->MaxWalkSpeed > 0.01f || bIsUsingWaterMagic);
@@ -454,5 +458,39 @@ void AFirefighterCharacter::Die()
 	{
 		// 랙돌 모드로 전환 (물리가 본을 제어)
 		MeshComponent->SetPhysicsMode(EPhysicsMode::Ragdoll);
+	}
+}
+
+void AFirefighterCharacter::ProcessGamepadInput()
+{
+	UInputManager& InputManager = UInputManager::GetInstance();
+
+	// 게임패드가 연결되어 있지 않으면 리턴
+	if (!InputManager.IsGamepadConnected())
+	{
+		return;
+	}
+
+	// 좌 스틱 이동 입력
+	FVector2D LeftStick = InputManager.GetGamepadLeftStick();
+
+	if (LeftStick.Y != 0.0f)
+	{
+		MoveForwardCamera(LeftStick.Y);
+	}
+
+	if (LeftStick.X != 0.0f)
+	{
+		MoveRightCamera(LeftStick.X);
+	}
+
+	// A 버튼 점프
+	if (InputManager.IsGamepadButtonPressed(GamepadA))
+	{
+		Jump();
+	}
+	else if (InputManager.IsGamepadButtonReleased(GamepadA))
+	{
+		StopJumping();
 	}
 }
