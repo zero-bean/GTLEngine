@@ -14,6 +14,9 @@
 #include "LevelTransitionManager.h"
 #include "GameInstance.h"
 #include "InputManager.h"
+#include "FAudioDevice.h"
+#include "Sound.h"
+#include "ResourceManager.h"
 #include <cmath>
 
 IMPLEMENT_CLASS(AItemCollectGameMode)
@@ -75,6 +78,9 @@ void AItemCollectGameMode::BeginPlay()
 			}
 		}
 	}
+
+	// 사운드 초기화 (BGM + 사이렌)
+	InitializeSounds();
 
 	// UI 초기화
 	InitializeUI();
@@ -248,6 +254,13 @@ void AItemCollectGameMode::Tick(float DeltaTime)
 void AItemCollectGameMode::EndPlay()
 {
 	Super::EndPlay();
+
+	// BGM 정지
+	if (BGMVoice)
+	{
+		FAudioDevice::StopSound(BGMVoice);
+		BGMVoice = nullptr;
+	}
 
 	// 입력 모드 복원 (혹시 모를 상태 변경 대비)
 	UInputManager::GetInstance().SetInputMode(EInputMode::GameAndUI);
@@ -605,6 +618,27 @@ void AItemCollectGameMode::UpdateNoticeAnimation(float DeltaTime)
 			Slot.SetSize(1100.f * Scale, 400.f * Scale);
 			break;
 		}
+	}
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 사운드 초기화
+// ────────────────────────────────────────────────────────────────────────────
+
+void AItemCollectGameMode::InitializeSounds()
+{
+	// BGM 로드 및 재생 (루프)
+	BGMSound = UResourceManager::GetInstance().Load<USound>(BGMSoundPath);
+	if (BGMSound)
+	{
+		BGMVoice = FAudioDevice::PlaySound3D(BGMSound, FVector::Zero(), 0.5f, true);
+	}
+
+	// 사이렌 로드 및 재생 (1회)
+	SirenSound = UResourceManager::GetInstance().Load<USound>(SirenSoundPath);
+	if (SirenSound)
+	{
+		FAudioDevice::PlaySound3D(SirenSound, FVector::Zero(), 0.7f, false);
 	}
 }
 
