@@ -4,6 +4,7 @@
 #include <xaudio2.h>
 #include <x3daudio.h>
 #include <Vector.h>
+#include <unordered_set>
 #pragma comment(lib, "xaudio2.lib")
 class USound;
 
@@ -26,11 +27,17 @@ public:
     // Loads .wav files under GDataDir/Audio into resource manager
     static void Preload();
 
+    // Check if audio device is valid (not shutdown)
+    static bool IsValid() { return pXAudio2 != nullptr; }
+
 private:
     static IXAudio2*                pXAudio2;
     static IXAudio2MasteringVoice*  pMasteringVoice;
     static X3DAUDIO_HANDLE          X3DInstance;
     static X3DAUDIO_LISTENER        Listener;
     static DWORD                    dwChannelMask;
+
+    // Track all active source voices for safe shutdown
+    static std::unordered_set<IXAudio2SourceVoice*> ActiveVoices;
 };
 

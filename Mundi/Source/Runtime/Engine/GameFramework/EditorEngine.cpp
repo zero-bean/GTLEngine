@@ -390,6 +390,11 @@ void UEditorEngine::Shutdown()
     UUIManager::GetInstance().Release();
 
     USlateManager::GetInstance().Shutdown();
+
+    // AudioDevice 종료 (USound PCM 데이터 해제 전에 먼저 voice 정리 필수!)
+    // voice가 재생 중일 때 PCM 데이터가 먼저 해제되면 dangling pointer 접근 발생
+    FAudioDevice::Shutdown();
+
     // Delete all UObjects (Components, Actors, Resources)
     // Resource destructors will properly release D3D resources
     ObjectFactory::DeleteAll(true);
@@ -399,9 +404,6 @@ void UEditorEngine::Shutdown()
     // because ObjStaticMeshMap is a static member variable that may be destroyed
     // before the global GEngine variable's destructor runs
     FObjManager::Clear();
-
-    // AudioDevice 종료
-    FAudioDevice::Shutdown();
     delete ClothManager;
     ClothManager = nullptr;
     // PhysX 종료

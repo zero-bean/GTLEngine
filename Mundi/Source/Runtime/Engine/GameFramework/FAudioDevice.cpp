@@ -10,6 +10,7 @@ IXAudio2MasteringVoice* FAudioDevice::pMasteringVoice = nullptr;
 X3DAUDIO_HANDLE         FAudioDevice::X3DInstance = {};
 X3DAUDIO_LISTENER       FAudioDevice::Listener = {};
 DWORD                   FAudioDevice::dwChannelMask = 0;
+std::unordered_set<IXAudio2SourceVoice*> FAudioDevice::ActiveVoices;
 
 UINT32 FAudioDevice::GetOutputChannelCount()
 {
@@ -99,16 +100,36 @@ bool FAudioDevice::Initialize()
 }
 void FAudioDevice::Shutdown()
 {
+    // 1. 먼저 모든 활성 SourceVoice 정리 (XAudio2 해제 전 필수)
+    if (!ActiveVoices.empty())
+    {
+        UE_LOG("[Audio] Shutdown: Cleaning up %zu active voice(s)", ActiveVoices.size());
+        for (IXAudio2SourceVoice* Voice : ActiveVoices)
+        {
+            if (Voice)
+            {
+                Voice->Stop(0);
+                Voice->FlushSourceBuffers();
+                Voice->DestroyVoice();
+            }
+        }
+        ActiveVoices.clear();
+    }
+
+    // 2. MasteringVoice 해제
     if (pMasteringVoice)
     {
         pMasteringVoice->DestroyVoice();
         pMasteringVoice = nullptr;
     }
+
+    // 3. XAudio2 엔진 해제
     if (pXAudio2)
     {
         pXAudio2->Release();
         pXAudio2 = nullptr;
     }
+
     ZeroMemory(&Listener, sizeof(Listener));
     ZeroMemory(&X3DInstance, sizeof(X3DInstance));
     dwChannelMask = 0;
@@ -189,6 +210,8 @@ IXAudio2SourceVoice* FAudioDevice::PlaySound3D(USound* SoundToPlay, const FVecto
         return nullptr;
     }
 
+    // 활성 voice 목록에 등록
+    ActiveVoices.insert(voice);
     return voice;
 }
 
@@ -260,6 +283,8 @@ IXAudio2SourceVoice* FAudioDevice::PlaySound2D(USound* SoundToPlay, float Volume
         return nullptr;
     }
 
+    // 활성 voice 목록에 등록
+    ActiveVoices.insert(voice);
     return voice;
 }
 
@@ -422,6 +447,18 @@ void FAudioDevice::SetListenerPosition(const FVector& Position, const FVector& F
 void FAudioDevice::StopSound(IXAudio2SourceVoice* pSourceVoice)
 {
     if (!pSourceVoice) return;
+
+    // ActiveVoices에서 제거 (이중 해제 방지)
+    // Shutdown()에서 이미 해제된 voice는 ActiveVoices에 없으므로 무시됨
+    auto it = ActiveVoices.find(pSourceVoice);
+    if (it == ActiveVoices.end())
+    {
+        // 이미 Shutdown()에서 해제되었거나, 등록되지 않은 voice
+        // 아무것도 하지 않음 (이중 해제 방지)
+        return;
+    }
+
+    ActiveVoices.erase(it);
     pSourceVoice->Stop(0);
     pSourceVoice->FlushSourceBuffers();
     pSourceVoice->DestroyVoice();

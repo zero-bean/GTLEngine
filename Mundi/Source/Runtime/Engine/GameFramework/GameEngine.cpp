@@ -417,6 +417,10 @@ void UGameEngine::Shutdown()
     }
     WorldContexts.clear();
 
+    // AudioDevice 종료 (USound PCM 데이터 해제 전에 먼저 voice 정리 필수!)
+    // voice가 재생 중일 때 PCM 데이터가 먼저 해제되면 dangling pointer 접근 발생
+    FAudioDevice::Shutdown();
+
     // Delete all UObjects (Components, Actors, Resources)
     // Resource destructors will properly release D3D resources
     ObjectFactory::DeleteAll(true);
@@ -430,9 +434,6 @@ void UGameEngine::Shutdown()
     // IMPORTANT: Explicitly release Renderer before RHIDevice destructor runs
     // Renderer may hold references to D3D resources
     Renderer.reset();
-
-    // Shutdown audio device
-    FAudioDevice::Shutdown();
 
     // Cloth 매니저 정리
     if (ClothManager)

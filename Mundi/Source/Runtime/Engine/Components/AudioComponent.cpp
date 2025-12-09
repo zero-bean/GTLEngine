@@ -74,11 +74,12 @@ void UAudioComponent::Play()
 
 void UAudioComponent::Stop()
 {
-    if (!bIsPlaying)
-        return;
-
+    // SourceVoice 존재 여부로 판단 (bIsPlaying 체크 제거)
+    // 이유: bIsPlaying이 false여도 SourceVoice가 유효한 경우가 있을 수 있음
     if (SourceVoice)
     {
+        // FAudioDevice::StopSound()는 이미 해제된 voice에 대해 안전하게 처리함
+        // (ActiveVoices에 없으면 아무것도 하지 않음)
         FAudioDevice::StopSound(SourceVoice);
         SourceVoice = nullptr;
     }
