@@ -343,6 +343,13 @@ void UInputManager::ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARA
             // 포커스 잃음: 현재 InputMode 저장 후 커서 표시
             bWindowHasFocus = false;
             InputModeBeforeFocusLost = CurrentInputMode;
+
+            // 모든 키/마우스 상태 초기화 (Alt+Tab 등으로 키가 고착되는 문제 방지)
+            memset(KeyStates, false, sizeof(KeyStates));
+            memset(PreviousKeyStates, false, sizeof(PreviousKeyStates));
+            memset(MouseButtons, false, sizeof(MouseButtons));
+            memset(PreviousMouseButtons, false, sizeof(PreviousMouseButtons));
+
             if (CurrentInputMode == EInputMode::GameOnly)
             {
                 SetCursorVisible(true);
