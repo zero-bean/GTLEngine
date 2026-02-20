@@ -840,7 +840,7 @@ FLuaManager::FLuaManager()
 
             if (!MeshComp) return false;
 
-            uint32 ObjectID = MeshComp->InternalIndex;
+            uint32 ObjectID = MeshComp->InternalIndex; // IdBuffer에 기록되는 것과 동일한 값
             if (ObjectID == 0) return false;
 
             // 색상 파싱 (기본값: 노란색)

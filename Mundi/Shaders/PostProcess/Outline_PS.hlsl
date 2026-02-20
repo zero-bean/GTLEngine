@@ -57,6 +57,9 @@ float LinearizeDepth(float depth)
 // 오브젝트 ID 기반 에지 검출 (특정 오브젝트의 외곽선만 검출)
 float ObjectIdEdge(float2 uv, float2 texelSize, uint targetId)
 {
+    // UV(0~1) → 픽셀 좌표(정수) 변환
+    // ObjectID는 uint 정수이므로 Sample()(보간 O)이 아닌 Load()(정확한 픽셀 접근)를 사용해야 함
+    // Load()는 정수 픽셀 좌표를 요구하므로, uv * 해상도로 변환
     // 현재 픽셀의 ObjectID
     int2 pixelCoord = int2(uv * ScreenSize.xy);
     uint centerId = g_IdBufferTex.Load(int3(pixelCoord, 0));

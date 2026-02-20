@@ -165,7 +165,7 @@ void AFireActor::Tick(float DeltaSeconds)
 	}
 
 	// 루프 사운드/끄는 사운드는 프레임당 한 번만 전역 갱신 (가장 가까운 4개만 재생, 끄는 사운드는 전역 제한)
-	if (AudioUpdateCursor == 0)
+	if (AudioUpdateCursor == 0) // 프레임 내 첫 번째 Tick에서만 통과
 	{
 		UpdateFireLoopAudio(DeltaSeconds);
 	}
@@ -471,7 +471,7 @@ void AFireActor::UpdateFireLoopAudio(float DeltaSeconds)
 		{
 			if (Entry.DistanceSq < DistSqArr[i])
 			{
-				// 뒤로 밀기
+				// 뒤쪽 요소를 한 칸씩 밀고 현재 위치에 삽입
 				for (int32 j = MaxSimultaneousFireLoops - 1; j > i; --j)
 				{
 					DistSqArr[j] = DistSqArr[j - 1];
