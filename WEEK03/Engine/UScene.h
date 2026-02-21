@@ -1,0 +1,71 @@
+﻿#pragma once
+#include "ISerializable.h"
+#include "Array.h"
+#include "UMeshManager.h"
+#include "UMaterialManager.h"
+#include "USceneManager.h"
+#include "json.hpp"
+#include "UGizmoManager.h"
+
+class UCamera;
+class URaycastManager;
+class UShowFlagManager;
+
+class UScene : public UObject
+{
+	DECLARE_UCLASS(UScene, UObject)
+protected:
+	int32 backBufferWidth, backBufferHeight;
+	int32 version;
+	int32 primitiveCount;
+	bool isInitialized;
+	TArray<USceneComponent*> objects;
+
+	// Reference from outside
+	URenderer* renderer;
+	UMeshManager* meshManager;
+	UMaterialManager* materialManager;
+	UInputManager* inputManager;
+	//URaycastManager* RaycastManager;
+	//UGizmoManager* GizmoManager;
+
+	//UScene owns camera
+	UCamera* camera;
+
+	UShowFlagManager* ShowFlagManager;
+
+	virtual void RenderGUI() {}
+	virtual void OnShutdown() {}
+public:
+	UScene();
+	virtual ~UScene();
+	virtual bool Initialize(URenderer* r, UMeshManager* mm, UMaterialManager* mrm, UShowFlagManager* InShowFlagManager, UInputManager* im = nullptr);
+
+	virtual void Render();
+	virtual void Update(float deltaTime);
+	virtual bool OnInitialize();
+
+	bool IsInitialized() { return isInitialized; }
+
+	int32 GetObjectCount() { return primitiveCount; }
+
+	static UScene* Create(json::JSON data);
+
+	void AddObject(USceneComponent* obj);
+	void SetVersion(int32 v) { version = v; }
+
+	json::JSON Serialize() const override;
+
+	bool Deserialize(const json::JSON& data) override;
+
+	const TArray<USceneComponent*>& GetObjects() const { return objects; }
+	UCamera* GetCamera() { return camera; }
+	URenderer* GetRenderer() { return renderer; }
+	UInputManager* GetInputManager() { return inputManager; }
+
+	int32 GetBackBufferWidth() { return backBufferWidth; };
+	int32 GetBackBufferHeight() { return backBufferHeight; };
+
+	EViewModeIndex GetViewMode() const { return renderer ? renderer->GetViewMode() : EViewModeIndex::VMI_Unlit; }
+	void SetViewMode(EViewModeIndex Mode) { if (renderer) renderer->SetViewMode(Mode); }
+};
