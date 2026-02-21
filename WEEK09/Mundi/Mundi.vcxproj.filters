@@ -512,6 +512,13 @@
     <ClCompile Include="Source\Runtime\Engine\Camera\CameraModifierGammaCorrection.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Camera\CameraModifierLetterbox.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Camera\CameraModifierVignette.cpp" />
+    <ClCompile Include="Source\Runtime\AssetManagement\Sound.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Camera\PerlinNoiseCameraShakePattern.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Components\SoundComponent.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Sound\USoundManager.cpp" />
+    <ClCompile Include="Source\Slate\TextOverlayD2D.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Camera\CameraShakePattern.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Camera\SinusoidalCameraShakePattern.cpp" />
   </ItemGroup>
   <!-- ThirdParty/ImGui Files -->
   <!-- Source Files -->
@@ -1049,6 +1056,13 @@
     <ClInclude Include="Source\Runtime\Engine\Camera\CameraModifierGammaCorrection.h" />
     <ClInclude Include="Source\Runtime\Engine\Camera\CameraModifierLetterbox.h" />
     <ClInclude Include="Source\Runtime\Engine\Camera\CameraModifierVignette.h" />
+    <ClInclude Include="Source\Runtime\AssetManagement\Sound.h" />
+    <ClInclude Include="Source\Runtime\Engine\Camera\CameraShakePattern.h" />
+    <ClInclude Include="Source\Runtime\Engine\Camera\PerlinNoiseCameraShakePattern.h" />
+    <ClInclude Include="Source\Runtime\Engine\Camera\SinusoidalCameraShakePattern.h" />
+    <ClInclude Include="Source\Runtime\Engine\Components\SoundComponent.h" />
+    <ClInclude Include="Source\Runtime\Engine\Sound\USoundManager.h" />
+    <ClInclude Include="Source\Slate\TextOverlayD2D.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
@@ -1174,5 +1188,8 @@
     <Filter Include="ThirdParty\ImGui">
       <UniqueIdentifier>{346ab5e5-7468-4a94-8536-d11b2a3a1762}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
