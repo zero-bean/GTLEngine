@@ -1,0 +1,21 @@
+#include "pch.h"
+#include "Actor/Public/SpotLightActor.h"
+
+#include "Component/Public/SpotLightComponent.h"
+#include "Component/Public/BillboardComponent.h"
+
+IMPLEMENT_CLASS(ASpotLightActor, ALightActor)
+
+ASpotLightActor::ASpotLightActor()
+{
+	auto SpotLightComponent = CreateDefaultSubobject<USpotLightComponent>("SpotLightComponent");
+	SetRootComponent(SpotLightComponent);
+}
+
+void ASpotLightActor::BeginPlay()
+{
+	auto BillboardComponent = CreateDefaultSubobject<UBillboardComponent>("BillboardComponent");
+	BillboardComponent->SetSprite(ELightType::Spotlight);
+	BillboardComponent->SetParentAttachment(GetRootComponent());
+	BillboardComponent->SetRelativeLocation(FVector(0, 0, 0.5f));
+}

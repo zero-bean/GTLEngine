@@ -1,0 +1,64 @@
+#pragma once
+#include "Component/Public/ActorComponent.h"
+#include "Global/Quaternion.h"
+
+namespace json { class JSON; }
+using JSON = json::JSON;
+
+UCLASS()
+class USceneComponent : public UActorComponent
+{
+	GENERATED_BODY()
+	DECLARE_CLASS(USceneComponent, UActorComponent)
+
+public:
+	USceneComponent();
+
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+	UObject* Duplicate(FObjectDuplicationParameters Parameters) override;
+
+	void SetParentAttachment(USceneComponent* SceneComponent);
+	void AddChild(USceneComponent* ChildAdded);
+	void RemoveChild(USceneComponent* ChildDeleted);
+
+	void MarkAsDirty();
+
+	void MoveComponent(const FVector& Delta, const FQuaternion& NewRotation);
+
+	void SetRelativeLocation(const FVector& Location);
+	void SetRelativeRotation(const FVector& Rotation);
+	void SetRelativeRotation(const FQuaternion& Rotation);
+	void SetRelativeScale3D(const FVector& Scale);
+	void SetUniformScale(bool bIsUniform);
+
+	bool IsUniformScale() const;
+
+	const FVector& GetRelativeLocation() const;
+	const FVector& GetRelativeRotation() const;
+	const FVector& GetRelativeScale3D() const;
+
+	const FVector& GetWorldLocation() const;
+
+	const FMatrix& GetWorldTransformMatrix() const;
+	const FMatrix& GetWorldTransformMatrixInverse() const;
+
+	const TArray<USceneComponent*>& GetChildren() const;
+
+	USceneComponent* GetParentAttachment() { return ParentAttachment; }
+
+	FVector ComponentVelocity;
+
+private:
+	mutable bool bIsTransformDirty = true;
+	mutable bool bIsTransformDirtyInverse = true;
+	mutable FMatrix WorldTransformMatrix;
+	mutable FMatrix WorldTransformMatrixInverse;
+
+	USceneComponent* ParentAttachment = nullptr;
+	TArray<USceneComponent*> Children;
+	FVector RelativeLocation = FVector{ 0,0,0.f };
+	FVector RelativeRotation = FVector{ 0,0,0.f };
+	FVector RelativeScale3D = FVector{ 0.3f,0.3f,0.3f };
+	bool bIsUniformScale = false;
+	const float MinScale = 0.01f;
+};
