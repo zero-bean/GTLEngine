@@ -1,0 +1,403 @@
+{
+  "Version" : 2,
+  "NextUUID" : 1912,
+  "PerspectiveCamera" : {
+    "FOV" : [60.000000],
+    "FarClip" : [4000.000000],
+    "Location" : [-48.172421, -21.821051, 32.911057],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 27.599979, 26.699738]
+  },
+  "Actors" : [
+    {
+      "UUID" : 634,
+      "Type" : "ASpotLightActor",
+      "Name" : "Spot Light_0",
+      "RootComponentUUID" : 635
+    },
+    {
+      "UUID" : 574,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_0",
+      "RootComponentUUID" : 575
+    },
+    {
+      "UUID" : 614,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Sphere_0",
+      "RootComponentUUID" : 615
+    },
+    {
+      "UUID" : 585,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Sphere_0",
+      "RootComponentUUID" : 586
+    },
+    {
+      "UUID" : 577,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_1",
+      "RootComponentUUID" : 578
+    },
+    {
+      "UUID" : 609,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_2",
+      "RootComponentUUID" : 612
+    },
+    {
+      "UUID" : 637,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_0",
+      "RootComponentUUID" : 638
+    },
+    {
+      "UUID" : 640,
+      "Type" : "APointLightActor",
+      "Name" : "Point Light_0",
+      "RootComponentUUID" : 643
+    },
+    {
+      "UUID" : 645,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Sphere_0",
+      "RootComponentUUID" : 647
+    },
+    {
+      "UUID" : 724,
+      "Type" : "AAmbientActor",
+      "Name" : "Valley_0",
+      "RootComponentUUID" : 725
+    },
+    {
+      "UUID" : 989,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Sphere2_0",
+      "RootComponentUUID" : 990
+    },
+    {
+      "UUID" : 991,
+      "Type" : "AActor",
+      "Name" : "Actor_0",
+      "RootComponentUUID" : 992
+    },
+    {
+      "UUID" : 1106,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Sphere2_0",
+      "RootComponentUUID" : 1108
+    },
+    {
+      "UUID" : 995,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Sphere2_0",
+      "RootComponentUUID" : 997
+    },
+    {
+      "UUID" : 1168,
+      "Type" : "AAmbientActor",
+      "Name" : "PubgBox_0",
+      "RootComponentUUID" : 1170
+    },
+    {
+      "UUID" : 1294,
+      "Type" : "AAmbientActor",
+      "Name" : "PubgBox_0",
+      "RootComponentUUID" : 1296
+    },
+    {
+      "UUID" : 1297,
+      "Type" : "AAmbientActor",
+      "Name" : "PubgBox_0",
+      "RootComponentUUID" : 1299
+    }
+  ],
+  "Components" : [
+    {
+      "UUID" : 635,
+      "OwnerActorUUID" : 634,
+      "ParentComponentUUID" : 0,
+      "Type" : "USpotLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 89.500320, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 636,
+      "OwnerActorUUID" : 634,
+      "ParentComponentUUID" : 635,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 575,
+      "OwnerActorUUID" : 574,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, -0.430423, 41.599014],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 576,
+      "OwnerActorUUID" : 574,
+      "ParentComponentUUID" : 575,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 615,
+      "OwnerActorUUID" : 614,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [18.809092, -40.669064, 24.331619],
+      "RelativeRotation" : [-172.933075, -1.341116, 179.999969],
+      "RelativeScale" : [8.280000, 8.280000, 8.280000],
+      "StaticMesh" : "Data/Stone-Golem/Stone.obj",
+      "Materials" : ["EYES", "STONE", "STONE", "STONE"],
+      "MaterialNormalMapOverrides" : ["Data/NormalMap/stone_1_nrm.JPG", "Data/Valley/udoli_kohoutovice_01_nrm.jpeg", "Data/Valley/udoli_kohoutovice_01_nrm.jpeg", "Data/NormalMap/tree_2_nrm.JPG"]
+    },
+    {
+      "UUID" : 586,
+      "OwnerActorUUID" : 585,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [19.677860, 3.303029, 30.000000],
+      "RelativeRotation" : [79.354660, 0.000000, 0.000000],
+      "RelativeScale" : [7.230000, 7.230000, 7.230000],
+      "StaticMesh" : "Data/Helmet/Helmet.obj",
+      "Materials" : ["TT_checker_2048x2048_UV_GRID", "TT_checker_2048x2048_UV_GRID", "TT_checker_2048x2048_UV_GRID"],
+      "MaterialNormalMapOverrides" : ["", "", ""]
+    },
+    {
+      "UUID" : 578,
+      "OwnerActorUUID" : 577,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [-41.228424, -13.998758, 26.022240],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 579,
+      "OwnerActorUUID" : 577,
+      "ParentComponentUUID" : 578,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 612,
+      "OwnerActorUUID" : 609,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [61.181164, 0.000000, 54.030640],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 613,
+      "OwnerActorUUID" : 609,
+      "ParentComponentUUID" : 612,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 638,
+      "OwnerActorUUID" : 637,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [5.801049, -41.574097, 145.214828],
+      "RelativeRotation" : [0.000000, 0.000000, 0.859437],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 639,
+      "OwnerActorUUID" : 637,
+      "ParentComponentUUID" : 638,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 643,
+      "OwnerActorUUID" : 640,
+      "ParentComponentUUID" : 0,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [-16.515848, -28.249208, 114.935555],
+      "RelativeRotation" : [0.000000, 0.000000, 0.859437],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "PointLightData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.000000,
+        "Color" : [1.000000, 0.000000, 0.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 644,
+      "OwnerActorUUID" : 640,
+      "ParentComponentUUID" : 643,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 647,
+      "OwnerActorUUID" : 645,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [50.008949, -69.611008, 135.316772],
+      "RelativeRotation" : [79.354660, 0.000000, 0.000000],
+      "RelativeScale" : [10.000000, 10.000000, 10.000000],
+      "StaticMesh" : "Data/Helmet/Helmet.obj",
+      "Materials" : ["TT_checker_2048x2048_UV_GRID", "TT_checker_2048x2048_UV_GRID", "TT_checker_2048x2048_UV_GRID"],
+      "MaterialNormalMapOverrides" : ["", "", ""]
+    },
+    {
+      "UUID" : 725,
+      "OwnerActorUUID" : 724,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [90.000008, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Valley/Valley.obj",
+      "Materials" : ["udoli_kohoutovice_01", "water", "rostlinka08", "rostlinka08", "rostlinka08", "rostlinka08", "rostlinka_09", "rostlinka_09", "rostlinka19", "rostlinka_09", "rostlinka_09", "rostlinka_09", "rostlinka19", "rostlinka19", "rostlinka19"],
+      "MaterialNormalMapOverrides" : ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+    },
+    {
+      "UUID" : 990,
+      "OwnerActorUUID" : 989,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.116009],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Sphere/Sphere2.obj"
+    },
+    {
+      "UUID" : 992,
+      "OwnerActorUUID" : 991,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [-0.181661, 0.000000, 42.553360],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 994,
+      "OwnerActorUUID" : 991,
+      "ParentComponentUUID" : 992,
+      "Type" : "UAmbientLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 993,
+      "OwnerActorUUID" : 991,
+      "ParentComponentUUID" : 992,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
+    },
+    {
+      "UUID" : 1108,
+      "OwnerActorUUID" : 1106,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.803940, 5.898058, 39.010365],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [4.380000, 4.380000, 4.380000],
+      "StaticMesh" : "Data/Sphere/Sphere2.obj"
+    },
+    {
+      "UUID" : 997,
+      "OwnerActorUUID" : 995,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 24.174038],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Sphere/Sphere2.obj"
+    },
+    {
+      "UUID" : 1170,
+      "OwnerActorUUID" : 1168,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [5.447884, 0.000000, -13.484645],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [2.699397, 20.034405, 1.000000],
+      "StaticMesh" : "Data/PUBGBOX/PubgBox.obj",
+      "Materials" : ["01_-_Default.001"],
+      "MaterialNormalMapOverrides" : [""]
+    },
+    {
+      "UUID" : 1296,
+      "OwnerActorUUID" : 1294,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-83.076378, 0.000000, -20.885895],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [2.699397, 20.034405, 1.000000],
+      "StaticMesh" : "Data/PUBGBOX/PubgBox.obj",
+      "Materials" : ["01_-_Default.001"],
+      "MaterialNormalMapOverrides" : [""]
+    },
+    {
+      "UUID" : 1299,
+      "OwnerActorUUID" : 1297,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [36.755569, 0.000000, -20.885895],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [2.699397, 20.034405, 1.000000],
+      "StaticMesh" : "Data/PUBGBOX/PubgBox.obj",
+      "Materials" : ["01_-_Default.001"],
+      "MaterialNormalMapOverrides" : [""]
+    }
+  ]
+}

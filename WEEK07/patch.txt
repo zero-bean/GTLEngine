@@ -1,0 +1,107 @@
+*** Begin Patch
+*** Update File: TL2/StaticMeshShader.hlsl
+@@
+-LightAccum ComputeSpotLights(float3 worldPos, float3 worldNormal, float shininess)
+-{
+-    LightAccum acc = (LightAccum)0;
+-
+-    float3 N = normalize(worldNormal);
+-    //float3 V = normalize(CameraWorldPos - worldPos);
+-    //float  exp = clamp(shininess, 1.0, 128.0);
+-
+-    [loop]
+-    for (int i = 0; i < SpotLightCount; i++)
+-    {
+-        FSpotLightData light = SpotLights[i];
+-
+-        // 방향 ??거리 계산
+-        float3 toPixel = light.Position.xyz - worldPos; // (???? -> 광원)
+-        float dist = length(toPixel);
+-        toPixel = normalize(toPixel);
+-        
+-        // 거리 감쇠 (??인????이???? ??일)
+-        float range = max(light.Position.w, 1e-3);
+-        float fall  = max(light.FallOff, 0.001);
+-        float t     = saturate(dist / range);
+-        float attenDist = pow(saturate(1.0 - t), fall);
+-        
+-        
+-        // spot 감쇠 
+-        float3 LightDirection = light.Direction.xyz;
+-        float cosTheta = dot(toPixel, -LightDirection);
+-        
+-        float denom = max(SpotLights[i].InnerConeAngle - SpotLights[i].OuterConeAngle, 1e-3);
+-        float spotTerm = saturate((cosTheta - SpotLights[i].OuterConeAngle)/ denom);
+-        
+-        
+-        // Diffuse
+-        float3 Li = SpotLights[i].Color.rgb * SpotLights[i].Color.a;
+-        float NdotL = saturate(dot(N, toPixel));
+-        float3 diffuse = Li * NdotL * attenDist * spotTerm;
+-        
+-        acc.diffuse += diffuse;
+-        
+-        
+-        // ??팟 ??감쇠
+-       // float3 dir = normalize(light.Direction.xyz);      // 광원 ??
+-       //  
+-       // float cosAngle = dot(dir, -L);
+-       // diffuse = diffuse * cosAngle; 
+-
+-        //acc.diffuse += diffuse; 
+-    }
+-
+-    return acc; 
+-}
++LightAccum ComputeSpotLights(float3 worldPos, float3 worldNormal, float shininess)
++{
++    LightAccum acc = (LightAccum)0;
++
++    float3 N = normalize(worldNormal);
++    float3 V = normalize(CameraWorldPos - worldPos);
++    float  exp = clamp(shininess, 1.0, 128.0);
++
++    [loop]
++    for (int i = 0; i < SpotLightCount; i++)
++    {
++        FSpotLightData light = SpotLights[i];
++
++        // 방향 및 거리 계산
++        float3 LvecToLight = light.Position.xyz - worldPos;     // 표면 -> 광원
++        float  dist        = length(LvecToLight);
++        float3 L           = (dist > 1e-5) ? (LvecToLight / dist) : float3(0, 0, 1); // 정규화 (표면->광원)
++
++        // 거리 감쇠 (반경 기반)
++        float range    = max(light.Position.w, 1e-3);
++        float fall     = max(light.FallOff, 0.001);
++        float t        = saturate(dist / range);
++        float attenDist = pow(saturate(1.0 - t), fall);
++
++        // 스포트라이트 각도 감쇠 (각도 -> cos 변환하여 선형 보간)
++        float3 dir     = normalize(light.Direction.xyz);         // 광원 전방 방향 (광원 기준)
++        float3 L_lightToPoint = normalize(-L);                   // 광원 -> 표면 방향
++        float  cosTheta = dot(dir, L_lightToPoint);
++
++        float  cosInner = cos(light.InnerConeAngle);
++        float  cosOuter = cos(light.OuterConeAngle);
++        // 보장: cosInner >= cosOuter (내각이 더 작으므로 cos 값은 더 큼)
++        float  denom    = max(cosInner - cosOuter, 1e-3);
++        float  spotTerm = saturate((cosTheta - cosOuter) / denom);
++
++        // Diffuse
++        float3 Li    = light.Color.rgb * light.Color.a;
++        float  NdotL = saturate(dot(N, L));
++        float3 diffuse = Li * NdotL * attenDist * spotTerm;
++
++        // Specular (Blinn-Phong)
++        float3 H     = normalize(L + V);
++        float  NdotH = saturate(dot(N, H));
++        float3 specular = Li * pow(NdotH, exp) * attenDist * spotTerm;
++
++        acc.diffuse  += diffuse;
++        acc.specular += specular;
++    }
++
++    return acc;
++}
+*** End Patch

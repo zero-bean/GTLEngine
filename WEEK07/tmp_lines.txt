@@ -1,0 +1,318 @@
+   1: cbuffer ModelBuffer : register(b0)
+   2: {
+   3:     row_major float4x4 WorldMatrix;
+   4:     uint UUID;
+   5:     float3 Padding;
+   6:     row_major float4x4 NormalMatrix;
+   7: }
+   8: 
+   9: cbuffer ViewProjBuffer : register(b1)
+  10: {
+  11:     row_major float4x4 ViewMatrix;
+  12:     row_major float4x4 ProjectionMatrix;
+  13:     float3 CameraWorldPos; // ?”ë“œ ê¸°ì? ì¹´ë©”???„ì¹˜
+  14:     float _pad_cam; // 16ë°”ì´???•ë ¬
+  15: }
+  16: 
+  17: cbuffer HighLightBuffer : register(b2)
+  18: {
+  19:     int Picked;
+  20:     float3 Color;
+  21:     int X;
+  22:     int Y;
+  23:     int Z;
+  24:     int GIzmo;
+  25:     int enable;
+  26: }
+  27: 
+  28: Texture2D g_DiffuseTexColor : register(t0);
+  29: Texture2D g_NormalTex : register(t1); // Normal map
+  30: SamplerState g_Sample : register(s0);
+  31: 
+  32: struct FMaterial
+  33: {
+  34:     float3 DiffuseColor; // Kd
+  35:     float OpticalDensity; // Ni
+  36:     float3 AmbientColor; // Ka
+  37:     float Transparency; // Tr/d
+  38:     float3 SpecularColor; // Ks
+  39:     float SpecularExponent; // Ns
+  40:     float3 EmissiveColor; // Ke
+  41:     uint IlluminationModel; // illum
+  42:     float3 TransmissionFilter; // Tf
+  43:     float dummy;
+  44: };
+  45: 
+  46: cbuffer ColorBuffer : register(b3)
+  47: {
+  48:     float4 LerpColor;
+  49: }
+  50: 
+  51: cbuffer PixelConstData : register(b4)
+  52: {
+  53:     FMaterial Material;
+  54:     bool HasMaterial;
+  55:     bool HasTexture;
+  56:     bool HasNormalTexture;
+  57:     float _pad_mat;
+  58: }
+  59: 
+  60: cbuffer PSScrollCB : register(b5)
+  61: {
+  62:     float2 UVScrollSpeed;
+  63:     float UVScrollTime;
+  64:     float _pad_scrollcb;
+  65: }
+  66: 
+  67: #define MAX_PointLight 100
+  68: #define MAX_SpotLight 100
+  69: 
+  70: // C++ êµ¬ì¡°ì²´ì? ?™ì¼???ˆì´?„ì›ƒ
+  71: struct FPointLightData
+  72: {
+  73:     float4 Position; // xyz=?„ì¹˜(?”ë“œ), w=ë°˜ê²½
+  74:     float4 Color; // rgb=?‰ìƒ, a=Intensity
+  75:     float FallOff; // ê°ì‡  ì§€??
+  76:     float3 _pad; // ?¨ë”©
+  77: };
+  78: 
+  79: cbuffer PointLightBuffer : register(b9)
+  80: {
+  81:     int PointLightCount;
+  82:     float3 _pad;
+  83:     FPointLightData PointLights[MAX_PointLight];
+  84: }
+  85: 
+  86: // C++ êµ¬ì¡°ì²´ì? ?™ì¼???ˆì´?„ì›ƒ
+  87: struct FSpotLightData
+  88: {
+  89:     float4 Position; // xyz=?„ì¹˜(?”ë“œ), w=ë°˜ê²½
+  90:     float4 Color; // rgb=?‰ìƒ, a=Intensity
+  91:     float InnerConeAngle; // ê°ì‡  ì§€??
+  92:     float OuterConeAngle; // ê°ì‡  ì§€??
+  93:     float SpotDataPadding;
+  94: };
+  95: 
+  96: cbuffer SpotLightBuffer : register(b13)
+  97: {
+  98:     int SpotLightCount;
+  99:     float3 SpotBufferPadding;
+ 100:     FSpotLightData SpotLights[MAX_SpotLight];
+ 101: }
+ 102: 
+ 103: struct LightAccum
+ 104: {
+ 105:     float3 diffuse;
+ 106:     float3 specular;
+ 107: };
+ 108: 
+ 109: // ------------------------------------------------------------------
+ 110: // ?ˆì •?”ëœ ê°ì‡  + ë°©í–¥(?œë©´?’ê´‘?? ë²„ì „??simple ?„ì 
+ 111: // ------------------------------------------------------------------
+ 112: float3 ComputePointLights(float3 worldPos)
+ 113: {
+ 114:     float3 total = 0;
+ 115:     [loop]
+ 116:     for (int i = 0; i < PointLightCount; ++i)
+ 117:     {
+ 118:         float3 Lvec = PointLights[i].Position.xyz - worldPos;
+ 119:         float dist = length(Lvec);
+ 120:         float range = max(PointLights[i].Position.w, 1e-3);
+ 121:         float fall = max(PointLights[i].FallOff, 0.001);
+ 122:         float t = saturate(dist / range);
+ 123:         float atten = pow(saturate(1.0 - t), fall);
+ 124: 
+ 125:         float3 Li = PointLights[i].Color.rgb * PointLights[i].Color.a;
+ 126:         total += Li * atten;
+ 127:     }
+ 128:     return total;
+ 129: }
+ 130: 
+ 131: 
+ 132: // ------------------------------------------------------------------
+ 133: // Lambert + Blinn-Phong (?ˆì •/?¼ê???
+ 134: // ------------------------------------------------------------------
+ 135: LightAccum ComputePointLights_LambertPhong(float3 worldPos, float3 worldNormal, float shininess)
+ 136: {
+ 137:     LightAccum acc = (LightAccum) 0;
+ 138: 
+ 139:     float3 N = normalize(worldNormal);
+ 140:     float3 V = normalize(CameraWorldPos - worldPos); // ?½ì? ê¸°ì? ë·?ë²¡í„°(?”ë“œ)
+ 141: 
+ 142:     float exp = clamp(shininess, 1.0, 128.0); // ??°œ ë°©ì?
+ 143: 
+ 144:     [loop]
+ 145:     for (int i = 0; i < PointLightCount; ++i)
+ 146:     {
+ 147:         float3 Lvec = PointLights[i].Position.xyz - worldPos; // ?œë©´?’ê´‘??
+ 148:         float dist = length(Lvec);
+ 149:         float3 L = (dist > 1e-5) ? (Lvec / dist) : float3(0, 0, 1);
+ 150: 
+ 151:         float range = max(PointLights[i].Position.w, 1e-3);
+ 152:         float fall = max(PointLights[i].FallOff, 0.001);
+ 153:         float t = saturate(dist / range);
+ 154:         float atten = pow(saturate(1.0 - t), fall);
+ 155: 
+ 156:         float3 Li = PointLights[i].Color.rgb * PointLights[i].Color.a;
+ 157: 
+ 158:         // Diffuse
+ 159:         float NdotL = saturate(dot(N, L));
+ 160:         float3 diffuse = Li * NdotL * atten;
+ 161: 
+ 162:         // Specular (Blinn-Phong)
+ 163:         float3 H = normalize(L + V);
+ 164:         float NdotH = saturate(dot(N, H));
+ 165:         float3 specular = Li * pow(NdotH, exp) * atten;
+ 166: 
+ 167:         acc.diffuse += diffuse;
+ 168:         acc.specular += specular;
+ 169:     }
+ 170: 
+ 171:     return acc;
+ 172: }
+ 173: 
+ 174: 
+ 175: float4 ComputeSpotLights(float3 worldPos, float3 worldNormal, float shininess)
+ 176: {
+ 177:     return float4(1, 0, 0, 1); 
+ 178: }
+ 179: struct VS_INPUT
+ 180: {
+ 181:     float3 position : POSITION;
+ 182:     float3 normal : NORMAL;
+ 183:     float4 color : COLOR;
+ 184:     float2 texCoord : TEXCOORD;
+ 185:     float3 tangent : TANGENT;
+ 186:     float3 bitangent : BITANGENT;
+ 187: };
+ 188: 
+ 189: struct PS_INPUT
+ 190: {
+ 191:     float4 position : SV_POSITION;
+ 192:     float3 worldPosition : TEXCOORD0;
+ 193:     float3 worldNormal : TEXCOORD1;
+ 194:     float2 texCoord : TEXCOORD2;
+ 195:     float3 worldTangent : TEXCOORD3;
+ 196:     float3 worldBitangent : TEXCOORD4;
+ 197:     float4 color : COLOR;
+ 198:     uint UUID : UUID;
+ 199: };
+ 200: 
+ 201: struct PS_OUTPUT
+ 202: {
+ 203:     float4 Color : SV_Target0;
+ 204:     uint UUID : SV_Target1;
+ 205: };
+ 206: 
+ 207: PS_INPUT mainVS(VS_INPUT input)
+ 208: {
+ 209:     PS_INPUT o;
+ 210:     
+ 211:     float time = UVScrollTime;
+ 212: 
+ 213:     // ?”ë“œ ë³€??(row_major ê¸°ì?: mul(v, M))
+ 214:     float4 worldPos = mul(float4(input.position, 1.0f), WorldMatrix);
+ 215:     o.worldPosition = worldPos.xyz;
+ 216: 
+ 217:     // ?¸ë?, ?„ì  ?? ë°”ì´?„ì  ?¸ë? ?”ë“œ ê³µê°„?¼ë¡œ ë³€??
+ 218:     o.worldNormal = normalize(mul(input.normal, (float3x3) NormalMatrix));
+ 219:     o.worldTangent = normalize(mul(input.tangent, (float3x3) WorldMatrix));
+ 220:     o.worldBitangent = normalize(mul(input.bitangent, (float3x3) WorldMatrix));
+ 221: 
+ 222:     // MVP
+ 223:     float4x4 MVP = mul(mul(WorldMatrix, ViewMatrix), ProjectionMatrix);
+ 224:     o.position = mul(float4(input.position, 1.0f), MVP);
+ 225: 
+ 226:     // Gizmo ?‰ìƒ ì²˜ë¦¬
+ 227:     float4 c = input.color;
+ 228:     if (GIzmo == 1)
+ 229:     {
+ 230:         if (Y == 1)
+ 231:             c = float4(1.0, 1.0, 0.0, c.a);
+ 232:         else
+ 233:         {
+ 234:             if (X == 1)
+ 235:                 c = float4(1.0, 0.0, 0.0, c.a);
+ 236:             else if (X == 2)
+ 237:                 c = float4(0.0, 1.0, 0.0, c.a);
+ 238:             else if (X == 3)
+ 239:                 c = float4(0.0, 0.0, 1.0, c.a);
+ 240:         }
+ 241:     }
+ 242: 
+ 243:     o.color = c;
+ 244:     o.texCoord = input.texCoord;
+ 245:     o.UUID = UUID;
+ 246:     return o;
+ 247: }
+ 248: 
+ 249: PS_OUTPUT mainPS(PS_INPUT input)
+ 250: {
+ 251:     PS_OUTPUT Result;
+ 252: 
+ 253:     float3 base = input.color.rgb;
+ 254:     base = lerp(base, LerpColor.rgb, LerpColor.a) * (1.0f - (HasMaterial ? 1.0f : 0.0f));
+ 255: 
+ 256:     if (HasMaterial && HasTexture)
+ 257:     {
+ 258:         float2 uv = input.texCoord + UVScrollSpeed * UVScrollTime;
+ 259:         base = g_DiffuseTexColor.Sample(g_Sample, uv).rgb;
+ 260:     }
+ 261: 
+ 262:     if (Picked == 1)
+ 263:     {
+ 264:         // ?¸ë????˜ì´?¼ì´?¸ë? 50% ë¸”ë Œ??
+ 265:         float3 highlightColor = float3(1.0, 1.0, 0.0); // ?¸ë???
+ 266:         base.rgb = lerp(base.rgb, highlightColor, 0.5);
+ 267:     }
+ 268: 
+ 269:     // ì¡°ëª… ê³„ì‚°???„í•œ ?¸ë? ë²¡í„° ì¤€ë¹?
+ 270:     float3 N = normalize(input.worldNormal);
+ 271: 
+ 272:     // ?¸ë§ë§??ìŠ¤ì³ê? ì¡´ì¬?œë‹¤ë©?
+ 273:     if (HasNormalTexture)
+ 274:     {
+ 275:         // 1. ?¸ë?ë§??ìŠ¤ì³ì—??RGB ê°’ì„ Normal ê°’ìœ¼ë¡?ë³€?˜í•©?ˆë‹¤.
+ 276:         // RGB ê°’ì? XYZ?€ ë§¤í•‘?˜ì–´ ?ˆìœ¼ë©?ë²”ìœ„??0~1ë¡??€?¥ë˜???ˆê³ , ?¸ë§ ê°’ì? -1~1ë¡??€?¥ë˜???ˆìŠµ?ˆë‹¤.
+ 277:         // Sample(): UV ì¢Œí‘œë¥??½ì–´?€ ?˜í”Œ?¬ìŠ¤?Œì´?¸ì˜ ê·œì¹™??ì°¸ê³ ?˜ì—¬, 
+ 278:         //           ì£¼ë? ?ì????‰ìƒ??ì¡°í•©???´ë‹¹ ?ì???ìµœì¢… ?‰ìƒê°’ì„ ê²°ì •?˜ëŠ” ??• ??ê°€ì§‘ë‹ˆ??
+ 279:         float3 tangentNormal = g_NormalTex.Sample(g_Sample, input.texCoord).rgb * 2.0 - 1.0;
+ 280: 
+ 281:         // 2. ë³´ê°„??ë²¡í„°?¤ë¡œ TBN ?‰ë ¬ ?¬êµ¬??ë°?ì§êµ?”ë? ?©ë‹ˆ??
+ 282:         float3 T = normalize(input.worldTangent);
+ 283:         float3 B = normalize(input.worldBitangent);
+ 284:         float3 N = normalize(input.worldNormal);
+ 285:         
+ 286:         // ?•ì  ?°ì´?”ì—???½ì? ?¨ìœ„ë¡?ë³´ê°„?˜ì–´ ?˜ì–´??ë²¡í„°?¤ì? ?„ë²½?˜ê²Œ ì§êµ?˜ì? ?Šì„ ???ˆìŠµ?ˆë‹¤.
+ 287:         // ?°ë¼??ê·¸ëŒ-?ˆë???Gram-Schmidt) ê¸°ë²•???µí•´ TBN ì¢Œí‘œê³„ë? ?¤ì‹œ ì§êµ?”í•˜???•ë ¬?©ë‹ˆ??
+ 288:         T = normalize(T - dot(T, N) * N);
+ 289:         B = cross(N, T);
+ 290: 
+ 291:         // 3ê°œì˜ ê¸°ì? ë²¡í„°ë¥?ê¸°ì? ?‰ë ¬ë¡?ë³€?˜í•©?ˆë‹¤ë§? row-major ?œì????„í•´ ?„ì¹˜ë¥??©ë‹ˆ??
+ 292:         float3x3 TBN = transpose(float3x3(T, B, N));
+ 293: 
+ 294:         // 3. ?„ì  ??ê³µê°„ ?¸ë????”ë“œ ê³µê°„?¼ë¡œ ë³€?˜í•©?ˆë‹¤.
+ 295:         N = normalize(mul(tangentNormal, TBN));
+ 296:     }
+ 297: 
+ 298:     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // ê¸°ë³¸ê°?32
+ 299:     LightAccum la = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);
+ 300:     la = ComputeSpotLights(input.worldPosition, N, shininess);
+ 301:     
+ 302:     // Ambient + Diffuse + Specular
+ 303:     float3 ambient = 0.25 * base;
+ 304:     if (HasMaterial)
+ 305:         ambient += 0.25 * Material.AmbientColor;
+ 306: 
+ 307:     float3 diffuseLit = base * la.diffuse;
+ 308:     float3 specularLit = la.specular;
+ 309:     if (HasMaterial)
+ 310:         specularLit *= saturate(Material.SpecularColor);
+ 311: 
+ 312:     float3 finalLit = ambient + diffuseLit + specularLit;
+ 313:     finalLit = saturate(finalLit); // ê³¼í¬??ë°©ì?
+ 314:     
+ 315:     Result.Color = float4(finalLit, 1.0);
+ 316:     Result.UUID = input.UUID;
+ 317:     return Result;
+ 318: }

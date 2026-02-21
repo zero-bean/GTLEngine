@@ -1,0 +1,94 @@
+{
+  "Version" : 2,
+  "NextUUID" : 717,
+  "PerspectiveCamera" : {
+    "FOV" : [60.000000],
+    "FarClip" : [4000.000000],
+    "Location" : [-44.583195, -55.020329, 20.961607],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 14.599988, 48.600266]
+  },
+  "Actors" : [
+    {
+      "UUID" : 609,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Grass_Block_0",
+      "RootComponentUUID" : 610
+    },
+    {
+      "UUID" : 673,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Snowy_0",
+      "RootComponentUUID" : 674
+    },
+    {
+      "UUID" : 638,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Mincraft-Lantern_0",
+      "RootComponentUUID" : 639
+    },
+    {
+      "UUID" : 714,
+      "Type" : "ADirectionalLightActor",
+      "Name" : "Directional Light_0",
+      "RootComponentUUID" : 715
+    }
+  ],
+  "Components" : [
+    {
+      "UUID" : 610,
+      "OwnerActorUUID" : 609,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.199729, 3.091783],
+      "RelativeRotation" : [-0.000022, -0.000005, 179.999939],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Minecraft/Grass/Grass_Block.obj",
+      "Materials" : ["Data/Minecraft/Grass/Grass_BlockMat.bin"],
+      "MaterialNormalMapOverrides" : ["Data/Minecraft/Grass/minecraft-glass_nrm.png"]
+    },
+    {
+      "UUID" : 674,
+      "OwnerActorUUID" : 673,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [-179.999985, 0.000005, 0.000022],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Minecraft/Snowy/Snowy.obj",
+      "Materials" : ["Data/Minecraft/Snowy/SnowyMat.bin", "Granite", "Diorite", "Andesite", "Grass_Block", "Dirt", "Stationary_Water", "Sand", "Gravel", "Iron_Ore", "Coal_Ore", "Spruce_Log", "Spruce_Leaves", "Sandstone", "Grass", "Dandelion", "Poppy", "Torch", "Chest", "Snow", "Ice", "Clay", "Sugar_Cane", "Pumpkin", "Tall_Seagrass", "Seagrass", "Copper_Ore"],
+      "MaterialNormalMapOverrides" : ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+    },
+    {
+      "UUID" : 639,
+      "OwnerActorUUID" : 638,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [1.328726, -2.193814, 2.179555],
+      "RelativeRotation" : [-179.999985, -0.000005, 179.999954],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Minecraft/Lantern/Mincraft-Lantern.obj",
+      "Materials" : ["Data/Minecraft/Lantern/Mincraft-LanternMat.bin", "Data/Minecraft/Lantern/Mincraft-LanternMat.bin", "Data/Minecraft/Lantern/Mincraft-LanternMat.bin"],
+      "MaterialNormalMapOverrides" : ["Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png", "Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png", "Data/Minecraft/Lantern/Mincraft-Lantern_nrm.png"]
+    },
+    {
+      "UUID" : 715,
+      "OwnerActorUUID" : 714,
+      "ParentComponentUUID" : 0,
+      "Type" : "UDirectionalLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 716,
+      "OwnerActorUUID" : 714,
+      "ParentComponentUUID" : 715,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    }
+  ]
+}

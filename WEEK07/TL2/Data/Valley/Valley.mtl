@@ -1,0 +1,56 @@
+# Blender 4.5.3 LTS MTL File: 'None'
+# www.blender.org
+
+newmtl rostlinka08
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1000.000000
+illum 2
+map_Kd rostlinka08_diffuse.png
+map_Ns rostlinka08_specularGlossiness.jpeg
+map_d rostlinka08_diffuse.png
+map_Bump rostlinka08_nrm.jpeg
+
+newmtl rostlinka19
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1000.000000
+illum 2
+map_Kd rostlinka19_diffuse.png
+map_Ns rostlinka19_specularGlossiness.jpeg
+map_d rostlinka19_diffuse.png
+map_Bump rostlinka19_nrm.jpeg
+
+newmtl rostlinka_09
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1000.000000
+illum 2
+map_Kd rostlinka_09_diffuse.png
+map_Ns rostlinka_09_specularGlossiness.jpeg
+map_d rostlinka_09_diffuse.png
+map_Bump rostlinka_09_nrm.jpeg
+
+newmtl udoli_kohoutovice_01
+Ns 13.158501
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1000.000000
+d 1.000000
+illum 2
+map_Kd udoli_kohoutovice_01_diffuse.jpeg
+map_Bump udoli_kohoutovice_01_nrm.jpeg
+
+newmtl water
+Ns 1000.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.017893 0.011389 0.003747
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1000.000000
+d 1.000000
+illum 2

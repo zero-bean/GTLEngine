@@ -1,0 +1,142 @@
+#include "pch.h"
+#include "DirectionalLightComponent.h"
+#include "SceneLoader.h"
+#include "ImGui/imgui.h"
+#include "GizmoArrowComponent.h"
+
+UDirectionalLightComponent::UDirectionalLightComponent()
+{
+    bCanEverTick = true;
+	Direction = GetWorldRotation().GetUpVector();
+	Direction.Z *= -1.0f;
+}
+
+UDirectionalLightComponent::~UDirectionalLightComponent()
+{
+}
+
+void UDirectionalLightComponent::Serialize(bool bIsLoading, FComponentData& InOut)
+{
+    // Call parent class serialization for transforms
+    ULightComponent::Serialize(bIsLoading, InOut);
+
+    if (bIsLoading)
+    {
+        Direction = InOut.DirectionalLightProperty.Direction;
+        bEnableSpecular = InOut.DirectionalLightProperty.bEnableSpecular;
+    }
+    else
+    {
+    	InOut.DirectionalLightProperty.Direction = Direction;
+        InOut.DirectionalLightProperty.bEnableSpecular = bEnableSpecular;
+    }
+}
+
+void UDirectionalLightComponent::TickComponent(float DeltaSeconds)
+{
+    // Directional light는 보통 고정되어 있지만, 필요시 동적 변화 구현 가능
+    // 예: 해의 이동에 따른 방향 변화 등
+}
+
+FVector UDirectionalLightComponent::GetDirection()
+{
+	FVector CurrentDirection = GetWorldRotation().GetUpVector();
+	CurrentDirection *= -1.0f;
+	return CurrentDirection;
+}
+
+void UDirectionalLightComponent::SetSpecularEnable(bool bEnable)
+{
+    bEnableSpecular = bEnable ? 1 : 0;
+}
+
+UObject* UDirectionalLightComponent::Duplicate()
+{
+    UDirectionalLightComponent* DuplicatedComponent = NewObject<UDirectionalLightComponent>();
+    CopyCommonProperties(DuplicatedComponent);
+	CopyLightProperties(DuplicatedComponent);
+    DuplicatedComponent->Direction = Direction;    
+    DuplicatedComponent->bEnableSpecular = this->bEnableSpecular;
+	DuplicatedComponent->SetDebugLineEnable(false);
+    DuplicatedComponent->DuplicateSubObjects();	
+    return DuplicatedComponent;
+}
+
+void UDirectionalLightComponent::DuplicateSubObjects()
+{
+    Super_t::DuplicateSubObjects();
+}
+
+void UDirectionalLightComponent::RenderDetails()
+{
+	ImGui::Separator();
+	ImGui::Text("PointLight Component Settings");
+
+	// 🔸 색상 설정 (RGB Color Picker)
+	float color[3] = { GetTintColor().R, GetTintColor().G, GetTintColor().B};
+	if (ImGui::ColorEdit3("Color", color))
+	{
+		SetTintColor(FLinearColor(color[0], color[1], color[2], 1.0f));
+	}
+
+	ImGui::Spacing();
+
+	float Temperature = GetColorTemperature();
+	if (ImGui::DragFloat("Temperature", &Temperature, 11.029f, 1000.0f, 15000.0f))
+	{
+		SetColorTemperature(Temperature);
+	}
+
+	// 🔸 밝기 (Intensity)
+	float intensity = GetIntensity();
+	if (ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f))
+	{
+		SetIntensity(intensity);
+	}
+
+	
+	bool bEnableSpecular = IsEnabledSpecular() && true;
+	if (ImGui::Checkbox("Specular Enable", &bEnableSpecular))
+	{
+		SetSpecularEnable(bEnableSpecular);
+	}
+	
+	ImGui::SameLine();
+	bool bEnableDebugLine = IsEnabledDebugLine();
+	if (ImGui::Checkbox("Debug Line", &bEnableDebugLine))
+	{
+		SetDebugLineEnable(bEnableDebugLine);
+	}
+
+	ImGui::Spacing();
+
+	// 🔸 시각적 미리보기용 Sphere 표시 (선택된 경우)
+	ImGui::Text("Preview:");
+	ImGui::SameLine();
+	ImGui::TextColored(ImVec4(color[0], color[1], color[2], 1.0f), "● DirectionalLight Active");
+}
+
+void UDirectionalLightComponent::DrawDebugLines(class URenderer* Renderer, const FMatrix& View, const FMatrix& Proj)
+{
+	if (!this->IsRender() || !Renderer)
+	{
+		return;
+	}
+	
+	if (!bEnableDebugLine)
+	{
+		return;
+	}
+
+	if (!DirectionComponent)
+	{
+		return;
+	}
+	
+	DirectionComponent->SetWorldLocation(GetWorldLocation());
+	DirectionComponent->SetColor(FVector(0.5f, 0.5f, 0.5f));
+	DirectionComponent->SetMaterial("Primitive.hlsl");
+	Renderer->UpdateSetCBuffer(ColorBufferType{FVector4(0.8f, 0.8f, 0.8f, 1.0f)});
+	DirectionComponent->Render(Renderer, View, Proj, EEngineShowFlags::SF_StaticMeshes);
+	DirectionComponent->SetMaterial("UberLit.hlsl");
+}
