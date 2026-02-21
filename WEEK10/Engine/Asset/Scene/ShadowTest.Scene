@@ -1,0 +1,580 @@
+{
+  "Actors" : {
+    "333" : {
+      "CollisionTag" : 0,
+      "Components" : [{
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "Intensity" : 0.050000,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "LightColor" : [1.000000, 1.000000, 1.000000],
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UAmbientLightComponent_0",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.005000,
+          "ShadowModeIndex" : 1,
+          "ShadowResolutionScale" : 1024.000000,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 1.000000,
+          "Type" : "UAmbientLightComponent",
+          "bCastShadows" : "true",
+          "bLightEnabled" : "true",
+          "bVisible" : "true"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Movable",
+          "Name" : "UUUIDTextComponent_0",
+          "ParentName" : "UAmbientLightComponent_0",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bGenerateOverlapEvents" : "false",
+          "bVisible" : "true"
+        }],
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "Name" : "AmbientLight",
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AAmbientLight",
+      "bCanEverTick" : "false",
+      "bIsTemplate" : "false",
+      "bTickInEditor" : "false"
+    },
+    "421" : {
+      "CollisionTag" : 0,
+      "Components" : [{
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Movable",
+          "Name" : "UStaticMeshComponent_0",
+          "ObjStaticMeshAsset" : "Data/Shapes/Cube.obj",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [14.901911, 14.901911, 1.000000],
+          "Type" : "UStaticMeshComponent",
+          "bGenerateOverlapEvents" : "false",
+          "bVisible" : "true"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Movable",
+          "Name" : "UUUIDTextComponent_5",
+          "ParentName" : "UStaticMeshComponent_0",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bGenerateOverlapEvents" : "false",
+          "bVisible" : "true"
+        }],
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "Name" : "AStaticMeshActor_0",
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [14.901911, 14.901911, 1.000000],
+      "Type" : "AStaticMeshActor",
+      "bCanEverTick" : "false",
+      "bIsTemplate" : "false",
+      "bTickInEditor" : "false"
+    },
+    "425" : {
+      "CollisionTag" : 0,
+      "Components" : [{
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "Intensity" : 1.000000,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "LightColor" : [1.000000, 1.000000, 1.000000],
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UDirectionalLightComponent_1",
+          "PSMMinInfinityZ" : 1.500000,
+          "PSMSlideBackEnabled" : true,
+          "PSMUnitCubeClip" : true,
+          "ParentName" : "",
+          "Rotation" : [-0.000000, -20.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.005000,
+          "ShadowModeIndex" : 1,
+          "ShadowProjectionMode" : 0,
+          "ShadowResolutionScale" : 1024.000000,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 1.000000,
+          "Type" : "UDirectionalLightComponent",
+          "bCastShadows" : "true",
+          "bLightEnabled" : "true",
+          "bVisible" : "true"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Movable",
+          "Name" : "UUUIDTextComponent_6",
+          "ParentName" : "UDirectionalLightComponent_1",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bGenerateOverlapEvents" : "false",
+          "bVisible" : "true"
+        }],
+      "Location" : [0.000000, 0.000000, 0.156042],
+      "Name" : "ADirectionalLight_1",
+      "Rotation" : [-0.000000, -20.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "ADirectionalLight",
+      "bCanEverTick" : "false",
+      "bIsTemplate" : "false",
+      "bTickInEditor" : "false"
+    },
+    "432" : {
+      "CollisionTag" : 0,
+      "Components" : [{
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Movable",
+          "Name" : "UStaticMeshComponent_1",
+          "ObjStaticMeshAsset" : "Data/Minecraft_Glass.fbx",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, -0.000000, -40.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UStaticMeshComponent",
+          "bGenerateOverlapEvents" : "false",
+          "bVisible" : "true"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Movable",
+          "Name" : "UUUIDTextComponent_7",
+          "ParentName" : "UStaticMeshComponent_1",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bGenerateOverlapEvents" : "false",
+          "bVisible" : "true"
+        }],
+      "Location" : [0.000000, -4.098584, 2.690829],
+      "Name" : "AStaticMeshActor_1",
+      "Rotation" : [-0.000000, -0.000000, -40.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AStaticMeshActor",
+      "bCanEverTick" : "false",
+      "bIsTemplate" : "false",
+      "bTickInEditor" : "false"
+    },
+    "440" : {
+      "CollisionTag" : 0,
+      "Components" : [{
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "BoneSpaceTransforms" : [{
+              "Location" : [0.000000, -0.131342, 2.851750],
+              "Rotation" : [-94.562241, -0.000001, 0.000004],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.932183, 0.000000],
+              "Rotation" : [-3.701147, 0.000014, -0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.510302, -0.000000],
+              "Rotation" : [8.920466, -0.000013, -0.000002],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.813901, -0.000000],
+              "Rotation" : [-9.523640, 0.000000, 0.000002],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.308329, 0.000000],
+              "Rotation" : [-13.965977, 0.000000, 0.000003],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.058454, 0.682658, -0.024315],
+              "Rotation" : [107.918900, 75.773758, 8.911551],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.018988, 0.677922, 0.002260],
+              "Rotation" : [96.375114, -21.825975, -88.204796],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.828780, -0.000000],
+              "Rotation" : [-28.111189, -23.285904, 2.060526],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 1.001073, 0.000000],
+              "Rotation" : [-15.461413, -84.444618, 3.574387],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.072999, 0.126907, -0.006729],
+              "Rotation" : [5.954285, -9.670022, 9.520209],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.199628, 0.000000],
+              "Rotation" : [-26.074667, 7.940815, -10.258720],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.098909, -0.000000],
+              "Rotation" : [-13.440390, 4.178165, -2.999344],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.111875, -0.000000],
+              "Rotation" : [2.596606, 9.755167, -6.395007],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.027020, -0.097779, 0.008239],
+              "Rotation" : [-95.539482, -63.723156, 126.463898],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.128068, 0.000000],
+              "Rotation" : [-16.242851, 15.442245, -1.475173],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.108183, 0.000000],
+              "Rotation" : [-9.572351, 1.728960, -0.366779],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.017052, 0.134073, -0.026365],
+              "Rotation" : [1.119899, -3.784988, 2.992154],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.185141, 0.000000],
+              "Rotation" : [-35.435013, 3.525496, -11.113861],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.122334, -0.000000],
+              "Rotation" : [1.712852, 9.624782, 2.666366],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.117980, 0.000000],
+              "Rotation" : [7.431382, 8.613196, 0.263978],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.031944, 0.127884, -0.019297],
+              "Rotation" : [1.377124, 6.174388, -7.753978],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.171447, -0.000000],
+              "Rotation" : [-40.044216, 2.752402, -3.607450],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.120511, 0.000000],
+              "Rotation" : [12.288371, 6.914714, 2.631478],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.099351, -0.000000],
+              "Rotation" : [-8.034893, 14.440049, 2.339169],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.078154, 0.114968, -0.007336],
+              "Rotation" : [-2.474250, 12.450562, -17.297449],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.189765, -0.000000],
+              "Rotation" : [-29.619675, 9.612771, -3.029788],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.114509, -0.000000],
+              "Rotation" : [-5.385139, 3.354555, -0.911104],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.088857, -0.000000],
+              "Rotation" : [-6.886821, 2.646135, 12.409588],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.058454, 0.682658, -0.024316],
+              "Rotation" : [107.918922, -75.773758, -8.911514],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.018988, 0.677922, 0.002260],
+              "Rotation" : [96.375084, 21.825989, 88.204796],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.828779, 0.000000],
+              "Rotation" : [-28.111183, 23.285873, -2.060497],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 1.001073, -0.000000],
+              "Rotation" : [-15.460273, 84.444618, -3.573275],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.072999, 0.126905, -0.006729],
+              "Rotation" : [5.954275, 9.669955, -9.520245],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.199629, -0.000000],
+              "Rotation" : [-26.074631, -7.940695, 10.258712],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.098907, -0.000000],
+              "Rotation" : [-13.440757, -4.178621, 2.999279],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.111877, 0.000000],
+              "Rotation" : [2.597216, -9.754573, 6.394878],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.027019, -0.097778, 0.008238],
+              "Rotation" : [-95.539818, 63.723133, -126.464241],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.128069, 0.000000],
+              "Rotation" : [-16.242666, -15.442571, 1.475109],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.108183, 0.000000],
+              "Rotation" : [-9.572231, -1.728949, 0.366886],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.017052, 0.134072, -0.026365],
+              "Rotation" : [1.119878, 3.784976, -2.992281],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.185142, 0.000000],
+              "Rotation" : [-35.434963, -3.525403, 11.113794],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.122335, 0.000000],
+              "Rotation" : [1.712544, -9.625160, -2.666244],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.117980, 0.000000],
+              "Rotation" : [7.431824, -8.612698, -0.264071],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.031944, 0.127883, -0.019296],
+              "Rotation" : [1.377103, -6.174406, 7.753869],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.171448, -0.000000],
+              "Rotation" : [-40.044144, -2.752482, 3.607345],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.120511, -0.000000],
+              "Rotation" : [12.288507, -6.914535, -2.631128],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.099352, 0.000000],
+              "Rotation" : [-8.035173, -14.440361, -2.339216],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.078155, 0.114968, -0.007336],
+              "Rotation" : [-2.474228, -12.450569, 17.297329],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.189765, -0.000000],
+              "Rotation" : [-29.619625, -9.612741, 3.029641],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.000000, 0.114509, 0.000000],
+              "Rotation" : [-5.385262, -3.354742, 0.911365],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.000000, 0.088857, -0.000000],
+              "Rotation" : [-6.886932, -2.646217, -12.409656],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [0.432056, 0.040859, 0.023328],
+              "Rotation" : [-177.248856, -1.687188, 4.480943],
+              "Scale" : [1.000064, 0.999997, 1.000027]
+            }, {
+              "Location" : [-0.000000, 1.036440, 0.000000],
+              "Rotation" : [-8.118246, -0.296125, -0.394263],
+              "Scale" : [0.999994, 1.000007, 0.999998]
+            }, {
+              "Location" : [-0.000000, 1.535522, -0.000000],
+              "Rotation" : [59.429932, 15.425210, -2.365992],
+              "Scale" : [0.999935, 1.000074, 1.000011]
+            }, {
+              "Location" : [0.000000, 0.417419, 0.000000],
+              "Rotation" : [152.610229, -2.709832, -168.083572],
+              "Scale" : [1.000000, 1.000000, 1.000000]
+            }, {
+              "Location" : [-0.432057, 0.040859, 0.023328],
+              "Rotation" : [-177.249023, 1.687063, -4.480968],
+              "Scale" : [1.000061, 0.999998, 1.000026]
+            }, {
+              "Location" : [0.000000, 1.036440, 0.000000],
+              "Rotation" : [-8.117944, 0.296137, 0.394234],
+              "Scale" : [0.999994, 1.000007, 0.999998]
+            }, {
+              "Location" : [-0.000000, 1.535521, 0.000000],
+              "Rotation" : [59.429840, -15.425297, 2.365879],
+              "Scale" : [0.999938, 1.000070, 1.000011]
+            }, {
+              "Location" : [-0.000000, 0.417419, 0.000000],
+              "Rotation" : [152.610184, 2.710091, 168.083511],
+              "Scale" : [1.000000, 1.000000, 0.999999]
+            }],
+          "BoneVisibilityStates" : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Movable",
+          "Name" : "USkeletalMeshComponent_0",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, -0.000000, -100.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "SkeletalMeshAsset" : "Data/DefaultSkeletalMesh.fbx",
+          "Type" : "USkeletalMeshComponent",
+          "bGenerateOverlapEvents" : "false",
+          "bNormalMapEnabled" : false,
+          "bVisible" : "true"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Movable",
+          "Name" : "UUUIDTextComponent_8",
+          "ParentName" : "USkeletalMeshComponent_0",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bGenerateOverlapEvents" : "false",
+          "bVisible" : "true"
+        }],
+      "Location" : [-1.869045, 0.000000, 0.336115],
+      "Name" : "ASkeletalMeshActor_0",
+      "Rotation" : [-0.000000, -0.000000, -100.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "ASkeletalMeshActor",
+      "bCanEverTick" : "false",
+      "bIsTemplate" : "false",
+      "bTickInEditor" : "false"
+    }
+  },
+  "Curves" : {
+    "EaseIn" : {
+      "CP1_X" : 0.420000,
+      "CP1_Y" : 0.000000,
+      "CP2_X" : 1.000000,
+      "CP2_Y" : 1.000000,
+      "Name" : "Untitled"
+    },
+    "EaseInBack" : {
+      "CP1_X" : 0.600000,
+      "CP1_Y" : -0.280000,
+      "CP2_X" : 0.735000,
+      "CP2_Y" : 0.045000,
+      "Name" : "Untitled"
+    },
+    "EaseInOut" : {
+      "CP1_X" : 0.420000,
+      "CP1_Y" : 0.000000,
+      "CP2_X" : 0.580000,
+      "CP2_Y" : 1.000000,
+      "Name" : "Untitled"
+    },
+    "EaseOut" : {
+      "CP1_X" : 0.000000,
+      "CP1_Y" : 0.000000,
+      "CP2_X" : 0.580000,
+      "CP2_Y" : 1.000000,
+      "Name" : "Untitled"
+    },
+    "EaseOutBack" : {
+      "CP1_X" : 0.175000,
+      "CP1_Y" : 0.885000,
+      "CP2_X" : 0.320000,
+      "CP2_Y" : 1.275000,
+      "Name" : "Untitled"
+    },
+    "Linear" : {
+      "CP1_X" : 0.333000,
+      "CP1_Y" : 0.333000,
+      "CP2_X" : 0.666000,
+      "CP2_Y" : 0.666000,
+      "Name" : "Untitled"
+    }
+  },
+  "NextUUID" : 0,
+  "PerspectiveCamera" : {
+    "0" : {
+      "CameraType" : 0,
+      "FarClip" : 5000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [0.000000, 0.000000, 100.000000],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, 0.000000, 0.000000]
+    },
+    "1" : {
+      "CameraType" : 0,
+      "FarClip" : 5000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [-100.000000, 0.000000, 0.000000],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, 0.000000, 0.000000]
+    },
+    "2" : {
+      "CameraType" : 0,
+      "FarClip" : 1000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [-5.734458, -4.157089, 6.652909],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, -49.600388, 387.804840]
+    },
+    "3" : {
+      "CameraType" : 0,
+      "FarClip" : 5000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [0.000000, -100.000000, 0.000000],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, 0.000000, 0.000000]
+    }
+  },
+  "ViewportSystem" : {
+    "Viewports" : [{
+        "Index" : 0,
+        "ViewMode" : 4,
+        "ViewType" : 1
+      }, {
+        "Index" : 1,
+        "ViewMode" : 4,
+        "ViewType" : 5
+      }, {
+        "Index" : 2,
+        "ViewMode" : 2,
+        "ViewType" : 0
+      }, {
+        "Index" : 3,
+        "ViewMode" : 4,
+        "ViewType" : 4
+      }]
+  }
+}
