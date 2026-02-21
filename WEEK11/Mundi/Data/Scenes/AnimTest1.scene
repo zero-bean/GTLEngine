@@ -1,0 +1,174 @@
+{
+  "Actors" : {
+    "918" : {
+      "ObjectName" : "APlayerCameraManager_2",
+      "OwnedComponents" : [{
+          "Id" : 919,
+          "ObjectName" : "USceneComponent_3",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 919,
+      "Tag" : "",
+      "Type" : "APlayerCameraManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "920" : {
+      "ObjectName" : "스켈레탈 메시_0",
+      "OwnedComponents" : [{
+          "Id" : 924,
+          "MaterialSlots" : [{
+              "Type" : "None"
+            }, {
+              "AssetPath" : "Ch06_body",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Ch06_eyelashes",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Ch06_body1",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "USkeletalMeshComponent_1",
+          "ParentId" : 0,
+          "RelativeLocation" : [-0.071582, -4.440413, 0.194528],
+          "RelativeRotationEuler" : [0.285218, -0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "SkeletalMesh" : "Data/James/James.fbx",
+          "TestBlend" : 0.000000,
+          "TestSpeed" : 1.000000,
+          "Type" : "USkeletalMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bMove" : false,
+          "bTickEnabled" : true
+        }, {
+          "ObjectName" : "ULuaScriptComponent_1",
+          "ScriptFilePath" : "Data/Scripts/LuaAnimationTest.lua",
+          "Type" : "ULuaScriptComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 924,
+      "Tag" : "",
+      "Type" : "ASkeletalMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "928" : {
+      "ObjectName" : "앰비언트 라이트_0",
+      "OwnedComponents" : [{
+          "Id" : 930,
+          "Intensity" : 0.200000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "ObjectName" : "UAmbientLightComponent_2",
+          "ParentId" : 0,
+          "RelativeLocation" : [1.532815, -4.648998, 3.735583],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.000010,
+          "ShadowResolutionScale" : 1024,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 0.000010,
+          "Temperature" : 6500.000000,
+          "Type" : "UAmbientLightComponent",
+          "bCastShadows" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 930,
+      "Tag" : "",
+      "Type" : "AAmbientLightActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "936" : {
+      "ObjectName" : "스태틱 메시_0",
+      "OwnedComponents" : [{
+          "Id" : 937,
+          "MaterialSlots" : [{
+              "AssetPath" : "texture",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "UStaticMeshComponent_1",
+          "ParentId" : 0,
+          "RelativeLocation" : [-4.213103, -1.946442, -0.376575],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [12.242538, 12.093132, 1.000000],
+          "StaticMesh" : "Data/cube-tex.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 937,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "938" : {
+      "ObjectName" : "방향성 라이트_0",
+      "OwnedComponents" : [{
+          "CascadedAreaColorDebugValue" : 0.000000,
+          "CascadedAreaShadowDebugValue" : -1,
+          "CascadedCount" : 4,
+          "CascadedLinearBlendingValue" : 0.500000,
+          "CascadedOverlapValue" : 0.200000,
+          "Id" : 939,
+          "Intensity" : 1.000000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "ObjectName" : "UDirectionalLightComponent_2",
+          "ParentId" : 0,
+          "RelativeLocation" : [-4.213103, -1.946442, 3.184231],
+          "RelativeRotationEuler" : [42.290833, 38.391205, -124.322113],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.000010,
+          "ShadowResolutionScale" : 2048,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 0.000010,
+          "Temperature" : 6500.000000,
+          "Type" : "UDirectionalLightComponent",
+          "bCascaded" : true,
+          "bCastShadows" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 939,
+      "Tag" : "",
+      "Type" : "ADirectionalLightActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    }
+  },
+  "NextUUID" : 968,
+  "PerspectiveCamera" : {
+    "FOV" : [60.000000],
+    "FarClip" : [137.000000],
+    "Location" : [2.052601, -4.156424, 1.809536],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 18.899944, -179.599747]
+  },
+  "Version" : 1
+}

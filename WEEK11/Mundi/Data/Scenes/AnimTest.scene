@@ -1,0 +1,349 @@
+{
+  "Actors" : {
+    "4622" : {
+      "ObjectName" : "APlayerCameraManager_2",
+      "OwnedComponents" : [{
+          "Id" : 4623,
+          "ObjectName" : "USceneComponent_3",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 4623,
+      "Tag" : "",
+      "Type" : "APlayerCameraManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "4624" : {
+      "ObjectName" : "스켈레탈 메시_0",
+      "OwnedComponents" : [{
+          "Id" : 4628,
+          "MaterialSlots" : [{
+              "Type" : "None"
+            }, {
+              "AssetPath" : "Ch06_body",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Ch06_eyelashes",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Ch06_body1",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "USkeletalMeshComponent_1",
+          "ParentId" : 0,
+          "RelativeLocation" : [1.532815, -1.532815, 0.692599],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "SkeletalMesh" : "Data/James/James.fbx",
+          "Type" : "USkeletalMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }, {
+          "ObjectName" : "ULuaScriptComponent_1",
+          "ScriptFilePath" : "Data/Scripts/LuaAnimationTest.lua",
+          "Type" : "ULuaScriptComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 4628,
+      "Tag" : "",
+      "Type" : "ASkeletalMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "4632" : {
+      "ObjectName" : "앰비언트 라이트_0",
+      "OwnedComponents" : [{
+          "Id" : 4634,
+          "Intensity" : 0.100000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "ObjectName" : "UAmbientLightComponent_2",
+          "ParentId" : 0,
+          "RelativeLocation" : [1.532815, -1.532815, 1.173166],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.000010,
+          "ShadowResolutionScale" : 1024,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 0.000010,
+          "Temperature" : 6500.000000,
+          "Type" : "UAmbientLightComponent",
+          "bCastShadows" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 4634,
+      "Tag" : "",
+      "Type" : "AAmbientLightActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "4635" : {
+      "ObjectName" : "스태틱 메시_1",
+      "OwnedComponents" : [{
+          "Id" : 4637,
+          "MaterialSlots" : [{
+              "AssetPath" : "Shaders/Materials/UberLit.hlsl",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "UStaticMeshComponent_8",
+          "ParentId" : 0,
+          "RelativeLocation" : [2.095053, -1.091116, 0.695255],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [40.000000, 40.000000, 1.000000],
+          "StaticMesh" : "Data/Model/Plane.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 4637,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "4638" : {
+      "ObjectName" : "방향성 라이트_0",
+      "OwnedComponents" : [{
+          "CascadedAreaColorDebugValue" : 0.000000,
+          "CascadedAreaShadowDebugValue" : -1,
+          "CascadedCount" : 8,
+          "CascadedLinearBlendingValue" : 0.500000,
+          "CascadedOverlapValue" : 0.200000,
+          "Id" : 4640,
+          "Intensity" : 1.000000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "ObjectName" : "UDirectionalLightComponent_4",
+          "ParentId" : 0,
+          "RelativeLocation" : [-0.428125, -1.317723, 3.174448],
+          "RelativeRotationEuler" : [171.009155, 28.962896, -138.035156],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.000010,
+          "ShadowResolutionScale" : 2048,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 0.000010,
+          "Temperature" : 6500.000000,
+          "Type" : "UDirectionalLightComponent",
+          "bCascaded" : true,
+          "bCastShadows" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 4640,
+      "Tag" : "",
+      "Type" : "ADirectionalLightActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "4641" : {
+      "ObjectName" : "스태틱 메시_0",
+      "OwnedComponents" : [{
+          "Id" : 4643,
+          "MaterialSlots" : [{
+              "AssetPath" : "texture",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "UStaticMeshComponent_3",
+          "ParentId" : 0,
+          "RelativeLocation" : [-2.559541, 2.817610, 1.141526],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "StaticMesh" : "Data/cube-tex.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 4643,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "4644" : {
+      "ObjectName" : "스태틱 메시_1",
+      "OwnedComponents" : [{
+          "Id" : 4646,
+          "MaterialSlots" : [{
+              "AssetPath" : "texture",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "UStaticMeshComponent_4",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.371765, -4.250785, 1.048470],
+          "RelativeRotationEuler" : [0.000000, -43.598312, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "StaticMesh" : "Data/cube-tex.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 4646,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "4647" : {
+      "CameraMoveSpeed" : 14.900000,
+      "CameraPitchDeg" : 0.000000,
+      "CameraYawDeg" : 0.000000,
+      "MouseSensitivity" : 0.100000,
+      "ObjectName" : "카메라_0",
+      "OwnedComponents" : [{
+          "AspectRatio" : 1.000000,
+          "FarClip" : 100.000000,
+          "FieldOfView" : 60.000000,
+          "Id" : 4649,
+          "NearClip" : 0.100000,
+          "ObjectName" : "UCameraComponent_7",
+          "ParentId" : 0,
+          "ProjectionMode" : 0,
+          "RelativeLocation" : [1.172215, -1.262738, 1.852731],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UCameraComponent",
+          "ZoomFactor" : 1.000000,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }],
+      "PerspectiveCameraInput" : false,
+      "RootComponentId" : 4649,
+      "Tag" : "",
+      "Type" : "ACameraActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "4650" : {
+      "ObjectName" : "스켈레탈 메시_0",
+      "OwnedComponents" : [{
+          "Id" : 4654,
+          "MaterialSlots" : [{
+              "Type" : "None"
+            }, {
+              "AssetPath" : "Ch06_body",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Ch06_eyelashes",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Ch06_body1",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "USkeletalMeshComponent_3",
+          "ParentId" : 0,
+          "RelativeLocation" : [1.891292, 3.960179, 0.680443],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "SkeletalMesh" : "Data/James/James.fbx",
+          "Type" : "USkeletalMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }, {
+          "ObjectName" : "ULuaScriptComponent_2",
+          "ScriptFilePath" : "Data/Scripts/LuaMonster.lua",
+          "Type" : "ULuaScriptComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 4654,
+      "Tag" : "",
+      "Type" : "ASkeletalMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "6548" : {
+      "ObjectName" : "스켈레탈 메시_0",
+      "OwnedComponents" : [{
+          "Id" : 6549,
+          "MaterialSlots" : [{
+              "Type" : "None"
+            }, {
+              "AssetPath" : "Ch06_body",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Ch06_eyelashes",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Ch06_body1",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "USkeletalMeshComponent_11",
+          "ParentId" : 0,
+          "RelativeLocation" : [5.008360, -1.821372, 0.719875],
+          "RelativeRotationEuler" : [0.000000, 0.000000, -148.274521],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "SkeletalMesh" : "Data/James/James.fbx",
+          "Type" : "USkeletalMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true
+        }, {
+          "ObjectName" : "ULuaScriptComponent_5",
+          "ScriptFilePath" : "Data/Scripts/LuaMonster.lua",
+          "Type" : "ULuaScriptComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bTickEnabled" : true
+        }],
+      "RootComponentId" : 6549,
+      "Tag" : "",
+      "Type" : "ASkeletalMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    }
+  },
+  "NextUUID" : 6612,
+  "PerspectiveCamera" : {
+    "FOV" : [60.000000],
+    "FarClip" : [155.000000],
+    "Location" : [9.312151, 6.793912, 4.595002],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 20.299955, -142.300568]
+  },
+  "Version" : 1
+}
