@@ -1,0 +1,127 @@
+#include "Ball.h"
+#include "Sphere.h"
+#include "Renderer.h"
+#include "TimeManager.h"
+
+Ball::Ball()
+{
+    
+}
+Ball::~Ball()
+{
+    Release();
+}
+void Ball::Initialize(Renderer& renderer)
+{
+    // ball color 랜덤 생성
+    LARGE_INTEGER seedTime;
+    QueryPerformanceCounter(&seedTime);
+    unsigned int seed = static_cast<unsigned int>(seedTime.QuadPart);
+    std::srand(seed);
+
+    BallColor = static_cast<eBallColor>(std::rand() % 3);
+    std::wstring textureFileName;
+    switch (BallColor)
+    {
+    case eBallColor::Red:
+        textureFileName = L"assets/sprite.png";
+        break;
+    case eBallColor::Green:
+        textureFileName = L"assets/spriteG.png";
+        break;
+    case eBallColor::Blue:
+        textureFileName = L"assets/spriteB.png";
+        break;
+    }
+
+    // 텍스처 로드
+    TextureSet textureSet = renderer.LoadTextureSet(textureFileName.c_str());
+    SetTextureSet(textureSet);
+
+    //버텍스 버퍼 셋
+    NumVertices = sizeof(SphereVertices) / sizeof(FVertexSimple);
+    D3D11_BUFFER_DESC vertexbufferdesc = {};
+    vertexbufferdesc.ByteWidth = sizeof(SphereVertices);
+    vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;
+    vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    D3D11_SUBRESOURCE_DATA vertexbufferSRD = { SphereVertices };
+    renderer.GetDevice()->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &VertexBuffer);
+
+    //상수 버퍼 셋
+    D3D11_BUFFER_DESC constantbufferdesc = {};
+    constantbufferdesc.ByteWidth = (sizeof(FConstants) + 0xf) & 0xfffffff0; // 16바이트 정렬
+    constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+    constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    renderer.GetDevice()->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
+
+    // 변수 설정
+    WorldPosition = { 0.0f, -0.9f, 0.0f };
+    Scale = 0.11f;
+    //Radius = 40.0f * (2.0f / 720.0f);
+    BallType = eBallType::Dynamic;
+
+    BallState = eBallState::Idle;
+}
+void Ball::Update(Renderer& renderer)
+{
+    float deltaTime = TimeManager::GET_SINGLE()->GetDeltaTime();
+
+    if (bIsGravity == true)
+    {
+        Velocity.y -= deltaTime * 0.58f;
+    }
+
+    // update
+    WorldPosition = CalculateUtil::operator+(WorldPosition, Velocity);
+    renderer.UpdateConstant(ConstantBuffer, WorldPosition, Scale, RotationDeg);
+    //lateupdate
+}
+void Ball::Render(Renderer& renderer)
+{
+    BindTexture(renderer.GetDeviceContext(), 0);
+    renderer.Render(ConstantBuffer, VertexBuffer, NumVertices);
+}
+
+void Ball::Release()
+{
+}
+void Ball::Collidable()
+{
+}
+
+ void Ball::SetBalllColor(eBallColor InBallColor)
+{
+    if (BallColor == InBallColor)
+        return;
+
+    BallColor = InBallColor;
+
+    std::wstring textureFileName;
+    switch (InBallColor)
+    {
+    case eBallColor::Red:
+        textureFileName = L"assets/sprite.png";
+        break;
+    case eBallColor::Green:
+        textureFileName = L"assets/spriteG.png";
+        break;
+    case eBallColor::Blue:
+        textureFileName = L"assets/spriteB.png";
+        break;
+    }
+}
+
+ void Ball::SetIsGravity(bool bIsActive)
+{
+    if (bIsGravity == bIsActive)
+        return;
+
+    bIsGravity = bIsActive;
+
+    if (bIsGravity == true)
+    {
+        int val = (rand() % 5) - 2;
+        Velocity = FVector3(0.03 * val, 0.11, 0);
+    }
+}
