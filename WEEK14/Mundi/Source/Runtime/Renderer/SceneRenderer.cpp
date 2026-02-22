@@ -1160,10 +1160,12 @@ void FSceneRenderer::RenderDecalPass()
 		const FMatrix DecalMatrix = Decal->GetDecalProjectionMatrix();
 		DecalBufferType DecalCB;
 		DecalCB.DecalMatrix = DecalMatrix;
-		DecalCB.Opacity = Decal->GetOpacity();
-		DecalCB.FadeProgress = Decal->GetFadeAlpha();  // FadeProperty에서 가져옴
+		DecalCB.DecalForward = Decal->GetWorldRotation().GetForwardVector();  // Forward 벡터로 투영 평면 자동 선택
+		DecalCB.FadeProgress = Decal->GetOpacity() * Decal->GetFadeAlpha();   // Opacity와 FadeAlpha 결합
 		DecalCB.FadeStyle = Decal->GetFadeStyle();     // FadeProperty에서 가져옴
-		DecalCB._pad = 0.0f;
+		DecalCB._pad[0] = 0.0f;
+		DecalCB._pad[1] = 0.0f;
+		DecalCB._pad[2] = 0.0f;
 		RHIDevice->SetAndUpdateConstantBuffer(DecalCB);
 
 		// 3. TargetPrimitive 순회하며 수집 후 렌더링

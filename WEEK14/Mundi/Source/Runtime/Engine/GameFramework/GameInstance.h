@@ -98,7 +98,7 @@ private:
     TMap<FString, int32> CollectedItems;
 
     // 플레이어 상태
-    uint32 PlayerHealth = 100;
+    uint32 PlayerHealth = -100;
     uint32 PlayerScore = 0;
     uint32 RescuedCount = 0;
     uint32 TotalPersonCount = 0;

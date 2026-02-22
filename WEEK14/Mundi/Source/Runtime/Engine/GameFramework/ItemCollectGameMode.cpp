@@ -29,7 +29,7 @@ AItemCollectGameMode::AItemCollectGameMode()
 	: PlayerSpawnScale(1.5f)
 	, SpawnActorName("PlayerStartPos")
 	, SpawnActorTag("None")
-	, TimeLimit(30.0f)
+	, TimeLimit(20.0f)
 	, NextScenePath(L"Data/Scenes/FireDispatch.scene")
 	, TimerWidgetSize(200.f)
 	, TimerTextOffsetRatio(0.12f)
@@ -685,7 +685,7 @@ void AItemCollectGameMode::InitializeSounds()
 	BGMSound = UResourceManager::GetInstance().Load<USound>(BGMSoundPath);
 	if (BGMSound)
 	{
-		BGMVoice = FAudioDevice::PlaySound2D(BGMSound, 0.5f, true);
+		//BGMVoice = FAudioDevice::PlaySound2D(BGMSound, 0.5f, true);
 	}
 
 	// 사이렌 로드 및 재생 (1회, 2D 사운드)

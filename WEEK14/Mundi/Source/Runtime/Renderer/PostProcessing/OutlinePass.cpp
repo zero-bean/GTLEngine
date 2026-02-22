@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "OutlinePass.h"
 #include "../SceneView.h"
 #include "../../RHI/SwapGuard.h"
@@ -56,13 +56,13 @@ void FOutlinePass::Execute(const FPostProcessModifier& M, FSceneView* View, D3D1
     OutlineConstant.DepthThreshold = M.Payload.Params0.Y;
     OutlineConstant.Intensity = M.Payload.Params0.Z;
     OutlineConstant.Weight = M.Weight;
-    // SceneRenderer에서 ObjectID를 넣은 Params1.X를 사용
+    // Params0.W에 하이라이트할 ObjectID 저장 (0 = 전체 에지)
     OutlineConstant.HighlightedObjectID = static_cast<uint32>(M.Payload.Params1.X);
 
     RHIDevice->SetAndUpdateConstantBuffer(OutlineConstant);
 
     // 6) Draw
-    RHIDevice->DrawFullScreenQuad(); // 모든 픽셀에 대해 Outline_PS.hlsl 실행
+    RHIDevice->DrawFullScreenQuad();
 
     // 7) 확정
     Swap.Commit();

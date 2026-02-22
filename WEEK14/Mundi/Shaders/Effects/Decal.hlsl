@@ -42,10 +42,10 @@ cbuffer PSScrollCB : register(b5)
 cbuffer DecalBuffer : register(b6)
 {
     row_major float4x4 DecalMatrix;
-    float DecalOpacity;
-    float FadeProgress;     // Fade progress (0-1)
+    float3 DecalForward;    // Decal's forward vector (world space) for dynamic projection
+    float FadeProgress;     // Combined opacity and fade progress (0-1)
     uint FadeStyle;         // 0:Standard, 1:WipeLtoR, 2:Dissolve, 3:Iris
-    float _pad_decal;
+    float _pad_decal[3];
 }
 
 // --- 텍스처 리소스 ---
@@ -146,6 +146,35 @@ PS_INPUT mainVS(VS_INPUT input)
 }
 
 //================================================================================================
+// UV 유틸리티 함수
+//================================================================================================
+// 데칼의 forward 벡터에 따라 가장 적절한 투영 평면을 선택하여 UV 생성
+float2 GetProjectedUV(float3 localPos, float3 forward)
+{
+    float3 absForward = abs(forward);
+    float2 uv;
+
+    // 가장 큰 forward 성분에 수직인 평면을 선택
+    if (absForward.x > absForward.y && absForward.x > absForward.z)
+    {
+        // X축으로 투영 -> YZ 평면 사용
+        uv = localPos.yz * float2(1.0f, -1.0f);
+    }
+    else if (absForward.y > absForward.z)
+    {
+        // Y축으로 투영 -> XZ 평면 사용
+        uv = localPos.xz * float2(1.0f, -1.0f);
+    }
+    else
+    {
+        // Z축으로 투영 -> XY 평면 사용
+        uv = localPos.xy * float2(1.0f, -1.0f);
+    }
+
+    return uv + 0.5f;
+}
+
+//================================================================================================
 // 픽셀 셰이더
 //================================================================================================
 float4 mainPS(PS_INPUT input) : SV_TARGET
@@ -164,8 +193,8 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         discard;
     }
 
-    // 3. 픽셀의 3D 위치를 X축에서 바라보고 2D 평면(YZ)에 투사하여 UV 생성
-    float2 uv = localPos.yz * float2(1.0f, -1.0f) + 0.5f;
+    // 3. Forward 벡터에 따라 동적으로 투영 평면 선택
+    float2 uv = GetProjectedUV(localPos, DecalForward);
     uv += UVScrollSpeed * UVScrollTime;
 
     float4 decalTexture = g_DecalTexColor.Sample(g_Sample, uv);
@@ -177,36 +206,40 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     }
 
     // 5. FadeStyle에 따라 다른 효과 적용
+    float fadeAlpha = 1.0f;
     float softness = 0.1f; // 경계선의 부드러움 정도
     float scaledProgress = FadeProgress * (1.0f + softness);
 
     switch (FadeStyle)
     {
         case 0: // Standard Alpha Fade
-            decalTexture.a *= FadeProgress;
+            fadeAlpha = FadeProgress;
             break;
         case 1: // Wipe Left to Right
         {
             float threshold = uv.x;
             float t = saturate((scaledProgress - threshold) / softness);
-            decalTexture.a *= t * t * (3.0f - 2.0f * t); // Smoothstep
+            fadeAlpha = t * t * (3.0f - 2.0f * t); // Smoothstep
             break;
         }
         case 2: // Procedural Random Dissolve
         {
             float threshold = hash(uv);
             float t = saturate((scaledProgress - threshold) / softness);
-            decalTexture.a *= t * t * (3.0f - 2.0f * t); // Smoothstep
+            fadeAlpha = t * t * (3.0f - 2.0f * t); // Smoothstep
             break;
         }
         case 3: // Iris (중앙에서 확장/축소)
         {
             float threshold = distance(uv, float2(0.5f, 0.5f)) * 1.414f;
             float t = saturate((scaledProgress - threshold) / softness);
-            decalTexture.a *= t * t * (3.0f - 2.0f * t); // Smoothstep
+            fadeAlpha = t * t * (3.0f - 2.0f * t); // Smoothstep
             break;
         }
     }
+
+    // FadeStyle 효과 적용
+    decalTexture.a *= fadeAlpha;
 
     // 6. Edge hardening: 매우 낮은 알파값을 부드럽게 제거하여 프린지 방지
     float edge = saturate((decalTexture.a - 0.05f) / 0.05f);
@@ -218,7 +251,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     // Gouraud: VS에서 계산한 조명 결과 사용
     float4 finalColor = input.litColor;
     finalColor.rgb *= decalTexture.rgb;  // Texture modulation
-    finalColor.a = decalTexture.a * DecalOpacity;
+    finalColor.a = decalTexture.a;
 
     // Premultiply alpha to avoid white wash with standard alpha blending
     finalColor.rgb *= finalColor.a;
@@ -253,7 +286,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         g_VSMShadowCube
     );
 
-    float4 finalColor = float4(litColor, decalTexture.a * DecalOpacity);
+    float4 finalColor = float4(litColor, decalTexture.a);
 
     // Premultiply alpha to avoid white wash with standard alpha blending
     finalColor.rgb *= finalColor.a;
@@ -262,7 +295,6 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 #else
     // No lighting model - 기존 방식 (단순 텍스처)
     float4 finalColor = decalTexture;
-    finalColor.a *= DecalOpacity;
 
     // Premultiply alpha to avoid white wash with standard alpha blending
     finalColor.rgb *= finalColor.a;

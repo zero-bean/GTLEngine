@@ -889,7 +889,7 @@ void ARescueGameMode::InitializeSounds()
     BGMSound = UResourceManager::GetInstance().Load<USound>(BGMSoundPath);
     if (BGMSound)
     {
-        BGMVoice = FAudioDevice::PlaySound2D(BGMSound, 0.5f, true);
+        //BGMVoice = FAudioDevice::PlaySound2D(BGMSound, 0.5f, true);
     }
 
     // 사이렌 로드 및 재생 (1회, 2D 사운드)
