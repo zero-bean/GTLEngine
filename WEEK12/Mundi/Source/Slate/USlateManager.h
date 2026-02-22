@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Object.h"
 #include "Windows/SGraphEditorWindow.h"
 #include "Windows/SWindow.h" // for FRect and SWindow types used by children
