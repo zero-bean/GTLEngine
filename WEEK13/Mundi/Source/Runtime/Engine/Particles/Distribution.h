@@ -1,0 +1,742 @@
+﻿#pragma once
+
+#include "Vector.h"
+#include "Color.h"
+#include "ParticleRandomStream.h"
+
+// Forward declarations
+class UParticleSystemComponent;
+namespace json { class JSON; }
+using JSON = json::JSON;
+
+// 언리얼 엔진 호환: Distribution 시스템
+// 파티클 모듈의 속성값을 유연하게 제어 (상수, 균등 분포, 커브 등)
+
+// ============================================================
+// InterpCurve 보간 모드
+// ============================================================
+enum class EInterpCurveMode : uint8
+{
+	Linear,          // 선형 보간
+	Constant,        // 계단식 (보간 없음, 이전 값 유지)
+	Curve,           // 커브 보간 (접선 사용) - 추후 구현
+	CurveAuto,       // 자동 접선 - 추후 구현
+	CurveAutoClamped // 클램핑된 자동 접선 - 추후 구현
+};
+
+// ============================================================
+// InterpCurve 키프레임 (Float 버전)
+// ============================================================
+struct FInterpCurvePointFloat
+{
+	float InVal;           // 시간 (X축)
+	float OutVal;          // 값 (Y축)
+	float ArriveTangent;   // 들어오는 접선 (Curve 모드용)
+	float LeaveTangent;    // 나가는 접선 (Curve 모드용)
+	EInterpCurveMode InterpMode;  // 보간 모드
+
+	FInterpCurvePointFloat()
+		: InVal(0.0f)
+		, OutVal(0.0f)
+		, ArriveTangent(0.0f)
+		, LeaveTangent(0.0f)
+		, InterpMode(EInterpCurveMode::Linear)
+	{
+	}
+
+	FInterpCurvePointFloat(float InTime, float InValue, EInterpCurveMode InMode = EInterpCurveMode::Linear)
+		: InVal(InTime)
+		, OutVal(InValue)
+		, ArriveTangent(0.0f)
+		, LeaveTangent(0.0f)
+		, InterpMode(InMode)
+	{
+	}
+
+	// 직렬화
+	void Serialize(bool bIsLoading, JSON& InOutHandle);
+};
+
+// ============================================================
+// InterpCurve 키프레임 (Vector 버전)
+// ============================================================
+struct FInterpCurvePointVector
+{
+	float InVal;           // 시간 (X축)
+	FVector OutVal;        // 값 (Y축)
+	FVector ArriveTangent; // 들어오는 접선
+	FVector LeaveTangent;  // 나가는 접선
+	EInterpCurveMode InterpMode;
+
+	FInterpCurvePointVector()
+		: InVal(0.0f)
+		, OutVal(0.0f, 0.0f, 0.0f)
+		, ArriveTangent(0.0f, 0.0f, 0.0f)
+		, LeaveTangent(0.0f, 0.0f, 0.0f)
+		, InterpMode(EInterpCurveMode::Linear)
+	{
+	}
+
+	FInterpCurvePointVector(float InTime, const FVector& InValue, EInterpCurveMode InMode = EInterpCurveMode::Linear)
+		: InVal(InTime)
+		, OutVal(InValue)
+		, ArriveTangent(0.0f, 0.0f, 0.0f)
+		, LeaveTangent(0.0f, 0.0f, 0.0f)
+		, InterpMode(InMode)
+	{
+	}
+
+	// 직렬화
+	void Serialize(bool bIsLoading, JSON& InOutHandle);
+};
+
+// ============================================================
+// Float InterpCurve
+// ============================================================
+struct FInterpCurveFloat
+{
+	TArray<FInterpCurvePointFloat> Points;
+	bool bIsLooped;
+	float LoopKeyOffset;
+
+	FInterpCurveFloat()
+		: bIsLooped(false)
+		, LoopKeyOffset(0.0f)
+	{
+	}
+
+	// 시간에 따른 값 계산 (Linear, Constant, Curve 보간 지원)
+	float Eval(float Time) const
+	{
+		if (Points.IsEmpty())
+		{
+			return 0.0f;
+		}
+
+		if (Points.Num() == 1)
+		{
+			return Points[0].OutVal;
+		}
+
+		// 시간이 첫 키프레임 이전
+		if (Time <= Points[0].InVal)
+		{
+			return Points[0].OutVal;
+		}
+
+		// 시간이 마지막 키프레임 이후
+		if (Time >= Points[Points.Num() - 1].InVal)
+		{
+			return Points[Points.Num() - 1].OutVal;
+		}
+
+		// 키프레임 구간 찾기
+		for (int32 i = 0; i < Points.Num() - 1; ++i)
+		{
+			const FInterpCurvePointFloat& Point1 = Points[i];
+			const FInterpCurvePointFloat& Point2 = Points[i + 1];
+
+			if (Time >= Point1.InVal && Time <= Point2.InVal)
+			{
+				// 보간 계수 계산
+				float dt = Point2.InVal - Point1.InVal;
+				float Alpha = (Time - Point1.InVal) / dt;
+
+				// 보간 모드에 따라 값 계산
+				if (Point1.InterpMode == EInterpCurveMode::Constant)
+				{
+					// Constant: 계단식 (다음 키까지 현재 값 유지)
+					return Point1.OutVal;
+				}
+				else if (Point1.InterpMode == EInterpCurveMode::Linear)
+				{
+					// Linear: 직선 보간
+					return Point1.OutVal + (Point2.OutVal - Point1.OutVal) * Alpha;
+				}
+				else // Curve, CurveAuto, CurveAutoClamped
+				{
+					// Hermite 보간 (탄젠트 사용)
+					float t = Alpha;
+					float t2 = t * t;
+					float t3 = t2 * t;
+
+					// Hermite 기저 함수
+					float h1 = 2.0f * t3 - 3.0f * t2 + 1.0f;  // P1 계수
+					float h2 = -2.0f * t3 + 3.0f * t2;         // P2 계수
+					float h3 = t3 - 2.0f * t2 + t;             // T1 계수
+					float h4 = t3 - t2;                         // T2 계수
+
+					// 탄젠트는 시간 구간에 맞게 스케일링
+					float T1 = Point1.LeaveTangent * dt;
+					float T2 = Point2.ArriveTangent * dt;
+
+					return h1 * Point1.OutVal + h2 * Point2.OutVal + h3 * T1 + h4 * T2;
+				}
+			}
+		}
+
+		return 0.0f;
+	}
+
+	// 키프레임 추가
+	void AddPoint(float Time, float Value, EInterpCurveMode Mode = EInterpCurveMode::Linear)
+	{
+		Points.Add(FInterpCurvePointFloat(Time, Value, Mode));
+	}
+
+	// CurveAuto/CurveAutoClamped 모드용 탄젠트 자동 계산
+	void AutoCalculateTangents()
+	{
+		const int32 NumPoints = Points.Num();
+		if (NumPoints < 2) return;
+
+		for (int32 i = 0; i < NumPoints; ++i)
+		{
+			FInterpCurvePointFloat& Point = Points[i];
+
+			// CurveAuto 또는 CurveAutoClamped 모드만 처리
+			if (Point.InterpMode != EInterpCurveMode::CurveAuto &&
+				Point.InterpMode != EInterpCurveMode::CurveAutoClamped)
+			{
+				continue;
+			}
+
+			float Tangent = 0.0f;
+
+			if (i == 0)
+			{
+				// 첫 번째 키: 다음 키로의 기울기
+				float dt = Points[1].InVal - Point.InVal;
+				if (dt > 0.0001f)
+				{
+					Tangent = (Points[1].OutVal - Point.OutVal) / dt;
+				}
+			}
+			else if (i == NumPoints - 1)
+			{
+				// 마지막 키: 이전 키로부터의 기울기
+				float dt = Point.InVal - Points[i - 1].InVal;
+				if (dt > 0.0001f)
+				{
+					Tangent = (Point.OutVal - Points[i - 1].OutVal) / dt;
+				}
+			}
+			else
+			{
+				// 중간 키: Catmull-Rom 스타일 (이전~다음 키의 기울기)
+				float dt = Points[i + 1].InVal - Points[i - 1].InVal;
+				if (dt > 0.0001f)
+				{
+					Tangent = (Points[i + 1].OutVal - Points[i - 1].OutVal) / dt;
+				}
+			}
+
+			// CurveAutoClamped: 오버슈트 방지
+			if (Point.InterpMode == EInterpCurveMode::CurveAutoClamped)
+			{
+				// 로컬 최대/최소값이면 탄젠트를 0으로
+				if (i > 0 && i < NumPoints - 1)
+				{
+					float PrevVal = Points[i - 1].OutVal;
+					float NextVal = Points[i + 1].OutVal;
+					float CurrVal = Point.OutVal;
+
+					// 로컬 최대 또는 최소
+					if ((CurrVal >= PrevVal && CurrVal >= NextVal) ||
+						(CurrVal <= PrevVal && CurrVal <= NextVal))
+					{
+						Tangent = 0.0f;
+					}
+				}
+			}
+
+			Point.ArriveTangent = Tangent;
+			Point.LeaveTangent = Tangent;
+		}
+	}
+
+	// 직렬화
+	void Serialize(bool bIsLoading, JSON& InOutHandle);
+};
+
+// ============================================================
+// Vector InterpCurve
+// ============================================================
+struct FInterpCurveVector
+{
+	TArray<FInterpCurvePointVector> Points;
+	bool bIsLooped;
+	float LoopKeyOffset;
+
+	FInterpCurveVector()
+		: bIsLooped(false)
+		, LoopKeyOffset(0.0f)
+	{
+	}
+
+	// 시간에 따른 값 계산 (Linear, Constant, Curve 보간 지원)
+	FVector Eval(float Time) const
+	{
+		if (Points.IsEmpty())
+		{
+			return FVector(0.0f, 0.0f, 0.0f);
+		}
+
+		if (Points.Num() == 1)
+		{
+			return Points[0].OutVal;
+		}
+
+		// 시간이 첫 키프레임 이전
+		if (Time <= Points[0].InVal)
+		{
+			return Points[0].OutVal;
+		}
+
+		// 시간이 마지막 키프레임 이후
+		if (Time >= Points[Points.Num() - 1].InVal)
+		{
+			return Points[Points.Num() - 1].OutVal;
+		}
+
+		// 키프레임 구간 찾기
+		for (int32 i = 0; i < Points.Num() - 1; ++i)
+		{
+			const FInterpCurvePointVector& Point1 = Points[i];
+			const FInterpCurvePointVector& Point2 = Points[i + 1];
+
+			if (Time >= Point1.InVal && Time <= Point2.InVal)
+			{
+				// 보간 계수 계산
+				float dt = Point2.InVal - Point1.InVal;
+				float Alpha = (Time - Point1.InVal) / dt;
+
+				// 보간 모드에 따라 값 계산
+				if (Point1.InterpMode == EInterpCurveMode::Constant)
+				{
+					// Constant: 계단식 (다음 키까지 현재 값 유지)
+					return Point1.OutVal;
+				}
+				else if (Point1.InterpMode == EInterpCurveMode::Linear)
+				{
+					// Linear: 직선 보간
+					return FVector(
+						Point1.OutVal.X + (Point2.OutVal.X - Point1.OutVal.X) * Alpha,
+						Point1.OutVal.Y + (Point2.OutVal.Y - Point1.OutVal.Y) * Alpha,
+						Point1.OutVal.Z + (Point2.OutVal.Z - Point1.OutVal.Z) * Alpha
+					);
+				}
+				else // Curve, CurveAuto, CurveAutoClamped
+				{
+					// Hermite 보간 (탄젠트 사용)
+					float t = Alpha;
+					float t2 = t * t;
+					float t3 = t2 * t;
+
+					// Hermite 기저 함수
+					float h1 = 2.0f * t3 - 3.0f * t2 + 1.0f;  // P1 계수
+					float h2 = -2.0f * t3 + 3.0f * t2;         // P2 계수
+					float h3 = t3 - 2.0f * t2 + t;             // T1 계수
+					float h4 = t3 - t2;                         // T2 계수
+
+					// 탄젠트는 시간 구간에 맞게 스케일링
+					FVector T1 = Point1.LeaveTangent * dt;
+					FVector T2 = Point2.ArriveTangent * dt;
+
+					return FVector(
+						h1 * Point1.OutVal.X + h2 * Point2.OutVal.X + h3 * T1.X + h4 * T2.X,
+						h1 * Point1.OutVal.Y + h2 * Point2.OutVal.Y + h3 * T1.Y + h4 * T2.Y,
+						h1 * Point1.OutVal.Z + h2 * Point2.OutVal.Z + h3 * T1.Z + h4 * T2.Z
+					);
+				}
+			}
+		}
+
+		return FVector(0.0f, 0.0f, 0.0f);
+	}
+
+	// 키프레임 추가
+	void AddPoint(float Time, const FVector& Value, EInterpCurveMode Mode = EInterpCurveMode::Linear)
+	{
+		Points.Add(FInterpCurvePointVector(Time, Value, Mode));
+	}
+
+	// CurveAuto/CurveAutoClamped 모드용 탄젠트 자동 계산
+	void AutoCalculateTangents()
+	{
+		const int32 NumPoints = Points.Num();
+		if (NumPoints < 2) return;
+
+		for (int32 i = 0; i < NumPoints; ++i)
+		{
+			FInterpCurvePointVector& Point = Points[i];
+
+			// CurveAuto 또는 CurveAutoClamped 모드만 처리
+			if (Point.InterpMode != EInterpCurveMode::CurveAuto &&
+				Point.InterpMode != EInterpCurveMode::CurveAutoClamped)
+			{
+				continue;
+			}
+
+			FVector Tangent(0.0f, 0.0f, 0.0f);
+
+			if (i == 0)
+			{
+				// 첫 번째 키: 다음 키로의 기울기
+				float dt = Points[1].InVal - Point.InVal;
+				if (dt > 0.0001f)
+				{
+					Tangent.X = (Points[1].OutVal.X - Point.OutVal.X) / dt;
+					Tangent.Y = (Points[1].OutVal.Y - Point.OutVal.Y) / dt;
+					Tangent.Z = (Points[1].OutVal.Z - Point.OutVal.Z) / dt;
+				}
+			}
+			else if (i == NumPoints - 1)
+			{
+				// 마지막 키: 이전 키로부터의 기울기
+				float dt = Point.InVal - Points[i - 1].InVal;
+				if (dt > 0.0001f)
+				{
+					Tangent.X = (Point.OutVal.X - Points[i - 1].OutVal.X) / dt;
+					Tangent.Y = (Point.OutVal.Y - Points[i - 1].OutVal.Y) / dt;
+					Tangent.Z = (Point.OutVal.Z - Points[i - 1].OutVal.Z) / dt;
+				}
+			}
+			else
+			{
+				// 중간 키: Catmull-Rom 스타일 (이전~다음 키의 기울기)
+				float dt = Points[i + 1].InVal - Points[i - 1].InVal;
+				if (dt > 0.0001f)
+				{
+					Tangent.X = (Points[i + 1].OutVal.X - Points[i - 1].OutVal.X) / dt;
+					Tangent.Y = (Points[i + 1].OutVal.Y - Points[i - 1].OutVal.Y) / dt;
+					Tangent.Z = (Points[i + 1].OutVal.Z - Points[i - 1].OutVal.Z) / dt;
+				}
+			}
+
+			// CurveAutoClamped: 오버슈트 방지 (각 축별로 처리)
+			if (Point.InterpMode == EInterpCurveMode::CurveAutoClamped)
+			{
+				if (i > 0 && i < NumPoints - 1)
+				{
+					const FVector& PrevVal = Points[i - 1].OutVal;
+					const FVector& NextVal = Points[i + 1].OutVal;
+					const FVector& CurrVal = Point.OutVal;
+
+					// X 축: 로컬 최대/최소이면 탄젠트를 0으로
+					if ((CurrVal.X >= PrevVal.X && CurrVal.X >= NextVal.X) ||
+						(CurrVal.X <= PrevVal.X && CurrVal.X <= NextVal.X))
+					{
+						Tangent.X = 0.0f;
+					}
+
+					// Y 축
+					if ((CurrVal.Y >= PrevVal.Y && CurrVal.Y >= NextVal.Y) ||
+						(CurrVal.Y <= PrevVal.Y && CurrVal.Y <= NextVal.Y))
+					{
+						Tangent.Y = 0.0f;
+					}
+
+					// Z 축
+					if ((CurrVal.Z >= PrevVal.Z && CurrVal.Z >= NextVal.Z) ||
+						(CurrVal.Z <= PrevVal.Z && CurrVal.Z <= NextVal.Z))
+					{
+						Tangent.Z = 0.0f;
+					}
+				}
+			}
+
+			Point.ArriveTangent = Tangent;
+			Point.LeaveTangent = Tangent;
+		}
+	}
+
+	// 직렬화
+	void Serialize(bool bIsLoading, JSON& InOutHandle);
+};
+
+// ============================================================
+// Distribution 타입
+// ============================================================
+enum class EDistributionType : uint8
+{
+	Constant,           // 고정값
+	Uniform,            // 균등 분포 (Min ~ Max)
+	ConstantCurve,      // 시간에 따른 커브 (모든 파티클 동일)
+	UniformCurve,       // 시간에 따른 Min~Max 커브
+	ParticleParameter   // 런타임 동적 제어 (게임 코드에서 설정)
+};
+
+// ============================================================
+// Float Distribution (수명, 속도 크기 등)
+// ============================================================
+struct FDistributionFloat
+{
+	EDistributionType Type = EDistributionType::Constant;
+
+	// Constant 모드
+	float ConstantValue = 0.0f;
+
+	// Uniform 모드 (Min ~ Max 랜덤)
+	float MinValue = 0.0f;
+	float MaxValue = 1.0f;
+
+	// ConstantCurve 모드 (시간에 따른 단일 커브)
+	FInterpCurveFloat ConstantCurve;
+
+	// UniformCurve 모드 (시간에 따른 Min~Max 커브)
+	FInterpCurveFloat MinCurve;
+	FInterpCurveFloat MaxCurve;
+
+	// ParticleParameter 모드 (런타임 제어)
+	FString ParameterName = "";        // 파라미터 이름 (예: "SpawnRate")
+	float ParameterDefaultValue = 0.0f; // 파라미터가 없을 때 기본값
+
+	// 생성자
+	FDistributionFloat()
+		: Type(EDistributionType::Constant)
+		, ConstantValue(0.0f)
+		, MinValue(0.0f)
+		, MaxValue(1.0f)
+		, ParameterDefaultValue(0.0f)
+	{
+	}
+
+	explicit FDistributionFloat(float InConstant)
+		: Type(EDistributionType::Constant)
+		, ConstantValue(InConstant)
+		, MinValue(InConstant)
+		, MaxValue(InConstant)
+		, ParameterDefaultValue(InConstant)
+	{
+	}
+
+	FDistributionFloat(float InMin, float InMax)
+		: Type(EDistributionType::Uniform)
+		, ConstantValue(InMin)
+		, MinValue(InMin)
+		, MaxValue(InMax)
+		, ParameterDefaultValue(InMin)
+	{
+	}
+
+	// 값 가져오기 (언리얼 엔진 호환 시그니처)
+	float GetValue(
+		float Time,                          // 파티클 나이 (RelativeTime: 0.0~1.0) 또는 이미터 시간
+		FParticleRandomStream& RandomStream, // 결정론적 랜덤 스트림
+		UParticleSystemComponent* Owner = nullptr  // 파라미터 조회용 (nullable)
+	) const;
+
+	// 정적 생성 헬퍼
+	static FDistributionFloat MakeConstant(float Value)
+	{
+		FDistributionFloat Dist;
+		Dist.Type = EDistributionType::Constant;
+		Dist.ConstantValue = Value;
+		return Dist;
+	}
+
+	static FDistributionFloat MakeUniform(float Min, float Max)
+	{
+		FDistributionFloat Dist;
+		Dist.Type = EDistributionType::Uniform;
+		Dist.MinValue = Min;
+		Dist.MaxValue = Max;
+		return Dist;
+	}
+
+	static FDistributionFloat MakeParameter(const FString& ParamName, float DefaultValue = 0.0f)
+	{
+		FDistributionFloat Dist;
+		Dist.Type = EDistributionType::ParticleParameter;
+		Dist.ParameterName = ParamName;
+		Dist.ParameterDefaultValue = DefaultValue;
+		return Dist;
+	}
+
+	// 직렬화
+	void Serialize(bool bIsLoading, JSON& InOutHandle);
+
+	// LOD 스케일링: 모든 값을 Multiplier로 곱함
+	void ScaleValues(float Multiplier)
+	{
+		ConstantValue *= Multiplier;
+		MinValue *= Multiplier;
+		MaxValue *= Multiplier;
+		ParameterDefaultValue *= Multiplier;
+
+		// 커브의 모든 키프레임 값도 스케일
+		for (FInterpCurvePointFloat& Point : ConstantCurve.Points)
+		{
+			Point.OutVal *= Multiplier;
+		}
+		for (FInterpCurvePointFloat& Point : MinCurve.Points)
+		{
+			Point.OutVal *= Multiplier;
+		}
+		for (FInterpCurvePointFloat& Point : MaxCurve.Points)
+		{
+			Point.OutVal *= Multiplier;
+		}
+	}
+};
+
+// ============================================================
+// Vector Distribution (위치, 속도, 크기 등)
+// ============================================================
+struct FDistributionVector
+{
+	EDistributionType Type = EDistributionType::Constant;
+
+	// Constant 모드
+	FVector ConstantValue = FVector(0.0f, 0.0f, 0.0f);
+
+	// Uniform 모드 (각 축별로 Min ~ Max 랜덤)
+	FVector MinValue = FVector(0.0f, 0.0f, 0.0f);
+	FVector MaxValue = FVector(1.0f, 1.0f, 1.0f);
+
+	// ConstantCurve 모드
+	FInterpCurveVector ConstantCurve;
+
+	// UniformCurve 모드
+	FInterpCurveVector MinCurve;
+	FInterpCurveVector MaxCurve;
+
+	// ParticleParameter 모드
+	FString ParameterName = "";
+	FVector ParameterDefaultValue = FVector(0.0f, 0.0f, 0.0f);
+
+	// 생성자
+	FDistributionVector()
+		: Type(EDistributionType::Constant)
+		, ConstantValue(FVector(0.0f, 0.0f, 0.0f))
+		, MinValue(FVector(0.0f, 0.0f, 0.0f))
+		, MaxValue(FVector(1.0f, 1.0f, 1.0f))
+		, ParameterDefaultValue(FVector(0.0f, 0.0f, 0.0f))
+	{
+	}
+
+	explicit FDistributionVector(const FVector& InConstant)
+		: Type(EDistributionType::Constant)
+		, ConstantValue(InConstant)
+		, MinValue(InConstant)
+		, MaxValue(InConstant)
+		, ParameterDefaultValue(InConstant)
+	{
+	}
+
+	FDistributionVector(const FVector& InMin, const FVector& InMax)
+		: Type(EDistributionType::Uniform)
+		, ConstantValue(InMin)
+		, MinValue(InMin)
+		, MaxValue(InMax)
+		, ParameterDefaultValue(InMin)
+	{
+	}
+
+	// 값 가져오기 (언리얼 엔진 호환 시그니처)
+	FVector GetValue(
+		float Time,
+		FParticleRandomStream& RandomStream,
+		UParticleSystemComponent* Owner = nullptr
+	) const;
+
+	// 정적 생성 헬퍼
+	static FDistributionVector MakeConstant(const FVector& Value)
+	{
+		FDistributionVector Dist;
+		Dist.Type = EDistributionType::Constant;
+		Dist.ConstantValue = Value;
+		return Dist;
+	}
+
+	static FDistributionVector MakeUniform(const FVector& Min, const FVector& Max)
+	{
+		FDistributionVector Dist;
+		Dist.Type = EDistributionType::Uniform;
+		Dist.MinValue = Min;
+		Dist.MaxValue = Max;
+		return Dist;
+	}
+
+	static FDistributionVector MakeParameter(const FString& ParamName, const FVector& DefaultValue = FVector(0.0f, 0.0f, 0.0f))
+	{
+		FDistributionVector Dist;
+		Dist.Type = EDistributionType::ParticleParameter;
+		Dist.ParameterName = ParamName;
+		Dist.ParameterDefaultValue = DefaultValue;
+		return Dist;
+	}
+
+	// 직렬화
+	void Serialize(bool bIsLoading, JSON& InOutHandle);
+};
+
+// ============================================================
+// Color Distribution (언리얼 방식: RGB는 Vector, Alpha는 Float)
+// ============================================================
+struct FDistributionColor
+{
+	// 언리얼 엔진 호환: RGB와 Alpha를 분리하여 제어
+	FDistributionVector RGB;    // R, G, B는 Vector Distribution (3D)
+	FDistributionFloat Alpha;   // A는 Float Distribution (1D)
+
+	// 생성자
+	FDistributionColor()
+	{
+		// 기본값: 흰색 불투명 (1, 1, 1, 1)
+		RGB = FDistributionVector::MakeConstant(FVector(1.0f, 1.0f, 1.0f));
+		Alpha = FDistributionFloat::MakeConstant(1.0f);
+	}
+
+	explicit FDistributionColor(const FLinearColor& InConstant)
+	{
+		RGB = FDistributionVector::MakeConstant(FVector(InConstant.R, InConstant.G, InConstant.B));
+		Alpha = FDistributionFloat::MakeConstant(InConstant.A);
+	}
+
+	FDistributionColor(const FLinearColor& InMin, const FLinearColor& InMax)
+	{
+		RGB = FDistributionVector::MakeUniform(
+			FVector(InMin.R, InMin.G, InMin.B),
+			FVector(InMax.R, InMax.G, InMax.B)
+		);
+		Alpha = FDistributionFloat::MakeUniform(InMin.A, InMax.A);
+	}
+
+	// 값 가져오기
+	FLinearColor GetValue(
+		float Time,
+		FParticleRandomStream& RandomStream,
+		UParticleSystemComponent* Owner = nullptr
+	) const
+	{
+		FVector RGBValue = RGB.GetValue(Time, RandomStream, Owner);
+		float AlphaValue = Alpha.GetValue(Time, RandomStream, Owner);
+
+		return FLinearColor(RGBValue.X, RGBValue.Y, RGBValue.Z, AlphaValue);
+	}
+
+	// 정적 생성 헬퍼
+	static FDistributionColor MakeConstant(const FLinearColor& Value)
+	{
+		FDistributionColor Dist;
+		Dist.RGB = FDistributionVector::MakeConstant(FVector(Value.R, Value.G, Value.B));
+		Dist.Alpha = FDistributionFloat::MakeConstant(Value.A);
+		return Dist;
+	}
+
+	static FDistributionColor MakeUniform(const FLinearColor& Min, const FLinearColor& Max)
+	{
+		FDistributionColor Dist;
+		Dist.RGB = FDistributionVector::MakeUniform(
+			FVector(Min.R, Min.G, Min.B),
+			FVector(Max.R, Max.G, Max.B)
+		);
+		Dist.Alpha = FDistributionFloat::MakeUniform(Min.A, Max.A);
+		return Dist;
+	}
+
+	// 직렬화
+	void Serialize(bool bIsLoading, JSON& InOutHandle);
+};
