@@ -1,0 +1,36 @@
+﻿#pragma once
+
+#include "LightComponent.h"
+#include "LightManager.h"
+#include "UAmbientLightComponent.generated.h"
+
+// 환경광 (전역 조명)
+UCLASS(DisplayName="앰비언트 라이트 컴포넌트", Description="전역 조명 컴포넌트입니다")
+class UAmbientLightComponent : public ULightComponent
+{
+public:
+
+	GENERATED_REFLECTION_BODY()
+
+	UAmbientLightComponent();
+	virtual ~UAmbientLightComponent() override;
+
+public:
+	// Diffuse 채널에 적용되는 강도 (0 = Ambient만, 1 = Diffuse에도 동일하게 적용)
+	UPROPERTY(EditAnywhere, Category="Light", Range="0.0, 1.0", Tooltip="Diffuse 채널에 적용되는 Ambient Light 강도")
+	float DiffuseIntensity = 0.0f;
+
+	// Light Info
+	FAmbientLightInfo GetLightInfo() const;
+
+	// Virtual Interface
+	virtual void UpdateLightData() override;
+	void OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport = ETeleportType::None) override;
+	void OnRegister(UWorld* InWorld) override;
+	void OnUnregister() override;
+
+	// Serialization & Duplication
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+	virtual void DuplicateSubObjects() override;
+
+};

@@ -1,0 +1,15 @@
+{
+  "FrameRate" : 30.000000,
+  "NotifyTracks" : [{
+      "Name" : "Track 0",
+      "Notifies" : [{
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "Duration" : 0.000000,
+          "NotifyName" : "EndWaterMagicEnd",
+          "SoundPath" : "",
+          "TriggerTime" : 0.291531
+        }]
+    }],
+  "NumberOfFrames" : 10,
+  "SourceFilePath" : "Data/firefighter/Firefighter_Without_Cloth_WaterMagic_End_mixamo.com"
+}

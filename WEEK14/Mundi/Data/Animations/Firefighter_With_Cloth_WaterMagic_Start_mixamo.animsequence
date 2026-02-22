@@ -1,0 +1,15 @@
+{
+  "FrameRate" : 30.000000,
+  "NotifyTracks" : [{
+      "Name" : "Track 0",
+      "Notifies" : [{
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "Duration" : 0.000000,
+          "NotifyName" : "EndWaterMagicStart",
+          "SoundPath" : "",
+          "TriggerTime" : 1.060369
+        }]
+    }],
+  "NumberOfFrames" : 38,
+  "SourceFilePath" : "Data/Animations/Firefighter_With_Cloth_WaterMagic_Start_mixamo.animsequence"
+}

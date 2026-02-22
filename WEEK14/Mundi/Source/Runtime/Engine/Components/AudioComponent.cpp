@@ -1,0 +1,109 @@
+﻿// Audio component that plays USound via FAudioDevice
+
+#include "pch.h"
+#include "AudioComponent.h"
+#include "../GameFramework/FAudioDevice.h"
+#include "../Audio/Sound.h"
+#include "../../Core/Misc/PathUtils.h"
+#include <xaudio2.h>
+#include "ResourceManager.h"
+#include "LuaBindHelpers.h"
+
+//extern "C" void LuaBind_Anchor_UAudioComponent() {}
+
+// IMPLEMENT_CLASS is now auto-generated in UAudioComponent.generated.cpp
+
+UAudioComponent::UAudioComponent()
+    : Volume(1.0f)
+    , Pitch(1.0f)
+    , bIsLooping(false)
+    , bAutoPlay(true)
+    , bIsPlaying(false)
+{
+}
+
+UAudioComponent::~UAudioComponent()
+{
+    Stop();
+}
+
+void UAudioComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    if (bAutoPlay)
+    {
+        Play();
+    }
+}
+
+void UAudioComponent::TickComponent(float DeltaTime)
+{
+    Super::TickComponent(DeltaTime);
+
+    if (bIsPlaying && SourceVoice)
+    {
+        FVector CurrentLocation = GetWorldLocation();
+        FAudioDevice::UpdateSoundPosition(SourceVoice, CurrentLocation);
+
+        if (!bIsLooping)
+        {
+            XAUDIO2_VOICE_STATE state{};
+            SourceVoice->GetState(&state);
+            if (state.BuffersQueued == 0)
+            {
+                Stop();
+            }
+        }
+    }
+}
+
+void UAudioComponent::EndPlay()
+{
+    Super::EndPlay();
+    Stop();
+} 
+
+void UAudioComponent::Play()
+{
+    // default to first valid slot
+    for (uint32 i = 0; i < Sounds.Num(); ++i)
+    {
+        if (Sounds[i]) { PlaySlot(i); return; }
+    }
+}
+
+void UAudioComponent::Stop()
+{
+    // SourceVoice 존재 여부로 판단 (bIsPlaying 체크 제거)
+    // 이유: bIsPlaying이 false여도 SourceVoice가 유효한 경우가 있을 수 있음
+    if (SourceVoice)
+    {
+        // FAudioDevice::StopSound()는 이미 해제된 voice에 대해 안전하게 처리함
+        // (ActiveVoices에 없으면 아무것도 하지 않음)
+        FAudioDevice::StopSound(SourceVoice);
+        SourceVoice = nullptr;
+    }
+    bIsPlaying = false;
+}
+
+void UAudioComponent::DuplicateSubObjects()
+{
+    Super::DuplicateSubObjects();
+}
+
+
+void UAudioComponent::PlaySlot(uint32 SlotIndex)
+{
+    if (SlotIndex >= (uint32)Sounds.Num()) return;
+    USound* Selected = Sounds[SlotIndex];
+    if (!Selected) return;
+    //if (bIsPlaying) return;
+
+    FVector CurrentLocation = GetWorldLocation();
+    SourceVoice = FAudioDevice::PlaySound3D(Selected, CurrentLocation, Volume, bIsLooping);
+    if (SourceVoice)
+    {
+        SourceVoice->SetFrequencyRatio(Pitch);
+        bIsPlaying = true;
+    }
+}

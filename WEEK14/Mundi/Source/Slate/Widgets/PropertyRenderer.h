@@ -1,0 +1,109 @@
+﻿#pragma once
+
+#include "Property.h"
+#include "Object.h"
+
+// 프로퍼티 렌더러
+// 리플렉션 정보를 기반으로 ImGui UI를 자동 생성
+class UPropertyRenderer
+{
+public:
+	// 단일 프로퍼티 렌더링
+	static bool RenderProperty(const FProperty& Property, void* ObjectInstance);
+
+	// 객체의 원하는 프로퍼티를 카테고리별로 렌더링
+	static void RenderProperties(const TArray<FProperty>& Properties, UObject* Object);
+
+	// 객체의 모든 프로퍼티를 카테고리별로 렌더링
+	static void RenderAllProperties(UObject* Object);
+
+	// 객체의 모든 프로퍼티를 카테고리별로 렌더링 (부모 클래스 프로퍼티 포함)
+	// 반환값: 프로퍼티가 변경되었으면 true
+	static bool RenderAllPropertiesWithInheritance(UObject* Object);
+
+	// 리소스 캐시 초기화 (새 에셋 생성 후 목록 갱신용)
+	static void ClearResourcesCache();
+
+private:
+	// 타입별 렌더링 함수들
+	static bool RenderBoolProperty(const FProperty& Prop, void* Instance);
+	static bool RenderInt32Property(const FProperty& Prop, void* Instance);
+	static bool RenderFloatProperty(const FProperty& Prop, void* Instance);
+	static bool RenderVectorProperty(const FProperty& Prop, void* Instance);
+	static bool RenderVector2DProperty(const FProperty& Prop, void* Instance);
+	static bool RenderColorProperty(const FProperty& Prop, void* Instance);
+	static bool RenderStringProperty(const FProperty& Prop, void* Instance);
+	static bool RenderNameProperty(const FProperty& Prop, void* Instance);
+	static bool RenderObjectPtrProperty(const FProperty& Prop, void* Instance);
+	static bool RenderStructProperty(const FProperty& Prop, void* Instance);
+	static bool RenderEnumProperty(const FProperty& Prop, void* Instance);
+	static bool RenderMapProperty(const FProperty& Prop, void* Instance);
+	static bool RenderTextureProperty(const FProperty& Prop, void* Instance);
+	static bool RenderSoundProperty(const FProperty& Prop, void* Instance);
+	static bool RenderSRVProperty(const FProperty& Prop, void* Instance);
+	static bool RenderScriptFileProperty(const FProperty& Prop, void* Instance);
+	static bool RenderCurveProperty(const FProperty& Prop, void* Instance);
+	static bool RenderPointLightCubeShadowMap(class FLightManager* LightManager, class ULightComponent* LightComp, int32 CubeSliceIndex);
+	static bool RenderSpotLightShadowMap(class FLightManager* LightManager, class ULightComponent* LightComp, ID3D11ShaderResourceView* AtlasSRV);
+	static bool RenderSkeletalMeshProperty(const FProperty& Prop, void* Instance);
+	static bool RenderStaticMeshProperty(const FProperty& Prop, void* Instance);
+	static bool RenderMaterialProperty(const FProperty& Prop, void* Instance);
+	static bool RenderMaterialArrayProperty(const FProperty& Prop, void* Instance);
+	static bool RenderSingleMaterialSlot(const char* Label, UMaterialInterface** MaterialPtr, UObject* OwningObject, uint32 MaterialIndex);	// 단일 UMaterial* 슬롯을 렌더링하는 헬퍼 함수.
+	static bool RenderPhysicalMaterialProperty(const FProperty& Prop, void* Instance);
+	static bool RenderStructArrayProperty(const FProperty& Prop, void* Instance);	// TArray<Struct> 렌더링
+	static bool RenderParticleSystemProperty(const FProperty& Prop, void* Instance);
+	static bool RenderPhysicsAssetProperty(const FProperty& Prop, void* Instance);
+	static bool RenderTextureSelectionCombo(const char* Label, UTexture* CurrentTexture, UTexture*& OutNewTexture);
+	static bool RenderSoundSelectionCombo(const char* Label, USound* CurrentSound, USound*& OutNewSound);
+	// Simplified sound combo without thumbnails
+	static bool RenderSoundSelectionComboSimple(const char* Label, USound* CurrentSound, USound*& OutNewSound);
+
+
+	// Transform 프로퍼티 렌더링 헬퍼 함수
+	static bool RenderTransformProperty(const FProperty& Prop, void* Instance);
+
+	// Distribution 렌더링 함수
+	static bool RenderDistributionFloatProperty(const FProperty& Prop, void* Instance);
+	static bool RenderDistributionVectorProperty(const FProperty& Prop, void* Instance);
+	static bool RenderDistributionColorProperty(const FProperty& Prop, void* Instance);
+
+	// Distribution 헬퍼 함수
+	static bool RenderDistributionFloatModeCombo(const char* Label, enum class EDistributionType& Type);
+	static bool RenderDistributionVectorModeCombo(const char* Label, enum class EDistributionType& Type);
+	static bool RenderInterpCurveFloat(const char* Label, struct FInterpCurveFloat& Curve);
+	static bool RenderInterpCurveVector(const char* Label, struct FInterpCurveVector& Curve);
+	static bool RenderInterpCurveFloatUniform(const char* Label, struct FInterpCurveFloat& MinCurve, struct FInterpCurveFloat& MaxCurve);
+	static bool RenderInterpCurveVectorUniform(const char* Label, struct FInterpCurveVector& MinCurve, struct FInterpCurveVector& MaxCurve);
+
+	static void CacheResources();	// 필요할 때 리소스 목록을 멤버 변수에 캐시합니다.
+
+private:
+	// 렌더링 중 캐시되는 리소스 목록
+	static TArray<FString> CachedSkeletalMeshPaths;
+	static TArray<FString> CachedSkeletalMeshItems;
+	static TArray<FString> CachedStaticMeshPaths;
+	static TArray<FString> CachedStaticMeshItems;
+	static TArray<FString> CachedMaterialPaths;
+	static TArray<const char*> CachedMaterialItems;
+	static TArray<FString> CachedPhysicalMaterialPaths;
+	static TArray<FString> CachedPhysicalMaterialItems;
+	static TArray<FString> CachedShaderPaths;
+	static TArray<const char*> CachedShaderItems;
+	static TArray<FString> CachedTexturePaths;
+	static TArray<FString> CachedTextureItems;
+	static TArray<FString> CachedSoundPaths;
+	static TArray<const char*> CachedSoundItems;
+	static TArray<FString> CachedScriptPaths;
+	static TArray<const char*> CachedScriptItems;
+	static TArray<FString> CachedParticleSystemPaths;
+	static TArray<FString> CachedParticleSystemItems;
+	static TArray<FString> CachedPhysicsAssetPaths;
+	static TArray<FString> CachedPhysicsAssetItems;
+	static TArray<FString> CachedAnimSequencePaths;
+	static TArray<FString> CachedAnimSequenceItems;
+
+	// 검색 필터 버퍼
+	static char TextureSearchFilter[256];
+	static char StaticMeshSearchFilter[256];
+};

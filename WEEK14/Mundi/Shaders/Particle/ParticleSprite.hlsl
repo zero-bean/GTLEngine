@@ -1,0 +1,108 @@
+// Particle Sprite Instancing Shader
+// GPU 인스턴싱을 사용하여 스프라이트 파티클 렌더링
+// 슬롯 0: 쿼드 버텍스, 슬롯 1: 인스턴스 데이터
+
+// b1: ViewProjBuffer (VS)
+cbuffer ViewProjBuffer : register(b1)
+{
+    row_major float4x4 ViewMatrix;
+    row_major float4x4 ProjectionMatrix;
+    row_major float4x4 InverseViewMatrix;
+    row_major float4x4 InverseProjectionMatrix;
+};
+
+// b2: SubUVBuffer (VS) - 스프라이트 시트 정보
+cbuffer SubUVBuffer : register(b2)
+{
+    float4 SubImageSize;    // xy = 타일 수 (예: 4, 4), zw = 1/타일 수 (예: 0.25, 0.25)
+};
+
+// 슬롯 0: 쿼드 버텍스 (4개 코너)
+struct VS_QUAD_INPUT
+{
+    float2 UV : TEXCOORD0;              // 쿼드 코너 UV (0,0), (1,0), (0,1), (1,1)
+};
+
+// 슬롯 1: 인스턴스 데이터 (FSpriteParticleInstanceVertex) - 표준 시맨틱 사용
+struct VS_INSTANCE_INPUT
+{
+    float3 WorldPosition : TEXCOORD1;   // 파티클 중심 위치
+    float Rotation : TEXCOORD2;         // Z축 회전 (라디안)
+    float2 Size : TEXCOORD3;            // 파티클 크기
+    float4 Color : COLOR1;              // 파티클 색상
+    float RelativeTime : TEXCOORD4;     // 상대 시간
+    float SubImageIndex : TEXCOORD5;    // Sub-UV 프레임 인덱스
+};
+
+struct PS_INPUT
+{
+    float4 Position : SV_POSITION;
+    float2 UV : TEXCOORD0;
+    float4 Color : COLOR0;
+    float RelativeTime : TEXCOORD1;
+};
+
+struct PS_OUTPUT
+{
+    float4 Color : SV_Target0;
+};
+
+Texture2D ParticleTexture : register(t0);
+SamplerState LinearSampler : register(s0);
+
+PS_INPUT mainVS(VS_QUAD_INPUT quad, VS_INSTANCE_INPUT inst)
+{
+    PS_INPUT output;
+
+    // 로컬 오프셋 계산 (UV 0.5 중심 기준)
+    // Y 반전: View Space에서 Y는 위로 향하지만, UV의 V는 아래로 향함
+    float2 localOffset = float2(quad.UV.x - 0.5f, 0.5f - quad.UV.y) * inst.Size;
+
+    // Z축 회전 적용 (카메라 Forward 축 기준 회전)
+    float cosR = cos(inst.Rotation);
+    float sinR = sin(inst.Rotation);
+    float2 rotatedOffset;
+    rotatedOffset.x = localOffset.x * cosR - localOffset.y * sinR;
+    rotatedOffset.y = localOffset.x * sinR + localOffset.y * cosR;
+
+    // 뷰 공간에서 오프셋 생성 후 월드 공간으로 변환 (빌보드)
+    float3 viewSpaceOffset = float3(rotatedOffset.x, rotatedOffset.y, 0.0f);
+    float3 worldOffset = mul(float4(viewSpaceOffset, 0.0f), InverseViewMatrix).xyz;
+
+    // 월드 위치에 빌보드 오프셋 적용
+    float3 worldPos = inst.WorldPosition + worldOffset;
+
+    // View-Projection 변환
+    output.Position = mul(float4(worldPos, 1.0f), mul(ViewMatrix, ProjectionMatrix));
+
+    // Sub-UV 계산: 프레임 인덱스에서 UV 오프셋 계산
+    // SubImageSize = (1,1,1,1)이면 결과는 quad.UV와 동일 (분기 없이 항상 계산)
+    uint frameIndex = (uint)inst.SubImageIndex;
+    uint column = frameIndex % (uint)SubImageSize.x;
+    uint row = frameIndex / (uint)SubImageSize.x;
+    float2 frameSize = SubImageSize.zw;
+    float2 frameOffset = float2((float)column, (float)row) * frameSize;
+    output.UV = quad.UV * frameSize + frameOffset;
+
+    output.Color = inst.Color;
+    output.RelativeTime = inst.RelativeTime;
+
+    return output;
+}
+
+PS_OUTPUT mainPS(PS_INPUT input)
+{
+    PS_OUTPUT output;
+
+    // 텍스처 샘플링
+    float4 texColor = ParticleTexture.Sample(LinearSampler, input.UV);
+
+    // 알파 테스트 (거의 투명한 픽셀 제거)
+    if (texColor.a < 0.01f)
+        discard;
+
+    // 텍스처 색상과 파티클 색상 곱하기
+    output.Color = texColor * input.Color;
+
+    return output;
+}

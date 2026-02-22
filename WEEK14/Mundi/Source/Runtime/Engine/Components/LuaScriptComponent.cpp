@@ -1,0 +1,422 @@
+﻿#include "pch.h"
+#include "LuaScriptComponent.h"
+#include "PrimitiveComponent.h"
+#include <sol/state.hpp>
+#include <sol/coroutine.hpp>
+
+#include "CameraActor.h"
+#include "LuaManager.h"
+#include "GameObject.h"
+
+// for test
+#include "PlayerCameraManager.h"
+// IMPLEMENT_CLASS is now auto-generated in .generated.cpp
+//BEGIN_PROPERTIES(ULuaScriptComponent)
+//	MARK_AS_COMPONENT("Lua 스크립트 컴포넌트", "Lua 스크립트 컴포넌트입니다.")
+//	ADD_PROPERTY_SCRIPT(FString, ScriptFilePath, "Script", ".lua", true, "Lua Script 파일 경로")
+//END_PROPERTIES()
+
+ULuaScriptComponent::ULuaScriptComponent()
+{
+	bCanEverTick = true;	// tick 지원 여부
+}
+
+ULuaScriptComponent::~ULuaScriptComponent()
+{
+	// 소멸자는 EndPlay가 호출되지 않았을 경우를 대비한
+	// 최후의 안전 장치 역할을 해야 합니다.
+	CleanupLuaResources();
+}
+
+void ULuaScriptComponent::BeginPlay()
+{
+	// 델리게이트 등록
+	if (AActor* Owner = GetOwner())
+	{
+		BeginHandleLua = Owner->OnComponentBeginOverlap.AddDynamic(this, &ULuaScriptComponent::OnBeginOverlap);
+		EndHandleLua = Owner->OnComponentEndOverlap.AddDynamic(this, &ULuaScriptComponent::OnEndOverlap);
+		//FDelegateHandle HitHandleLua = Owner->OnComponentHit.AddDynamic(this, ULuaScriptComponent::OnHit);
+	}
+
+	auto LuaVM = GetWorld()->GetLuaManager();
+	Lua  = &(LuaVM->GetState());
+
+	// 독립된 환경 생성, Engine Object&Util 주입
+	Env = LuaVM->CreateEnvironment();
+
+	FGameObject* Obj = Owner->GetGameObject();
+	Env["Obj"] = Obj;
+
+	// Input 전역 객체 주입 (각 Environment마다)
+	UInputManager* InputMgr = &UInputManager::GetInstance();
+	UE_LOG("[Lua] InputManager pointer: %p", (void*)InputMgr);
+
+	if (InputMgr)
+	{
+		Env["Input"] = InputMgr;
+		UE_LOG("[Lua] Input successfully injected into Environment");
+	}
+	else
+	{
+		UE_LOG("[Lua][ERROR] InputManager is nullptr!");
+	}
+
+	Env["StartCoroutine"] = [LuaVM, this](sol::function f) {
+		sol::state_view L = LuaVM->GetState();
+		
+		sol::thread Thread = sol::thread::create(L); // Coroutine 관리할 Thread 생성
+		sol::state_view ThreadState = Thread.state();
+		
+		sol::coroutine Coroutine(ThreadState.lua_state(), f);                // 스레드에 함수 올리기
+		return LuaVM->GetScheduler().Register(std::move(Thread), std::move(Coroutine), this);
+	};
+	
+	if(ScriptFilePath.empty())
+	{
+		return;
+	}
+
+#ifdef _EDITOR
+	// 핫 리로드용 초기 파일 수정 시간 기록
+	if (std::filesystem::exists(ScriptFilePath))
+	{
+		LastModifiedTime = std::filesystem::last_write_time(ScriptFilePath);
+	}
+#endif
+
+	if (!LuaVM->LoadScriptInto(Env, ScriptFilePath)) {
+		UE_LOG("[Lua][error] failed to run: %s\n", ScriptFilePath.c_str());
+#ifdef _EDITOR
+		GEngine.EndPIE();
+#endif
+		return;
+	}
+
+	// 함수 캐시
+	FuncBeginPlay = FLuaManager::GetFunc(Env, "OnBeginPlay");
+	FuncTick      = FLuaManager::GetFunc(Env, "Update");  // 루아 스크립트는 Update 함수 사용
+	FuncOnBeginOverlap = FLuaManager::GetFunc(Env, "OnBeginOverlap");
+	FuncOnEndOverlap = FLuaManager::GetFunc(Env, "OnEndOverlap");
+	FuncEndPlay		  =	FLuaManager::GetFunc(Env, "OnEndPlay");
+	FuncOnAnimNotify = FLuaManager::GetFunc(Env, "OnAnimNotify");
+	
+	if (FuncBeginPlay.valid()) {
+		auto Result = FuncBeginPlay();
+		if (!Result.valid())
+		{
+			sol::error Err = Result; UE_LOG("[Lua][error] %s\n", Err.what());
+#ifdef _EDITOR
+			GEngine.EndPIE();
+#endif
+		}
+	}
+
+	bIsLuaCleanedUp = false;
+}
+
+void ULuaScriptComponent::OnBeginOverlap(UPrimitiveComponent* MyComp, UPrimitiveComponent* OtherComp)
+{
+	// Lua 리소스가 이미 정리된 경우 무시 (크래시 방지)
+	if (bIsLuaCleanedUp)
+	{
+		return;
+	}
+
+	if (FuncOnBeginOverlap.valid())
+	{
+		FGameObject* OtherGameObject = nullptr;
+		if (OtherComp)
+		{
+			if (AActor* OtherActor = OtherComp->GetOwner())
+			{
+				// 파괴 대기 중인 액터는 무시 (크래시 방지)
+				if (OtherActor->IsPendingDestroy())
+				{
+					return;
+				}
+				OtherGameObject = OtherActor->GetGameObject();
+			}
+		}
+
+		if (OtherGameObject)
+		{
+			auto Result = FuncOnBeginOverlap(OtherGameObject);
+			if (!Result.valid())
+			{
+				sol::error Err = Result; UE_LOG("[Lua][error] %s\n", Err.what());
+#ifdef _EDITOR
+				GEngine.EndPIE();
+#endif
+			}
+		}
+	}
+}
+
+void ULuaScriptComponent::OnEndOverlap(UPrimitiveComponent* MyComp, UPrimitiveComponent* OtherComp)
+{
+	// Lua 리소스가 이미 정리된 경우 무시 (크래시 방지)
+	if (bIsLuaCleanedUp)
+	{
+		return;
+	}
+
+	if (FuncOnEndOverlap.valid())
+	{
+		FGameObject* OtherGameObject = nullptr;
+		if (OtherComp)
+		{
+			if (AActor* OtherActor = OtherComp->GetOwner())
+			{
+				// 파괴된 액터라도 GetGameObject()로 FGameObject를 가져옴
+				// FGameObject가 MarkDestroyed 상태면 Lua에서 IsDestroyed()로 체크 가능
+				OtherGameObject = OtherActor->GetGameObject();
+
+				// GetGameObject()가 nullptr이면 (ClearLuaGameObject 호출됨)
+				// Lua에게 알릴 방법이 없으므로 무시
+				// 이 경우 Lua 측에서 이미 리스트에서 제거했거나 (TryPickup),
+				// 또는 다음 프레임에 IsDestroyed 체크로 걸러질 것임
+			}
+		}
+
+		if (OtherGameObject)
+		{
+			auto Result = FuncOnEndOverlap(OtherGameObject);
+			if (!Result.valid())
+			{
+				sol::error Err = Result; UE_LOG("[Lua][error] %s\n", Err.what());
+#ifdef _EDITOR
+				GEngine.EndPIE();
+#endif
+			}
+		}
+	}
+}
+
+void ULuaScriptComponent::OnHit(UPrimitiveComponent* MyComp, UPrimitiveComponent* OtherComp)
+{
+	// Lua 리소스가 이미 정리된 경우 무시 (크래시 방지)
+	if (bIsLuaCleanedUp)
+	{
+		return;
+	}
+
+	if (FuncOnHit.valid())
+	{
+		FGameObject* OtherGameObject = nullptr;
+		if (OtherComp)
+		{
+			if (AActor* OtherActor = OtherComp->GetOwner())
+			{
+				OtherGameObject = OtherActor->GetGameObject();
+			}
+		}
+
+		if (OtherGameObject)
+		{
+			auto Result = FuncOnHit(OtherGameObject);
+			if (!Result.valid())
+			{
+				sol::error Err = Result; UE_LOG("[Lua][error] %s\n", Err.what());
+#ifdef _EDITOR
+				GEngine.EndPIE();
+#endif
+			}
+		}
+	}
+}
+
+void ULuaScriptComponent::OnAnimNotify(const FString& NotifyName)
+{
+	if (FuncOnAnimNotify.valid())
+	{
+		auto Result = FuncOnAnimNotify(NotifyName);
+		if (!Result.valid())
+		{
+			sol::error Err = Result;
+			UE_LOG("[Lua][error] %s\n", Err.what());
+#ifdef _EDITOR
+			GEngine.EndPIE();
+#endif
+		}
+	}
+}
+
+void ULuaScriptComponent::TickComponent(float DeltaTime)
+{
+	// Lua 리소스가 이미 정리된 경우 무시
+	if (bIsLuaCleanedUp)
+	{
+		return;
+	}
+
+	// Owner가 파괴 대기 중이면 틱 무시 (DestroyObject 호출 후 실제 파괴 전까지의 틱 방지)
+	AActor* Owner = GetOwner();
+	if (!Owner || Owner->IsPendingDestroy())
+	{
+		return;
+	}
+
+#ifdef _EDITOR
+	// 핫 리로드: 파일 변경 감지 (throttled)
+	HotReloadCheckTimer += DeltaTime;
+	if (HotReloadCheckTimer >= HotReloadCheckInterval)
+	{
+		HotReloadCheckTimer = 0.0f;
+
+		if (!ScriptFilePath.empty() && std::filesystem::exists(ScriptFilePath))
+		{
+			auto CurrentModTime = std::filesystem::last_write_time(ScriptFilePath);
+			if (CurrentModTime > LastModifiedTime)
+			{
+				LastModifiedTime = CurrentModTime;
+				ReloadScript();
+			}
+		}
+	}
+#endif
+
+	if (FuncTick.valid()) {
+		auto Result = FuncTick(DeltaTime);
+		if (!Result.valid()) { sol::error Err = Result; UE_LOG("[Lua][error] %s\n", Err.what()); }
+	}
+}
+
+void ULuaScriptComponent::EndPlay()
+{
+	// 먼저 델리게이트 해제 (오버랩 콜백이 더 이상 호출되지 않도록)
+	// PIE 종료 시 순서 문제로 인한 크래시 방지
+	if (AActor* Owner = GetOwner())
+	{
+		if (!Owner->IsPendingDestroy())
+		{
+			Owner->OnComponentBeginOverlap.Remove(BeginHandleLua);
+			Owner->OnComponentEndOverlap.Remove(EndHandleLua);
+			// Owner->OnComponentHit.Remove(HitHandleLua);
+		}
+	}
+
+	// Lua OnEndPlay 콜백 호출
+	if (FuncEndPlay.valid())
+	{
+		auto Result = FuncEndPlay();
+		if (!Result.valid())
+		{
+			sol::error Err = Result; UE_LOG("[Lua][error] %s\n", Err.what());
+#ifdef _EDITOR
+			GEngine.EndPIE();
+#endif
+		}
+	}
+
+	// 모든 Lua 관련 리소스 정리
+	CleanupLuaResources();
+}
+
+#ifdef _EDITOR
+void ULuaScriptComponent::ReloadScript()
+{
+	auto LuaVM = GetWorld()->GetLuaManager();
+	if (!LuaVM) return;
+
+	// 기존 코루틴 정리
+	LuaVM->GetScheduler().CancelByOwner(this);
+
+	// ═══════════════════════════════════════════════════════════════════════════
+	// 핫 리로드: 기존 변수들(함수 제외)을 백업하고 스크립트 재로드 후 복원
+	// ═══════════════════════════════════════════════════════════════════════════
+
+	// 1. 기존 Env에서 함수가 아닌 값들을 백업
+	sol::state& L = LuaVM->GetState();
+	sol::table Backup = L.create_table();
+
+	for (auto& Pair : Env)
+	{
+		sol::object Key = Pair.first;
+		sol::object Value = Pair.second;
+
+		// 함수가 아닌 값만 백업 (함수는 새 스크립트에서 갱신됨)
+		if (Value.get_type() != sol::type::function)
+		{
+			Backup[Key] = Value;
+		}
+	}
+
+	// 2. 스크립트 재로드
+	if (!LuaVM->LoadScriptInto(Env, ScriptFilePath))
+	{
+		UE_LOG("[Lua][HotReload][error] Failed to reload: %s", ScriptFilePath.c_str());
+		return;
+	}
+
+	// 3. 백업한 변수들 복원 (새 스크립트에서 정의한 함수는 유지)
+	for (auto& Pair : Backup)
+	{
+		sol::object Key = Pair.first;
+		sol::object BackupValue = Pair.second;
+
+		// Env에서 현재 값 확인
+		sol::object CurrentValue = Env[Key];
+
+		// 현재 값이 함수가 아니면 백업값으로 복원
+		// (새 스크립트에서 함수로 재정의한 경우는 유지)
+		if (CurrentValue.get_type() != sol::type::function)
+		{
+			Env[Key] = BackupValue;
+		}
+	}
+
+	// 함수 캐시 갱신
+	FuncBeginPlay      = FLuaManager::GetFunc(Env, "OnBeginPlay");
+	FuncTick           = FLuaManager::GetFunc(Env, "Update");
+	FuncOnBeginOverlap = FLuaManager::GetFunc(Env, "OnBeginOverlap");
+	FuncOnEndOverlap   = FLuaManager::GetFunc(Env, "OnEndOverlap");
+	FuncEndPlay        = FLuaManager::GetFunc(Env, "OnEndPlay");
+	FuncOnAnimNotify   = FLuaManager::GetFunc(Env, "OnAnimNotify");
+
+	// OnHotReload 콜백 호출 (있으면)
+	sol::protected_function FuncOnHotReload = FLuaManager::GetFunc(Env, "OnHotReload");
+	if (FuncOnHotReload.valid())
+	{
+		auto Result = FuncOnHotReload();
+		if (!Result.valid())
+		{
+			sol::error Err = Result;
+			UE_LOG("[Lua][HotReload][error] OnHotReload failed: %s", Err.what());
+		}
+	}
+
+	UE_LOG("[Lua][HotReload] Reloaded: %s", ScriptFilePath.c_str());
+}
+#endif
+
+void ULuaScriptComponent::CleanupLuaResources()
+{
+	// 이미 정리되었다면 중복 실행 방지
+	if (bIsLuaCleanedUp)
+	{
+		return;
+	}
+
+	// GetWorld()나 LuaManager가 유효한지 확인 (소멸 시점에는 이미 없을 수 있음)
+	if (UWorld* World = GetWorld())
+	{
+		if (FLuaManager* LuaVM = World->GetLuaManager())
+		{
+			// 1. 코루틴 정리 (가장 중요. Use-After-Free 방지)
+			LuaVM->GetScheduler().CancelByOwner(this);
+		}
+	}
+
+	// 2. Lua 참조 해제
+	FuncBeginPlay = sol::nil;
+	FuncTick = sol::nil;
+	FuncOnBeginOverlap = sol::nil;
+	FuncOnEndOverlap = sol::nil;
+	FuncOnHit = sol::nil;
+	FuncEndPlay = sol::nil;
+	FuncOnAnimNotify = sol::nil;
+	Env = sol::nil;
+	Lua = nullptr;
+
+	bIsLuaCleanedUp = true;
+}

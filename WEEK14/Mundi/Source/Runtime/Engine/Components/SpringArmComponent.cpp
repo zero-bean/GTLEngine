@@ -1,0 +1,368 @@
+﻿// ────────────────────────────────────────────────────────────────────────────
+// SpringArmComponent.cpp
+// SpringArmComponent 구현
+// ────────────────────────────────────────────────────────────────────────────
+#include "pch.h"
+#include "SpringArmComponent.h"
+#include "Actor.h"
+#include "Pawn.h"
+#include "Controller.h"
+#include "World.h"
+#include "PhysScene.h"
+
+// ────────────────────────────────────────────────────────────────────────────
+// 생성자 / 소멸자
+// ────────────────────────────────────────────────────────────────────────────
+
+USpringArmComponent::USpringArmComponent()
+	: TargetArmLength(3.0f)
+	, CurrentArmLength(3.0f)
+	, SocketOffset(FVector())
+	, TargetOffset(FVector(0.0f, 0.0f, 0.5f))
+	, bEnableCameraLag(false)
+	, CameraLagSpeed(1.0f)
+	, CameraLagMaxDistance(0.0f)
+	, PreviousDesiredLocation(FVector())
+	, PreviousActorLocation(FVector())
+	, bEnableCameraRotationLag(false)
+	, CameraRotationLagSpeed(1.0f)
+	, PreviousDesiredRotation(FQuat::Identity())
+	, bDoCollisionTest(true)
+	, ProbeSize(0.12f)
+	, bDrawDebugCollision(false)
+	, CameraCollisionBias(0.5f)
+	, bUsePawnControlRotation(false)
+	, SocketLocation(FVector())
+	, SocketRotation(FQuat::Identity())
+{
+	bCanEverTick = true;
+}
+
+USpringArmComponent::~USpringArmComponent()
+{
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 생명주기
+// ────────────────────────────────────────────────────────────────────────────
+
+void USpringArmComponent::TickComponent(float DeltaSeconds)
+{
+	Super::TickComponent(DeltaSeconds);
+
+	FVector DesiredSocketLocation;
+	FQuat DesiredSocketRotation;
+
+	UpdateDesiredArmLocation(DeltaSeconds, DesiredSocketLocation, DesiredSocketRotation);
+
+	// Collision Test
+	FVector FinalSocketLocation = DesiredSocketLocation;
+	if (bDoCollisionTest)
+	{
+		DoCollisionTest(DesiredSocketLocation, FinalSocketLocation);
+	}
+
+	// Socket 위치/회전 저장 (GetSocketLocation/Rotation에서 사용)
+	SocketLocation = FinalSocketLocation;
+	SocketRotation = DesiredSocketRotation;
+
+	// 자식 컴포넌트(카메라)를 Socket 위치로 이동
+	for (USceneComponent* Child : GetAttachChildren())
+	{
+		if (Child)
+		{
+			Child->SetWorldLocationAndRotation(SocketLocation, SocketRotation);
+		}
+	}
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Socket Transform 조회
+// ────────────────────────────────────────────────────────────────────────────
+
+FVector USpringArmComponent::GetSocketLocation() const
+{
+	return SocketLocation;
+}
+
+FQuat USpringArmComponent::GetSocketRotation() const
+{
+	return SocketRotation;
+}
+
+FTransform USpringArmComponent::GetSocketTransform() const
+{
+	return FTransform(SocketLocation, SocketRotation, FVector(1.0f, 1.0f, 1.0f));
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 내부 함수
+// ────────────────────────────────────────────────────────────────────────────
+
+void USpringArmComponent::UpdateDesiredArmLocation(float DeltaTime, FVector& OutDesiredLocation, FQuat& OutDesiredRotation)
+{
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor)
+	{
+		OutDesiredLocation = GetWorldLocation();
+		OutDesiredRotation = GetWorldRotation();
+		return;
+	}
+
+	// 회전 결정 - bUsePawnControlRotation이면 Controller 회전, 아니면 Owner 회전
+	FQuat OwnerRotation = OwnerActor->GetActorRotation();
+
+	if (bUsePawnControlRotation)
+	{
+		// Owner가 Pawn이면 Controller의 회전을 사용
+		if (APawn* Pawn = Cast<APawn>(OwnerActor))
+		{
+			if (AController* Controller = Pawn->GetController())
+			{
+				OwnerRotation = Controller->GetControlRotation();
+			}
+		}
+	}
+
+	// 기본 위치: Owner의 위치 + TargetOffset (월드 좌표계 기준, 회전 적용 안 함)
+	// TargetOffset은 캐릭터 머리 위치 등 고정 오프셋으로 사용
+	FVector OwnerLocation = OwnerActor->GetActorLocation();
+	FVector TargetLocation = OwnerLocation + TargetOffset;
+
+	// Spring Arm 방향 계산 (뒤쪽)
+	FVector ArmDirection = OwnerRotation.GetForwardVector() * -1.0f; // Backward direction
+
+	// SocketOffset도 Owner 회전 적용
+	FVector RotatedSocketOffset = OwnerRotation.RotateVector(SocketOffset);
+
+	// Desired Location
+	FVector UnlaggedDesiredLocation = TargetLocation + ArmDirection * TargetArmLength + RotatedSocketOffset;
+
+	// Camera Lag 적용
+	// 캐릭터 "이동"에만 래그를 적용하고, 마우스 "회전"으로 인한 위치 변화에는 래그 적용 안 함
+	// 이렇게 해야 마우스 회전 시 카메라가 즉시 따라가고, 캐릭터 이동 시에만 부드럽게 따라감
+	if (bEnableCameraLag)
+	{
+		// 이전 위치가 초기값이면 즉시 설정
+		if (PreviousActorLocation.IsZero())
+		{
+			PreviousActorLocation = OwnerLocation;
+		}
+
+		// 캐릭터 위치에만 래그 적용
+		FVector LaggedOwnerLocation = FVector::Lerp(PreviousActorLocation, OwnerLocation,
+		                                            FMath::Min(1.0f, DeltaTime * CameraLagSpeed));
+
+		// MaxDistance 제한
+		FVector LagVector = OwnerLocation - LaggedOwnerLocation;
+		if (CameraLagMaxDistance > 0.0f && LagVector.Size() > CameraLagMaxDistance)
+		{
+			LaggedOwnerLocation = OwnerLocation - LagVector.GetNormalized() * CameraLagMaxDistance;
+		}
+
+		PreviousActorLocation = LaggedOwnerLocation;
+
+		// 래그가 적용된 캐릭터 위치로 최종 위치 계산 (회전은 현재 값 그대로 사용)
+		FVector LaggedTargetLocation = LaggedOwnerLocation + TargetOffset;
+		OutDesiredLocation = LaggedTargetLocation + ArmDirection * TargetArmLength + RotatedSocketOffset;
+	}
+	else
+	{
+		OutDesiredLocation = UnlaggedDesiredLocation;
+	}
+
+	// Rotation Lag 적용
+	if (bEnableCameraRotationLag)
+	{
+		if (PreviousDesiredRotation.IsIdentity())
+		{
+			PreviousDesiredRotation = OwnerRotation;
+		}
+
+		float Alpha = FMath::Min(1.0f, DeltaTime * CameraRotationLagSpeed);
+		OutDesiredRotation = FQuat::Slerp(PreviousDesiredRotation, OwnerRotation, Alpha);
+		PreviousDesiredRotation = OutDesiredRotation;
+	}
+	else
+	{
+		OutDesiredRotation = OwnerRotation;
+	}
+}
+
+bool USpringArmComponent::DoCollisionTest(const FVector& DesiredLocation, FVector& OutLocation)
+{
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor)
+	{
+		OutLocation = DesiredLocation;
+		return false;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		OutLocation = DesiredLocation;
+		return false;
+	}
+
+	FPhysScene* PhysScene = World->GetPhysicsScene();
+	if (!PhysScene)
+	{
+		OutLocation = DesiredLocation;
+		return false;
+	}
+
+	// 스윕 시작점: Owner 위치 + TargetOffset
+	// UpdateDesiredArmLocation과 동일한 회전을 사용해야 함
+	FQuat OwnerRotation = OwnerActor->GetActorRotation();
+	if (bUsePawnControlRotation)
+	{
+		if (APawn* Pawn = Cast<APawn>(OwnerActor))
+		{
+			if (AController* Controller = Pawn->GetController())
+			{
+				OwnerRotation = Controller->GetControlRotation();
+			}
+		}
+	}
+	FVector OwnerLocation = OwnerActor->GetActorLocation();
+	FVector RotatedTargetOffset = OwnerRotation.RotateVector(TargetOffset);
+	FVector SweepStart = OwnerLocation + RotatedTargetOffset;
+
+	// 스윕 끝점: 원하는 카메라 위치
+	FVector SweepEnd = DesiredLocation;
+
+	// 디버그 로그: 스윕 정보 출력
+	if (bDrawDebugCollision)
+	{
+		FVector SweepDir = (SweepEnd - SweepStart).GetNormalized();
+		float SweepDist = (SweepEnd - SweepStart).Size();
+		UE_LOG("[SpringArm] Sweep Start:(%.2f,%.2f,%.2f) End:(%.2f,%.2f,%.2f) Dir:(%.2f,%.2f,%.2f) Dist:%.2f",
+			SweepStart.X, SweepStart.Y, SweepStart.Z,
+			SweepEnd.X, SweepEnd.Y, SweepEnd.Z,
+			SweepDir.X, SweepDir.Y, SweepDir.Z,
+			SweepDist);
+	}
+
+	// 무시할 액터 목록 구성 (Owner + 추가 무시 액터)
+	TArray<AActor*> AllIgnoredActors;
+	AllIgnoredActors.push_back(OwnerActor);
+	for (AActor* Actor : IgnoredActors)
+	{
+		if (Actor)
+		{
+			AllIgnoredActors.push_back(Actor);
+		}
+	}
+
+	// Sphere 스윕으로 충돌 검사 (PhysX에서 무시 액터 필터링)
+	FHitResult HitResult;
+	bool bHit = PhysScene->SweepSingleSphere(SweepStart, SweepEnd, ProbeSize, HitResult, AllIgnoredActors);
+
+	if (bHit && HitResult.bBlockingHit)
+	{
+		// 초기 겹침 (Distance가 너무 작음) - 무시
+		if (HitResult.Distance < 0.1f)
+		{
+			if (bDrawDebugCollision)
+			{
+				AActor* HitActor = HitResult.Actor.Get();
+				UE_LOG("[SpringArm] IGNORED (InitialOverlap) Dist:%.2f HitActor:%s",
+					HitResult.Distance,
+					HitActor ? HitActor->GetName().c_str() : "null");
+			}
+			OutLocation = DesiredLocation;
+			CurrentArmLength = TargetArmLength;
+			return false;
+		}
+
+		AActor* HitActor = HitResult.Actor.Get();
+
+		// PhysX에서 반환된 충돌 위치를 직접 사용 (P2UVector 좌표 변환이 적용됨)
+		FVector HitLocation = HitResult.ImpactPoint;
+
+		// Bias 적용: 충돌 지점에서 타겟(캐릭터) 방향으로 살짝 밀어줌
+		// 이렇게 하면 카메라의 Near Clip Plane이 벽을 뚫고 보이는 것을 방지
+		FVector ToTarget = (SweepStart - HitLocation).GetNormalized();
+		FVector BiasedLocation = HitLocation + ToTarget * CameraCollisionBias;
+
+		// 충돌 위치를 카메라 위치로 사용 (Bias 적용됨)
+		OutLocation = BiasedLocation;
+
+		// 현재 암 길이 업데이트 (엔진 좌표계에서 실제 거리 계산)
+		CurrentArmLength = (BiasedLocation - SweepStart).Size();
+
+		// 디버그 로그
+		if (bDrawDebugCollision)
+		{
+			UE_LOG("[SpringArm] HIT! Dist:%.2f ArmLen:%.2f HitActor:%s",
+				HitResult.Distance,
+				CurrentArmLength,
+				HitActor ? HitActor->GetName().c_str() : "null");
+		}
+		return true;
+	}
+
+	// 충돌 없음 - 원래 위치 사용
+	OutLocation = DesiredLocation;
+	CurrentArmLength = TargetArmLength;
+
+	// 디버그 로그
+	if (bDrawDebugCollision)
+	{
+		UE_LOG("[SpringArm] NoHit Start:(%.2f,%.2f,%.2f) End:(%.2f,%.2f,%.2f)",
+			SweepStart.X, SweepStart.Y, SweepStart.Z,
+			OutLocation.X, OutLocation.Y, OutLocation.Z);
+	}
+	return false;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 충돌 무시 액터 관리
+// ────────────────────────────────────────────────────────────────────────────
+
+void USpringArmComponent::AddIgnoredActor(AActor* Actor)
+{
+	if (Actor && !IsActorIgnored(Actor))
+	{
+		IgnoredActors.push_back(Actor);
+	}
+}
+
+void USpringArmComponent::RemoveIgnoredActor(AActor* Actor)
+{
+	if (Actor)
+	{
+		auto It = std::find(IgnoredActors.begin(), IgnoredActors.end(), Actor);
+		if (It != IgnoredActors.end())
+		{
+			IgnoredActors.erase(It);
+		}
+	}
+}
+
+void USpringArmComponent::ClearIgnoredActors()
+{
+	IgnoredActors.clear();
+}
+
+bool USpringArmComponent::IsActorIgnored(AActor* Actor) const
+{
+	return std::find(IgnoredActors.begin(), IgnoredActors.end(), Actor) != IgnoredActors.end();
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 복제 및 직렬화
+// ────────────────────────────────────────────────────────────────────────────
+
+void USpringArmComponent::DuplicateSubObjects()
+{
+	Super::DuplicateSubObjects();
+}
+
+void USpringArmComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	// TODO: 필요한 멤버 변수 직렬화 추가
+}

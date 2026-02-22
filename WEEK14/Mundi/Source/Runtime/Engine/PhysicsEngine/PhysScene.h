@@ -1,0 +1,440 @@
+#pragma once
+
+#include <mutex>
+
+#include "PhysXSupport.h"
+#include "ConvexElem.h"
+#include "TriangleMeshElem.h"
+
+class FPhysXSimEventCallback;
+class FCCTHitReport;
+class FCCTBehaviorCallback;
+class FCCTControllerFilterCallback;
+struct FControllerInstance;
+class UCapsuleComponent;
+class UCharacterMovementComponent;
+
+class FPhysScene
+{
+public:
+    FPhysScene(UWorld* InOwningWorld);
+    
+    ~FPhysScene();
+
+    // ==================================================================================
+    // Physics Interface
+    // ==================================================================================
+
+    /** 프레임을 시작한다 (시뮬레이션 시작). */
+    void StartFrame();
+
+    /** 프레임을 종료한다 (시뮬레이션 완료 후 동기화). */
+    void EndFrame(ULineComponent* InLineComponent);
+    
+    void SetOwningWorld(UWorld* InOwningWorld) { OwningWorld = InOwningWorld; }
+    
+    UWorld* GetOwningWorld() { return OwningWorld; }
+
+    const UWorld* GetOwningWorld() const { return OwningWorld; }
+
+    void AddPendingCollisionNotify(const FCollisionNotifyInfo& NotifyInfo);
+
+    void AddPendingCollisionNotify(FCollisionNotifyInfo&& NotifyInfo);
+
+    // ==================================================================================
+    // PhysScene Interface
+    // ==================================================================================
+    
+    physx::PxScene* GetPxScene() const { return PhysXScene; }
+
+    /** 프레임 중 씬이 수정되었음을 표시 (getActiveActors 버퍼 무효화) */
+    void MarkSceneModified() { bSceneModifiedDuringFrame = true; }
+
+    /** @note 액터의 추가는 시뮬레이션 시작 직전에 일괄적으로 이루어진다. */
+    void DeferAddActor(PxActor* InActor);
+
+    /** 대기중인 액터 추가를 일괄적으로 처리한다. */
+    void FlushDeferredAdds();
+
+    /** @note 액터의 제거는 시뮬레이션 종료 직후에 일괄적으로 이루어진다. */
+    void DeferReleaseActor(PxActor* InActor);
+
+    /** 대기중인 액터 해제를 일괄적으로 처리한다. */
+    void FlushDeferredReleases();
+
+    /** * 물리 명령을 큐에 등록한다.
+     * 주로 액터가 아직 씬에 등록되지 않았을 때(초기화 시점) 사용한다.
+     */
+    void EnqueueCommand(std::function<void()> InCommand);
+
+    /** 등록된 모든 물리 명령을 실행한다. */
+    void FlushCommands();
+
+    // ==================================================================================
+    // Character Controller (CCT) Interface
+    // ==================================================================================
+
+    /** CCT 매니저 반환 */
+    PxControllerManager* GetControllerManager() const { return ControllerManager; }
+
+    /** CCT Controller 필터 콜백 반환 */
+    FCCTControllerFilterCallback* GetCCTControllerFilter() const { return CCTControllerFilter; }
+
+    /** CCT Hit 리포트 반환 */
+    FCCTHitReport* GetCCTHitReport() const { return CCTHitReport; }
+
+    /** CCT Behavior 콜백 반환 */
+    FCCTBehaviorCallback* GetCCTBehaviorCallback() const { return CCTBehaviorCallback; }
+
+    /**
+     * CCT Controller 생성
+     * @param InCapsule 소유 캡슐 컴포넌트
+     * @param InMovement 연결된 이동 컴포넌트 (nullptr 가능)
+     * @return 생성된 FControllerInstance (실패 시 nullptr)
+     */
+    FControllerInstance* CreateController(UCapsuleComponent* InCapsule, UCharacterMovementComponent* InMovement);
+
+    /**
+     * CCT Controller 해제
+     * @param InController 해제할 Controller
+     */
+    void DestroyController(FControllerInstance* InController);
+
+    // ==================================================================================
+
+    /** PhysX Scene 초기화 */
+    void InitPhysScene();
+
+    /** PhysX Scene 종료 */
+    void TermPhysScene();
+
+    /** 시뮬레이션 종료를 대기한다. (BodyInstance::TermBody에서 호출) */
+    void WaitPhysScene();
+
+    /** 현재 시뮬레이션이 실행 중인지 반환 */
+    bool IsSimulating() const { return bPhysXSceneExecuting; }
+
+    // ==================================================================================
+    // Raycast Interface
+    // ==================================================================================
+
+    /**
+     * @brief 레이캐스트를 수행하여 첫 번째 히트를 반환
+     * @param Origin 레이 시작점
+     * @param Direction 레이 방향 (정규화됨)
+     * @param MaxDistance 최대 거리
+     * @param OutHitLocation 히트 위치 (출력)
+     * @param OutHitNormal 히트 노멀 (출력)
+     * @param OutHitDistance 히트 거리 (출력)
+     * @param IgnoreActor 무시할 액터 (nullptr이면 무시 안 함)
+     * @return 히트 여부
+     */
+    bool Raycast(const FVector& Origin, const FVector& Direction, float MaxDistance,
+                 FVector& OutHitLocation, FVector& OutHitNormal, float& OutHitDistance,
+                 AActor* IgnoreActor = nullptr) const;
+
+    /**
+     * @brief 레이캐스트를 수행하여 FHitResult로 반환 (액터 정보 포함)
+     * @param Origin 레이 시작점
+     * @param Direction 레이 방향 (정규화됨)
+     * @param MaxDistance 최대 거리
+     * @param OutHit 히트 결과 (출력, 액터/컴포넌트 정보 포함)
+     * @param IgnoreActor 무시할 액터 (nullptr이면 무시 안 함)
+     * @return 히트 여부
+     */
+    bool RaycastSingle(const FVector& Origin, const FVector& Direction, float MaxDistance,
+                       FHitResult& OutHit,
+                       AActor* IgnoreActor = nullptr) const;
+
+    // ==================================================================================
+    // Sweep Interface (Shape Cast)
+    // ==================================================================================
+
+    /**
+     * @brief 캡슐 형태로 스윕하여 첫 번째 히트를 반환
+     * @param Start 시작 위치
+     * @param End 끝 위치
+     * @param Radius 캡슐 반경
+     * @param HalfHeight 캡슐 반높이 (헤미스피어 제외)
+     * @param OutHit 히트 결과 (출력)
+     * @param IgnoreActor 무시할 액터 (nullptr이면 무시 안 함)
+     * @return 히트 여부
+     */
+    bool SweepSingleCapsule(const FVector& Start, const FVector& End,
+                            float Radius, float HalfHeight,
+                            FHitResult& OutHit,
+                            AActor* IgnoreActor = nullptr) const;
+
+    /**
+     * @brief 스피어 형태로 스윕하여 첫 번째 히트를 반환
+     * @param Start 시작 위치
+     * @param End 끝 위치
+     * @param Radius 스피어 반경
+     * @param OutHit 히트 결과 (출력)
+     * @param IgnoreActor 무시할 액터 (nullptr이면 무시 안 함)
+     * @return 히트 여부
+     */
+    bool SweepSingleSphere(const FVector& Start, const FVector& End,
+                           float Radius,
+                           FHitResult& OutHit,
+                           AActor* IgnoreActor = nullptr) const;
+
+    /**
+     * @brief 스피어 형태로 스윕하여 첫 번째 히트를 반환 (여러 액터 무시)
+     * @param Start 시작 위치
+     * @param End 끝 위치
+     * @param Radius 스피어 반경
+     * @param OutHit 히트 결과 (출력)
+     * @param IgnoreActors 무시할 액터 목록
+     * @return 히트 여부
+     */
+    bool SweepSingleSphere(const FVector& Start, const FVector& End,
+                           float Radius,
+                           FHitResult& OutHit,
+                           const TArray<AActor*>& IgnoreActors) const;
+
+    /**
+     * @brief 박스 형태로 스윕하여 첫 번째 히트를 반환
+     * @param Start 시작 위치
+     * @param End 끝 위치
+     * @param HalfExtent 박스 반크기
+     * @param Rotation 박스 회전
+     * @param OutHit 히트 결과 (출력)
+     * @param IgnoreActor 무시할 액터 (nullptr이면 무시 안 함)
+     * @return 히트 여부
+     */
+    bool SweepSingleBox(const FVector& Start, const FVector& End,
+                        const FVector& HalfExtent, const FQuat& Rotation,
+                        FHitResult& OutHit,
+                        AActor* IgnoreActor = nullptr) const;
+
+    /**
+     * @brief Convex Mesh 형태로 스윕하여 첫 번째 히트를 반환
+     * @param ConvexElem Convex 요소 (유효한 ConvexMesh가 있어야 함)
+     * @param Start 시작 위치
+     * @param End 끝 위치
+     * @param Rotation 회전
+     * @param Scale3D 스케일
+     * @param OutHit 히트 결과 (출력)
+     * @param IgnoreActor 무시할 액터 (nullptr이면 무시 안 함)
+     * @return 히트 여부
+     */
+    bool SweepSingleConvex(const FKConvexElem& ConvexElem,
+                           const FVector& Start, const FVector& End,
+                           const FQuat& Rotation, const FVector& Scale3D,
+                           FHitResult& OutHit,
+                           AActor* IgnoreActor = nullptr) const;
+
+    /**
+     * @brief 임의의 PxGeometry로 스윕하여 첫 번째 히트를 반환 (고급 사용)
+     * @param Geometry PhysX 지오메트리
+     * @param Start 시작 위치
+     * @param End 끝 위치
+     * @param Rotation 회전
+     * @param OutHit 히트 결과 (출력)
+     * @param IgnoreActor 무시할 액터 (nullptr이면 무시 안 함)
+     * @return 히트 여부
+     */
+    bool SweepSingleGeometry(const PxGeometry& Geometry,
+                             const FVector& Start, const FVector& End,
+                             const FQuat& Rotation,
+                             FHitResult& OutHit,
+                             AActor* IgnoreActor = nullptr) const;
+
+    // ==================================================================================
+    // Overlap / Penetration Interface
+    // ==================================================================================
+
+    /**
+     * @brief 캡슐이 다른 물체와 겹치는지 확인하고 MTD(최소 이동 거리) 반환
+     * @param Position 캡슐 위치
+     * @param Radius 캡슐 반경
+     * @param HalfHeight 캡슐 반높이
+     * @param OutMTD 최소 이동 방향 (정규화됨, 출력)
+     * @param OutPenetrationDepth 침투 깊이 (출력)
+     * @param IgnoreActor 무시할 액터
+     * @return 겹침이 있으면 true
+     */
+    bool ComputePenetrationCapsule(const FVector& Position,
+                                   float Radius, float HalfHeight,
+                                   FVector& OutMTD, float& OutPenetrationDepth,
+                                   AActor* IgnoreActor = nullptr) const;
+
+    /**
+     * @brief 임의의 지오메트리가 다른 물체와 겹치는지 확인 (빠른 체크)
+     * @param Geometry PhysX 지오메트리
+     * @param Position 위치
+     * @param Rotation 회전
+     * @param IgnoreActor 무시할 액터
+     * @return 겹침이 있으면 true
+     */
+    bool OverlapAnyGeometry(const PxGeometry& Geometry,
+                            const FVector& Position, const FQuat& Rotation,
+                            AActor* IgnoreActor = nullptr) const;
+
+    /**
+     * @brief Convex가 다른 물체와 겹치는지 확인
+     * @param ConvexElem Convex 요소
+     * @param Position 위치
+     * @param Rotation 회전
+     * @param Scale3D 스케일
+     * @param IgnoreActor 무시할 액터
+     * @return 겹침이 있으면 true
+     */
+    bool OverlapAnyConvex(const FKConvexElem& ConvexElem,
+                          const FVector& Position, const FQuat& Rotation,
+                          const FVector& Scale3D,
+                          AActor* IgnoreActor = nullptr) const;
+
+    /**
+     * @brief Triangle Mesh가 다른 물체와 겹치는지 확인
+     * @param TriMeshElem Triangle Mesh 요소
+     * @param Position 위치
+     * @param Rotation 회전
+     * @param Scale3D 스케일
+     * @param IgnoreActor 무시할 액터
+     * @return 겹침이 있으면 true
+     * @note Triangle Mesh는 PhysX에서 sweep은 불가능하지만 overlap은 가능
+     */
+    bool OverlapAnyTriangleMesh(const FKTriangleMeshElem& TriMeshElem,
+                                const FVector& Position, const FQuat& Rotation,
+                                const FVector& Scale3D,
+                                AActor* IgnoreActor = nullptr) const;
+
+    /**
+     * @brief 박스가 다른 물체와 겹치는지 확인
+     * @param Position 위치
+     * @param HalfExtent 박스 반크기
+     * @param Rotation 회전
+     * @param IgnoreActor 무시할 액터
+     * @return 겹침이 있으면 true
+     */
+    bool OverlapAnyBox(const FVector& Position,
+                       const FVector& HalfExtent, const FQuat& Rotation,
+                       AActor* IgnoreActor = nullptr) const;
+
+    /**
+     * @brief 스피어가 다른 물체와 겹치는지 확인
+     * @param Position 위치
+     * @param Radius 반경
+     * @param IgnoreActor 무시할 액터
+     * @return 겹침이 있으면 true
+     */
+    bool OverlapAnySphere(const FVector& Position, float Radius,
+                          AActor* IgnoreActor = nullptr) const;
+
+    /** 실제 시뮬레이션 로직을 수행한다 (에디터에서 직접 호출 가능). */
+    void TickPhysScene(float DeltaTime);
+
+    /** 시뮬레이션 결과를 처리하고 동기화한다. */
+    void ProcessPhysScene();
+
+private:
+    /**
+     * @brief 내부 스윕 헬퍼 함수 (모든 지오메트리 공용)
+     */
+    bool SweepSingleInternal(const PxGeometry& Geometry, const FVector& Start, const FVector& End,
+                             const FQuat& Rotation, FHitResult& OutHit, AActor* IgnoreActor) const;
+
+    /** 컴포넌트의 트랜스폼에 시뮬레이션 결과를 동기화 */
+    void SyncComponentsToBodies();
+
+    /** 큐에 쌓인 충돌 이벤트를 메인 스레드에서 처리 */
+    void DispatchPhysNotifications_AssumesLocked();
+
+    /** PhysX Scene */
+    PxScene* PhysXScene;
+
+    /** PhysX Scene을 소유하고 있는 월드 */
+    UWorld* OwningWorld;
+
+    /** PhysX 이벤트 콜백 */
+    FPhysXSimEventCallback* SimEventCallback;
+    
+    /** 삽입 대기 중인 PhysX 액터 목록 */
+    TArray<PxActor*> DeferredAddQueue;
+    
+    /** 시뮬레이션 중 액터 추가 큐 접근용 뮤텍스 */
+    std::mutex DeferredAddMutex;
+
+    /** 해제 대기 중인 PhysX 액터 목록 */
+    TArray<PxActor*> DeferredReleaseQueue;
+    
+    /** 시뮬레이션 중 액터 해제 큐 접근용 뮤텍스 */
+    std::mutex DeferredReleaseMutex;
+
+    /** 물리 커맨드 큐 */
+    TArray<std::function<void()>> CommandQueue;
+
+    /** 커맨드 큐 접근용 뮤텍스 */
+    std::mutex CommandMutex;
+
+    /** 시뮬레이션이 종료되고 처리될 충돌 정보 큐 */
+    TArray<FCollisionNotifyInfo> PendingCollisionNotifies;
+
+    /** 시뮬레이션 중 충돌 정보 큐 접근용 뮤텍스 */
+    std::mutex NotifyMutex;
+
+    /** PhysX Scene 시뮬레이션 실행 여부 (실행 시점과 동기화 시점 사이) */
+    bool bPhysXSceneExecuting;
+
+    /** 프레임 중 씬이 수정되었는지 (getActiveActors 버퍼 무효화 감지용) */
+    bool bSceneModifiedDuringFrame = false;
+
+    // ==================================================================================
+    // Active Body Management (getActiveActors 대체)
+    // ==================================================================================
+
+    /** 활성 BodyInstance 목록 (우리가 직접 관리) */
+    TArray<struct FBodyInstance*> ActiveBodies;
+
+    /** ActiveBodies 접근용 뮤텍스 */
+    std::mutex ActiveBodiesMutex;
+
+public:
+    /** BodyInstance를 활성 목록에 등록 (InitBody에서 호출) */
+    void RegisterActiveBody(struct FBodyInstance* InBody);
+
+    /** BodyInstance를 활성 목록에서 제거 (TermBody에서 호출) */
+    void UnregisterActiveBody(struct FBodyInstance* InBody);
+
+private:
+
+    /** 물리 시뮬레이션 누적 시간 (서브스테핑용) */
+    float PhysicsAccumulator = 0.0f;
+
+    /** 고정 물리 시간 스텝 (240Hz - CCT와 동일) */
+    static constexpr float FixedPhysicsStep = 1.0f / 240.0f;
+
+    /** 최대 서브스텝 횟수 (프레임 드랍 시 물리가 너무 밀리지 않도록) */
+    static constexpr int32 MaxSubSteps = 8;
+
+    // ==================================================================================
+    // CCT (Character Controller) 관련 멤버
+    // ==================================================================================
+
+    /** PhysX Controller Manager (CCT 관리) */
+    PxControllerManager* ControllerManager = nullptr;
+
+    /** CCT Hit 리포트 (충돌 이벤트 브릿지) */
+    FCCTHitReport* CCTHitReport = nullptr;
+
+    /** CCT Behavior 콜백 (물리 상호작용 정책) */
+    FCCTBehaviorCallback* CCTBehaviorCallback = nullptr;
+
+    /** CCT Controller 필터 콜백 (CCT간 충돌 필터링) */
+    FCCTControllerFilterCallback* CCTControllerFilter = nullptr;
+
+    /** 해제 대기 중인 CCT Controller 목록 */
+    TArray<PxController*> DeferredControllerReleaseQueue;
+
+    /** CCT Controller 해제 큐 접근용 뮤텍스 */
+    std::mutex DeferredControllerReleaseMutex;
+
+public:
+    /**
+     * CCT Controller 해제를 다음 FlushDeferredReleases까지 지연
+     * @param InController 해제할 Controller (userData는 즉시 클리어됨)
+     */
+    void DeferReleaseController(PxController* InController);
+};
