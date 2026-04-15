@@ -1,5 +1,4 @@
 ## 01. 프로젝트 설명
-### DirectX 11 기반 자체 엔진, Mundi Engine
 
 DirectX 11를 사용하여 Win32 API에서 0줄 코드에서 계속 더하여 만든 3D 자체 엔진입니다.
 
